@@ -158,6 +158,38 @@ body.menu:not(.deploy) .panel{margin:0 auto 0 0;max-width:none}
 .side .keys{font-size:14px} .side .go{margin-top:4px}
 label.sens{display:flex;gap:12px;align-items:center;font-size:17px;margin-bottom:18px}
 label.sens input{flex:1;accent-color:var(--khaki)}
+
+/* Hangar */
+body.menu.hangar #overlay{padding:0;background:transparent!important;overflow:hidden}
+body.menu.hangar .panel{max-width:none;width:100%;height:100%;margin:0}
+.hg{position:relative;width:100%;height:100%;font-family:system-ui,sans-serif}
+.hgTop{position:absolute;top:12px;left:12px;right:130px;display:flex;flex-wrap:wrap;gap:4px}
+.hgN,.hgBack{font:700 13px system-ui,sans-serif;letter-spacing:.04em;text-transform:uppercase;color:#e8e4da;background:linear-gradient(180deg,#3a414d,#22272f);border:1px solid #59616e;padding:7px 11px;cursor:pointer;display:flex;align-items:center;gap:6px}
+.hgN i{width:16px;height:11px;display:inline-block;border:1px solid rgba(0,0,0,.5)} .hgN.sel{border-color:var(--khaki);background:linear-gradient(180deg,#5a5640,#2f2c20)} .hgN.tr{margin-left:auto;border-color:#b83a2c}
+.hgBack{font-size:17px;padding:5px 11px}
+.hgInfo{position:absolute;right:12px;top:66px;width:300px;max-height:calc(100% - 300px);overflow:hidden;background:rgba(18,20,23,.82);border:1px solid #444b55;padding:12px 14px;color:#e8e4da;font-size:13px}
+.hgInfo .nm{font:700 24px 'Saira Condensed',sans-serif;color:var(--khaki);line-height:1} .hgInfo .sub{opacity:.8;margin:2px 0 8px}
+.hgInfo .st{display:grid;grid-template-columns:1fr auto;gap:2px 10px} .hgInfo .st span{opacity:.75}
+.hgInfo .chips{display:flex;flex-wrap:wrap;gap:4px;margin:8px 0} .hgInfo .chips span{background:#2b3038;border:1px solid #4a525e;padding:2px 6px;font-size:12px}
+.hgInfo .am{font-size:12px;line-height:1.4;opacity:.9}
+.hgInfo .lvl{margin-top:8px;border-top:1px solid #3a4049;padding-top:8px} .hgInfo .lvl ul{list-style:none;margin:6px 0 0;padding:0;font-size:12px} .hgInfo .lvl li{opacity:.45} .hgInfo .lvl li.ok{opacity:1;color:var(--ally)} .hgInfo .lvl li b{display:inline-block;width:34px}
+.hgInfo small{display:block;opacity:.7;margin-top:4px}
+.pb{display:block;height:5px;background:rgba(255,255,255,.12);margin-top:4px} .pb i{display:block;height:100%;background:var(--amber)}
+.hgInfo .btns{display:flex;gap:6px;margin-top:10px} .hgB{flex:1;font:600 12px system-ui,sans-serif;padding:7px 4px;background:#2b3038;color:#e8e4da;border:1px solid #59616e;cursor:pointer} .hgB:hover{background:#3a414d}
+.hgRow{position:absolute;left:12px;right:330px;bottom:12px;display:flex;gap:4px}
+.hgc{flex:1 1 0;min-width:0;max-width:170px;text-align:left;position:relative;font:12px system-ui,sans-serif;color:#e8e4da;background:linear-gradient(180deg,rgba(52,58,68,.92),rgba(28,32,38,.92));border:1px solid #4d5562;padding:22px 7px 7px;cursor:pointer;overflow:hidden}
+.hgc b{display:block;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis} .hgc small{display:block;opacity:.7;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hgc .br{position:absolute;top:4px;left:7px;font-weight:700;color:var(--khaki)} .hgc .gar{position:absolute;top:3px;right:6px;color:var(--amber)}
+.hgc.sel{border-color:var(--khaki);box-shadow:inset 0 0 0 1px var(--khaki)} .hgc.lock{opacity:.55} .hgc:hover{filter:brightness(1.2)}
+.hgGo{position:absolute;right:12px;bottom:12px;width:306px;display:flex;flex-direction:column;gap:5px}
+.garTxt{font-size:12px;color:#cfc9bb;text-align:right;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hgModes,.hgOpt{display:flex;flex-wrap:wrap;gap:3px;align-items:center} .hgModes button,.hgOpt button{flex:1 1 auto;font:600 11px system-ui,sans-serif;padding:5px 6px;background:#262b33;color:#e8e4da;border:1px solid #4d5562;cursor:pointer}
+.hgModes button.sel,.hgOpt button.sel{border-color:var(--khaki);background:#4a4632} .hgOpt label{font-size:12px;color:#e8e4da;display:flex;gap:4px;align-items:center}
+.hgPlay{font:700 22px system-ui,sans-serif;letter-spacing:.06em;text-transform:uppercase;padding:13px 0;color:#fff;background:linear-gradient(180deg,#c0392b,#7d2016);border:1px solid #e0614f;cursor:pointer} .hgPlay:hover{filter:brightness(1.12)} .hgPlay[disabled]{opacity:.45;cursor:not-allowed}
+#hgModal .hgM{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:min(420px,92vw);background:rgba(18,20,23,.96);border:1px solid #6a7280;padding:16px 18px;z-index:20}
+#hgModal .hgM h2{margin:0 0 8px;color:var(--khaki)} #hgModal .s{font-size:13px}
+.tree{display:grid!important;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));max-height:none!important;overflow:visible!important} .tree .vrow{cursor:pointer}
+@media (max-height:640px){.hgInfo .am,.hgInfo .chips{display:none}}
 input.txt{width:100%;box-sizing:border-box;font:500 18px 'Saira Condensed',sans-serif;padding:8px 10px;background:rgba(0,0,0,.35);color:var(--paper);border:1px solid rgba(239,231,210,.35);margin-bottom:10px;user-select:text}
 .go{font:inherit;font-size:24px;font-weight:700;background:var(--khaki);color:#221e17;border:0;padding:12px 28px;cursor:pointer}
 .go:hover{background:#ddcd9c}
@@ -1864,7 +1896,9 @@ function makeTank(crew,key,x,z,heading,id){
     eY:rand(-1,1)*.035,eP:rand(-1,1)*.01,visP:false,immuneT:IMMUNE,spottedT:0,mgHeat:0,mgLock:false,mgNext:0,mgN:0,mgBurst:0,moved:5};
   const seats=T.crew===3?['driver','gunner','commander']:T.crew===5?['driver','gunner','commander','loader','codriver']:['driver','gunner','commander','loader'];
   t.crewM=seats.map(st=>({seat:st,hp:100,alive:true})); t.mod={engine:100,breech:100}; t.trackT=0; t.engT=0; t.breechT=0; t.fireT=0; t.swapT=0;
-  t.ammoIdx=0; t.thermal=false; t.troops=T.troops||0; t.id=id||++net.seq; t.mgCount=0; if(crew&&crew.isPlayer) initAmmo(t);
+  t.ammoIdx=0; t.thermal=false; t.troops=T.troops||0; t.id=id||++net.seq; t.mgCount=0;
+  applyLevel(t,crew&&crew.isPlayer?tankLv(key):crew&&crew.lvs?crew.lvs[key]||1:1);
+  if(crew&&crew.isPlayer) initAmmo(t);
   const root=new THREE.Group(); t.root=root; root.rotation.order='YXZ';
   t.wheels=_wl=[]; t.mud=mud; buildModel(t,M,mat); _wl=null; scene.add(root);
   t.pos=root.position; t.pos.set(x,heightAt(x,z),z);
@@ -1909,7 +1943,7 @@ function groundMark(p,r){
 }
 // Munición limitada (jugador): carga según el vehículo, repartida entre los tipos; ametralladora en cintas de 250.
 function initAmmo(t){ const L=t.T.ammo, tot=t.T.auto?Math.round(t.T.auto.mag*14):(t.T.ammoCap||(t.T.hp>=130?42:t.T.hp>=90?36:30));
-  const sh=L.length===1?[1]:L.length===2?[.6,.4]:[.5,.3,.2]; t.ammoMax=L.map((_,i)=>Math.max(2,Math.round(tot*sh[i]))); t.ammoCount=t.ammoMax.slice(); t.mgBelt=250; t.mgBelts=3; t.mgRel=0; }
+  const sh=L.length===1?[1]:L.length===2?[.6,.4]:[.5,.3,.2]; t.ammoMax=L.map((_,i)=>Math.max(2,Math.round(tot*sh[i]*(t.lv>=4?1.2:1)))); t.ammoCount=t.ammoMax.slice(); t.mgBelt=250; t.mgBelts=3; t.mgRel=0; }
 const needsRepair=t=>t.trackT>0||t.mod.engine<100||t.mod.breech<100||t.fireT>0;
 function removeTank(t){
   scene.remove(t.root); const i=tanks.indexOf(t); if(i>=0)tanks.splice(i,1);
@@ -1917,11 +1951,23 @@ function removeTank(t){
 }
 function placeOnGround(t,dt){
   const p=t.pos, s=Math.sin(t.heading), c=Math.cos(t.heading), L=t.T.m.L*.42, Wd=t.T.m.W*.45;
-  const hF=heightAt(p.x+s*L,p.z+c*L), hB=heightAt(p.x-s*L,p.z-c*L);
-  const hL=heightAt(p.x+c*Wd,p.z-s*Wd), hR=heightAt(p.x-c*Wd,p.z+s*Wd);
-  const tp=Math.atan2(hF-hB,L*2), tr=Math.atan2(hL-hR,Wd*2);
-  const k=Math.min(1,dt*8); t.pitch+=(tp-t.pitch)*k; t.roll+=(tr-t.roll)*k;
-  p.y=(hF+hB+hL+hR)/4;
+  let hL=heightAt(p.x+c*Wd,p.z-s*Wd), hR=heightAt(p.x-c*Wd,p.z+s*Wd), hc=heightAt(p.x,p.z);
+  // Borde (puente, barranco): si un costado queda sin apoyo, el tanque se desliza hacia el vacío y cae
+  if(!t.air&&!t.dead&&dt<.5){ const dl=hc-hL, dr=hc-hR;
+    if(Math.max(dl,dr)>2){ const k2=(dl>dr?1:-1)*dt*3; p.x+=c*k2; p.z-=s*k2; t.speed*=1-dt*.5;
+      hL=heightAt(p.x+c*Wd,p.z-s*Wd); hR=heightAt(p.x-c*Wd,p.z+s*Wd); hc=heightAt(p.x,p.z); } }
+  const cl=h=>clamp(h,hc-1.4,hc+1.4);
+  const hF=cl(heightAt(p.x+s*L,p.z+c*L)), hB=cl(heightAt(p.x-s*L,p.z-c*L)); hL=cl(hL); hR=cl(hR);
+  const tp=clamp(Math.atan2(hF-hB,L*2),-.6,.6), tr=clamp(Math.atan2(hL-hR,Wd*2),-.55,.55);
+  const gy=(hF+hB+hL+hR)/4;
+  // Gravedad: si el suelo quedó más abajo (se fue de un borde), cae; al tocar el suelo, el golpe lastima a la tripulación
+  if(!t.dead&&dt<.5&&(t.air||p.y>gy+.9)){
+    t.air=true; t.vy=(t.vy||0)-G*dt; p.y+=t.vy*dt; t.pitch+=dt*.35*Math.sign(t.speed||1);
+    if(p.y<=gy){ const imp=-t.vy; p.y=gy; t.air=false; t.vy=0;
+      if(t.isPlayer) shake=Math.max(shake,Math.min(1.5,imp*.08));
+      if(imp>7&&!net.guest&&!(t.immuneT>0)){ for(const m of t.crewM) if(m.alive){ m.hp-=(imp-7)*7*rand(.7,1.2); if(m.hp<=0) m.alive=false; }
+        if(imp>10) t.trackT=Math.max(t.trackT,10); tell(t,`¡Caída de ${Math.round(imp*imp/(2*G))} m!`,'var(--enemy)'); afterHit(t,t.lastBy||null,false); } }
+  } else { const k=Math.min(1,dt*8); t.pitch+=(tp-t.pitch)*k; t.roll+=(tr-t.roll)*k; p.y=gy; }
   // Suspensión: el casco cabecea al acelerar/frenar y se inclina en las curvas (resorte amortiguado)
   if(dt<.5&&!t.dead){ const acc=(t.speed-(t._ls??t.speed))/dt, yr=wrap(t.heading-(t._lh??t.heading))/dt; t._ls=t.speed; t._lh=t.heading;
     const tgP=clamp(acc*.011,-.07,.07), tgR=clamp(-yr*t.speed*.006,-.05,.05);
@@ -1931,12 +1977,13 @@ function placeOnGround(t,dt){
   t.root.rotation.set(-(t.pitch+(t.sP||0)),t.heading,t.roll+(t.sR||0));
 }
 function drive(t,throttle,steer,dt){
-  if(!canMove(t)){throttle=0;steer=0;}
+  if(!canMove(t)||t.air){throttle=0;steer=0;}
   const T=t.T, want=throttle>0?throttle*T.maxF:throttle<0?throttle*T.maxR:0;
   const d=want-t.speed; t.speed+=clamp(d,-dt*(want===0?6:5),dt*(Math.sign(d)===Math.sign(t.speed)||t.speed===0?3.5:6));
   t.speed-=Math.sin(t.pitch)*dt*3;
   t.heading=wrap(t.heading+steer*dt*(T.turn-Math.min(.3,Math.abs(t.speed)*.015)));
-  const p=t.pos, ox=p.x, oz=p.z;
+  const p=t.pos, ox=p.x, oz=p.z, yO=p.y;
+  if(t.air) t.speed*=1-dt*.2; else if(W.water!=null&&W.water-heightAt(p.x,p.z)>.3) t.speed*=1-dt*1.6; // en el aire no hay control; en el agua frena
   p.x+=Math.sin(t.heading)*t.speed*dt; p.z+=Math.cos(t.heading)*t.speed*dt;
   p.x=clamp(p.x,-W.bx,W.bx); p.z=clamp(p.z,-W.bz,W.bz);
   // Casco = dos círculos (adelante y atrás) contra edificios orientados: se desliza en vez de trabarse
@@ -1951,7 +1998,9 @@ function drive(t,throttle,steer,dt){
       if(into>0&&it===0) t.speed*=1-Math.min(.9,into*dt*10);
     }
   }
-  if((W.boundary&&!inPoly(p.x,p.z,W.boundary))||(W.water!=null&&heightAt(p.x,p.z)<W.water+.4)){p.x=ox;p.z=oz;t.speed*=.5;}
+  { const gN=heightAt(p.x,p.z), bot=!t.isPlayer&&!t.net;
+    // no se trepan paredes ni escalones de más de 1,2 m; la IA además evita el agua y los precipicios
+    if((W.boundary&&!inPoly(p.x,p.z,W.boundary))||(!t.air&&gN-yO>1.2)||(bot&&((W.water!=null&&gN<W.water+.4)||yO-gN>2.5))){p.x=ox;p.z=oz;t.speed*=.5;} }
   for(const o of tanks){ if(o===t) continue; const dx=p.x-o.pos.x, dz=p.z-o.pos.z, dd=Math.hypot(dx,dz), m=t.R+o.R*.9;
     if(dd<m&&dd>0.01){p.x+=dx/dd*(m-dd)*.6;p.z+=dz/dd*(m-dd)*.6; const into=-(fx*dx+fz*dz)/dd*dir; if(into>0)t.speed*=1-Math.min(.9,into*dt*8);} }
   propsNear(p.x,p.z,t.co+cr+3,P=>{ if(P.fallen||P.crushed||P.gone) return; for(const k of [1,-1]){ const dx=P.x-(p.x+fx*t.co*k), dz=P.z-(p.z+fz*t.co*k);
@@ -1997,7 +2046,7 @@ function aimAt(t,point,dt,eY=0,eP=0){
   t.root.updateMatrixWorld(true);
   const gp=t.gunPivot.getWorldPosition(new THREE.Vector3());
   const dx=point.x-gp.x, dz=point.z-gp.z, d=Math.max(5,Math.hypot(dx,dz));
-  const v=ammoOf(t).v, manual=t.isPlayer&&realMode&&!t.T.fcs;
+  const v=ammoOf(t).v, manual=t.isPlayer&&realMode&&!hasFcs(t);
   const wy=Math.atan2(dx,dz)+eY, wp=(manual?Math.atan2(point.y-gp.y,d)+ballisticPitch(200,0,v):ballisticPitch(d,point.y-gp.y,v))+eP;
   const dir=new THREE.Vector3(Math.sin(wy)*Math.cos(wp),Math.sin(wp),Math.cos(wy)*Math.cos(wp));
   qInv.copy(t.root.quaternion).invert(); dir.applyQuaternion(qInv);
@@ -2034,6 +2083,17 @@ function addRP(n,rp){ const out=[]; let left=rp;
     else { PROG.rp[k]=have+left; left=0; } }
   saveProg(); return out; }
 let battleBR=null;
+// ---------- Niveles por tanque: la experiencia (XP) de cada vehículo desbloquea mejoras ----------
+const LV_XP=[0,1500,4000,8000,14000];
+const LV_UP=[null,null,{k:'smoke',n:'Lanzahumos',d:'2 granadas de humo por salida (tecla de humo)'},{k:'rep',n:'Reparación rápida',d:'Reparás un 40 % más rápido'},
+  {k:'ammo',n:'Munición mejorada',d:'+8 % de penetración y 20 % más proyectiles'},{k:'fcs',n:'Control de tiro',d:'Telémetro (o recarga 10 % más rápida si ya lo tenía)'}];
+const tankXP=k=>(PROG&&PROG.txp&&PROG.txp[k])||0;
+const tankLv=k=>{ const x=tankXP(k); let l=1; for(let i=1;i<LV_XP.length;i++) if(x>=LV_XP[i]) l=i+1; return l; };
+function addTankXP(k,xp){ if(!PROG||!VEH[k]) return []; PROG.txp=PROG.txp||{}; const before=tankLv(k); PROG.txp[k]=tankXP(k)+xp; const after=tankLv(k); saveProg();
+  const ups=[]; for(let l=before+1;l<=after;l++) ups.push(l); return ups; }
+function applyLevel(t,lv){ t.lv=lv=clamp(lv|0,1,5); t.smoke=lv>=2?2:0; t.repairK=lv>=3?.6:1; t.penK=lv>=4?1.08:1; t.fcsX=lv>=5&&!t.T.fcs;
+  if(lv>=5&&t.T.fcs) t.reloadMax*=.9; }
+const hasFcs=t=>!!(t&&(t.T.fcs||t.fcsX));
 const usesOf=(crew,key)=>crew.uses[key]||0;
 const costOf=(crew,key)=>crew.spawns===0&&!VEH[key].uses?0:Math.round(COST[VEH[key].cls]*(usesOf(crew,key)?1.5:1));
 const available=(crew,key)=>usesOf(crew,key)<usesMax(key)&&costOf(crew,key)<=crew.sp;
@@ -2089,7 +2149,7 @@ function fireGun(t,F){
   if(!F){ const spread=.0012+Math.abs(t.speed)*(t.T.stab?.0003:.0035);
   dir.x+=rand(-1,1)*spread; dir.y+=rand(-1,1)*spread; dir.z+=rand(-1,1)*spread; dir.normalize(); }
   const m=new THREE.Mesh(shellGeo,SHELL_MAT[A.kind]); m.position.copy(mp); scene.add(m);
-  shells.push({p:mp.clone(),v:dir.clone().multiplyScalar(A.v),owner:t,m,travel:0,life:4,A,fx:net.guest}); noise(mp,120);
+  shells.push({p:mp.clone(),v:dir.clone().multiplyScalar(A.v),owner:t,m,travel:0,life:4,A,fx:net.guest}); noise(mp,120); if(tut&&t===player) tut.shots=(tut.shots||0)+1;
   if(net.on) netShot(t,mp,dir,F);
   const big=t.T.m.gr*10;
   if(t.T.auto){ puff(mp,0xffc060,1.2,.06,0,1,true); boom(t.isPlayer?.18:distVol(mp,.15),.12,2200); if(t.isPlayer) shake=Math.max(shake,.06); return true; }
@@ -2114,7 +2174,7 @@ function updateShells(dt){
         if(s.fx){ const tk=hit.object.userData.tank; explode(hit.point,tk?'metal':'ground'); if(tk) clang(distVol(hit.point,.25)); else boom(distVol(hit.point,.25),.5,500); done=true; break; }
         if(s.rocket){ blast(hit.point,.25); noise(hit.point,80); }
         infBlast(hit.point,(s.A.kind==='he'?6:s.A.kind==='hesh'?4:1.8)*(s.A.sc<1?.4:1),s.owner);
-        if(hit.object.userData.tank) hitTank(s.owner,hit,dir,s.A.kind==='ke'?s.A.pen*Math.max(.5,1-s.travel/3000):s.A.pen,'shell',s.A);
+        if(hit.object.userData.tank) hitTank(s.owner,hit,dir,(s.A.kind==='ke'?s.A.pen*Math.max(.5,1-s.travel/3000):s.A.pen)*(s.owner.penK||1),'shell',s.A);
         else { if((s.A.kind==='he'||s.A.kind==='hesh')&&s.A.sc<1){explode(hit.point,'ground');heSplash(hit.point,s.owner,s.A);} else if(s.A.kind==='he'||s.A.kind==='hesh'){blast(hit.point,.35);heSplash(hit.point,s.owner,s.A);} else {explode(hit.point,'ground');boom(distVol(hit.point,.25),.5,500);}
           const b=bldOf(hit); if(b) damageBuilding(b,(15+s.owner.T.m.gr*250)*({ke:.6,heat:1,hesh:2.2,he:2.2})[s.A.kind]*(s.A.sc||1));}
         done=true; break; }
@@ -2132,7 +2192,8 @@ let mgMsgT=0;
 const SEAT_ES={codriver:'ayudante',driver:'conductor',gunner:'artillero',commander:'comandante',loader:'cargador'};
 const manned=(t,seat)=>t.crewM.some(m=>m.alive&&m.seat===seat);
 const crewAlive=t=>t.crewM.filter(m=>m.alive).length;
-const canMove=t=>t.mod.engine>0&&t.trackT<=0&&manned(t,'driver')&&!(t.repairT>0);
+const flooded=t=>W.water!=null&&W.water-heightAt(t.pos.x,t.pos.z)>1.3;
+const canMove=t=>t.mod.engine>0&&t.trackT<=0&&manned(t,'driver')&&!(t.repairT>0)&&!flooded(t);
 const canFire=t=>t.mod.breech>0&&manned(t,'gunner')&&!(t.repairT>0);
 const reloadFactor=t=>t.T.autoL||manned(t,'loader')?1:1.8;
 function compPos(t){ // posiciones locales del casco (x lateral, y alto, z adelante)
@@ -2253,11 +2314,16 @@ function callCrew(t){
 function startRepair(t){
   if(t.repairT>0){ t.repairT=0; tell(t,'Reparación cancelada','var(--paper)'); return; }
   if(!needsRepair(t)){ tell(t,'No hay nada que reparar','var(--paper)'); return; }
-  const k=crewAlive(t)/t.crewM.length; t.repairMax=t.repairT=Math.round(9/Math.max(.4,k)); t.speed=0; tell(t,`Reparando… ${t.repairT} s`,'var(--amber)');
+  const k=crewAlive(t)/t.crewM.length; t.repairMax=t.repairT=Math.round(9/Math.max(.4,k)*(t.repairK||1)); t.speed=0; tell(t,`Reparando… ${t.repairT} s`,'var(--amber)');
 }
 function updateModules(t,dt){
+  // Agua profunda: el motor se ahoga y el tanque se hunde; a los 5 s la tripulación se ahoga
+  if(!t.air&&flooded(t)){ if(!t.sinkT){ t.sinkT=0; tell(t,'¡Nos hundimos! Entra agua al tanque','var(--enemy)'); if(t.isPlayer) radio('¡Nos hundimos!',2); }
+    t.sinkT+=dt; t.bubT=(t.bubT||0)-dt; if(t.bubT<=0){ t.bubT=.25; puff(new THREE.Vector3(t.pos.x+rand(-1.5,1.5),W.water+.2,t.pos.z+rand(-1.5,1.5)),0xdfe8ea,rand(1,1.8),.8,.6,.6); }
+    if(t.sinkT>5){ t.crewM.forEach(m=>{m.alive=false;m.hp=0;}); t.drowned=true; destroy(t,t.lastBy&&t.lastBy.team!==t.team&&now-(t.lastHitT||0)<15?t.lastBy:null,false); return; } }
+  else t.sinkT=0;
   if(t.repairT>0){ t.repairT-=dt; if(t.repairT<=0){ t.repairT=0; t.trackT=0; t.mod.engine=100; t.mod.breech=100; t.engT=0; t.breechT=0; t.fireT=0;
-    tell(t,'Reparación terminada','var(--ally)'); if(t.isPlayer) radio('¡Tripulación lista! ¡Adelante!'); } }
+    tell(t,'Reparación terminada','var(--ally)'); if(t.isPlayer){ radio('¡Tripulación lista! ¡Adelante!'); if(tut) tut.rep=true; } } }
   if(t.trackT>0) t.trackT-=dt;
   if(t.mod.engine<=0){ t.engT-=dt; if(t.engT<=0&&t.fireT<=0) t.mod.engine=40; }
   if(t.mod.breech<=0){ t.breechT-=dt; if(t.breechT<=0) t.mod.breech=50; }
@@ -2277,11 +2343,11 @@ function destroy(t,by,rack){
   if(by&&by.team!==t.team&&by.crew){by.crew.kills++; addSP(by,90,100);}
   tickets[t.team]-=TICKET_KILL;
   t.crew.respawnT=7;
-  feed(by?`${by.inf?(by.team===0?allyLabel():NATIONS[foeNation].label)+', '+by.name.toLowerCase():by.name} (${by.T.label}) ✕ ${t.name} (${t.T.label})`:`${t.name} (${t.T.label}) se incendió`, by&&by.isPlayer?'var(--amber)':(t.team===0?'var(--enemy)':'var(--ally)'));
+  feed(by?`${by.inf?(by.team===0?allyLabel():NATIONS[foeNation].label)+', '+by.name.toLowerCase():by.name} (${by.T.label}) ✕ ${t.name} (${t.T.label})`:`${t.name} (${t.T.label}) ${t.drowned?'se hundió: la tripulación se ahogó':'se incendió'}`, by&&by.isPlayer?'var(--amber)':(t.team===0?'var(--enemy)':'var(--ally)'));
   if(!sfx('expl',t.pos,1.1,{rate:rand(.72,.85)})) boom(distVol(t.pos,.9),1.6,600);
   if(by&&by.isPlayer&&t.team!==by.team) radio('¡Blanco destruido!',2);
   for(let i=0;i<6;i++) puff(t.pos.clone().add(new THREE.Vector3(rand(-2,2),rand(1,3),rand(-2,2))),0xff8a30,rand(3,6),.5,1,1,true);
-  if(t.isPlayer){ playerDeadT=3.5; banner('Vehículo destruido',canSpawn(playerCrew)?'Vas a poder elegir el siguiente':'No te quedan vehículos o puntos para reaparecer',3.5); }
+  if(t.isPlayer){ playerDeadT=3.5; banner(t.drowned?'Tanque hundido':'Vehículo destruido',canSpawn(playerCrew)?'Vas a poder elegir el siguiente':'No te quedan vehículos o puntos para reaparecer',3.5); }
   updateHud(); checkEnd();
 }
 
@@ -2367,6 +2433,7 @@ function callArtillery(by,point){
 }
 function callAirstrike(by,point){
   const c=by.crew; if(c.sp<AIR_COST||c.airCD>0) return false;
+  if(tut&&by.isPlayer) tut.air=true;
   c.sp-=AIR_COST; c.airCD=AIR_CD; if(c.isPlayer) $('spT').textContent=c.sp;
   const dir=new THREE.Vector3(point.x-by.pos.x,0,point.z-by.pos.z); if(dir.lengthSq()<1) dir.set(0,0,1); dir.normalize();
   const g=new THREE.Group(), pm=new THREE.MeshLambertMaterial({color:by.team===0?0x4b5440:0x5a5348});
@@ -2651,7 +2718,27 @@ function updateInfantry(dt){
 
 /* ---------- IA ---------- */
 function eyeOf(t){return new THREE.Vector3(t.pos.x,t.pos.y+t.topH-.2,t.pos.z);}
+// Humo: nubes que cortan la línea de vista (la IA no ve a través)
+const smokes=[];
+function smokeBlocks(a,b){ for(const S of smokes){ if(now>S.until) continue; const ab=b.clone().sub(a), L=ab.length(); if(L<1) continue; ab.divideScalar(L);
+  const c=new THREE.Vector3(S.x,S.y,S.z), k=clamp(c.clone().sub(a).dot(ab),0,L); if(c.distanceTo(a.clone().addScaledVector(ab,k))<S.r) return true; } return false; }
+function addSmoke(x,y,z){ smokes.push({x,y:y+3,z,r:9,until:now+22,k:0}); if(smokes.length>12) smokes.shift();
+  for(let i=0;i<16;i++) puff(new THREE.Vector3(x+rand(-7,7),y+rand(.5,4),z+rand(-7,7)),i%3?0xd8d6d0:0xbfbcb4,rand(6,9),rand(16,22),.08,.85); }
+function updateSmoke(dt){ for(let i=smokes.length-1;i>=0;i--){ const S=smokes[i]; if(now>S.until){ smokes.splice(i,1); continue; }
+  S.k-=dt; if(S.k<=0&&S.until-now>4){ S.k=1.2; puff(new THREE.Vector3(S.x+rand(-6,6),S.y-2+rand(0,3),S.z+rand(-6,6)),0xd2d0c9,rand(6,8),rand(8,11),.06,.75); } } }
+function deploySmoke(t,force){
+  if(!t||t.dead) return false;
+  if(!force){ if(!t.lv||t.lv<2){ tell(t,'Este tanque todavía no tiene lanzahumos (se desbloquea en el nivel 2)','var(--paper)'); return false; }
+    if(!(t.smoke>0)){ tell(t,'No quedan granadas de humo','var(--enemy)'); return false; } t.smoke--; }
+  if(net.guest&&t===player){ net.hostConn.send({t:'smk'}); tell(t,'¡Humo!','var(--ally)'); if(t.isPlayer) radio('¡Humo!'); return true; }
+  const f=t.turretYaw+t.heading, x=t.pos.x+Math.sin(f)*10, z=t.pos.z+Math.cos(f)*10, y=heightAt(x,z);
+  if(tut&&t.isPlayer) tut.smoke=true;
+  addSmoke(x,y,z); sfx('metal',t.pos,.3,{rate:1.4}); if(t.isPlayer){ tell(t,'¡Humo!','var(--ally)'); radio('¡Humo!'); }
+  if(net.host) netAll({t:'smk',x,y,z});
+  return true;
+}
 function los(a,b){
+  if(smokes.length&&smokeBlocks(a,b)) return false;
   const d=a.distanceTo(b), n=Math.ceil(d/4);
   for(let i=1;i<n;i++){const k=i/n, x=a.x+(b.x-a.x)*k, y=a.y+(b.y-a.y)*k, z=a.z+(b.z-a.z)*k; if(y<heightAt(x,z)+.4) return false;}
   ray.set(a,b.clone().sub(a).normalize()); ray.far=d; const h=ray.intersectObjects(houseMeshes,false).length; ray.far=Infinity;
@@ -2773,7 +2860,7 @@ const teamNation=team=>team===0?allyNation:foeNation;
 const ACTIONS=[['fwd','Avanzar','KeyW'],['back','Retroceder','KeyS'],['left','Girar a la izquierda','KeyA'],['right','Girar a la derecha','KeyD'],
   ['scope','Mira telescópica (mantener)','ShiftLeft'],['mg','Ametralladora','Space'],['ammo1','Munición 1','Digit1'],['ammo2','Munición 2','Digit2'],['ammo3','Munición 3','Digit3'],
   ['ammoAuto','Munición automática','Digit4'],['arty','Artillería','KeyF'],['air','Ataque aéreo','KeyG'],['nuke','Nuke','KeyN'],['thermal','Visión térmica','KeyT'],
-  ['aerial','Vista aérea (la IA maneja)','KeyV'],['troops','Bajar la infantería','KeyE'],['fullscreen','Pantalla completa','KeyP'],['repair','Reparar','KeyR'],['crewSwap','Reemplazar tripulante (infantería)','KeyC']];
+  ['aerial','Vista aérea (la IA maneja)','KeyV'],['troops','Bajar la infantería','KeyE'],['fullscreen','Pantalla completa','KeyP'],['repair','Reparar','KeyR'],['crewSwap','Reemplazar tripulante (infantería)','KeyC'],['smoke','Granadas de humo','KeyX']];
 const DEF_BINDS=Object.fromEntries(ACTIONS.map(a=>[a[0],a[2]]));
 let binds={...DEF_BINDS}, bindCapture=null;
 const keyName=c=>!c?'—':c.startsWith('Key')?c.slice(3):c.startsWith('Digit')?c.slice(5):c.startsWith('Numpad')?'Num '+c.slice(6):
@@ -2836,7 +2923,7 @@ function updatePlayer(dt){
     if(mouseDown) fireGun(t);
     if((rightDown||down('mg'))&&now>t.mgNext){fireMG(t);t.mgNext=now+.085;}
     if(t.reloadT>0&&t.ammoManual==null){ t.ammoT=(t.ammoT||0)-dt; if(t.ammoT<=0){ t.ammoT=.2; let n=bestAmmo(t,aimInfo(t)); if(t.ammoCount&&t.ammoCount[n]<=0) n=t.ammoCount.findIndex(c=>c>0); if(n>=0&&n!==t.ammoIdx) t.ammoIdx=n; } }
-    const showR=!realMode||t.T.fcs; $('rngR').style.display=showR?'':'none';
+    const showR=!realMode||hasFcs(t); $('rngR').style.display=showR?'':'none';
     if(showR) $('rngT').textContent=Math.round(lastAim.distanceTo(t.pos))+' m';
   }
   engineUpdate(t,dt); radioWatch(t);
@@ -2929,7 +3016,7 @@ function updateAmmoBar(t){
   const slots=[...L.map((A,i)=>({id:'a'+i,key:binds['ammo'+(i+1)],ic:shellIcon(A.kind),title:`${A.n} (${KIND_ES[A.kind]})`})),
     ...(L.length>1?[{id:'auto',key:binds.ammoAuto,ic:'<span style="font-size:13px">AUTO</span>',title:'Munición automática'}]:[]),{gap:1},
     {id:'arty',key:binds.arty,ic:'✸',title:'Artillería'},{id:'air',key:binds.air,ic:'✈',title:'Ataque aéreo'},{id:'nuke',key:binds.nuke,ic:'☢',title:'Nuke'},
-    {id:'rep',key:binds.repair,ic:'🔧',title:'Reparar'},{id:'crew',key:binds.crewSwap,ic:'👤',title:'Reemplazar tripulante con infantería'},
+    {id:'rep',key:binds.repair,ic:'🔧',title:'Reparar'},{id:'crew',key:binds.crewSwap,ic:'👤',title:'Reemplazar tripulante con infantería'},{id:'smk',key:binds.smoke,ic:'☁',title:'Granadas de humo (nivel 2)'},
     ...(t.T.thermal?[{id:'th',key:binds.thermal,ic:'◐',title:'Visión térmica'}]:[]),...(t.troops?[{id:'tr',key:binds.troops,ic:'⇩',title:'Bajar infantería'}]:[])];
   const sig=t.T.label+'|'+JSON.stringify(binds);
   if(box._sig!==sig){ box._sig=sig; box.innerHTML=slots.map(S=>S.gap?'<span class="gap"></span>':`<div class="as" data-id="${S.id}" title="${S.title}"><div class="k">${keyName(S.key)}</div><div class="ic">${S.ic}<span class="n"></span><span class="cd"></span></div></div>`).join('');
@@ -2943,6 +3030,7 @@ function updateAmmoBar(t){
   set('nuke',net.on||nuke||c.sp<NUKE_COST?' off':'',c.sp<NUKE_COST?NUKE_COST:'',0);
   set('rep',t.repairT>0?' sel':needsRepair(t)?'':' off',t.repairT>0?Math.ceil(t.repairT):'',t.repairT>0?t.repairT/t.repairMax:0);
   const lost=t.crewM.length-crewAlive(t); set('crew',lost&&!t.boarding&&!net.on?'':' off',lost||'',0);
+  set('smk',t.smoke>0?'':' off',t.lv>=2?t.smoke:'🔒',0);
   set('th',t.thermal?' sel':'','',0);
   // Barras de arma (cañón: proyectiles del tipo cargado; ametralladora: cintas de repuesto + cinta actual)
   const gn=t.ammoCount?t.ammoCount[t.ammoIdx]:'∞'; txt('gunN',gn); { const B=$('gunBar'), w=(t.reloadT>0?Math.round((1-t.reloadT/full)*100):100)+'%'; if(B._w!==w){B._w=w;B.style.width=w;} }
@@ -3012,7 +3100,7 @@ function drawOverlay(){
     oc.fillStyle='rgba(255,255,255,.95)'; oc.beginPath(); oc.arc(cx,cy,1.4,0,7); oc.fill(); }
   if(scoped){oc.strokeStyle='rgba(20,20,20,.9)';oc.lineWidth=1.5;oc.beginPath();
     oc.moveTo(cx-200,cy);oc.lineTo(cx-14,cy);oc.moveTo(cx+14,cy);oc.lineTo(cx+200,cy);oc.moveTo(cx,cy+14);oc.lineTo(cx,cy+160);oc.stroke();}
-  const manual=realMode&&!player.T.fcs;
+  const manual=realMode&&!hasFcs(player);
   if(scoped&&manual){ // escala de alzas: marcas para 100 a 600 m
     const v=ammoOf(player).v, z0=ballisticPitch(200,0,v), ppr=innerHeight/(2*Math.tan(camera.fov*Math.PI/360));
     oc.strokeStyle='rgba(20,20,20,.95)'; oc.fillStyle='rgba(20,20,20,.95)'; oc.lineWidth=1.5; oc.font='600 13px "Saira Condensed",sans-serif'; oc.textAlign='left';
@@ -3062,7 +3150,7 @@ function clearBattle(){
   shells.forEach(s=>scene.remove(s.m)); shells.length=0; arty.length=0; scorches.forEach(S=>{scene.remove(S.m);S.m.material.dispose();}); scorches.length=0;
   marks.forEach(M=>scene.remove(M.g)); marks.length=0; planes.forEach(P=>{scene.remove(P.g); if(P.snd) P.snd.stop();}); planes.length=0; bombs.forEach(B=>scene.remove(B.m)); bombs.length=0;
   if(builtKey){buildWorld(builtKey);}
-  tickets=[400,400]; tickT=0; resetZones(); player=null; hitDirs.length=0; smolder.length=0;
+  tickets=[400,400]; tickT=0; resetZones(); player=null; hitDirs.length=0; smolder.length=0; smokes.length=0;
   infantry.forEach(i=>scene.remove(i.g)); infantry.length=0;
   if(nuke){ if(nuke.plane) scene.remove(nuke.plane.g); if(nuke.bomb) scene.remove(nuke.bomb.m); if(nuke.cloud&&!nuke.cloud.done){ scene.remove(nuke.cloud.g); nuke.cloud.parts.forEach(P=>P.m.material.dispose()); } } nuke=null;
   if(camera.far!==1000){ camera.far=1000; camera.updateProjectionMatrix(); }
@@ -3197,45 +3285,81 @@ function finish(winner){
   setTimeout(()=>{if(state==='end') summary(winner);},2800);
 }
 let tut=null;
-const TUT_STEPS=[
-  {t:'Moverse',x:'W y S aceleran y frenan; A y D giran. Recorré unos 40 metros.',ok:T=>T.start.distanceTo(player.pos)>40},
-  {t:'Mirar y apuntar',x:'Mové el mouse para mirar. Mantené Shift unos segundos para usar la mira telescópica.',ok:T=>(T.scope||0)>2.5},
-  {t:'Disparar',x:'Destruí el tanque ligero marcado. Clic izquierdo dispara. La munición se elige sola mientras recarga, según lo que apuntás.',ok:T=>T.d[0].dead},
-  {t:'Blindaje',x:'El frente es grueso; los costados y la parte de atrás, finos. Destruí el tanque medio pegándole de costado.',ok:T=>T.d[1].dead},
-  {t:'Puntos de captura',x:'Entrá al círculo del punto A y quedate hasta que la bandera sea tuya. Capturar baja los tickets del enemigo.',ok:T=>zones[0].owner===1},
-  {t:'Artillería',x:'Apuntá al último tanque y apretá F. Cuesta 80 puntos de reaparición; para practicar tenés 400.',ok:T=>T.arty},
-  {t:'Rematar',x:'Terminá con el último tanque como quieras. Si te rompen la oruga o el cañón, esperá que la tripulación lo repare.',ok:T=>T.d[2].dead},
-  {t:'Nuke',x:'Apretá N. Para practicar te damos 1500 puntos. Mirá al cielo: un B-29 cruza, abre la bodega y suelta la bomba. En batalla, gana la partida.',ok:T=>nuke&&nuke.phase>=1,enter:()=>{playerCrew.sp=Math.max(playerCrew.sp,NUKE_COST);$('spT').textContent=playerCrew.sp;}},
-  {t:'Listo',x:'En batalla también tenés el ataque aéreo (G), la visión térmica (T) en algunos tanques, y la vista aérea (V).',ok:()=>false}
-];
-function startTutorial(){
-  battleBR=null; startBattle(false,'campo',null,true); battleBR=null; tut={step:0,okT:0,start:null,d:[],arty:false};
+// Tutorial: se arma según el tanque elegido (sus habilidades y su nivel)
+const tutAmmo=()=>player.ammoCount?player.ammoCount.reduce((a,b)=>a+b,0):0;
+function buildTutSteps(P){
+  const T=P.T, S=[], K=k=>keyName(binds[k]);
+  S.push({t:'Moverse',x:`${K('fwd')} y ${K('back')} aceleran y frenan; ${K('left')} y ${K('right')} giran. Recorré unos 40 metros.`,ok:U=>U.start.distanceTo(player.pos)>40});
+  S.push({t:'Mirar y apuntar',x:`Mové el mouse para mirar. Mantené ${K('scope')} unos segundos para usar la mira telescópica (la rueda cambia el aumento).`,ok:U=>(U.scope||0)>2.5});
+  S.push({t:'Disparar',x:'Destruí el tanque ligero marcado. Clic izquierdo dispara.',ok:U=>U.d[0].dead});
+  S.push({t:'Blindaje',x:'El frente es grueso; los costados y la parte de atrás, finos. Destruí el tanque medio pegándole de costado.',ok:U=>U.d[1].dead});
+  if(T.ammo.length>1) S.push({t:'Munición',x:`Tu tanque lleva ${T.ammo.map((A,i)=>`<b>${i+1}</b> ${A.n}`).join(', ')}. Elegí una a mano con ${T.ammo.map((_,i)=>K('ammo'+(i+1))).join('/')} y después volvé a la automática con ${K('ammoAuto')}.`,ok:U=>U.manual&&U.autoBack});
+  S.push({t:'Puntos de captura',x:'Entrá al círculo del punto A y quedate hasta que la bandera sea tuya. Capturar baja los tickets del enemigo.',ok:U=>zones[0].owner===1});
+  S.push({t:'Reabastecer munición',x:'Te quedan pocos proyectiles. Quedate quieto dentro de un punto capturado (el A) hasta reponer al menos 3.',
+    enter:U=>{ if(player.ammoCount){ player.ammoCount=player.ammoCount.map(n=>Math.max(1,Math.floor(n/4))); } U.ammo0=tutAmmo(); },ok:U=>!player.ammoCount||tutAmmo()>=U.ammo0+3});
+  S.push({t:'Reparar',x:`¡Te rompieron la oruga y el motor! No podés moverte. Apretá ${K('repair')} y esperá: mientras reparás no podés moverte ni disparar.`,
+    enter:()=>{ player.trackT=600; player.mod.engine=0; player.engT=600; radio('¡Oruga rota!',2); },ok:U=>U.rep});
+  S.push({t:'Recuperar tripulación',x:`Perdiste un tripulante. Hay infantería aliada cerca: apretá ${K('crewSwap')} y un soldado corre a ocupar el puesto.`,
+    enter:()=>{ const m=player.crewM.filter(m=>m.alive&&m.seat!=='driver'&&m.seat!=='gunner').pop()||player.crewM[player.crewM.length-1]; m.alive=false; m.hp=0; afterHit(player,null,false); radio(`¡Perdimos al ${SEAT_RADIO[m.seat]||'tripulante'}!`,2);
+      const b=player.heading+Math.PI; for(let i=0;i<2;i++) makePerson('rifle',0,player.pos.x+Math.sin(b)*22+i*2,player.pos.z+Math.cos(b)*22); },
+    ok:()=>crewAlive(player)===player.crewM.length});
+  // Habilidades según el tanque y su nivel
+  if(P.lv>=2) S.push({t:'Humo (nivel 2)',x:`Tu tanque tiene lanzahumos. Apretá ${K('smoke')}: la nube corta la vista del enemigo unos 20 segundos. Tenés 2 granadas por salida.`,ok:U=>U.smoke});
+  if(T.thermal) S.push({t:'Visión térmica',x:`Apretá ${K('thermal')} para la visión térmica: los tanques se ven brillantes aunque haya humo o poca luz.`,ok:()=>player.thermal});
+  if(hasFcs(P)) S.push({t:'Telémetro',x:`Tu tanque tiene telémetro${P.fcsX?' (mejora de nivel 5)':''}: compensa solo la caída del proyectil. Mirá con ${K('scope')} al tanque lejano y leé la distancia.`,enter:U=>{U.scope=0;},ok:U=>(U.scope||0)>2});
+  if(T.troops) S.push({t:'Infantería',x:`Tu vehículo lleva soldados. Apretá ${K('troops')} para bajarlos: capturan puntos y tienen un antitanque.`,ok:()=>!player.troops});
+  if(T.auto) S.push({t:'Ráfaga',x:'Tu cañón es automático: mantené el clic y dispará una ráfaga al tanque lejano. Al vaciar el cargador hay una recarga larga.',enter:U=>{U.shots=0;},ok:U=>U.shots>=3});
+  else if(T.autoL) S.push({t:'Cargador automático',x:'Tu tanque tiene cargador automático: recarga a la misma velocidad aunque pierdas tripulantes. Disparale dos veces al tanque lejano.',enter:U=>{U.shots=0;},ok:U=>U.shots>=2});
+  S.push({t:'Artillería',x:`Apuntá al tanque lejano y apretá ${K('arty')}. Cuesta ${ARTY_COST} puntos; para practicar tenés de sobra.`,enter:()=>{playerCrew.sp=Math.max(playerCrew.sp,600);playerCrew.artyCD=0;},ok:U=>U.arty});
+  S.push({t:'Ataque aéreo',x:`Apuntá a la zona y apretá ${K('air')}: un avión suelta cuatro bombas en línea. Cuesta ${AIR_COST} puntos.`,enter:()=>{playerCrew.sp=Math.max(playerCrew.sp,600);playerCrew.airCD=0;},ok:U=>U.air});
+  S.push({t:'Rematar',x:'Terminá con el tanque lejano como quieras.',skip:U=>U.d[2].dead,ok:U=>U.d[2].dead});
+  S.push({t:'¡Ataque enemigo! Nuke',x:`¡Entran 5 tanques enemigos! Te damos 1500 puntos: apretá ${K('nuke')}. Un B-29 cruza, suelta la bomba y arrasa a todos. Tu tanque está protegido en esta prueba.`,
+    enter:U=>{ playerCrew.sp=Math.max(playerCrew.sp,NUKE_COST); $('spT').textContent=playerCrew.sp; player.immuneT=90; tutAttack(U); },ok:()=>nuke&&nuke.phase>=1});
+  const nx=[2,3,4,5].filter(l=>l>P.lv).map(l=>`nivel ${l}: ${LV_UP[l].n.toLowerCase()}`);
+  S.push({t:'Listo',x:`¡Terminaste! ${nx.length?`Este tanque mejora con la experiencia (${nx.join(', ')}); cada mejora suma su práctica a este tutorial.`:'Este tanque ya tiene todas las mejoras.'} También tenés la vista aérea (${K('aerial')}).`,ok:()=>false});
+  return S;
+}
+function tutAttack(U){
+  const pts=W.sp[1]; U.attack=[];
+  for(let i=0;i<5;i++){ const c=newCrew(NATIONS[foeNation].names[i%NATIONS[foeNation].names.length],1,foeNation,false); c.out=true; crews.push(c);
+    const sp=pts[i%pts.length], k=NATIONS[foeNation].lineup[i%NATIONS[foeNation].lineup.length];
+    const t=spawnCrew(c,k,{x:sp.x+rand(-12,12),z:sp.z+rand(-12,12)}); t.immuneT=0; t.spottedT=99; U.attack.push(t); }
+  banner('¡Ataque enemigo!','5 tanques avanzan hacia vos',3);
+}
+function startTutorial(key){
+  if(!PROG) loadProg();
+  const ok=k=>k&&VEH[k]&&PROG.unlocked[k];
+  key=ok(key)?key:(garageOf(chosenNation)[0]||vehTree(chosenNation).find(k=>PROG.unlocked[k]));
+  battleBR=null; startBattle(false,'campo',null,true); battleBR=null; tut={step:0,okT:0,start:null,d:[],arty:false,key};
   infantry.forEach(i=>scene.remove(i.g)); infantry.length=0; tanks.slice().forEach(removeTank);
-  crews=[playerCrew]; playerCrew.sp=400;
+  crews=[playerCrew]; playerCrew.sp=400; playerCrew.lineup=[key];
   const sp=W.sp[0][0], fx=0-sp.x, fz=-2-sp.z, L=Math.hypot(fx,fz), ux=fx/L, uz=fz/L;
   const foe=NATIONS[foeNation].lineup;
   [[foe[0],70,-14],[foe[1],120,18],[foe[2],205,-10]].forEach(([k,dist,side],i)=>{
     const c=newCrew(['Blanco 1','Blanco 2','Blanco 3'][i],1,foeNation,false); c.out=true; crews.push(c);
     const p={label:'',x:sp.x+ux*dist-uz*side,z:sp.z+uz*dist+ux*side};
     const t=spawnCrew(c,k,p); t.dummy=true; t.immuneT=0; t.heading=Math.atan2(ux,uz)+Math.PI/2*(i===1?1:-1); tut.d.push(t); });
-  const k=NATIONS[allyNation].lineup[1]; player=spawnCrew(playerCrew,k,sp); tut.start=player.pos.clone();
-  camYaw=player.heading; camPitch=.1; camDist=14; state='play'; $('overlay').style.display='none'; document.body.classList.remove('deploy','menu'); document.body.classList.add('tut');
-  showTut(); lock(); updateHud();
+  player=spawnCrew(playerCrew,key,sp); tut.start=player.pos.clone(); tut.steps=buildTutSteps(player);
+  camYaw=player.heading; camPitch=.1; camDist=14; state='play'; $('overlay').style.display='none'; document.body.classList.remove('deploy','menu','home'); document.body.classList.add('tut');
+  showTut(); lock(); updateHud(); banner(player.T.label,`Tutorial · nivel ${player.lv}`,2.5);
 }
-function showTut(){ const S=TUT_STEPS[tut.step]; if(S.enter) S.enter(); $('tutbox').innerHTML=`<b>Tutorial · paso ${tut.step+1} de ${TUT_STEPS.length}: ${S.t}</b>${S.x}`; }
+function showTut(){ const S=tut.steps[tut.step]; if(S.enter) S.enter(tut); $('tutbox').innerHTML=`<b>Tutorial · paso ${tut.step+1} de ${tut.steps.length}: ${S.t}</b>${S.x}`; }
 function updateTutorial(dt){
   if(!player||state!=='play') return;
+  if(player.dead){ tutDone(true); return; }
   if(scoped) tut.scope=(tut.scope||0)+dt;
   for(const t of tut.d) if(!t.dead) t.spottedT=3;
-  if(tut.okT>0){ tut.okT-=dt; if(tut.okT<=0){ tut.step++; showTut(); if(tut.step===TUT_STEPS.length-1) setTimeout(()=>{ if(tut&&state==='play') tutDone(); },7000); } return; }
-  if(TUT_STEPS[tut.step].ok(tut)){ hitMsg('¡Bien hecho!','var(--ally)'); tut.okT=1.4; }
+  if(tut.okT>0){ tut.okT-=dt; if(tut.okT<=0){ do{ tut.step++; }while(tut.step<tut.steps.length-1&&tut.steps[tut.step].skip&&tut.steps[tut.step].skip(tut));
+      showTut(); if(tut.step===tut.steps.length-1) setTimeout(()=>{ if(tut&&state==='play') tutDone(); },9000); } return; }
+  if(tut.steps[tut.step].ok(tut)){ hitMsg('¡Bien hecho!','var(--ally)'); tut.okT=1.4; }
 }
-function tutDone(){
+function tutDone(failed){
   if(document.pointerLockElement) document.exitPointerLock();
-  tut=null; document.body.classList.remove('tut'); state='summary'; document.body.classList.add('menu'); $('overlay').style.display='flex';
-  $('panel').innerHTML=`<h1>Tutorial completo</h1><p>Ya sabés moverte, apuntar, aprovechar el blindaje, capturar y pedir apoyo. En batalla los enemigos se mueven, se cubren y te disparan.</p>
-    <button class="go" id="tgo">Ir a la batalla</button><button class="go alt" id="tmenu">Menú principal</button>`;
-  $('tgo').onclick=()=>{initAudio(); startBattle(false);}; $('tmenu').onclick=()=>mainMenu();
+  const key=tut&&tut.key; tut=null; document.body.classList.remove('tut'); state='summary'; document.body.classList.add('menu'); $('overlay').style.display='flex';
+  $('panel').innerHTML=failed?`<h1>Te destruyeron</h1><p>Probá de nuevo: en el tutorial conviene mostrar el frente y usar la mira.</p>
+    <button class="go" id="tgo">Repetir el tutorial</button><button class="go alt" id="tmenu">Volver al hangar</button>`:`<h1>Tutorial completo</h1><p>Ya sabés moverte, apuntar, aprovechar el blindaje, capturar, reabastecer, reparar, recuperar tripulantes y pedir apoyo.</p>
+    <button class="go" id="tgo">Repetir con este tanque</button><button class="go alt" id="tmenu">Volver al hangar</button>`;
+  $('tgo').onclick=()=>{initAudio(); startTutorial(key);}; $('tmenu').onclick=()=>{menuScreen='hangar'; mainMenu();};
 }
 function guide(){
   $('panel').innerHTML=`<h1>Cómo jugar</h1><div class="guide">
@@ -3262,8 +3386,11 @@ function summary(winner){
   let rpHtml=''; const me=crews.find(c=>c.isPlayer||c.name==='Vos'||c.name==='Vos (IA)');
   if(!spectating&&!curSpecial&&me&&PROG&&!summary._done){ summary._done=true; const n=chosenNation, rp=(winner===0?600:300)+me.score*6;
     PROG.stats.battles++; if(winner===0) PROG.stats.wins++; const un=addRP(n,rp), nx=nextResearch(n);
+    const used=Object.keys(me.uses||{}).filter(k=>VEH[k]); let xpHtml='';
+    for(const k of used){ const xp=Math.round(rp/used.length), ups=addTankXP(k,xp), L=tankLv(k);
+      xpHtml+=`<br>${VEH[k].label}: +${xp.toLocaleString('es-AR')} XP · nivel ${L}${L<5?` (${tankXP(k).toLocaleString('es-AR')} / ${LV_XP[L].toLocaleString('es-AR')})`:' (máximo)'}`+ups.map(l=>`<br>&nbsp;&nbsp;¡Nivel ${l}! <b>${LV_UP[l].n}</b>: ${LV_UP[l].d}`).join(''); }
     rpHtml=`<div class="rpbox"><b>+${rp.toLocaleString('es-AR')} PI</b> (puntos de investigación)${un.map(k=>`<br>¡Desbloqueaste el <b>${VEH[k].label}</b> (BR ${brTxt(VEH[k].br)})!`).join('')}
-      ${nx?`<br>Investigando: ${VEH[nx].label} (BR ${brTxt(VEH[nx].br)}) · ${(PROG.rp[nx]||0).toLocaleString('es-AR')} / ${rpCost(nx).toLocaleString('es-AR')} PI<div class="pbar"><i style="width:${Math.round((PROG.rp[nx]||0)/rpCost(nx)*100)}%"></i></div>`:'<br>Árbol de '+NATIONS[n].label+' completo.'}</div>`; }
+      ${xpHtml}${nx?`<br>Investigando: ${VEH[nx].label} (BR ${brTxt(VEH[nx].br)}) · ${(PROG.rp[nx]||0).toLocaleString('es-AR')} / ${rpCost(nx).toLocaleString('es-AR')} PI<div class="pbar"><i style="width:${Math.round((PROG.rp[nx]||0)/rpCost(nx)*100)}%"></i></div>`:'<br>Árbol de '+NATIONS[n].label+' completo.'}</div>`; }
   $('panel').innerHTML=`<h1>${spectating?'Fin de la partida':winner===0?'Victoria':'Derrota'}</h1>${rpHtml}
     <p>Gana ${N}. Tickets finales: ${allyLabel()} ${Math.max(0,Math.ceil(tickets[0]))}, ${NATIONS[foeNation].label} ${Math.max(0,Math.ceil(tickets[1]))}. Puntos: penetrar 20, destruir 100, capturar 60 y artillería 10 por impacto.</p>
     <div class="sumwrap">${table(0)}${table(1)}</div>
@@ -3290,56 +3417,134 @@ function mainMenu(){
   const go=f=>()=>{initAudio(); if(AC.state==='suspended')AC.resume(); f();};
   const gear=`<button class="setB" id="setB" title="Ajustes" aria-label="Ajustes">⚙</button>`;
   if(menuScreen==='settings'){ renderSettings(); return; }
-  if(menuScreen==='play'){
-    const NN=normalNations();
-    const modes={battle:{label:'Batalla',desc:'Elegís tu nación. El enemigo, el mapa y los aliados salen al azar.'},
-      esp:{label:'Corrientes vs. Resistencia',desc:'Modo especial en el Puente General Belgrano. Cada provincia con su línea de tanques.'},
-      watch:{label:'Ver una partida',desc:'La IA juega sola y vos mirás. Naciones y mapa al azar.'},
-      online:{label:'Online con amigos',desc:'Cooperativo: vos y tus amigos contra los bots. Entran con un código, sin cuenta.'}};
-    $('panel').innerHTML=`<div class="side">${gear}<h1 class="logo">Jugar</h1>
-      <h2>Modo</h2>${radios('mode',modes,playMode,'')}
-      ${playMode==='battle'||playMode==='online'?`<h2>Tu nación</h2>${radios('nat',Object.fromEntries(Object.entries(NN).map(([k,N])=>[k,{label:N.label,desc:'Garaje: '+garageOf(k).map(x=>VEH[x].label).join(', ')+' · BR '+brTxt(garageBR(k))}])),chosenNation,'two')}<p class="s">Cambiá el garaje y mirá qué te falta desbloquear en <b>Vehículos</b>.</p>`:''}
-      ${playMode==='esp'?`<h2>Tu provincia</h2>${radios('side',{ctes:{label:'Corrientes',desc:`<i>${NATIONS.ctes.faction}</i><br>${NATIONS.ctes.desc}`},chaco:{label:'Resistencia',desc:`<i>${NATIONS.chaco.faction}</i><br>${NATIONS.chaco.desc}`}},specialSide,'two')}
-        <label class="chk"><input type="checkbox" id="espWatch"> Solo mirar la partida</label>`:''}
-      ${playMode==='online'?onlineMenuHTML():'<button class="go" id="go">Continuar</button>'}<button class="go alt" id="back">Volver</button></div>`;
-    document.querySelectorAll('.tk').forEach(b=>b.onclick=()=>{ const g=b.dataset.g, k=b.dataset.k;
-      if(g==='mode') playMode=k; else if(g==='nat') chosenNation=k; else if(g==='side') specialSide=k; mainMenu(); });
-    const sp=()=>({ally:specialSide,foe:specialSide==='ctes'?'chaco':'ctes'});
-    if($('go')) $('go').onclick=go(()=>{ if(playMode==='battle') startBattle(false); else if(playMode==='watch') startBattle(true);
-      else startBattle($('espWatch').checked,'puente',sp()); });
-    $('back').onclick=()=>{menuScreen='home';mainMenu();};
-    wireOnlineMenu(go);
-  } else if(menuScreen==='tree'){ renderTree(); return; }
-  else {
+  if(menuScreen==='play'||menuScreen==='hangar'){ renderHangar(); return; }
+  if(menuScreen==='tree'){ renderTree(); return; }
+  {
     document.body.classList.add('home');
     $('panel').innerHTML=`${gear}<div class="homeArt"></div><div class="homeShade"></div>
       <div class="homeBar"><button class="hb main" id="playB">Jugar ahora</button><button class="hb" id="vehB">Vehículos</button><button class="hb" id="tutB">Tutorial</button><button class="hb" id="optB">Opciones</button></div>
       <div class="homeCopy">Taragüí War · Frente de Acero · necesita teclado y mouse</div>`;
-    const toPlay=()=>{menuScreen='play';mainMenu();};
+    const toPlay=()=>{menuScreen='hangar';if(playMode==='tut')playMode='battle';mainMenu();};
     $('playB').onclick=toPlay;
     $('vehB').onclick=()=>{menuScreen='tree';mainMenu();};
-    $('tutB').onclick=go(startTutorial);
+    $('tutB').onclick=()=>{menuScreen='hangar';playMode='tut';mainMenu();};
     $('optB').onclick=()=>{menuScreen='settings';mainMenu();};
   }
   $('setB').onclick=()=>{menuScreen='settings';mainMenu();};
 }
+/* ---------- Hangar estilo War Thunder: naciones arriba, tanque 3D al centro, fila de vehículos abajo ---------- */
+let hg=null, hgSel=null, hgModal=null;
+const goWrap=f=>()=>{ initAudio(); if(AC.state==='suspended')AC.resume(); f(); };
+function hgInit(){
+  if(hg) return hg;
+  const sc=new THREE.Scene(); sc.background=new THREE.Color(0x202326); sc.fog=new THREE.Fog(0x202326,30,90);
+  sc.add(new THREE.HemisphereLight(0xe6ecf2,0x2c2822,.9));
+  const sl=new THREE.DirectionalLight(0xfff4e0,.95); sl.position.set(9,14,7); sc.add(sl);
+  const fl=new THREE.DirectionalLight(0x9fb4d0,.35); fl.position.set(-8,5,-6); sc.add(fl);
+  const floor=new THREE.Mesh(new THREE.CircleGeometry(40,64),new THREE.MeshLambertMaterial({color:0x34363a})); floor.rotation.x=-Math.PI/2; sc.add(floor);
+  const pad=new THREE.Mesh(new THREE.CircleGeometry(7.5,64),new THREE.MeshLambertMaterial({color:0x45474b})); pad.rotation.x=-Math.PI/2; pad.position.y=.01; sc.add(pad);
+  const ring=new THREE.Mesh(new THREE.RingGeometry(7.4,7.6,64),new THREE.MeshBasicMaterial({color:0xc9b98a})); ring.rotation.x=-Math.PI/2; ring.position.y=.02; sc.add(ring);
+  const cam=new THREE.PerspectiveCamera(40,innerWidth/innerHeight,.1,200);
+  hg={sc,cam,obj:null,key:null,yaw:.9,drag:null};
+  renderer.domElement.addEventListener('mousedown',e=>{ if(hangarOn()) hg.drag=e.clientX; });
+  document.addEventListener('mouseup',()=>{ if(hg) hg.drag=null; });
+  document.addEventListener('mousemove',e=>{ if(hg&&hg.drag!=null&&hangarOn()){ hg.yaw-=(e.clientX-hg.drag)*.008; hg.drag=e.clientX; } });
+  return hg;
+}
+const hangarOn=()=>state==='menu'&&menuScreen==='hangar';
+function hgShow(key,nat){
+  hgInit(); if(hg.key===key+'|'+nat) return;
+  if(hg.obj){ hg.sc.remove(hg.obj.root); hg.obj=null; }
+  const t=makeTank({name:'',team:0,nation:nat,isPlayer:false},key,0,0,0);
+  const i=tanks.indexOf(t); if(i>=0) tanks.splice(i,1); colliders=colliders.filter(c=>c.userData.tank!==t);
+  scene.remove(t.root); t.root.position.set(0,0,0); t.root.rotation.set(0,0,0); hg.sc.add(t.root);
+  t.turret.rotation.y=-.25; t.gunPivot.rotation.x=-.05; hg.obj=t; hg.key=key+'|'+nat;
+}
+function hgRender(dt){
+  const H=hgInit(); if(!H.obj) return false;
+  if(H.drag==null) H.yaw+=dt*.12;
+  const M=H.obj.T.m, R=Math.max(9,M.L*1.55+5), w=innerWidth, h=innerHeight;
+  H.cam.aspect=w/h; H.cam.position.set(Math.sin(H.yaw)*R,R*.32+1.5,Math.cos(H.yaw)*R); H.cam.lookAt(0,1.2,0);
+  H.cam.setViewOffset(w,h,w>900?w*.1:0,h*.06,w,h); H.cam.updateProjectionMatrix();
+  renderer.render(H.sc,H.cam); return true;
+}
+const CLS_ES={ligero:'Ligero',medio:'Medio',pesado:'Pesado',principal:'Principal'};
+function hgStatus(k){ const own=!!PROG.unlocked[k], n=VEH[k].nation, inG=garageOf(chosenNation).includes(k), res=k===nextResearch(chosenNation);
+  return {own,inG,res,have:PROG.rp[k]||0,cost:rpCost(k)}; }
+function renderHangar(){
+  if(!PROG) loadProg(); menuScreen='hangar'; document.body.classList.remove('home');
+  const NN=normalNations(); if(!NN[chosenNation]) chosenNation='ar';
+  const T=vehTree(chosenNation); if(!hgSel||!T.includes(hgSel)) hgSel=garageOf(chosenNation)[0]||T[0];
+  hgShow(hgSel,chosenNation);
+  const V=VEH[hgSel], S=hgStatus(hgSel), lv=tankLv(hgSel), xp=tankXP(hgSel);
+  const eq=[`Mira ${V.optic.join('/')}×`,V.fcs?'Telémetro':'',V.stab?'Estabilizador':'',V.thermal?'Térmica':'',V.autoL?'Cargador automático':'',V.auto?'Cañón automático':'',V.troops?`Lleva ${V.troops} soldados`:''].filter(Boolean);
+  const card=k=>{ const W2=VEH[k], s=hgStatus(k);
+    return `<button class="hgc${k===hgSel?' sel':''}${s.own?'':' lock'}" data-k="${k}"><span class="br">${brTxt(W2.br)}</span>${s.inG?'<span class="gar" title="En el garaje">★</span>':''}
+      <b>${W2.label}</b><small>${s.own?`${CLS_ES[W2.cls]||W2.cls} · Nv ${tankLv(k)}`:s.res?'Investigando':'🔒 Bloqueado'}</small>
+      ${s.res?`<i class="pb"><i style="width:${Math.round(s.have/s.cost*100)}%"></i></i>`:''}</button>`; };
+  const upg=[2,3,4,5].map(l=>`<li class="${lv>=l?'ok':''}"><b>Nv ${l}</b> ${LV_UP[l].n}</li>`).join('');
+  const modes={battle:'Batalla',esp:'Ctes. vs. Resistencia',watch:'Ver partida',online:'Online',tut:'Tutorial'};
+  const playTxt=playMode==='tut'?(S.own?'Tutorial con este tanque':'Tanque bloqueado'):playMode==='watch'?'Mirar una partida':playMode==='online'?'Jugar online':playMode==='esp'?'¡Al puente!':'¡A la batalla!';
+  $('panel').innerHTML=`<div class="hg">
+    <div class="hgTop"><button class="hgBack" id="hgBack" title="Inicio">⌂</button>
+      ${Object.entries(NN).map(([k,N])=>`<button class="hgN${k===chosenNation?' sel':''}" data-n="${k}"><i style="background:linear-gradient(90deg,${N.camo.join(',')})"></i>${N.label}</button>`).join('')}
+      <button class="hgN tr" id="hgTree">Árbol ▸</button></div>
+    <button class="setB" id="setB" title="Ajustes" aria-label="Ajustes">⚙</button>
+    <div class="hgInfo"><div class="nm">${V.label}</div><div class="sub">${NATIONS[chosenNation].label} · ${CLS_ES[V.cls]||V.cls} · BR ${brTxt(V.br)}</div>
+      <div class="st"><span>Velocidad</span><b>${Math.round(V.maxF*3.6)} km/h</b><span>Blindaje frontal</span><b>${V.armor.hull.front} / ${V.armor.turret.front} mm</b>
+        <span>Penetración</span><b>${Math.max(...V.ammo.map(A=>A.pen))} mm</b><span>Recarga</span><b>${V.reload} s</b><span>Tripulación</span><b>${V.crew}</b></div>
+      <div class="chips">${eq.map(e=>`<span>${e}</span>`).join('')}</div>
+      <div class="am">${V.ammo.map(A=>`${A.n} <small>(${KIND_ES[A.kind]}, ${A.pen} mm)</small>`).join('<br>')}</div>
+      ${S.own?`<div class="lvl"><b>Nivel ${lv}</b>${lv<5?` · ${xp.toLocaleString('es-AR')} / ${LV_XP[lv].toLocaleString('es-AR')} XP<i class="pb"><i style="width:${Math.round(xp/LV_XP[lv]*100)}%"></i></i>`:' · máximo'}<ul>${upg}</ul></div>
+        <div class="btns"><button class="hgB" id="hgGar">${S.inG?'Quitar del garaje':'Al garaje'}</button><button class="hgB" id="hgTut">Probar en el tutorial</button></div>`
+       :S.res?`<div class="lvl">Investigando: ${S.have.toLocaleString('es-AR')} / ${S.cost.toLocaleString('es-AR')} PI<i class="pb"><i style="width:${Math.round(S.have/S.cost*100)}%"></i></i><small>Ganás PI en cada partida con esta nación.</small></div>`
+       :`<div class="lvl">🔒 Requiere investigar el anterior · ${S.cost.toLocaleString('es-AR')} PI</div>`}
+    </div>
+    <div class="hgRow">${T.map(card).join('')}</div>
+    <div class="hgGo"><div class="garTxt">Garaje: ${garageOf(chosenNation).map(k=>VEH[k].label).join(', ')||'vacío'} · BR ${brTxt(garageBR(chosenNation))}</div>
+      <div class="hgModes">${Object.entries(modes).map(([k,l])=>`<button class="${k===playMode?'sel':''}" data-m="${k}">${l}</button>`).join('')}</div>
+      ${playMode==='esp'?`<div class="hgOpt"><button class="${specialSide==='ctes'?'sel':''}" data-side="ctes">Corrientes</button><button class="${specialSide==='chaco'?'sel':''}" data-side="chaco">Resistencia</button><label><input type="checkbox" id="espWatch"> solo mirar</label></div>`:''}
+      <button class="hgPlay" id="hgPlay" ${playMode==='tut'&&!S.own?'disabled':''}>${playTxt}</button></div>
+    <div id="hgModal"></div></div>`;
+  document.querySelectorAll('.hgN[data-n]').forEach(b=>b.onclick=()=>{ chosenNation=b.dataset.n; hgSel=null; renderHangar(); });
+  document.querySelectorAll('.hgc').forEach(b=>b.onclick=()=>{ hgSel=b.dataset.k; renderHangar(); });
+  document.querySelectorAll('.hgModes button').forEach(b=>b.onclick=()=>{ playMode=b.dataset.m; renderHangar(); });
+  document.querySelectorAll('.hgOpt [data-side]').forEach(b=>b.onclick=()=>{ specialSide=b.dataset.side; renderHangar(); });
+  $('hgBack').onclick=()=>{ menuScreen='home'; mainMenu(); };
+  $('hgTree').onclick=()=>{ menuScreen='tree'; treeNation=chosenNation; mainMenu(); };
+  $('setB').onclick=()=>{ menuScreen='settings'; mainMenu(); };
+  if($('hgGar')) $('hgGar').onclick=()=>{ const G=PROG.garage[chosenNation]||(PROG.garage[chosenNation]=[]); const i=G.indexOf(hgSel);
+    if(i>=0){ if(G.length>1) G.splice(i,1); } else { if(G.length>=3) G.shift(); G.push(hgSel); } saveProg(); renderHangar(); };
+  if($('hgTut')) $('hgTut').onclick=goWrap(()=>startTutorial(hgSel));
+  $('hgPlay').onclick=goWrap(()=>{
+    if(playMode==='battle') startBattle(false); else if(playMode==='watch') startBattle(true);
+    else if(playMode==='esp') startBattle($('espWatch').checked,'puente',{ally:specialSide,foe:specialSide==='ctes'?'chaco':'ctes'});
+    else if(playMode==='tut') startTutorial(hgSel); else if(playMode==='online') hgOnline(); });
+}
+function hgOnline(){
+  const box=$('hgModal'); if(!box) return;
+  box.innerHTML=`<div class="hgM"><h2>Online con amigos</h2>${onlineMenuHTML()}<button class="go alt" id="onClose" style="margin:8px 0 0">Cerrar</button></div>`;
+  wireOnlineMenu(goWrap); $('onClose').onclick=()=>{ box.innerHTML=''; };
+}
+
 let treeNation=null;
 function renderTree(){
   const NN=normalNations(); treeNation=treeNation&&NN[treeNation]?treeNation:chosenNation; const n=treeNation, T=vehTree(n), g=garageOf(n), nx=nextResearch(n);
   const row=k=>{ const V=VEH[k], own=!!PROG.unlocked[k], inG=g.includes(k), res=k===nx, have=PROG.rp[k]||0, cost=rpCost(k);
-    return `<div class="vrow ${own?'own':res?'res':'lock'} ${inG?'in':''}"><div class="br">${brTxt(V.br)}</div><div><b>${V.label}</b><small>${V.cls}${V.uses?' · uso limitado':''} · blindaje frontal ${V.armor.hull.front} mm · penetración ${V.pen} mm</small>
+    return `<div class="vrow ${own?'own':res?'res':'lock'} ${inG?'in':''}" data-k="${k}"><div class="br">${brTxt(V.br)}</div><div><b>${V.label}</b><small>${V.cls}${V.uses?' · uso limitado':''} · blindaje frontal ${V.armor.hull.front} mm · penetración ${V.pen} mm</small>
       ${res?`<div class="pbar"><i style="width:${Math.round(have/cost*100)}%"></i></div><small>Investigando: ${have.toLocaleString('es-AR')} / ${cost.toLocaleString('es-AR')} PI</small>`:own?'':`<small><br>Requiere investigar el anterior · ${cost.toLocaleString('es-AR')} PI</small>`}</div>
       <div>${own?`<button data-k="${k}" class="tg">${inG?'Quitar':'Al garaje'}</button>`:''}</div></div>`; };
   $('panel').innerHTML=`<div class="side" style="width:min(640px,96vw)"><button class="setB" id="setB" title="Ajustes" aria-label="Ajustes">⚙</button><h1 class="logo" style="font-size:54px!important">Vehículos</h1>
     ${radios('tn',Object.fromEntries(Object.entries(NN).map(([k,N])=>[k,{label:N.label,desc:''}])),n,'two')}
     <p class="s">Garaje (hasta 3): ${g.map(k=>VEH[k].label).join(', ')||'vacío'} · <b>BR de batalla ${brTxt(garageBR(n))}</b> (el de tu vehículo más alto). Enemigos y aliados salen con BR de ±1.0.
     Ganás puntos de investigación (PI) en cada partida; se suman al próximo vehículo del árbol.</p>
-    <div class="tree">${T.map(row).join('')}</div>
+    <div class="tree">${T.map(row).join('')}</div><p class="s">Tocá un vehículo para verlo en el hangar.</p>
     <button class="go alt" id="back">Volver</button></div>`;
   document.querySelectorAll('.tk').forEach(b=>b.onclick=()=>{ if(b.dataset.g==='tn'){ treeNation=b.dataset.k; renderTree(); } });
   document.querySelectorAll('.tg').forEach(b=>b.onclick=()=>{ const k=b.dataset.k, G=PROG.garage[n]||(PROG.garage[n]=[]); const i=G.indexOf(k);
     if(i>=0){ if(G.length>1) G.splice(i,1); } else { if(G.length>=3) G.shift(); G.push(k); } saveProg(); renderTree(); });
-  $('back').onclick=()=>{menuScreen='home';mainMenu();}; $('setB').onclick=()=>{menuScreen='settings';mainMenu();};
+  $('back').onclick=()=>{menuScreen='hangar';chosenNation=treeNation;mainMenu();}; $('setB').onclick=()=>{menuScreen='settings';mainMenu();};
+  document.querySelectorAll('.vrow').forEach(r=>r.onclick=e=>{ if(e.target.closest('button')) return; chosenNation=treeNation; hgSel=r.dataset.k; menuScreen='hangar'; mainMenu(); });
 }
 function renderSettings(){
   const rows=ACTIONS.map(([k,label])=>`<span>${label}</span><button class="kb${bindCapture===k?' cap':''}" data-k="${k}">${bindCapture===k?'Presioná una tecla…':keyName(binds[k])}</button>`).join('');
@@ -3422,8 +3627,9 @@ document.addEventListener('keydown',e=>{
   if(state==='play'&&player&&!player.dead){
     for(let i=0;i<3;i++) if(e.code===binds['ammo'+(i+1)]&&i<player.T.ammo.length){ if(player.ammoCount&&player.ammoCount[i]<=0) hitMsg('No queda munición de ese tipo','var(--enemy)'); else selectAmmo(player,i); }
     if(e.code===binds.repair) startRepair(player);
+    if(e.code===binds.smoke&&!e.repeat) deploySmoke(player);
     if(e.code===binds.crewSwap) callCrew(player);
-    if(e.code===binds.ammoAuto&&player.T.ammo.length>1){ player.ammoManual=null; hitMsg('Munición automática','var(--paper)'); } }
+    if(e.code===binds.ammoAuto&&player.T.ammo.length>1){ if(tut&&tut.manual) tut.autoBack=true; player.ammoManual=null; hitMsg('Munición automática','var(--paper)'); } }
   if(state==='spectate'){ if(e.code==='ArrowRight'){specIdx++;aerial=false;} if(e.code==='ArrowLeft'){specIdx--;aerial=false;} if(e.code==='Space'){aerial=!aerial;e.preventDefault();}
     if(e.code==='Escape'&&!playerCrew){clearBattle();mainMenu();} }
   if(state==='play'&&player&&!player.dead&&lastAim){
@@ -3441,6 +3647,7 @@ document.addEventListener('keyup',e=>{keys[e.code]=false;});
 // Si la ventana pierde el foco (Alt+Tab, Win+Shift+S, etc.) el keyup nunca llega: soltamos todo para que no queden teclas trabadas.
 const releaseAll=()=>{ for(const k in keys) keys[k]=false; mouseDown=rightDown=false; };
 function selectAmmo(t,i){
+  if(tut) tut.manual=true;
   const A=t.T.ammo[i]; t.ammoManual=i;
   if(t.ammoIdx!==i){ t.ammoIdx=i; if(t.reloadT<=0&&!t.T.auto) t.reloadT=t.reloadMax*reloadFactor(t); } // cambiar el proyectil cargado obliga a recargar
   hitMsg(`${A.n} (${KIND_ES[A.kind]})`,'var(--paper)');
@@ -3489,7 +3696,7 @@ function loop(ts){
     visT-=dt;
     if(visT<=0){visT=.25;const pe=player&&!player.dead?eyeOf(player):null;
       for(const t of tanks){if(t.team!==1||t.dead)continue;t.visP=!!pe&&t.pos.distanceTo(player.pos)<420&&los(pe,eyeOf(t));if(t.visP)t.spottedT=Math.max(t.spottedT,2);}}
-    updateShells(dt); updateArty(dt); if(!tut&&!net.on) botSupport(dt); updateNuke(dt); if(tut) updateTutorial(dt);
+    updateSmoke(dt); updateShells(dt); updateArty(dt); if(!tut&&!net.on) botSupport(dt); updateNuke(dt); if(tut) updateTutorial(dt);
     if(state!=='end'&&!net.guest) updateZones(dt);
     if(net.on) netTick(dt);
     updateProps(dt);
@@ -3512,7 +3719,8 @@ function loop(ts){
   document.body.classList.toggle('board',boardMode);
   { const th=thermalOn(); if(th!==lastTh){ lastTh=th; hemi.intensity=th?.22:.75; sun.intensity=th?.15:.85;
       const sky=th?0x1c1f1c:(W.sky||0xbcc6c4); scene.background.set(sky); scene.fog.color.set(sky); document.body.classList.toggle('thermal',th); } }
-  renderer.render(scene,camera);
+  document.body.classList.toggle('hangar',hangarOn());
+  if(!(hangarOn()&&hgRender(dt))) renderer.render(scene,camera);
   drawOverlay(); if(state!=='menu'&&state!=='summary') drawMinimap();
 }
 try{ const S=JSON.parse(localStorage.getItem('tw_settings')||'null'); if(S){ if(S.sens) sens=+S.sens; if(S.binds) binds={...DEF_BINDS,...S.binds}; if(S.vol!=null) volMaster=+S.vol; if(S.radio!=null) radioOn=!!S.radio; if(S.fs!=null) fsAuto=!!S.fs; } }catch(e){}
@@ -3549,7 +3757,7 @@ function wireOnlineMenu(go){
   $('onHost').onclick=go(()=>netHost());
   $('onJoin').onclick=go(()=>netJoin(netCodeIn));
 }
-function netErr(msg){ if(!$('onErr')){ menuScreen='play'; playMode='online'; mainMenu(); } if($('onErr')){ $('onErr').textContent=msg; $('onErr').style.color='var(--enemy)'; } }
+function netErr(msg){ if(!$('onErr')){ menuScreen='hangar'; playMode='online'; mainMenu(); hgOnline(); } if($('onErr')){ $('onErr').textContent=msg; $('onErr').style.color='var(--enemy)'; } }
 function lobbyShell(){ state='lobby'; document.body.classList.add('menu'); document.body.classList.remove('deploy','spec','tut','home','brief'); $('overlay').style.display='flex'; if(document.pointerLockElement) document.exitPointerLock(); }
 function myName(){ return netName||(net.host?'Anfitrión':'Invitado'); }
 
@@ -3584,7 +3792,7 @@ function hostLobby(){
   $('lbQuit').onclick=()=>mainMenu();
   netAll(L);
 }
-function remoteCrew(conn){ const nat=conn.nation||allyNation, c=newCrew(conn.name,0,nat,false); c.lineup=conn.garage&&conn.garage.length?conn.garage.slice():NATIONS[nat].lineup.slice(); c.peer=conn.peer; conn.crew=c; return c; }
+function remoteCrew(conn){ const nat=conn.nation||allyNation, c=newCrew(conn.name,0,nat,false); c.lineup=conn.garage&&conn.garage.length?conn.garage.slice():NATIONS[nat].lineup.slice(); c.peer=conn.peer; c.lvs=conn.lvs||{}; conn.crew=c; return c; }
 const battleOn=()=>['play','deploy','spectate','end','paused'].includes(state)&&crews.length&&!tut;
 function hostData(conn,d){
   if(!d||typeof d!=='object') return;
@@ -3593,6 +3801,7 @@ function hostData(conn,d){
     let n=cleanName(d.name)||'Invitado'; const used=new Set([net.name,...net.conns.filter(c=>c.ready).map(c=>c.name)]); let k=2,b=n; while(used.has(n)) n=b+' '+(k++);
     conn.name=n; conn.ready=true; conn.nation=normalNations()[d.nation]?d.nation:chosenNation;
     conn.garage=(Array.isArray(d.garage)?d.garage:[]).filter(k=>typeof k==='string'&&VEH[k]).slice(0,3);
+    conn.lvs={}; if(d.lvs&&typeof d.lvs==='object') for(const k of conn.garage) conn.lvs[k]=clamp((+d.lvs[k])|0,1,5);
     if(net.inBattle&&battleOn()){ const c=remoteCrew(conn); crews.splice(1,0,c); conn.send(net.startMsg); feed(`${n} se unió a la batalla`,'var(--ally)'); }
     else if(state==='summary'){ conn.send(lobbyInfo()); }
     else hostLobby();
@@ -3615,6 +3824,8 @@ function hostData(conn,d){
     const mp=new THREE.Vector3(...d.p.map(Number)), dir=new THREE.Vector3(...d.d.map(Number)).normalize();
     if(mp.distanceTo(t.pos)>15) return;
     fireGun(t,{mp,dir});
+  } else if(d.t==='smk'){
+    const t=c.tank; if(t&&!t.dead) deploySmoke(t,true);
   } else if(d.t==='rep'||d.t==='crew'){
     const t=c.tank; if(!t||t.dead) return; if(d.t==='rep') startRepair(t); else callCrew(t);
   }
@@ -3666,7 +3877,7 @@ async function netJoin(code){
   peer.on('error',e=>{ if(!net.on||!opened){ netErr(e.type==='peer-unavailable'?'No existe una sala con ese código, o ya se cerró.':'No se pudo conectar ('+e.type+').'); try{peer.destroy();}catch(_){} } else console.warn(e); });
   peer.on('open',()=>{
     const conn=peer.connect(ROOM_PFX+code.toLowerCase(),{reliable:true,serialization:'json'});
-    conn.on('open',()=>{ opened=true; net.lastT=performance.now(); Object.assign(net,{on:true,host:false,guest:true,peer,hostConn:conn,code,name:myName()}); conn.send({t:'hi',name:net.name,nation:chosenNation,garage:garageOf(chosenNation)}); guestWait(null); });
+    conn.on('open',()=>{ opened=true; net.lastT=performance.now(); Object.assign(net,{on:true,host:false,guest:true,peer,hostConn:conn,code,name:myName()}); conn.send({t:'hi',name:net.name,nation:chosenNation,garage:garageOf(chosenNation),lvs:Object.fromEntries(garageOf(chosenNation).map(k=>[k,tankLv(k)]))}); guestWait(null); });
     conn.on('data',d=>{ try{ guestData(d); }catch(e){ console.error(e); } });
     conn.on('close',()=>{ if(net.guest&&net.hostConn===conn){ netLeave(true); mainMenu(); banner('Se cortó la conexión','El anfitrión cerró la sala o se desconectó',4); } });
   });
@@ -3739,6 +3950,7 @@ function guestData(d){
     case 'fd': feed(String(d.txt).slice(0,160),String(d.color).slice(0,24)); break;
     case 'hm': hitMsg(String(d.txt).slice(0,120),String(d.color).slice(0,24)); break;
     case 'hf': hitFrom(+d.x,+d.z,+d.s||1); break;
+    case 'smk': addSmoke(+d.x||0,+d.y||0,+d.z||0); break;
     case 'bd': { const b=buildings[d.i|0]; if(b) damageBuilding(b,+d.d||0,true); break; }
     case 'shot': { const t=netTanks.get(d.id); if(!t||!Array.isArray(d.p)||!Array.isArray(d.d)) return;
       t.ammoIdx=clamp(d.a|0,0,t.T.ammo.length-1); t.root.updateMatrixWorld(true);
