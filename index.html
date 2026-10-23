@@ -36,12 +36,24 @@ body.tut #tutbox{display:block}
 #tabB{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);width:min(980px,94vw);max-height:86vh;overflow:auto;background:rgba(20,22,18,.9);border:1px solid rgba(239,231,210,.25);padding:12px 18px;z-index:40;display:none;color:var(--paper);font-family:'Saira Condensed',sans-serif}
 #tabB.on{display:block}#tabB h2{margin:6px 0 2px;font-size:20px;display:flex;justify-content:space-between}#tabB .ally{color:var(--ally)}#tabB .foe{color:var(--enemy)}#tabB .dead td{opacity:.55}#tabB tr.me td{background:rgba(232,196,96,.16)}#tabB .ft{font-size:13px;opacity:.7;margin-top:6px}
 @media (min-width:900px){#tabB .cols{display:grid;grid-template-columns:1fr 1fr;gap:18px}}
-table.sum{border-collapse:collapse;width:100%;font-size:16px;margin:4px 0 14px}
+table.sum{border-collapse:collapse;width:100%;font-size:16px;margin:4px 0 14px;table-layout:fixed}
+table.sum th.n{text-align:right}
+table.sum td,table.sum th{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+table.sum tbody tr:nth-child(even) td{background:rgba(239,231,210,.035)}
+table.sum tbody tr:hover td{background:rgba(239,231,210,.08)}
+table.sum td.pts{font-weight:700;color:var(--paper)}
+table.sum .ia{font-size:11px;letter-spacing:.06em;color:var(--khaki);opacity:.75;border:1px solid rgba(201,185,138,.45);border-radius:3px;padding:0 4px;margin-left:6px;vertical-align:1px}
+table.sum .mvp{color:var(--amber);margin-left:6px}
+table.sum tfoot td{border-top:1px solid rgba(239,231,210,.3);border-bottom:0;color:var(--khaki);font-weight:700}
+.sumwrap h2.tm{display:flex;align-items:baseline;gap:10px;margin:10px 0 2px;padding-left:10px;border-left:4px solid var(--ally)}
+.sumwrap h2.tm.foe{border-left-color:var(--enemy)}
+.sumwrap h2.tm .w{font-size:13px;letter-spacing:.12em;background:var(--amber);color:#1a1712;padding:1px 8px;border-radius:3px}
+.sumwrap h2.tm .tk{margin-left:auto;font-size:15px;color:var(--khaki);font-weight:500;border:0!important;background:none!important;padding:0!important;box-shadow:none!important}
 table.sum th{text-align:left;color:var(--khaki);font-weight:700;padding:3px 6px;border-bottom:1px solid rgba(239,231,210,.3)}
 table.sum td{padding:3px 6px;border-bottom:1px solid rgba(239,231,210,.1)}
 table.sum td.n{text-align:right;font-variant-numeric:tabular-nums}
 table.sum tr.me td{color:var(--amber);font-weight:700}
-.sumwrap{max-height:52vh;overflow:auto;margin-bottom:12px}
+.sumwrap{max-height:52vh;overflow:auto;margin-bottom:12px;background:rgba(14,13,10,.86);border:1px solid rgba(239,231,210,.18);border-radius:4px;padding:6px 16px 2px;max-width:1100px}
 #counts{font-size:16px;opacity:.85;margin-top:2px}
 #feed{top:calc(12px + env(safe-area-inset-top,0px));right:16px;display:flex;flex-direction:column;align-items:flex-end;gap:3px}
 #feed div{background:rgba(20,18,14,.6);padding:2px 10px;font-size:16px}
@@ -4055,11 +4067,12 @@ function startBattle(spectator=false,forceMap=null,special=null,noBrief=false){ 
   const guests=net.host?net.conns.filter(c=>c.ready):[], gA=guests.filter(c=>sideOf(c)===0), gB=guests.filter(c=>sideOf(c)===1);
   // Aliados: cada tripulación de la IA sale de una nación al azar (puede no ser la tuya). En el modo especial, todos de la misma provincia.
   const used=new Set(), allyCrews=[];
-  for(let i=0;i<(spectator?5:Math.max(1,4-gA.length));i++){ const nat=special?allyNation:pick(NK.filter(k=>k!==foeNation));
+  const vsN=net.host&&net.mode==='vs'?Math.max(5,1+gA.length,gB.length):0; // Versus: los dos bandos con la misma cantidad de tanques
+  for(let i=0;i<(spectator?5:vsN?vsN-1-gA.length:Math.max(1,4-gA.length));i++){ const nat=special?allyNation:pick(NK.filter(k=>k!==foeNation));
     const nm=NATIONS[nat].names.find(n=>!used.has(n))||NATIONS[nat].names[i%NATIONS[nat].names.length]; used.add(nm); allyCrews.push(newCrew(nm,0,nat,false)); }
   allyMixed=allyCrews.some(c=>c.nation!==allyNation);
   playerCrew=spectator?null:newCrew(net.on?net.name:'Vos',0,allyNation,true);
-  crews=[...(playerCrew?[playerCrew]:[]),...guests.map(remoteCrew),...allyCrews,...NATIONS[foeNation].names.slice(0,Math.max(1,5-gB.length)).map(n=>newCrew(n,1,foeNation,false))];
+  crews=[...(playerCrew?[playerCrew]:[]),...guests.map(remoteCrew),...allyCrews,...Array.from({length:vsN?vsN-gB.length:Math.max(1,5-gB.length)},(_,i)=>NATIONS[foeNation].names[i%NATIONS[foeNation].names.length]).map(n=>newCrew(n,1,foeNation,false))];
   if(net.host){ net.startMsg={t:'start',seed:net.seed,map:builtKey,ally:allyNation,foe:foeNation,br:battleBR,wx:wxKey}; net.inBattle=true; guests.forEach(c=>c.send({...net.startMsg,side:sideOf(c)})); }
   for(const c of crews){ if(c.isPlayer||c.peer) continue; const pts=W.sp[c.team]; spawnCrew(c,c.lineup[0],pts[(Math.random()*pts.length)|0]); }
   now=0; noises.length=0; battleKills=0; lastKillCrew=null; teamSup[0]={arty:20,air:40}; teamSup[1]={arty:20,air:40}; if(!tut) for(const c of crews){ c.artyCD=ARTY_CD; c.airCD=AIR_CD; } updateInfantry.t=40; if(!net.guest){ for(const tm of [0,1]){spawnSquad(tm);spawnSquad(tm);} spawnCivilians(streetSegs.length?20:12); spawnTraffic(streetSegs.length>20?8:0); } updateHud();
@@ -4160,7 +4173,7 @@ function checkEnd(){
 let nukeView=null;
 function finish(winner){
   if(lastKillCrew&&!net.guest){ award(lastKillCrew,'Último derribo',30,50); lastKillCrew=null; }
-  if(net.host) netAll({t:'end',w:winner,crews:crews.map(c=>({st:c.st,tk:c.tk,name:c.name,team:c.team,uses:c.uses,kills:c.kills,assists:c.assists||0,deaths:c.deaths,caps:c.caps,score:c.score,peer:c.peer||null}))});
+  if(net.host) netAll({t:'end',w:winner,crews:crews.map(c=>({st:c.st,tk:c.tk,name:c.name,team:c.team,uses:c.uses,kills:c.kills,assists:c.assists||0,deaths:c.deaths,caps:c.caps,score:c.score,peer:c.peer||null,h:c.isPlayer||c.peer||c.wasHuman?1:0}))});
   if(nuke&&nuke.phase>=1&&nuke.cloud){ nukeEnd(winner); return; }
   state='end'; const N=NATIONS[winner===0?allyNation:foeNation].label;
   banner(spectating?`Gana ${N}`:winner===0?'Victoria':'Derrota',spectating?'':`Gana ${N}`,99);
@@ -4261,9 +4274,12 @@ function summary(winner){
   if(document.pointerLockElement) document.exitPointerLock();
   stopAllLoops(); state='summary'; document.body.classList.add('menu'); document.body.classList.remove('deploy','spec');
   $('banner').style.opacity=0; bannerT=0; $('overlay').style.display='flex';
-  const table=team=>{const rows=crews.filter(c=>c.team===team).sort((a,b)=>b.score-a.score);
-    return `<h2>${NATIONS[team===0?allyNation:foeNation].label}${team===winner?', ganador':''}</h2><table class="sum"><thead><tr><th>Jugador</th><th>Tanques</th><th class="n">Bajas</th><th class="n">Asist.</th><th class="n">Muertes</th><th class="n">Capturas</th><th class="n">Puntos</th></tr></thead><tbody>${
-      rows.map(c=>`<tr class="${c.isPlayer?'me':''}"><td>${c.name}</td><td>${Object.keys(c.uses).map(k=>VEH[k].label).join(', ')||'Ninguno'}</td><td class="n">${c.kills}</td><td class="n">${c.assists||0}</td><td class="n">${c.deaths}</td><td class="n">${c.caps}</td><td class="n">${c.score}</td></tr>`).join('')}</tbody></table>`;};
+  const top=crews.reduce((b,c)=>!b||c.score>b.score?c:b,null);
+  const table=team=>{const rows=crews.filter(c=>c.team===team).sort((a,b)=>b.score-a.score), sm=k=>rows.reduce((a,c)=>a+(+c[k]||0),0);
+    return `<h2 class="tm ${team===0?'':'foe'}">${NATIONS[team===0?allyNation:foeNation].label}${team===winner?'<span class="w">GANADOR</span>':''}<span class="tk">${Math.max(0,Math.ceil(tickets[team]))} tickets</span></h2><table class="sum"><colgroup><col style="width:21%"><col><col style="width:8.5%"><col style="width:8.5%"><col style="width:8.5%"><col style="width:8.5%"><col style="width:10%"></colgroup><thead><tr><th>Jugador</th><th>Tanques</th><th class="n">Bajas</th><th class="n">Asist.</th><th class="n">Muertes</th><th class="n">Capturas</th><th class="n">Puntos</th></tr></thead><tbody>${
+      rows.map(c=>{ const ia=net.on&&!c.isPlayer&&!c.peer&&!c.wasHuman&&!c.human, tks=Object.keys(c.uses).filter(k=>VEH[k]).map(k=>VEH[k].label).join(', ')||'Ninguno';
+        return `<tr class="${c.isPlayer?'me':''}"><td title="${esc(c.name)}">${esc(c.name)}${c===top&&c.score>0?'<span class="mvp" title="Mejor de la partida">★</span>':''}${ia?'<span class="ia">BOT</span>':''}</td><td title="${esc(tks)}">${esc(tks)}</td><td class="n">${c.kills|0}</td><td class="n">${c.assists|0}</td><td class="n">${c.deaths|0}</td><td class="n">${c.caps|0}</td><td class="n pts">${(c.score|0).toLocaleString('es-AR')}</td></tr>`; }).join('')}</tbody>
+      <tfoot><tr><td>Total</td><td></td><td class="n">${sm('kills')}</td><td class="n">${sm('assists')}</td><td class="n">${sm('deaths')}</td><td class="n">${sm('caps')}</td><td class="n">${sm('score').toLocaleString('es-AR')}</td></tr></tfoot></table>`;};
   const N=NATIONS[winner===0?allyNation:foeNation].label;
   let rpHtml=''; const me=crews.find(c=>c.isPlayer||c.name==='Vos'||c.name==='Vos (IA)');
   if(!spectating&&!curSpecial&&me&&PROG&&!summary._done){ summary._done=true; const n=chosenNation, rp=(winner===0?600:300)+me.score*6;
@@ -4535,8 +4551,8 @@ function tabRows(){
 function renderTab(){
   const R=tabRows(), sup=(cd)=>cd>0?Math.ceil(cd)+' s':'Lista';
   const tb=tm=>{ const rows=R.filter(r=>r.team===tm).sort((a,b)=>b.score-a.score);
-    return `<div><h2 class="${tm===0?'ally':'foe'}"><span>${NATIONS[tm===0?allyNation:foeNation].label}</span><span>${Math.max(0,Math.round(tickets[tm]))} tickets</span></h2><table class="sum"><thead><tr><th>Jugador</th><th>Tanque</th><th class="n">Bajas</th><th class="n">Asist.</th><th class="n">Muertes</th><th class="n">Capt.</th><th class="n">Puntos</th></tr></thead><tbody>${
-      rows.map(r=>`<tr class="${r.me?'me':''} ${r.alive?'':'dead'}"><td>${esc(r.name)}</td><td>${r.tk&&VEH[r.tk]?VEH[r.tk].label:'—'}</td><td class="n">${r.kills}</td><td class="n">${r.assists}</td><td class="n">${r.deaths}</td><td class="n">${r.caps}</td><td class="n">${r.score}</td></tr>`).join('')}</tbody></table></div>`; };
+    return `<div><h2 class="${tm===0?'ally':'foe'}"><span>${NATIONS[tm===0?allyNation:foeNation].label}</span><span>${Math.max(0,Math.round(tickets[tm]))} tickets</span></h2><table class="sum"><colgroup><col style="width:27%"><col><col style="width:9.5%"><col style="width:9.5%"><col style="width:11%"><col style="width:9%"><col style="width:11%"></colgroup><thead><tr><th>Jugador</th><th>Tanque</th><th class="n">Bajas</th><th class="n">Asist.</th><th class="n">Muertes</th><th class="n">Capt.</th><th class="n">Puntos</th></tr></thead><tbody>${
+      rows.map(r=>`<tr class="${r.me?'me':''} ${r.alive?'':'dead'}"><td title="${esc(r.name)}">${esc(r.name)}</td><td>${r.tk&&VEH[r.tk]?VEH[r.tk].label:'—'}</td><td class="n">${r.kills}</td><td class="n">${r.assists}</td><td class="n">${r.deaths}</td><td class="n">${r.caps}</td><td class="n">${r.score}</td></tr>`).join('')}</tbody></table></div>`; };
   $('tabB').innerHTML=`<div class="cols">${tb(0)}${tb(1)}</div><div class="ft">${W.label} · Artillería del equipo: ${sup(playerCrew?playerCrew.artyCD:0)} · Bombardeo: ${sup(playerCrew?playerCrew.airCD:0)} · Nuke: ${NUKE_COST} pts (gana la partida)</div>`;
 }
 function tabBoard(on){ tabOn=on&&battleOn(); $('tabB').classList.toggle('on',tabOn); if(tabOn) renderTab(); }
@@ -4726,26 +4742,28 @@ function hostLobby(){
   netAll(L);
 }
 const sideOf=conn=>net.mode==='vs'?(conn.side?1:0):0;
-function remoteCrew(conn){ const nat=conn.nation||allyNation, c=newCrew(conn.name,sideOf(conn),nat,false); c.lineup=conn.garage&&conn.garage.length?conn.garage.slice():NATIONS[nat].lineup.slice(); c.peer=conn.peer; c.lvs=conn.lvs||{}; c.cams=conn.cams||{}; conn.crew=c; return c; }
+function remoteCrew(conn){ const nat=conn.nation||allyNation, c=newCrew(conn.name,sideOf(conn),nat,false); c.lineup=conn.garage&&conn.garage.length?conn.garage.slice():NATIONS[nat].lineup.slice(); c.peer=conn.peer; c.wasHuman=true; c.lvs=conn.lvs||{}; c.cams=conn.cams||{}; conn.crew=c; return c; }
 const battleOn=()=>['play','deploy','spectate','end','paused'].includes(state)&&crews.length&&!tut;
 function hostData(conn,d){
   if(!d||typeof d!=='object') return;
   conn.lastT=performance.now(); if(d.t==='p') return;
-  if(d.t==='side'){ conn.side=d.s?1:0; if(state==='lobby') hostLobby(); else conn.send(lobbyInfo()); return; }
+  if(d.t==='side'){ if(battleOn()) return; /* en plena batalla no se puede cambiar de bando */ conn.side=d.s?1:0; if(state==='lobby') hostLobby(); else conn.send(lobbyInfo()); return; }
   if(d.t==='hi'){
     let n=cleanName(d.name)||'Invitado'; const used=new Set([net.name,...net.conns.filter(c=>c.ready).map(c=>c.name)]); let k=2,b=n; while(used.has(n)) n=b+' '+(k++);
-    conn.name=n; conn.ready=true; conn.nation=normalNations()[d.nation]?d.nation:chosenNation;
+    conn.name=n; conn.ready=true; conn.side=d.side?1:0; conn.nation=normalNations()[d.nation]?d.nation:chosenNation;
     conn.garage=(Array.isArray(d.garage)?d.garage:[]).filter(k=>typeof k==='string'&&VEH[k]).slice(0,3);
     conn.lvs={}; if(d.lvs&&typeof d.lvs==='object') for(const k of conn.garage) conn.lvs[k]=clamp((+d.lvs[k])|0,1,5);
     conn.cams={}; if(d.cams&&typeof d.cams==='object') for(const k of conn.garage) if(CAMOS[d.cams[k]]) conn.cams[k]=d.cams[k];
-    if(net.inBattle&&battleOn()){ const c=remoteCrew(conn); crews.splice(1,0,c); conn.send({...net.startMsg,side:c.team}); feed(`${n} se unió a la batalla`,'var(--ally)'); }
+    if(net.inBattle&&battleOn()){ const c=joinBattle(conn,n); conn.send({...net.startMsg,side:c.team}); }
     else if(state==='summary'){ conn.send(lobbyInfo()); }
     else hostLobby();
     return;
   }
   const c=conn.crew; if(!c||!conn.ready) return;
   if(d.t==='sp'){
-    if(!battleOn()||(c.tank&&!c.tank.dead)) return;
+    if(!battleOn()) return;
+    if(c.tank&&!c.tank.dead){ const t=c.tank; if(t.net) return; t.net=true; t.tgt=null; t.name=c.name; t.target=null;
+      conn.send({t:'ok',id:t.id,key:t.key,x:t.pos.x,z:t.pos.z,h:t.heading,label:'tu tanque, que manejaba la IA'}); return; }
     const pts0=spawnPoints(c.team);
     if(!VEH[d.key]||!c.lineup.includes(d.key)||!available(c,d.key)){ conn.send({t:'no'}); return; }
     const pts=pts0, p=pts[clamp(d.i|0,0,pts.length-1)];
@@ -4778,11 +4796,26 @@ function hostData(conn,d){
     const t=c.tank; if(!t||t.dead) return; if(d.t==='rep') startRepair(t); else callCrew(t);
   }
 }
+// Entrar a una batalla ya empezada sin desequilibrar los equipos:
+// 1) si se había desconectado, recupera su mismo lugar (mismo bando, mismos puntos y su tanque si sigue vivo);
+// 2) si es nuevo, reemplaza a un bot de su bando (el bot termina su vida y no reaparece); si su bando no tiene bots, va al otro.
+function joinBattle(conn,n){
+  const back=crews.find(x=>!x.peer&&!x.isPlayer&&x.rejoin&&x.rejoin===n);
+  if(back){ back.peer=conn.peer; back.name=n; back.rejoin=null; back.out=false; conn.crew=back; conn.side=back.team;
+    if(back.tank&&!back.tank.dead) back.tank.name=n;
+    feed(`${n} volvió a la batalla`,'var(--ally)'); return back; }
+  const bots=tm=>crews.filter(x=>x.team===tm&&!x.out&&!x.isPlayer&&!x.peer&&!x.wasHuman);
+  const c=remoteCrew(conn), alive=tm=>crews.filter(x=>x.team===tm&&!x.out).length;
+  if(net.mode==='vs'){ const o=1-c.team; if(!bots(c.team).length&&bots(o).length||alive(c.team)>alive(o)&&bots(o).length){ c.team=o; conn.side=o; } }
+  const B=bots(c.team).sort((a,b)=>((a.tank&&!a.tank.dead)?1:0)-((b.tank&&!b.tank.dead)?1:0)||a.score-b.score)[0];
+  if(B){ B.out=true; feed(`${n} entra a la batalla y reemplaza a ${B.name}`,'var(--ally)'); } else feed(`${n} se unió a la batalla`,'var(--ally)');
+  crews.splice(1,0,c); return c;
+}
 function hostDrop(conn){
   const i=net.conns.indexOf(conn); if(i<0) return; net.conns.splice(i,1);
   const c=conn.crew;
-  if(c){ c.peer=null; c.name=conn.name+' (IA)'; if(c.tank){ c.tank.net=false; c.tank.name=c.name; c.tank.tgt=null; } else c.respawnT=3;
-    if(battleOn()) feed(`${conn.name} se desconectó; la IA toma su tanque`,'var(--paper)'); }
+  if(c){ c.peer=null; c.rejoin=conn.name; c.name=conn.name+' (IA)'; if(c.tank){ c.tank.net=false; c.tank.name=c.name; c.tank.tgt=null; } else c.respawnT=3;
+    if(battleOn()) feed(`${conn.name} se desconectó; la IA toma su lugar hasta que vuelva`,'var(--paper)'); }
   if(state==='lobby') hostLobby();
 }
 // Disparo: el anfitrión avisa a todos (menos al que disparó); el invitado avisa al anfitrión
@@ -4828,7 +4861,7 @@ async function netJoin(code){
   peer.on('error',e=>{ if(!net.on||!opened){ netErr(e.type==='peer-unavailable'?'No existe una sala con ese código, o ya se cerró.':'No se pudo conectar ('+e.type+').'); try{peer.destroy();}catch(_){} } else console.warn(e); });
   peer.on('open',()=>{
     const conn=peer.connect(ROOM_PFX+code.toLowerCase(),{reliable:true,serialization:'json'});
-    conn.on('open',()=>{ opened=true; net.lastT=performance.now(); Object.assign(net,{on:true,host:false,guest:true,peer,hostConn:conn,code,name:myName()}); conn.send({t:'hi',name:net.name,nation:chosenNation,garage:garageOf(chosenNation),lvs:Object.fromEntries(garageOf(chosenNation).map(k=>[k,tankLv(k)])),cams:PROG.camo||{}}); guestWait(null); });
+    conn.on('open',()=>{ opened=true; net.lastT=performance.now(); Object.assign(net,{on:true,host:false,guest:true,peer,hostConn:conn,code,name:myName()}); conn.send({t:'hi',name:net.name,side:net.side?1:0,nation:chosenNation,garage:garageOf(chosenNation),lvs:Object.fromEntries(garageOf(chosenNation).map(k=>[k,tankLv(k)])),cams:PROG.camo||{}}); guestWait(null); });
     conn.on('data',d=>{ try{ guestData(d); }catch(e){ console.error(e); } });
     conn.on('close',()=>{ if(net.guest&&net.hostConn===conn){ netLeave(true); mainMenu(); banner('Se cortó la conexión','El anfitrión cerró la sala o se desconectó',4); } });
   });
@@ -4912,7 +4945,7 @@ function guestData(d){
     case 'start': guestStart(d); break;
     case 's': guestSnap(d); break;
     case 'ok': {
-      if(!VEH[d.key]) return; if(player&&player.dead){ removeTank(player); }
+      if(!VEH[d.key]) return; if(player&&player.dead){ removeTank(player); } { const dup=netTanks.get(d.id); if(dup){ removeTank(dup); netTanks.delete(d.id); } }
       player=makeTank(playerCrew,d.key,+d.x,+d.z,+d.h,d.id); playerCrew.tank=player;
       camYaw=player.heading; camPitch=.1; camDist=14; state='play'; syncIntro(); setTimeout(()=>radio('¡Tripulación lista! ¡Adelante!',2),600);
       $('overlay').style.display='none'; document.body.classList.remove('deploy');
@@ -4933,7 +4966,7 @@ function guestData(d){
       t.ammoIdx=clamp(d.a|0,0,t.T.ammo.length-1); t.root.updateMatrixWorld(true);
       fireGun(t,{mp:new THREE.Vector3(...d.p.map(Number)),dir:new THREE.Vector3(...d.d.map(Number)).normalize()}); break; }
     case 'end': {
-      crews=(d.crews||[]).map(c=>({name:String(c.name).slice(0,24),team:(c.team?1:0)^net.swap,uses:Object.fromEntries(Object.entries(c.uses||{}).filter(([k])=>VEH[k])),st:c.st&&typeof c.st==='object'?{side:c.st.side|0,inf:c.st.inf|0,smoke:c.st.smoke|0}:{},tk:c.tk&&typeof c.tk==='object'?c.tk:{},kills:c.kills|0,assists:c.assists|0,deaths:c.deaths|0,caps:c.caps|0,score:c.score|0,isPlayer:c.peer===net.peer.id}));
+      crews=(d.crews||[]).map(c=>({name:String(c.name).slice(0,24),team:(c.team?1:0)^net.swap,uses:Object.fromEntries(Object.entries(c.uses||{}).filter(([k])=>VEH[k])),st:c.st&&typeof c.st==='object'?{side:c.st.side|0,inf:c.st.inf|0,smoke:c.st.smoke|0}:{},tk:c.tk&&typeof c.tk==='object'?c.tk:{},kills:c.kills|0,assists:c.assists|0,deaths:c.deaths|0,caps:c.caps|0,score:c.score|0,human:!!c.h,isPlayer:c.peer===net.peer.id}));
       if(document.pointerLockElement) document.exitPointerLock();
       finish((d.w?1:0)^net.swap); break; }
   }
