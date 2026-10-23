@@ -33,6 +33,9 @@ body.spec #specT{display:block}
 #tutbox b{color:var(--amber);display:block;font-size:13px;letter-spacing:.08em;text-transform:uppercase}
 body.tut #tutbox{display:block}
 .guide{max-height:62vh;overflow:auto;text-align:left} .guide h2{margin:14px 0 4px} .guide p{margin:4px 0} body.thermal #vig{opacity:.55!important;background:radial-gradient(circle at center,transparent 45%,rgba(0,0,0,.85))} body.spec #status{display:none}
+#tabB{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);width:min(980px,94vw);max-height:86vh;overflow:auto;background:rgba(20,22,18,.9);border:1px solid rgba(239,231,210,.25);padding:12px 18px;z-index:40;display:none;color:var(--paper);font-family:'Saira Condensed',sans-serif}
+#tabB.on{display:block}#tabB h2{margin:6px 0 2px;font-size:20px;display:flex;justify-content:space-between}#tabB .ally{color:var(--ally)}#tabB .foe{color:var(--enemy)}#tabB .dead td{opacity:.55}#tabB tr.me td{background:rgba(232,196,96,.16)}#tabB .ft{font-size:13px;opacity:.7;margin-top:6px}
+@media (min-width:900px){#tabB .cols{display:grid;grid-template-columns:1fr 1fr;gap:18px}}
 table.sum{border-collapse:collapse;width:100%;font-size:16px;margin:4px 0 14px}
 table.sum th{text-align:left;color:var(--khaki);font-weight:700;padding:3px 6px;border-bottom:1px solid rgba(239,231,210,.3)}
 table.sum td{padding:3px 6px;border-bottom:1px solid rgba(239,231,210,.1)}
@@ -224,6 +227,7 @@ button:focus-visible{outline:3px solid var(--paper);outline-offset:3px}
 <div class="hud" id="feed"></div>
 <div class="hud" id="hitmsg"></div>
 <div class="hud" id="banner"></div>
+<div id="tabB"></div>
 <button id="fsBtn" title="Pantalla completa" aria-label="Pantalla completa">⛶</button>
 <div class="hud" id="status">
   <div class="wt-name" id="typeT"></div>
@@ -2787,7 +2791,9 @@ function fireMG(t){
 }
 
 /* ---------- Apoyo: artillería y ataque aéreo ---------- */
-const ARTY_COST=80, AIR_COST=150, ARTY_CD=30, AIR_CD=60;
+const ARTY_COST=80, AIR_COST=150, ARTY_CD=30, AIR_CD=45;
+// La recarga es del equipo: cuando alguien pide un apoyo, todo su equipo espera
+const teamCD=(team,k,v)=>{ for(const c of crews) if(c.team===team) c[k]=Math.max(c[k]||0,v); };
 const arty=[], marks=[], planes=[], bombs=[];
 const ringGeo=new THREE.RingGeometry(.9,1,64); ringGeo.rotateX(-Math.PI/2);
 const discGeo=new THREE.CircleGeometry(1,48); discGeo.rotateX(-Math.PI/2);
@@ -2834,7 +2840,7 @@ function splash(p,by,r,power,bldDmg){
 function callArtillery(by,point){
   const c=by.crew; if(c.sp<ARTY_COST||c.artyCD>0) return false;
   if(tut&&by.isPlayer) tut.arty=true;
-  c.sp-=ARTY_COST; c.artyCD=ARTY_CD; if(c.isPlayer) $('spT').textContent=c.sp;
+  c.sp-=ARTY_COST; c.artyCD=ARTY_CD; teamCD(by.team,'artyCD',ARTY_CD); if(c.isPlayer) $('spT').textContent=c.sp;
   for(let i=0;i<7;i++) arty.push({t:now+4+i*.4,p:point.clone().add(new THREE.Vector3(rand(-10,10),0,rand(-10,10))),by});
   markZone(point,13,0xffb43c,now+4+7*.4+.6);
   if(AC&&SFX.thump&&SFX.thump.length){ for(let i=0;i<4;i++) setTimeout(()=>sfx('thump',null,.35,{rate:rand(.55,.75)}),i*260+rand(0,120)); } else whistle();
@@ -2843,7 +2849,7 @@ function callArtillery(by,point){
 function callAirstrike(by,point){
   const c=by.crew; if(c.sp<AIR_COST||c.airCD>0) return false;
   if(tut&&by.isPlayer) tut.air=true;
-  c.sp-=AIR_COST; c.airCD=AIR_CD; if(c.isPlayer) $('spT').textContent=c.sp;
+  c.sp-=AIR_COST; c.airCD=AIR_CD; teamCD(by.team,'airCD',AIR_CD); if(c.isPlayer) $('spT').textContent=c.sp;
   const dir=new THREE.Vector3(point.x-by.pos.x,0,point.z-by.pos.z); if(dir.lengthSq()<1) dir.set(0,0,1); dir.normalize();
   const g=new THREE.Group(), pm=new THREE.MeshLambertMaterial({color:by.team===0?0x4b5440:0x5a5348});
   box(g,1.3,1.3,10,0,0,0,pm); box(g,13,.25,2.4,0,0,.5,pm); box(g,4.6,.2,1.3,0,.1,-4.3,pm); box(g,.2,1.8,1.4,0,1,-4.3,pm);
@@ -2876,7 +2882,7 @@ function updateArty(dt){
     if(now>M.until){ scene.remove(M.g); M.ring.material.dispose(); M.disc.material.dispose(); marks.splice(i,1); continue; }
     M.ring.material.opacity=.55+.4*Math.sin(now*6); M.disc.material.opacity=.12+.08*Math.sin(now*6); }
 }
-const NUKE_COST=1500; let nuke=null;
+const NUKE_COST=2000; let nuke=null;
 function callNuke(by){
   const c=by.crew; if(nuke||!c||c.sp<NUKE_COST||!['play','spectate','deploy','paused','brief'].includes(state)) return false;
   c.sp-=NUKE_COST; if(c.isPlayer) $('spT').textContent=c.sp;
@@ -4060,7 +4066,7 @@ function doDeploy(){
   if(!selKey||!available(c,selKey)){renderDeploy();return;}
   if(net.guest){ net.hostConn.send({t:'sp',key:selKey,i:selSp}); $('panel').innerHTML='<h1>Desplegando…</h1><p>Esperando al anfitrión.</p>'; return; }
   const pts=spawnPoints(0); const p=pts[Math.min(selSp,pts.length-1)];
-  player=spawnCrew(c,selKey,p); c.artyCD=0;
+  player=spawnCrew(c,selKey,p);
   camYaw=player.heading; camPitch=.1; camDist=14; state='play';
   $('overlay').style.display='none'; document.body.classList.remove('deploy');
   banner(player.T.label,`Desplegado en ${p.label.toLowerCase()}`,2.5); syncIntro(); setTimeout(()=>radio('¡Tripulación lista! ¡Adelante!',2),600);
@@ -4119,7 +4125,7 @@ function buildTutSteps(P){
   S.push({t:'Artillería',x:`Apuntá al tanque lejano y apretá ${K('arty')}. Cuesta ${ARTY_COST} puntos; para practicar tenés de sobra.`,enter:()=>{playerCrew.sp=Math.max(playerCrew.sp,600);playerCrew.artyCD=0;},ok:U=>U.arty});
   S.push({t:'Ataque aéreo',x:`Apuntá a la zona y apretá ${K('air')}: un avión suelta cuatro bombas en línea. Cuesta ${AIR_COST} puntos.`,enter:()=>{playerCrew.sp=Math.max(playerCrew.sp,600);playerCrew.airCD=0;},ok:U=>U.air});
   S.push({t:'Rematar',x:'Terminá con el tanque lejano como quieras.',skip:U=>U.d[2].dead,ok:U=>U.d[2].dead});
-  S.push({t:'¡Ataque enemigo! Nuke',x:`¡Entran 5 tanques enemigos! Te damos 1500 puntos: apretá ${K('nuke')}. Un B-29 cruza, suelta la bomba y arrasa a todos. Tu tanque está protegido en esta prueba.`,
+  S.push({t:'¡Ataque enemigo! Nuke',x:`¡Entran 5 tanques enemigos! Te damos ${NUKE_COST} puntos: apretá ${K('nuke')}. Un B-29 cruza, suelta la bomba y arrasa a todos. Tu tanque está protegido en esta prueba.`,
     enter:U=>{ playerCrew.sp=Math.max(playerCrew.sp,NUKE_COST); $('spT').textContent=playerCrew.sp; player.immuneT=90; tutAttack(U); },ok:()=>nuke&&nuke.phase>=1});
   const nx=[2,3,4,5].filter(l=>l>P.lv).map(l=>`nivel ${l}: ${LV_UP[l].n.toLowerCase()}`);
   S.push({t:'Listo',x:`¡Terminaste! ${nx.length?`Este tanque mejora con la experiencia (${nx.join(', ')}); cada mejora suma su práctica a este tutorial.`:'Este tanque ya tiene todas las mejoras.'} También tenés la vista aérea (${K('aerial')}).`,ok:()=>false});
@@ -4449,6 +4455,20 @@ function edgeTurn(dt){
   if(ex<z) camYaw=wrap(camYaw+(z-ex)/z*k*dt); else if(ex>1-z) camYaw=wrap(camYaw-(ex-1+z)/z*k*dt);
   if(ey<z) camPitch=clamp(camPitch+(z-ey)/z*k*.5*dt,-.45,.6); else if(ey>1-z) camPitch=clamp(camPitch-(ey-1+z)/z*k*.5*dt,-.45,.6);
 }
+// ---------- Tabla de jugadores (mantener Tab) ----------
+let tabOn=false, tabT=0;
+function tabRows(){
+  if(net.guest&&net.sb) return net.sb.map(r=>({name:r[0],team:(r[1]?1:0)^net.swap,kills:r[2],assists:r[3],deaths:r[4],caps:r[5],score:r[6],tk:r[7],alive:!!r[8],me:r[0]===(playerCrew&&playerCrew.name)}));
+  return crews.map(c=>({name:c.name,team:c.team,kills:c.kills|0,assists:c.assists|0,deaths:c.deaths|0,caps:c.caps|0,score:c.score|0,tk:c.tank&&!c.tank.dead?c.tank.key:null,alive:!!(c.tank&&!c.tank.dead),me:c.isPlayer}));
+}
+function renderTab(){
+  const R=tabRows(), sup=(cd)=>cd>0?Math.ceil(cd)+' s':'Lista';
+  const tb=tm=>{ const rows=R.filter(r=>r.team===tm).sort((a,b)=>b.score-a.score);
+    return `<div><h2 class="${tm===0?'ally':'foe'}"><span>${NATIONS[tm===0?allyNation:foeNation].label}</span><span>${Math.max(0,Math.round(tickets[tm]))} tickets</span></h2><table class="sum"><thead><tr><th>Jugador</th><th>Tanque</th><th class="n">Bajas</th><th class="n">Asist.</th><th class="n">Muertes</th><th class="n">Capt.</th><th class="n">Puntos</th></tr></thead><tbody>${
+      rows.map(r=>`<tr class="${r.me?'me':''} ${r.alive?'':'dead'}"><td>${esc(r.name)}</td><td>${r.tk&&VEH[r.tk]?VEH[r.tk].label:'—'}</td><td class="n">${r.kills}</td><td class="n">${r.assists}</td><td class="n">${r.deaths}</td><td class="n">${r.caps}</td><td class="n">${r.score}</td></tr>`).join('')}</tbody></table></div>`; };
+  $('tabB').innerHTML=`<div class="cols">${tb(0)}${tb(1)}</div><div class="ft">${W.label} · Artillería del equipo: ${sup(playerCrew?playerCrew.artyCD:0)} · Bombardeo: ${sup(playerCrew?playerCrew.airCD:0)} · Nuke: ${NUKE_COST} pts (gana la partida)</div>`;
+}
+function tabBoard(on){ tabOn=on&&battleOn(); $('tabB').classList.toggle('on',tabOn); if(tabOn) renderTab(); }
 document.addEventListener('keydown',e=>{
   if(e.target&&e.target.tagName==='INPUT'&&e.target.type!=='range'&&e.target.type!=='checkbox') return;
   if(bindCapture){ e.preventDefault(); if(e.code!=='Escape'){ const prev=Object.keys(binds).find(k=>binds[k]===e.code&&k!==bindCapture); if(prev) binds[prev]=binds[bindCapture]; binds[bindCapture]=e.code; saveSettings(); }
@@ -4471,16 +4491,17 @@ document.addEventListener('keydown',e=>{
     if(e.code==='Escape'&&!playerCrew){clearBattle();mainMenu();} }
   if(state==='play'&&player&&!player.dead&&lastAim){
     if(e.code===binds.arty&&callArtillery(player,lastAim)) teamSup[0].arty=Math.max(teamSup[0].arty,TEAM_ARTY_CD*.6);
-    else if(e.code===binds.arty) hitMsg(playerCrew.artyCD>0?'Artillería en espera':`Artillería: te faltan ${ARTY_COST-playerCrew.sp} puntos`,'var(--paper)');
+    else if(e.code===binds.arty) hitMsg(playerCrew.artyCD>0?`Artillería del equipo en espera: ${Math.ceil(playerCrew.artyCD)} s`:`Artillería: te faltan ${ARTY_COST-playerCrew.sp} puntos`,'var(--paper)');
     if(e.code===binds.air&&callAirstrike(player,lastAim)) teamSup[0].air=Math.max(teamSup[0].air,TEAM_AIR_CD*.6);
-    else if(e.code===binds.air) hitMsg(playerCrew.airCD>0?'Ataque aéreo en espera':`Ataque aéreo: te faltan ${AIR_COST-playerCrew.sp} puntos`,'var(--paper)'); }
+    else if(e.code===binds.air) hitMsg(playerCrew.airCD>0?`Bombardeo del equipo en espera: ${Math.ceil(playerCrew.airCD)} s`:`Ataque aéreo: te faltan ${AIR_COST-playerCrew.sp} puntos`,'var(--paper)'); }
   if(state==='play'&&(e.code===binds.mg||e.code==='Space'||e.code==='Tab')) e.preventDefault();
+  if(e.code==='Tab'){ e.preventDefault(); if(!e.repeat) tabBoard(true); }
   if(state==='play'&&e.code===binds.aerial) goSpectate();
   if(state==='play'&&e.code===binds.troops&&player&&!player.dead&&!dismount(player)) hitMsg(player.T.troops?'Ya bajaste a la infantería':'Este vehículo no lleva tropas','var(--paper)');
   if(state==='play'&&player&&!player.dead){
     if(e.code===binds.nuke&&!callNuke(player)) hitMsg(nuke?'Ya hay un ataque nuclear en curso':`Nuke: te faltan ${NUKE_COST-playerCrew.sp} puntos`,'var(--paper)');
     if(e.code===binds.thermal){ if(player.T.thermal) player.thermal=!player.thermal; else hitMsg('Este tanque no tiene visión térmica','var(--paper)'); } } });
-document.addEventListener('keyup',e=>{keys[e.code]=false;});
+document.addEventListener('keyup',e=>{keys[e.code]=false; if(e.code==='Tab') tabBoard(false);});
 // Si la ventana pierde el foco (Alt+Tab, Win+Shift+S, etc.) el keyup nunca llega: soltamos todo para que no queden teclas trabadas.
 const releaseAll=()=>{ for(const k in keys) keys[k]=false; mouseDown=rightDown=false; };
 function selectAmmo(t,i){
@@ -4503,6 +4524,7 @@ function loop(ts){
   camera.up.set(0,1,0); boardMode=false;
   if(sim){
     now+=dt; mgMsgT-=dt; for(const c of crews){c.artyCD=Math.max(0,c.artyCD-dt);c.airCD=Math.max(0,c.airCD-dt);}
+    if(tabOn){ tabT-=dt; if(tabT<=0){ tabT=.5; if(!battleOn()) tabBoard(false); else renderTab(); } }
     const gone=[];
     for(const t of tanks){
       t.reloadT=Math.max(0,t.reloadT-dt); t.recoil=Math.max(0,t.recoil-dt*4); t.barrel.position.z=-t.recoil*.5;
@@ -4670,8 +4692,8 @@ function hostData(conn,d){
     fireGun(t,{mp,dir});
   } else if(d.t==='sup'){
     const t=c.tank; if(!t||t.dead||!Array.isArray(d.p)) return; const P=new THREE.Vector3(...d.p.map(Number)); if(!isFinite(P.x+P.y+P.z)) return;
-    if(d.k==='arty'){ if(!callArtillery(t,P)) tell(t,c.artyCD>0?'Artillería en espera':`Artillería: te faltan ${ARTY_COST-c.sp} puntos`,'var(--paper)'); }
-    else if(d.k==='air'){ if(!callAirstrike(t,P)) tell(t,c.airCD>0?'Ataque aéreo en espera':`Ataque aéreo: te faltan ${AIR_COST-c.sp} puntos`,'var(--paper)'); }
+    if(d.k==='arty'){ if(!callArtillery(t,P)) tell(t,c.artyCD>0?`Artillería del equipo en espera: ${Math.ceil(c.artyCD)} s`:`Artillería: te faltan ${ARTY_COST-c.sp} puntos`,'var(--paper)'); }
+    else if(d.k==='air'){ if(!callAirstrike(t,P)) tell(t,c.airCD>0?`Bombardeo del equipo en espera: ${Math.ceil(c.airCD)} s`:`Ataque aéreo: te faltan ${AIR_COST-c.sp} puntos`,'var(--paper)'); }
     else if(d.k==='nuke'){ if(!callNuke(t)) tell(t,nuke?'Ya hay un ataque nuclear en curso':`Nuke: te faltan ${NUKE_COST-c.sp} puntos`,'var(--paper)'); }
   } else if(d.t==='ping'){
     if(!Array.isArray(d.p)) return; const P=d.p.map(Number); if(!P.every(isFinite)) return; makePing(c.team,P[0],P[1],P[2],d.k,c.name,d.zid,true);
@@ -4705,6 +4727,7 @@ function netTick(dt){
     const inf=infantry.map(P=>{ const r=[P.id,KIND_CODE[P.kind]??1,P.team,r2(P.pos.x),r2(P.pos.z),r3(P.heading||0),P.dead?(P.how==='blast'?2:P.how==='crush'?3:1):0,Math.round((P.spd||0)*10)/10,P.pose|0,P.shotP?[r2(P.shotP.x),r2(P.shotP.y),r2(P.shotP.z)]:0]; P.shotP=null; return r; });
     const tr=traffic.map(C=>[C.id,r2(C.x),r2(C.z),r3(C.h),C.state,C.ci]), pl=civPlanes.map(q=>[q.id,r2(q.pos.x),r2(q.pos.y),r2(q.pos.z),r3(q.yaw),r3(q.pitch),q.state]);
     const base={t:'s',tk,inf,tr,pl,z:zones.map(Z=>[Math.round(Z.cap),Z.owner]),k:[r2(tickets[0]),r2(tickets[1])]};
+    net.sbT=(net.sbT||0)-1/15; if(net.sbT<=0){ net.sbT=1; base.sb=crews.map(c=>[c.name,c.team,c.kills|0,c.assists|0,c.deaths|0,c.caps|0,c.score|0,c.tank&&!c.tank.dead?c.tank.key:0,c.tank&&!c.tank.dead?1:0]); }
     for(const conn of net.conns){ if(!conn.ready||!conn.open||!conn.crew) continue; const c=conn.crew, t=c.tank;
       const me={sp:c.sp,uses:c.uses,spawns:c.spawns,ac:r2(c.artyCD),aic:r2(c.airCD)};
       if(t) Object.assign(me,{id:t.id,crew:t.crewM.map(m=>[m.seat,Math.round(m.hp),m.alive?1:0]),eng:Math.round(t.mod.engine),br:Math.round(t.mod.breech),tm:Math.round(t.mod.trans),tr:r2(t.trackT),et:r2(t.engT),bt:r2(t.breechT),ft:r2(t.fireT),rp:r2(t.repairT||0),rpm:r2(t.repairMax||1),ex:t.ext|0,cr:r2(t.crT||0)});
@@ -4767,6 +4790,7 @@ function netKill(t,rack){
 }
 function guestSnap(m){
   if(!['play','deploy','end','paused','brief'].includes(state)) return;
+  if(m.sb) net.sb=m.sb;
   const seen=new Set();
   for(const r of m.tk||[]){
     const [id,key,nat,team,name,x,z,h,ty,gp,spd,dead,imm,spot,mg,fire,trk,cid]=r; if(!VEH[key]) continue; seen.add(id);
