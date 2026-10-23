@@ -1620,13 +1620,16 @@ function initAudio(){
   trkGain=AC.createGain(); trkGain.gain.value=0; trkSrc.connect(tf).connect(trkGain).connect(engGain);
   [eng,eng2,nz,lfo,trkSrc].forEach(n=>n.start());
   for(const [k,arr] of Object.entries(SND_B64)){ SFX[k]=[]; arr.forEach(b64=>{ const bin=atob(b64), u=new Uint8Array(bin.length); for(let i=0;i<bin.length;i++) u[i]=bin.charCodeAt(i);
-    AC.decodeAudioData(u.buffer,buf=>{ SFX[k].push(buf); if(k==='intro') syncIntro(); if(['idle','drive','turret','mgburst'].includes(k)) startLoops(); },()=>{}); }); }
+    AC.decodeAudioData(u.buffer,buf=>{ SFX[k].push(buf); if(k==='intro'&&musMode==='hangar'){ musMode=null; syncIntro(); } if(['idle','drive','turret','mgburst'].includes(k)) startLoops(); },()=>{}); }); }
   for(const [lang,arr] of Object.entries(VO_B64)){ VO[lang]=[]; arr.forEach((b64,i)=>{ const bin=atob(b64), u=new Uint8Array(bin.length); for(let j=0;j<bin.length;j++) u[j]=bin.charCodeAt(j);
     AC.decodeAudioData(u.buffer,buf=>{ VO[lang][i]=buf; },()=>{}); }); }
 }
 // Motor: las RPM suben dentro de cada marcha y caen al cambiar, como una caja de cambios real.
+let engQuiet=false;
+function quietEngine(){ if(engQuiet||!AC||!engGain) return; engQuiet=true; const n=AC.currentTime; engGain.gain.setTargetAtTime(0,n,.2); if(trkGain) trkGain.gain.setTargetAtTime(0,n,.2);
+  for(const k in LOOPS) LOOPS[k].g.gain.setTargetAtTime(0,n,.2); }
 function engineUpdate(t,dt){
-  if(!AC) return; const now=AC.currentTime;
+  if(!AC) return; engQuiet=false; const now=AC.currentTime;
   if(t.dead){ engGain.gain.setTargetAtTime(0,now,.3); if(LOOPS.turret) LOOPS.turret.g.gain.setTargetAtTime(0,now,.1); return; }
   const mx=Math.max(1,t.T.maxF||10), v=Math.abs(t.speed), r=v/mx, thr=(down('fwd')||down('back'))?1:0;
   const rpm=v<.4?.18+thr*.15:clamp(.3+((r*5)%1)*.65+thr*.08,.3,1);
@@ -1714,11 +1717,46 @@ function nukeSound(p){
   og.gain.setValueAtTime(.0001,t); og.gain.exponentialRampToValueAtTime(.9,t+.2); og.gain.exponentialRampToValueAtTime(.0001,t+9); o.connect(og).connect(master); o.start(t); o.stop(t+9.1);
   if(engGain) engGain.gain.setTargetAtTime(0,t,.2);
 }
+// ---------- Música de menús (generada, sin disparos) y ambiente del hangar (pruebas de tanques a lo lejos) ----------
+let musMode=null, mus=null;
+const NOTE=n=>440*Math.pow(2,(n-69)/12);
+function musStop(){ if(!mus) return; const m=mus; mus=null; clearInterval(m.iv); clearTimeout(m.ev); m.out.gain.setTargetAtTime(0,AC.currentTime,.5); setTimeout(()=>{ try{ m.nodes.forEach(n=>n.stop&&n.stop()); m.out.disconnect(); }catch(e){} },2500); }
+function musStart(mode){
+  const out=AC.createGain(); out.gain.setValueAtTime(0,AC.currentTime); out.gain.linearRampToValueAtTime(mode==='hangar'?.9:.5,AC.currentTime+2.5); out.connect(master);
+  const m={out,nodes:[],mode}; mus=m;
+  if(mode==='music'){
+    // Re menor, lento: Dm - Bb - F - C con colchón, bajo, eco y tambor grave
+    const dly=AC.createDelay(1); dly.delayTime.value=.42; const fb=AC.createGain(); fb.gain.value=.38; const wet=AC.createGain(); wet.gain.value=.35; dly.connect(fb).connect(dly); dly.connect(wet).connect(out);
+    const CH=[[50,53,57,62],[46,50,53,58],[41,48,53,57],[48,52,55,60]], BAR=4.2, MEL=[62,65,67,69,72,74,69,67];
+    let bar=0, next=AC.currentTime+.2;
+    const pad=(f,t,d,v)=>{ for(const det of [-6,6]){ const o=AC.createOscillator(); o.type='sawtooth'; o.frequency.value=f; o.detune.value=det; const lp=AC.createBiquadFilter(); lp.type='lowpass'; lp.frequency.value=700; lp.Q.value=.6;
+        const g=AC.createGain(); g.gain.setValueAtTime(0,t); g.gain.linearRampToValueAtTime(v,t+1.4); g.gain.setValueAtTime(v,t+d-1.2); g.gain.linearRampToValueAtTime(0,t+d+.6); o.connect(lp).connect(g).connect(out); o.start(t); o.stop(t+d+.7); } };
+    const bass=(f,t,d)=>{ const o=AC.createOscillator(); o.type='sine'; o.frequency.value=f; const g=AC.createGain(); g.gain.setValueAtTime(0,t); g.gain.linearRampToValueAtTime(.32,t+.3); g.gain.exponentialRampToValueAtTime(.001,t+d); o.connect(g).connect(out); o.start(t); o.stop(t+d); };
+    const drum=(t,v)=>{ const o=AC.createOscillator(); o.type='sine'; o.frequency.setValueAtTime(90,t); o.frequency.exponentialRampToValueAtTime(42,t+.5); const g=AC.createGain(); g.gain.setValueAtTime(v,t); g.gain.exponentialRampToValueAtTime(.001,t+.9); o.connect(g).connect(out); o.start(t); o.stop(t+1); };
+    const bell=(f,t)=>{ const o=AC.createOscillator(); o.type='triangle'; o.frequency.value=f; const g=AC.createGain(); g.gain.setValueAtTime(0,t); g.gain.linearRampToValueAtTime(.09,t+.02); g.gain.exponentialRampToValueAtTime(.001,t+2.2); o.connect(g); g.connect(out); g.connect(dly); o.start(t); o.stop(t+2.3); };
+    const sched=()=>{ while(next<AC.currentTime+1.5){ const c=CH[bar%4], t=next;
+        c.forEach(n=>pad(NOTE(n),t,BAR,.028)); bass(NOTE(c[0]-12),t,BAR*.95); drum(t,.32); if(bar%2) drum(t+BAR*.5,.18); if(bar%4===3) drum(t+BAR*.75,.14);
+        if(bar>1) for(let k=0;k<3;k++) if(Math.random()<.55) bell(NOTE(MEL[(Math.random()*MEL.length)|0]),t+k*BAR/3+rand(0,.3));
+        bar++; next+=BAR; } };
+    sched(); m.iv=setInterval(()=>{ if(mus===m) sched(); },400);
+  } else {
+    // Hangar: el campo de pruebas a lo lejos (filtrado), un motor en ralentí cerca y herramientas
+    const lp=AC.createBiquadFilter(); lp.type='lowpass'; lp.frequency.value=650; lp.connect(out);
+    if(SFX.intro&&SFX.intro.length){ const b=AC.createBufferSource(); b.buffer=SFX.intro[0]; b.loop=true; const g=AC.createGain(); g.gain.value=.4; b.connect(g).connect(lp); b.start(); m.nodes.push(b); }
+    if(SFX.idle&&SFX.idle.length){ const b=AC.createBufferSource(); b.buffer=SFX.idle[0]; b.loop=true; b.loopStart=.2; b.loopEnd=.2+LOOP_LEN.idle; b.playbackRate.value=.9; const g=AC.createGain(); g.gain.value=.1; b.connect(g).connect(out); b.start(); m.nodes.push(b); }
+    const ev=()=>{ if(mus!==m) return; const r=Math.random();
+      if(r<.45) sfx('metal',null,rand(.06,.13),{near:true,rate:rand(.9,1.6)});           // herramientas
+      else if(r<.7) sfx('turret',null,.07,{near:true,rate:rand(.8,1.1)});                 // torre girando
+      else if(r<.9){ const s2=AC.createBufferSource(); if(SFX.cannon&&SFX.cannon.length){ s2.buffer=SFX.cannon[0]; s2.playbackRate.value=rand(.75,.9); const g=AC.createGain(); g.gain.value=.25; s2.connect(g).connect(lp); s2.start(); } } // disparo de prueba lejos
+      else if(SFX.drive&&SFX.drive.length){ const s2=AC.createBufferSource(); s2.buffer=SFX.drive[0]; s2.playbackRate.value=.8; const g=AC.createGain(); g.gain.setValueAtTime(0,AC.currentTime); g.gain.linearRampToValueAtTime(.12,AC.currentTime+1); g.gain.linearRampToValueAtTime(0,AC.currentTime+3); s2.connect(g).connect(lp); s2.start(); s2.stop(AC.currentTime+3.2); }
+      m.ev=setTimeout(ev,rand(2500,6500)); };
+    m.ev=setTimeout(ev,1500);
+  }
+}
 function syncIntro(){
-  if(!AC) return; const want=['menu','brief'].includes(state);
-  if(want&&!introNode&&SFX.intro&&SFX.intro.length){ const s=AC.createBufferSource(); s.buffer=SFX.intro[0]; s.loop=true; const g=AC.createGain();
-    g.gain.setValueAtTime(0,AC.currentTime); g.gain.linearRampToValueAtTime(.55,AC.currentTime+2); s.connect(g).connect(master); s.start(); introNode={s,g}; }
-  else if(!want&&introNode){ const n=introNode; introNode=null; n.g.gain.setTargetAtTime(0,AC.currentTime,.4); n.s.stop(AC.currentTime+2); }
+  if(!AC) return;
+  const want=['menu','summary','lobby','brief'].includes(state)?(state==='menu'&&menuScreen==='hangar'?'hangar':'music'):null;
+  if(want===musMode) return; musMode=want; musStop(); if(want) musStart(want);
 }
 document.addEventListener('pointerdown',()=>{ initAudio(); if(AC.state==='suspended') AC.resume(); syncIntro(); });
 // Radio de la tripulación: voces grabadas (texto a voz) en el idioma de la nación, con filtro de radio, estática y corte.
@@ -1952,7 +1990,7 @@ function makeTank(crew,key,x,z,heading,id){
     target:null,thinkT:0,goal:null,path:null,stuckT:0,revT:0,errScale:1,prefRange:rand(110,180),angleOff:rand(.3,.5)*(Math.random()<.5?-1:1),
     eY:rand(-1,1)*.035,eP:rand(-1,1)*.01,visP:false,immuneT:IMMUNE,spottedT:0,mgHeat:0,mgLock:false,mgNext:0,mgN:0,mgBurst:0,moved:5};
   const seats=T.crew===3?['driver','gunner','commander']:T.crew===5?['driver','gunner','commander','loader','codriver']:['driver','gunner','commander','loader'];
-  t.crewM=seats.map(st=>({seat:st,hp:100,alive:true})); t.mod={engine:100,breech:100,trans:100}; t.trackT=0; t.engT=0; t.breechT=0; t.fireT=0; t.swapT=0;
+  t.crewM=seats.map(st=>({seat:st,hp:100,alive:true})); t.mod={engine:100,breech:100,trans:100}; t.ext=2; t.trackT=0; t.engT=0; t.breechT=0; t.fireT=0; t.swapT=0;
   t.ammoIdx=0; t.thermal=false; t.troops=T.troops||0; t.id=id||++net.seq; t.mgCount=0;
   applyLevel(t,crew&&crew.isPlayer?tankLv(key):crew&&crew.lvs?crew.lvs[key]||1:1);
   if(!crew.isPlayer){ t.sk=clamp((crew.team===1?enemySkill():.6)+rand(-.07,.07),.2,1); t.reloadMax*=1.3-t.sk*.3; t.eY*=1.6-t.sk; t.eP*=1.6-t.sk; t.smokeN=t.sk>.8?2:t.sk>.45?1:0; t.mode='adv'; }
@@ -1962,7 +2000,13 @@ function makeTank(crew,key,x,z,heading,id){
   t.pos=root.position; t.pos.set(x,heightAt(x,z),z);
   tanks.push(t); placeOnGround(t,1); return t;
 }
+const looseTrkMat=new THREE.MeshLambertMaterial({color:0x2a2825});
 function tankFX(t,dt){
+  if(t.trackT>0&&!t.looseTrk&&!t.dead){ const M=t.T.m, side=Math.random()<.5?1:-1, c=Math.cos(t.heading), s=Math.sin(t.heading);
+    const m=new THREE.Mesh(new THREE.BoxGeometry(.55,.12,M.L*.75),looseTrkMat); const x=t.pos.x+c*side*(M.W/2+.9)-s*M.L*.15, z=t.pos.z-s*side*(M.W/2+.9)-c*M.L*.15;
+    m.position.set(x,heightAt(x,z)+.08,z); m.rotation.y=t.heading+rand(-.25,.25); scene.add(m); t.looseTrk=m; }
+  else if((!(t.trackT>0)||t.dead)&&t.looseTrk&&!(t.dead&&t.deadT<30)){ scene.remove(t.looseTrk); t.looseTrk.geometry.dispose(); t.looseTrk=null; }
+  if(net.guest&&t.fireT>0&&!t.dead){ t.fxF=(t.fxF||0)-dt; if(t.fxF<=0){ t.fxF=.35; puff(t.pos.clone().add(new THREE.Vector3(rand(-1,1),t.topH,rand(-1,1))),0xff7020,rand(2,3),.6,2,1,true); puff(t.pos.clone().setY(t.pos.y+t.topH+1),0x2a2622,rand(3,5),2,3,.6); } }
   if(t.ammoCount){ if(t.mgRel>0) t.mgRel=Math.max(0,t.mgRel-dt);
     const mine=t.team===0?1:-1, Z=zones.find(Z=>Z.owner===mine&&Math.hypot(Z.x-t.pos.x,Z.z-t.pos.z)<Z.r);
     const full=t.ammoCount.every((c,i)=>c>=t.ammoMax[i])&&t.mgBelts>=3&&t.mgBelt>=250;
@@ -2004,7 +2048,7 @@ function initAmmo(t){ const L=t.T.ammo, tot=t.T.auto?Math.round(t.T.auto.mag*14)
   const sh=L.length===1?[1]:L.length===2?[.6,.4]:[.5,.3,.2]; t.ammoMax=L.map((_,i)=>Math.max(2,Math.round(tot*sh[i]*(t.lv>=4?1.2:1)))); t.ammoCount=t.ammoMax.slice(); t.mgBelt=250; t.mgBelts=3; t.mgRel=0; }
 const needsRepair=t=>t.trackT>0||t.mod.engine<100||t.mod.breech<100||t.mod.trans<100||t.fireT>0;
 function removeTank(t){
-  scene.remove(t.root); const i=tanks.indexOf(t); if(i>=0)tanks.splice(i,1);
+  scene.remove(t.root); if(t.looseTrk){ scene.remove(t.looseTrk); t.looseTrk=null; } const i=tanks.indexOf(t); if(i>=0)tanks.splice(i,1);
   colliders=colliders.filter(c=>c.userData.tank!==t);
 }
 function placeOnGround(t,dt){
@@ -2266,18 +2310,18 @@ function compPos(t){ // posiciones locales del casco (x lateral, y alto, z adela
   return out;
 }
 const SPALL={ke:{base:140,r0:.25,sp:.32,len:6},heat:{base:110,r0:.15,sp:.16,len:4},hesh:{base:95,r0:.7,sp:.5,len:1.8},he:{base:85,r0:.8,sp:.45,len:2.5}};
-function spall(t,pointW,dirW,kind,by,sc=1){
+function spall(t,pointW,dirW,kind,by,sc=1,over=1){
   t.lastBy=by; noteHit(t,by);
   t.root.updateMatrixWorld(true);
   const inv=new THREE.Matrix4().copy(t.root.matrixWorld).invert(), P=pointW.clone().applyMatrix4(inv);
-  const d=dirW.clone().transformDirection(inv).normalize(), S=SPALL[kind], C=compPos(t), hurt=[];
+  const d=dirW.clone().transformDirection(inv).normalize(), S0=SPALL[kind], ov=clamp(over,1,2.2), S={...S0,len:S0.len*(.8+ov*.35),base:S0.base*(.9+ov*.15)}, C=compPos(t), hurt=[];
   let rack=false;
   for(const [name,c] of Object.entries(C)){
     const s0=clamp(c.clone().sub(P).dot(d),0,S.len), q=P.clone().addScaledVector(d,s0), dist=c.distanceTo(q), r=S.r0+s0*S.sp+.35;
     if(dist>r) continue;
     const dmg=S.base*sc*(1-dist/r)*(1-s0/(S.len*1.5))*rand(.75,1.15);
-    if(name==='ammo'||name==='ammo2'){ if(dmg>45&&Math.random()<.45) rack=true; else if(Math.random()<.3) t.fireT=Math.max(t.fireT,8); hurt.push('munición'); continue; }
-    if(name==='engine'){ t.mod.engine-=dmg; if(t.mod.engine<=0){t.engT=20; hurt.push('motor destruido'); if(Math.random()<.4) t.fireT=8;} else hurt.push('motor'); continue; }
+    if(name==='ammo'||name==='ammo2'){ if(dmg>45&&Math.random()<.45) rack=true; else if(Math.random()<.3){ t.fireT=Math.max(t.fireT,30); hurt.push('¡incendio!'); } hurt.push('munición'); continue; }
+    if(name==='engine'){ t.mod.engine-=dmg; if(t.mod.engine<=0){t.engT=20; hurt.push('motor destruido'); if(Math.random()<.4){ t.fireT=Math.max(t.fireT,30); hurt.push('¡incendio!'); } } else hurt.push('motor'); continue; }
     if(name==='trans'){ t.mod.trans-=dmg; hurt.push(t.mod.trans<=0?'transmisión rota':'transmisión'); continue; }
     if(name==='breech'){ t.mod.breech-=dmg; if(t.mod.breech<=0){t.breechT=12; hurt.push('cañón inutilizado');} continue; }
     const m=t.crewM.find(x=>x.alive&&x.seat===name); if(!m) continue;
@@ -2305,7 +2349,12 @@ function hitTank(by,hit,dir,pen,kind,A){
   if(by&&!by.inf) by.shotAt={tank:t,t:now};
   if((by.isPlayer||isRemote(by))&&kind==='shell'&&by.team===0){ playerFocus=t; playerFocusT=now; t.spottedT=6; }
   const wn=hit.face.normal.clone().transformDirection(hit.object.matrixWorld);
-  const cos=Math.abs(dir.dot(wn)), armor=t.T.armor[zone][face];
+  const cos=Math.abs(dir.dot(wn)); let armor=t.T.armor[zone][face], spot='';
+  // Puntos débiles y fuertes: placa inferior, tronera del conductor, anillo de la torre y mantelete del cañón
+  if(kind!=='mg'&&(face==='front'||face==='side')){ t.root.updateMatrixWorld(true); const q=hit.point.clone().applyMatrix4(new THREE.Matrix4().copy(t.root.matrixWorld).invert()), M=t.T.m, hy=(M.wr*2+.25)*.55;
+    if(zone==='hull'&&face==='front'){ if(q.y<hy+M.H*.38){ armor*=.62; spot='placa inferior'; } else if(q.y>hy+M.H*.62&&Math.abs(q.x+M.W*.25)<.35){ armor*=.7; spot='tronera del conductor'; } }
+    else if(zone==='turret'){ const c=Math.cos(t.turretYaw), sn=Math.sin(t.turretYaw), lx=q.x*c-(q.z-M.tz)*sn;
+      if(q.y<hy+M.H+M.th*.2){ armor*=.7; spot='anillo de la torre'; } else if(face==='front'&&Math.abs(lx)<M.tw*.18){ armor*=1.25; spot='mantelete'; } } }
   let res, hurt=[];
   if(kind==='mg'){
     if(pen*rand(.9,1.1)>armor/Math.max(cos,.2)){ res='mg'; damage(t,1.6,by,false); } else res='No penetró';
@@ -2319,7 +2368,7 @@ function hitTank(by,hit,dir,pen,kind,A){
     if(cos<ric&&k!=='he') res='Rebote';
     else if(pen*rand(.9,1.1)>eff){
       res='Penetración'; if(!(A.sc<1)||Math.random()<.25) addSP(by,15,20);
-      hurt=hurt.concat(spall(t,hit.point,k==='hesh'||k==='he'?wn.clone().negate():dir,k,by,A.sc||1));
+      hurt=hurt.concat(spall(t,hit.point,k==='hesh'||k==='he'?wn.clone().negate():dir,k,by,A.sc||1,k==='ke'?pen/eff:1));
       if(t.dead) res=t.rack?'Estiba de munición':'Destruido';
     } else {
       res='No penetró';
@@ -2334,7 +2383,7 @@ function hitTank(by,hit,dir,pen,kind,A){
   if(kind==='shell'&&t.isPlayer){ if(res==='Penetración') radio('¡Nos penetraron!',2); else if(res==='Rebote') radio('¡Rebotó en el blindaje!'); else if(res==='No penetró') radio('El blindaje aguantó.'); }
   if(by.isPlayer||isRemote(by)){
     if(kind==='mg'){ if(by.isPlayer?mgMsgT<=0:(by.mgMsgT||0)<now){ by.mgMsgT=now+.8; tell(by,res==='mg'?(t.dead?'Destruido':'Ametralladora: perfora el blindaje'):'Ametralladora: no perfora', res==='mg'?'var(--amber)':'var(--paper)'); if(by.isPlayer) mgMsgT=.8; } }
-    else tell(by,res+(['Penetración','No penetró','Rebote'].includes(res)?' · '+FACE_ES[face]:'')+det, ['Penetración','Destruido','Estiba de munición'].includes(res)?'var(--amber)':'var(--paper)');
+    else tell(by,res+(['Penetración','No penetró','Rebote'].includes(res)?' · '+(spot||FACE_ES[face]):'')+det, ['Penetración','Destruido','Estiba de munición'].includes(res)?'var(--amber)':'var(--paper)');
   }
   if(t.isPlayer&&by) hitFrom(by.pos.x,by.pos.z,kind==='mg'?.5:1);
   else if(by&&isRemote(t)) netTo(t,{t:'hf',x:by.pos.x,z:by.pos.z,s:kind==='mg'?.5:1});
@@ -2374,6 +2423,14 @@ function callCrew(t){
   if(!best){ tell(t,'No hay infantería aliada a menos de 150 m','var(--enemy)'); return; }
   best.board=t; best.goal=null; best.target=null; t.boarding=best; tell(t,`Un soldado viene a reemplazar al ${SEAT_RADIO[lost[0].seat]||'tripulante'} (${Math.round(bd)} m)`,'var(--ally)');
 }
+function extinguish(t){
+  if(!t||t.dead) return false;
+  if(!(t.fireT>0)){ tell(t,'No hay fuego a bordo','var(--paper)'); return false; }
+  if(!(t.ext>0)){ tell(t,'No quedan extintores: reparar también apaga el fuego','var(--enemy)'); return false; }
+  t.ext--; t.fireT=0; t.fireAge=0; t.extAt=0; tell(t,`Fuego apagado · quedan ${t.ext} extintores`,'var(--ally)'); if(t.isPlayer) radio('¡Tripulación lista! ¡Adelante!');
+  for(let i=0;i<6;i++) puff(t.pos.clone().add(new THREE.Vector3(rand(-1.5,1.5),t.topH+rand(0,1),rand(-1.5,1.5))),0xeeeeee,rand(1.5,2.5),1.2,1.2,.7);
+  return true;
+}
 function startRepair(t){
   if(t.repairT>0){ t.repairT=0; tell(t,'Reparación cancelada','var(--paper)'); return; }
   if(!needsRepair(t)){ tell(t,'No hay nada que reparar','var(--paper)'); return; }
@@ -2394,7 +2451,10 @@ function updateModules(t,dt){
     for(const seat of ['gunner','driver']) if(!manned(t,seat)){ const m=t.crewM.find(x=>x.alive&&x.seat==='loader')||t.crewM.find(x=>x.alive&&x.seat==='commander'); if(m) m.seat=seat; }
     tell(t,'La tripulación cambió de puesto','var(--paper)'); } }
   if(t.fireT>0){ t.fireT-=dt; t.fireTick=(t.fireTick||0)-dt;
+    t.fireAge=(t.fireAge||0)+dt;
+    if(!t.isPlayer&&!t.net&&t.ext>0&&t.fireAge>(t.extAt||(t.extAt=rand(2,5)))) extinguish(t); // la IA usa el extintor
     if(t.fireTick<=0){ t.fireTick=1; const live=t.crewM.filter(m=>m.alive); if(live.length){const m=live[(Math.random()*live.length)|0]; m.hp-=7; if(m.hp<=0)m.alive=false;}
+      if(Math.random()<.012&&t.fireT>0){ tell(t,'¡El fuego llegó a la munición!','var(--enemy)'); destroy(t,t.lastBy&&t.lastBy.team!==t.team?t.lastBy:null,true); return; }
       afterHit(t,t.lastBy||null,false); puff(t.pos.clone().add(new THREE.Vector3(rand(-1,1),t.topH,rand(-1,1))),0xff7020,rand(2,3),.6,2,1,true); puff(t.pos.clone().setY(t.pos.y+t.topH+1),0x2a2622,rand(3,5),2,3,.6); } }
 }
 
@@ -2502,7 +2562,7 @@ function splash(p,by,r,power,bldDmg){
     if(t.immuneT<=0) addSP(by,10,10);
     if(t.isPlayer) hitFrom(p.x,p.z,1);
     if(t.immuneT<=0){ if(Math.random()<k*.85) t.trackT=Math.max(t.trackT,10); if(Math.random()<k*.5){t.mod.engine-=60*k*power; if(t.mod.engine<=0)t.engT=20;}
-      if(d<2.5&&top<=power*25&&Math.random()<.5) t.fireT=Math.max(t.fireT,8);
+      if(d<2.5&&top<=power*25&&Math.random()<.5) t.fireT=Math.max(t.fireT,30);
       // Esquirlas: atraviesan blindaje fino y hieren a la tripulación (más si el tanque es liviano o la explosión fue cerca)
       const sh=clamp(25/Math.max(side,8),.15,2.5)*k*power*.55; for(const m of t.crewM) if(m.alive&&Math.random()<sh){ m.hp-=rand(25,55)*k*power; if(m.hp<=0){m.alive=false; if(t.isPlayer) hitMsg('Esquirlas: tripulante herido','var(--enemy)');} }
       if(Math.random()<k*.35*power) { t.mod.breech-=40*k; if(t.mod.breech<=0){t.mod.breech=0;t.breechT=12;} } }
@@ -2800,6 +2860,7 @@ const infantry=[], noises=[];
 const iBody=new THREE.BoxGeometry(.5,.75,.3), iLegs=new THREE.BoxGeometry(.42,.8,.26), iHead=new THREE.SphereGeometry(.17,8,6), iGun=new THREE.BoxGeometry(.07,.07,.95), iTube=new THREE.CylinderGeometry(.08,.08,1.1,6);
 const skinMat=new THREE.MeshLambertMaterial({color:0xc69c78}), CIV_COL=[0x2f5d8a,0xb33a3a,0xd9c27a,0x5e8a4a,0xeeeeee,0x6b4e8a,0xd98a3a];
 const RIFLE={n:'Fusil',kind:'ke',pen:8,v:600}, ROCKET={n:'Cohete antitanque',kind:'heat',pen:330,v:150};
+let infSeq=0;
 function makePerson(kind,team,x,z){
   const g=new THREE.Group(), civ=kind==='civ';
   const cloth=new THREE.MeshLambertMaterial({color:civ?CIV_COL[(Math.random()*CIV_COL.length)|0]:new THREE.Color(NATIONS[team===0?allyNation:foeNation].camo[0]).multiplyScalar(.85)});
@@ -2812,7 +2873,7 @@ function makePerson(kind,team,x,z){
   g.position.set(x,heightAt(x,z),z); scene.add(g);
   const P={kind,team,g,pos:g.position,dead:false,deadT:0,inf:true,isPlayer:false,heading:rand(0,6.28),thinkT:rand(0,.5),fireT:rand(1,4),target:null,goal:null,
     flee:false,name:kind==='civ'?'Civil':kind==='at'?'Soldado antitanque':'Fusilero',T:{label:'Infantería',m:{gr:.05}},topH:1.7,aimH:1.1,R:.5,bob:rand(0,6)};
-  infantry.push(P); return P;
+  P.id=++infSeq; infantry.push(P); return P;
 }
 function dismount(t){
   if(!t.troops||t.dead) return false; const n=t.troops; t.troops=0;
@@ -2837,7 +2898,7 @@ function spawnCivilians(n){
 }
 function noise(p,r){ noises.push({x:p.x,z:p.z,r,t:now}); if(noises.length>40) noises.shift(); }
 function killInf(P,by,how){
-  if(P.dead||P.kind==='civ') return; P.dead=true; P.deadT=0; P.g.rotation.x=-Math.PI/2*(Math.random()<.5?1:-1); P.g.position.y+=.25;
+  if(P.dead||P.kind==='civ'||net.guest) return; P.dead=true; P.deadT=0; P.g.rotation.x=-Math.PI/2*(Math.random()<.5?1:-1); P.g.position.y+=.25;
   if(by&&by.crew&&by.team!==P.team){ addSP(by,8,10); if(by.isPlayer) hitMsg(`${P.kind==='at'?'Antitanque':'Fusilero'} abatido`,'var(--amber)'); }
 }
 function infBlast(p,r,by){ for(const P of infantry){ if(P.dead||P.kind==='civ'||(by&&P.team===by.team)) continue; const d=P.pos.distanceTo(p); if(d<r&&Math.random()<(d<r*.6?1:.5)) killInf(P,by); } }
@@ -2854,7 +2915,11 @@ function walk(P,tx,tz,spd,dt){
 }
 const infEye=P=>new THREE.Vector3(P.pos.x,P.pos.y+1.5,P.pos.z);
 function updateInfantry(dt){
-  if(!['play','deploy','spectate','end'].includes(state)) return;
+  if(!['play','deploy','spectate','end','paused','brief'].includes(state)) return;
+  if(net.guest){ for(const P of infantry){ if(P.dead||!P.tgt) continue; const g=P.tgt, k=Math.min(1,dt*10);
+      if(Math.hypot(g.x-P.pos.x,g.z-P.pos.z)>15){ P.pos.x=g.x; P.pos.z=g.z; } else { P.pos.x+=(g.x-P.pos.x)*k; P.pos.z+=(g.z-P.pos.z)*k; }
+      P.heading=wrap(P.heading+wrap(g.h-P.heading)*k); if(g.mv) P.bob+=dt*8; P.pos.y=heightAt(P.pos.x,P.pos.z)+(g.mv?Math.abs(Math.sin(P.bob))*.08:0); P.g.rotation.y=P.heading; }
+    return; }
   for(let i=infantry.length-1;i>=0;i--){ const P=infantry[i];
     if(P.dead){ P.deadT+=dt; if(P.deadT>25){scene.remove(P.g);infantry.splice(i,1);} continue; }
     // tanques enemigos que pasan por encima
@@ -2890,10 +2955,10 @@ function updateInfantry(dt){
             const dx=aim.x-o.x, dz=aim.z-o.z, hd=Math.hypot(dx,dz), yaw=Math.atan2(dx,dz)+rand(-1,1)*.012, pit=ballisticPitch(hd,aim.y-o.y,ROCKET.v)+rand(-1,1)*.01;
             const v=new THREE.Vector3(Math.sin(yaw)*Math.cos(pit),Math.sin(pit),Math.cos(yaw)*Math.cos(pit)).multiplyScalar(ROCKET.v);
             const m=new THREE.Mesh(shellGeo,SHELL_MAT.heat); m.position.copy(o); scene.add(m);
-            shells.push({p:o.clone(),v,owner:P,m,travel:0,life:4,A:ROCKET,rocket:true});
+            shells.push({p:o.clone(),v,owner:P,m,travel:0,life:4,A:ROCKET,rocket:true}); if(net.host) netAll({t:'rk',p:[r2(o.x),r2(o.y),r2(o.z)],v:[r2(v.x),r2(v.y),r2(v.z)]});
             for(let k=0;k<4;k++) puff(o.clone().addScaledVector(v.clone().normalize(),-k*.6),0xcfc8b8,rand(1.5,2.5),1.2,.4,.6);
             boom(distVol(o,.4),.5,1500); noise(o,90);
-          } else if(P.kind==='rifle'){ P.fireT=rand(.7,1.5); const dir=aim.clone().sub(o).normalize();
+          } else if(P.kind==='rifle'){ P.fireT=rand(.7,1.5); const dir=aim.clone().sub(o).normalize(); P.shotP=aim.clone();
             tracer(o,aim.clone().add(new THREE.Vector3(rand(-1,1),rand(-.5,.5),rand(-1,1)).multiplyScalar(d*.01)),P.team===0?0xffd080:0xff9a70);
             if(T.inf){ if(Math.random()<clamp(.35-d/400,.06,.3)) killInf(T,P); } else debris(aim,1,sparkMat,2,.4);
             boom(distVol(o,.06),.05,3000); noise(o,50); }
@@ -2902,11 +2967,11 @@ function updateInfantry(dt){
       else if(P.goal&&W.bridge&&Math.sign(P.pos.x)!==Math.sign(P.goal.x)){ walk(P,-Math.sign(P.pos.x)*(DECK_END+3),0,2.6,dt); moving=2.6; }
       else if(P.goal){ if(walk(P,P.goal.x,P.goal.z,2.6,dt)) P.goal=Math.random()<.3?null:{x:P.pos.x+rand(-5,5),z:P.pos.z+rand(-5,5)}; moving=2.6; }
     }
-    P.pos.y=heightAt(P.pos.x,P.pos.z)+(moving?Math.abs(Math.sin(P.bob))*.08:0); P.g.rotation.y=P.heading;
+    P.mv=moving?1:0; P.pos.y=heightAt(P.pos.x,P.pos.z)+(moving?Math.abs(Math.sin(P.bob))*.08:0); P.g.rotation.y=P.heading;
   }
   // refuerzos: escuadras de 4 hasta 2 por bando
   updateInfantry.t=(updateInfantry.t||0)-dt;
-  if(updateInfantry.t<=0&&!tut&&!net.on){ updateInfantry.t=40; for(const tm of [0,1]) if(infantry.filter(P=>!P.dead&&P.team===tm).length<5) spawnSquad(tm); }
+  if(updateInfantry.t<=0&&!tut&&!net.guest){ updateInfantry.t=40; for(const tm of [0,1]) if(infantry.filter(P=>!P.dead&&P.team===tm).length<5) spawnSquad(tm); }
 }
 
 /* ---------- IA ---------- */
@@ -3103,7 +3168,7 @@ const teamNation=team=>team===0?allyNation:foeNation;
 const ACTIONS=[['fwd','Avanzar','KeyW'],['back','Retroceder','KeyS'],['left','Girar a la izquierda','KeyA'],['right','Girar a la derecha','KeyD'],
   ['scope','Mira telescópica (mantener)','ShiftLeft'],['mg','Ametralladora','Space'],['ammo1','Munición 1','Digit1'],['ammo2','Munición 2','Digit2'],['ammo3','Munición 3','Digit3'],
   ['ammoAuto','Munición automática','Digit4'],['arty','Artillería','KeyF'],['air','Ataque aéreo','KeyG'],['nuke','Nuke','KeyN'],['thermal','Visión térmica','KeyT'],
-  ['aerial','Vista aérea (la IA maneja)','KeyV'],['troops','Bajar la infantería','KeyE'],['fullscreen','Pantalla completa','KeyP'],['repair','Reparar','KeyR'],['crewSwap','Reemplazar tripulante (infantería)','KeyC'],['smoke','Granadas de humo','KeyX'],['ping','Marcar: enemigo / punto / atención','KeyQ']];
+  ['aerial','Vista aérea (la IA maneja)','KeyV'],['troops','Bajar la infantería','KeyE'],['fullscreen','Pantalla completa','KeyP'],['repair','Reparar','KeyR'],['crewSwap','Reemplazar tripulante (infantería)','KeyC'],['smoke','Granadas de humo','KeyX'],['ping','Marcar: enemigo / punto / atención','KeyQ'],['ext','Extintor (apagar incendio)','KeyZ']];
 const DEF_BINDS=Object.fromEntries(ACTIONS.map(a=>[a[0],a[2]]));
 let binds={...DEF_BINDS}, bindCapture=null;
 const keyName=c=>!c?'—':c.startsWith('Key')?c.slice(3):c.startsWith('Digit')?c.slice(5):c.startsWith('Numpad')?'Num '+c.slice(6):
@@ -3260,7 +3325,7 @@ function updateAmmoBar(t){
   const slots=[...L.map((A,i)=>({id:'a'+i,key:binds['ammo'+(i+1)],ic:shellIcon(A.kind),title:`${A.n} (${KIND_ES[A.kind]})`})),
     ...(L.length>1?[{id:'auto',key:binds.ammoAuto,ic:'<span style="font-size:13px">AUTO</span>',title:'Munición automática'}]:[]),{gap:1},
     {id:'arty',key:binds.arty,ic:'✸',title:'Artillería'},{id:'air',key:binds.air,ic:'✈',title:'Ataque aéreo'},{id:'nuke',key:binds.nuke,ic:'☢',title:'Nuke'},
-    {id:'rep',key:binds.repair,ic:'🔧',title:'Reparar'},{id:'crew',key:binds.crewSwap,ic:'👤',title:'Reemplazar tripulante con infantería'},{id:'smk',key:binds.smoke,ic:'☁',title:'Granadas de humo (nivel 2)'},
+    {id:'rep',key:binds.repair,ic:'🔧',title:'Reparar'},{id:'crew',key:binds.crewSwap,ic:'👤',title:'Reemplazar tripulante con infantería'},{id:'smk',key:binds.smoke,ic:'☁',title:'Granadas de humo (nivel 2)'},{id:'ext',key:binds.ext,ic:'🧯',title:'Extintor'},
     ...(t.T.thermal?[{id:'th',key:binds.thermal,ic:'◐',title:'Visión térmica'}]:[]),...(t.troops?[{id:'tr',key:binds.troops,ic:'⇩',title:'Bajar infantería'}]:[])];
   const sig=t.T.label+'|'+JSON.stringify(binds);
   if(box._sig!==sig){ box._sig=sig; box.innerHTML=slots.map(S=>S.gap?'<span class="gap"></span>':`<div class="as" data-id="${S.id}" title="${S.title}"><div class="k">${keyName(S.key)}</div><div class="ic">${S.ic}<span class="n"></span><span class="cd"></span></div></div>`).join('');
@@ -3273,8 +3338,9 @@ function updateAmmoBar(t){
   set('air',c.airCD>0||c.sp<AIR_COST?' off':'',c.airCD>0?Math.ceil(c.airCD):c.sp<AIR_COST?AIR_COST:'',c.airCD/AIR_CD);
   set('nuke',nuke||c.sp<NUKE_COST?' off':'',c.sp<NUKE_COST?NUKE_COST:'',0);
   set('rep',t.repairT>0?' sel':needsRepair(t)?'':' off',t.repairT>0?Math.ceil(t.repairT):'',t.repairT>0?t.repairT/t.repairMax:0);
-  const lost=t.crewM.length-crewAlive(t); set('crew',lost&&!t.boarding&&!net.on?'':' off',lost||'',0);
+  const lost=t.crewM.length-crewAlive(t); set('crew',lost&&!t.boarding?'':' off',lost||'',0);
   set('smk',t.smoke>0?'':' off',t.lv>=2?t.smoke:'🔒',0);
+  set('ext',t.fireT>0&&t.ext>0?' sel':t.ext>0?'':' off',t.ext,0);
   set('th',t.thermal?' sel':'','',0);
   // Barras de arma (cañón: proyectiles del tipo cargado; ametralladora: cintas de repuesto + cinta actual)
   const gn=t.ammoCount?t.ammoCount[t.ammoIdx]:'∞'; txt('gunN',gn); { const B=$('gunBar'), w=(t.reloadT>0?Math.round((1-t.reloadT/full)*100):100)+'%'; if(B._w!==w){B._w=w;B.style.width=w;} }
@@ -3436,7 +3502,7 @@ function startBattle(spectator=false,forceMap=null,special=null,noBrief=false){ 
   crews=[...(playerCrew?[playerCrew]:[]),...guests.map(remoteCrew),...allyCrews,...NATIONS[foeNation].names.slice(0,Math.max(1,5-gB.length)).map(n=>newCrew(n,1,foeNation,false))];
   if(net.host){ net.startMsg={t:'start',seed:net.seed,map:builtKey,ally:allyNation,foe:foeNation,br:battleBR}; net.inBattle=true; guests.forEach(c=>c.send({...net.startMsg,side:sideOf(c)})); }
   for(const c of crews){ if(c.isPlayer||c.peer) continue; const pts=W.sp[c.team]; spawnCrew(c,c.lineup[0],pts[(Math.random()*pts.length)|0]); }
-  now=0; noises.length=0; battleKills=0; lastKillCrew=null; teamSup[0]={arty:20,air:40}; teamSup[1]={arty:20,air:40}; updateInfantry.t=40; if(!net.on){ for(const tm of [0,1]){spawnSquad(tm);spawnSquad(tm);} spawnCivilians(14); } updateHud();
+  now=0; noises.length=0; battleKills=0; lastKillCrew=null; teamSup[0]={arty:20,air:40}; teamSup[1]={arty:20,air:40}; updateInfantry.t=40; if(!net.guest){ for(const tm of [0,1]){spawnSquad(tm);spawnSquad(tm);} spawnCivilians(14); } updateHud();
   if(noBrief) openDeploy(); else openBriefing(spectator);
 }
 let allyMixed=false;
@@ -3882,13 +3948,15 @@ document.addEventListener('keydown',e=>{
   keys[e.code]=true;
   if(e.code===binds.ping&&state==='play'&&player&&!player.dead&&!e.repeat){ doPing(); return; }
   if(net.guest&&state==='play'&&player&&!player.dead&&lastAim&&[binds.arty,binds.air,binds.nuke].includes(e.code)&&!e.repeat){ net.hostConn.send({t:'sup',k:e.code===binds.arty?'arty':e.code===binds.air?'air':'nuke',p:[lastAim.x,lastAim.y,lastAim.z]}); return; }
-  if(net.on&&state==='play'&&[binds.aerial,binds.troops].includes(e.code)){ hitMsg('No disponible en online (por ahora)','var(--paper)'); return; }
+  if(net.guest&&state==='play'&&e.code===binds.troops&&player&&!player.dead&&!e.repeat){ net.hostConn.send({t:'troops'}); return; }
+  if(net.on&&state==='play'&&[binds.aerial].includes(e.code)){ hitMsg('No disponible en online (por ahora)','var(--paper)'); return; }
   if(net.guest&&state==='play'&&player&&!player.dead&&(e.code===binds.repair||e.code===binds.crewSwap)&&!e.repeat){ net.hostConn.send({t:e.code===binds.repair?'rep':'crew'}); return; }
   if(e.code===binds.fullscreen&&!e.repeat) toggleFS();
   if(state==='play'&&player&&!player.dead){
     for(let i=0;i<3;i++) if(e.code===binds['ammo'+(i+1)]&&i<player.T.ammo.length){ if(player.ammoCount&&player.ammoCount[i]<=0) hitMsg('No queda munición de ese tipo','var(--enemy)'); else selectAmmo(player,i); }
     if(e.code===binds.repair) startRepair(player);
     if(e.code===binds.smoke&&!e.repeat) deploySmoke(player);
+    if(e.code===binds.ext&&!e.repeat){ if(net.guest) net.hostConn.send({t:'ext'}); else extinguish(player); }
     if(e.code===binds.crewSwap) callCrew(player);
     if(e.code===binds.ammoAuto&&player.T.ammo.length>1){ if(tut&&tut.manual) tut.autoBack=true; player.ammoManual=null; hitMsg('Munición automática','var(--paper)'); } }
   if(state==='spectate'){ if(e.code==='ArrowRight'){specIdx++;aerial=false;} if(e.code==='ArrowLeft'){specIdx--;aerial=false;} if(e.code==='Space'){aerial=!aerial;e.preventDefault();}
@@ -3944,7 +4012,7 @@ function loop(ts){
       }
       if(!net.guest){ updateModules(t,dt); if(t.dead) continue; }
       tankFX(t,dt);
-      if(t.troops&&!t.isPlayer&&!net.on){ const mine=t.team===0?1:-1; if(zones.some(Z=>Z.owner!==mine&&Math.hypot(Z.x-t.pos.x,Z.z-t.pos.z)<Z.r+25)||(t.target&&t.target.pos.distanceTo(t.pos)<60)) dismount(t); }
+      if(t.troops&&!t.isPlayer&&!t.net&&!net.guest){ const mine=t.team===0?1:-1; if(zones.some(Z=>Z.owner!==mine&&Math.hypot(Z.x-t.pos.x,Z.z-t.pos.z)<Z.r+25)||(t.target&&t.target.pos.distanceTo(t.pos)<60)) dismount(t); }
       if(t.net) netLerp(t,dt); else if(!t.isPlayer&&!t.dummy) updateAI(t,dt); else if(t.dummy) drive(t,0,0,dt);
     }
     gone.forEach(removeTank);
@@ -3980,7 +4048,7 @@ function loop(ts){
   document.body.classList.toggle('board',boardMode);
   { const th=thermalOn(); if(th!==lastTh){ lastTh=th; hemi.intensity=th?.22:.75; sun.intensity=th?.15:.85;
       const sky=th?0x1c1f1c:(W.sky||0xbcc6c4); scene.background.set(sky); scene.fog.color.set(sky); document.body.classList.toggle('thermal',th); } }
-  document.body.classList.toggle('hangar',hangarOn());
+  document.body.classList.toggle('hangar',hangarOn()); syncIntro(); if(!(state==='play'&&player&&!player.dead)) quietEngine();
   if(!(hangarOn()&&hgRender(dt))) renderer.render(scene,camera);
   drawOverlay(); if(state!=='menu'&&state!=='summary') drawMinimap();
 }
@@ -4098,6 +4166,8 @@ function hostData(conn,d){
     else if(d.k==='nuke'){ if(!callNuke(t)) tell(t,nuke?'Ya hay un ataque nuclear en curso':`Nuke: te faltan ${NUKE_COST-c.sp} puntos`,'var(--paper)'); }
   } else if(d.t==='ping'){
     if(!Array.isArray(d.p)) return; const P=d.p.map(Number); if(!P.every(isFinite)) return; makePing(c.team,P[0],P[1],P[2],d.k,c.name,d.zid,true);
+  } else if(d.t==='ext'){ const t=c.tank; if(t&&!t.dead) extinguish(t);
+  } else if(d.t==='troops'){ const t=c.tank; if(t&&!t.dead&&!dismount(t)) tell(t,t.T.troops?'Ya bajaste a la infantería':'Este vehículo no lleva tropas','var(--paper)');
   } else if(d.t==='oob'){
     const t=c.tank; if(t&&!t.dead&&!t.a10){ t.a10=true; a10Strike(t); }
   } else if(d.t==='smk'){
@@ -4122,11 +4192,12 @@ function netTick(dt){
   net.sendT+=dt;
   if(net.host){
     if(net.sendT<1/15) return; net.sendT=0;
-    const tk=tanks.map(t=>{ const r=[t.id,t.key,t.crew?t.crew.nation:t.T.nation,t.team,t.name,r2(t.pos.x),r2(t.pos.z),r3(t.heading),r3(t.turretYaw),r3(t.gunPitch),r2(t.speed),t.dead?(t.rack?2:1):0,t.immuneT>0?1:0,t.spottedT>0?1:0,t.mgCount]; t.mgCount=0; return r; });
-    const base={t:'s',tk,z:zones.map(Z=>[Math.round(Z.cap),Z.owner]),k:[r2(tickets[0]),r2(tickets[1])]};
+    const tk=tanks.map(t=>{ const r=[t.id,t.key,t.crew?t.crew.nation:t.T.nation,t.team,t.name,r2(t.pos.x),r2(t.pos.z),r3(t.heading),r3(t.turretYaw),r3(t.gunPitch),r2(t.speed),t.dead?(t.rack?2:1):0,t.immuneT>0?1:0,t.spottedT>0?1:0,t.mgCount,t.fireT>0?1:0,t.trackT>0?1:0]; t.mgCount=0; return r; });
+    const inf=infantry.map(P=>{ const r=[P.id,P.kind==='civ'?0:P.kind==='at'?2:1,P.team,r2(P.pos.x),r2(P.pos.z),r3(P.heading||0),P.dead?1:0,P.mv|0,P.shotP?[r2(P.shotP.x),r2(P.shotP.y),r2(P.shotP.z)]:0]; P.shotP=null; return r; });
+    const base={t:'s',tk,inf,z:zones.map(Z=>[Math.round(Z.cap),Z.owner]),k:[r2(tickets[0]),r2(tickets[1])]};
     for(const conn of net.conns){ if(!conn.ready||!conn.open||!conn.crew) continue; const c=conn.crew, t=c.tank;
       const me={sp:c.sp,uses:c.uses,spawns:c.spawns,ac:r2(c.artyCD),aic:r2(c.airCD)};
-      if(t) Object.assign(me,{id:t.id,crew:t.crewM.map(m=>[m.seat,Math.round(m.hp),m.alive?1:0]),eng:Math.round(t.mod.engine),br:Math.round(t.mod.breech),tm:Math.round(t.mod.trans),tr:r2(t.trackT),et:r2(t.engT),bt:r2(t.breechT),ft:r2(t.fireT),rp:r2(t.repairT||0),rpm:r2(t.repairMax||1)});
+      if(t) Object.assign(me,{id:t.id,crew:t.crewM.map(m=>[m.seat,Math.round(m.hp),m.alive?1:0]),eng:Math.round(t.mod.engine),br:Math.round(t.mod.breech),tm:Math.round(t.mod.trans),tr:r2(t.trackT),et:r2(t.engT),bt:r2(t.breechT),ft:r2(t.fireT),rp:r2(t.repairT||0),rpm:r2(t.repairMax||1),ex:t.ext|0});
       conn.send({...base,me}); }
   } else if(net.guest){
     if(net.sendT<1/20) return; net.sendT=0;
@@ -4167,12 +4238,12 @@ function guestWait(L){
   $('lbQuit').onclick=()=>mainMenu();
   document.querySelectorAll('[data-sd]').forEach(b=>b.onclick=()=>{ net.side=+b.dataset.sd; net.hostConn.send({t:'side',s:net.side}); });
 }
-const netTanks=new Map();
+const netTanks=new Map(), netInf=new Map();
 function guestStart(m){
   if(!WORLDS[m.map]||!NATIONS[m.ally]||!NATIONS[m.foe]) return;
   net.swap=m.side?1:0;
   tut=null; curSpecial=null; spectating=false; allyNation=net.swap?m.foe:m.ally; foeNation=net.swap?m.ally:m.foe; builtKey=m.map; battleBR=+m.br||1; allyMixed=false; summary._done=false; menuScreen='home';
-  withSeed(m.seed,()=>{ clearBattle(); assignSpawns(m.ally); if(net.swap){ const a=W.sp[0]; W.sp[0]=W.sp[1]; W.sp[1]=a; } }); $('feed').innerHTML=''; netTanks.clear();
+  netInf.clear(); withSeed(m.seed,()=>{ clearBattle(); assignSpawns(m.ally); if(net.swap){ const a=W.sp[0]; W.sp[0]=W.sp[1]; W.sp[1]=a; } }); $('feed').innerHTML=''; netTanks.clear();
   playerCrew=newCrew(net.name,0,chosenNation,true); if(!playerCrew.lineup.length) playerCrew.lineup=NATIONS[chosenNation].lineup.slice(); crews=[playerCrew]; now=0; noises.length=0; updateHud();
   initAudio(); openBriefing(false);
 }
@@ -4188,15 +4259,21 @@ function guestSnap(m){
   if(!['play','deploy','end','paused','brief'].includes(state)) return;
   const seen=new Set();
   for(const r of m.tk||[]){
-    const [id,key,nat,team,name,x,z,h,ty,gp,spd,dead,imm,spot,mg]=r; if(!VEH[key]) continue; seen.add(id);
+    const [id,key,nat,team,name,x,z,h,ty,gp,spd,dead,imm,spot,mg,fire,trk]=r; if(!VEH[key]) continue; seen.add(id);
     if(player&&player.id===id){ if(dead&&!player.dead) netKill(player,dead===2); continue; }
     let t=netTanks.get(id);
     if(!t){ if(dead) continue; t=makeTank({name:String(name).slice(0,24),team:(team?1:0)^net.swap,nation:NATIONS[nat]?nat:VEH[key].nation,isPlayer:false},key,x,z,h,id); t.net=true; t.turretYaw=ty; netTanks.set(id,t); }
-    t.tgt={x,z,h,ty,gp,spd}; t.immuneT=imm?1:0; if(spot) t.spottedT=Math.max(t.spottedT,.5);
+    t.tgt={x,z,h,ty,gp,spd}; t.immuneT=imm?1:0; t.fireT=fire?1:0; t.trackT=trk?1:0; if(spot) t.spottedT=Math.max(t.spottedT,.5);
     if(dead&&!t.dead) netKill(t,dead===2);
     for(let i=0;i<Math.min(6,mg|0);i++){ t.mgLock=false; fireMG(t); }
   }
   for(const [id,t] of netTanks) if(!seen.has(id)){ removeTank(t); netTanks.delete(id); }
+  if(Array.isArray(m.inf)){ const iseen=new Set();
+    for(const r of m.inf){ const [id,kc,team,x,z,h,dead,mv,shot]=r; if(!isFinite(x)||!isFinite(z)) continue; iseen.add(id); let P=netInf.get(id);
+      if(!P){ if(dead) continue; const kind=kc===0?'civ':kc===2?'at':'rifle'; P=makePerson(kind,kind==='civ'?-1:((team?1:0)^net.swap),x,z); P.id=id; netInf.set(id,P); }
+      P.tgt={x,z,h,mv}; if(dead&&!P.dead){ P.dead=true; P.deadT=0; P.g.rotation.x=-Math.PI/2*(Math.random()<.5?1:-1); P.g.position.y+=.25; }
+      if(Array.isArray(shot)&&!P.dead){ const o=infEye(P), a=new THREE.Vector3(+shot[0],+shot[1],+shot[2]); tracer(o,a,P.team===0?0xffd080:0xff9a70); boom(distVol(o,.06),.05,3000); } }
+    for(const [id,P] of netInf) if(!iseen.has(id)){ scene.remove(P.g); const i=infantry.indexOf(P); if(i>=0) infantry.splice(i,1); netInf.delete(id); } }
   (m.z||[]).forEach((v,i)=>{ const Z=zones[i]; if(!Z) return; const was=Z.owner, sg=net.swap?-1:1; Z.cap=v[0]*sg; Z.owner=v[1]*sg;
     if(was!==Z.owner) Z.mat.color.set(Z.owner===1?0x8fd16a:Z.owner===-1?0xff5a3c:0xefe7d2);
     const el=$('zb'+Z.id); if(el){const f=el.firstChild; f.style.height=Math.abs(Z.cap)+'%'; f.style.background=Z.cap>=0?'var(--ally)':'var(--enemy)'; el.style.outlineColor=Z.owner===1?'var(--ally)':Z.owner===-1?'var(--enemy)':'var(--paper)';} });
@@ -4205,7 +4282,7 @@ function guestSnap(m){
     playerCrew.sp=me.sp|0; playerCrew.uses=me.uses||{}; playerCrew.spawns=me.spawns|0; playerCrew.artyCD=+me.ac||0; playerCrew.airCD=+me.aic||0; $('spT').textContent=playerCrew.sp;
     if(player&&me.id===player.id&&me.crew){ const before=player.crewM.reduce((a,x)=>a+Math.max(0,x.hp),0);
       player.crewM=me.crew.map(([seat,hp,al])=>({seat,hp,alive:!!al})); player.mod.engine=me.eng; player.mod.breech=me.br; player.mod.trans=me.tm??100;
-      player.trackT=me.tr; player.engT=me.et; player.breechT=me.bt; player.fireT=me.ft; player.repairT=+me.rp||0; player.repairMax=+me.rpm||1;
+      player.trackT=me.tr; player.engT=me.et; player.breechT=me.bt; player.fireT=me.ft; player.repairT=+me.rp||0; player.repairMax=+me.rpm||1; player.ext=me.ex|0;
       const after=player.crewM.reduce((a,x)=>a+Math.max(0,x.hp),0); player.hp=player.T.hp*after/(player.crewM.length*100);
       if(after<before-1){ vig=.6; $('vig').style.opacity=.9; } }
     if(state==='deploy') refreshDeploy();
@@ -4233,6 +4310,8 @@ function guestData(d){
     case 'sup': supFx(d); break;
     case 'ping': { const P=(d.p||[]).map(Number); if(P.length===3&&P.every(isFinite)) makePing(0,P[0],P[1],P[2],d.k,String(d.name||'').slice(0,24),d.zid); break; }
     case 'aw': showAward(String(d.n).slice(0,40),d.s|0); break;
+    case 'rk': { if(!Array.isArray(d.p)||!Array.isArray(d.v)) break; const o=new THREE.Vector3(...d.p.map(Number)), v=new THREE.Vector3(...d.v.map(Number)); const mm=new THREE.Mesh(shellGeo,SHELL_MAT.heat); mm.position.copy(o); scene.add(mm);
+      shells.push({p:o.clone(),v,owner:{team:-9},m:mm,travel:0,life:4,A:ROCKET,rocket:true,fx:true}); for(let k=0;k<4;k++) puff(o.clone().addScaledVector(v.clone().normalize(),-k*.6),0xcfc8b8,rand(1.5,2.5),1.2,.4,.6); boom(distVol(o,.4),.5,1500); break; }
     case 'smk': addSmoke(+d.x||0,+d.y||0,+d.z||0); break;
     case 'bd': { const b=buildings[d.i|0]; if(b) damageBuilding(b,+d.d||0,true); break; }
     case 'shot': { const t=netTanks.get(d.id); if(!t||!Array.isArray(d.p)||!Array.isArray(d.d)) return;
