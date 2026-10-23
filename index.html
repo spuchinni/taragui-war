@@ -1372,18 +1372,61 @@ function finalizeBuildings(){
 }
 
 const rubGeo=new THREE.BoxGeometry(1,1,1), beamMat=new THREE.MeshLambertMaterial({color:0x5b4632});
+// Agujeros de bala y de proyectil en las paredes (calcomanías) y cascotes que caen al pie
+const holeTex=(()=>{ const c=document.createElement('canvas'); c.width=c.height=64; const x=c.getContext('2d');
+  const g=x.createRadialGradient(32,32,2,32,32,31); g.addColorStop(0,'rgba(5,4,3,1)'); g.addColorStop(.4,'rgba(12,10,8,1)'); g.addColorStop(.52,'rgba(150,104,80,.9)'); g.addColorStop(.75,'rgba(190,170,145,.5)'); g.addColorStop(1,'rgba(190,170,145,0)');
+  x.fillStyle=g; x.beginPath(); for(let i=0;i<=24;i++){ const a=i/24*Math.PI*2, r=24+Math.random()*8; x.lineTo(32+Math.cos(a)*r,32+Math.sin(a)*r); } x.fill();
+  const t=new THREE.CanvasTexture(c); return t; })();
+const scorchTex=(()=>{ const c=document.createElement('canvas'); c.width=c.height=64; const x=c.getContext('2d');
+  const g=x.createRadialGradient(32,32,4,32,32,31); g.addColorStop(0,'rgba(10,9,8,.6)'); g.addColorStop(.5,'rgba(25,22,20,.3)'); g.addColorStop(1,'rgba(25,22,20,0)'); x.fillStyle=g; x.fillRect(0,0,64,64);
+  return new THREE.CanvasTexture(c); })();
+const DEC_N=900, CHIP_N=700; let decIM=null, scIM=null, chipIM=null, decK=0, scK=0, chipK=0, decOwner=[];
+const _dm=new THREE.Matrix4(), _dq=new THREE.Quaternion(), _dv=new THREE.Vector3(), _ds=new THREE.Vector3(), _dz=new THREE.Vector3(0,0,1);
+function decPools(){
+  if(decIM&&decIM.parent===worldGroup) return;
+  const mk=(tex,n)=>{ const im=new THREE.InstancedMesh(new THREE.PlaneGeometry(1,1),new THREE.MeshLambertMaterial({map:tex,transparent:true,depthWrite:false,polygonOffset:true,polygonOffsetFactor:-4}),n);
+    _dm.makeScale(0,0,0); for(let i=0;i<n;i++) im.setMatrixAt(i,_dm); im.frustumCulled=false; im.renderOrder=2; worldGroup.add(im); return im; };
+  decIM=mk(holeTex,DEC_N); scIM=mk(scorchTex,300); decK=scK=chipK=0; decOwner=new Array(DEC_N).fill(-1);
+  chipIM=new THREE.InstancedMesh(rubGeo,new THREE.MeshLambertMaterial({color:0xffffff}),CHIP_N); _dm.makeScale(0,0,0);
+  for(let i=0;i<CHIP_N;i++){ chipIM.setMatrixAt(i,_dm); chipIM.setColorAt(i,new THREE.Color(0x888888)); } chipIM.castShadow=chipIM.receiveShadow=true; chipIM.frustumCulled=false; worldGroup.add(chipIM);
+}
+function hitNormal(hit,b){ // normal de la cara en el mundo (las casas solo giran sobre el eje vertical)
+  const n=hit.face?hit.face.normal.clone():new THREE.Vector3(0,0,1); n.applyAxisAngle(new THREE.Vector3(0,1,0),b?b.a:0); return n.normalize(); }
+function markBuilding(hit,b,size,kind){
+  if(!hit||!b||b.hp<=0) return; decPools();
+  const n=hitNormal(hit,b), p=hit.point.clone().addScaledVector(n,.04);
+  _dq.setFromUnitVectors(_dz,n); _dq.multiply(new THREE.Quaternion().setFromAxisAngle(_dz,rand(0,6.28)));
+  _dm.compose(p,_dq,_ds.set(size,size,1)); decIM.setMatrixAt(decK,_dm); decOwner[decK]=b.i; decK=(decK+1)%DEC_N; decIM.instanceMatrix.needsUpdate=true;
+  if(kind==='big'){ _dm.compose(p.clone().addScaledVector(n,-.01),_dq,_ds.set(size*1.7,size*1.7,1)); scIM.setMatrixAt(scK,_dm); scK=(scK+1)%300; scIM.instanceMatrix.needsUpdate=true; }
+  // cascotes al pie de la pared, apoyados en el suelo
+  const nc=kind==='big'?rand(5,9)|0:Math.random()<.35?1:0, col=new THREE.Color();
+  for(let k=0;k<nc;k++){ const x=p.x+n.x*rand(.3,1.8)+rand(-.8,.8)*size, z=p.z+n.z*rand(.3,1.8)+rand(-.8,.8)*size, sz=kind==='big'?rand(.18,.55):rand(.06,.14), gy=heightAt(x,z);
+    _dq.setFromEuler(new THREE.Euler(rand(-.5,.5),rand(0,3.1),rand(-.5,.5))); _dm.compose(_dv.set(x,gy+sz*.3,z),_dq,_ds.set(sz*rand(.8,1.6),sz,sz*rand(.8,1.4)));
+    chipIM.setMatrixAt(chipK,_dm); chipIM.setColorAt(chipK,col.set(Math.random()<.6?b.wall:0x8a8178).multiplyScalar(rand(.55,.85))); chipK=(chipK+1)%CHIP_N; }
+  if(nc){ chipIM.instanceMatrix.needsUpdate=true; chipIM.instanceColor.needsUpdate=true; }
+}
+function clearMarks(b){ if(!decIM) return; let ch=false; _dm.makeScale(0,0,0); for(let i=0;i<DEC_N;i++) if(decOwner[i]===b.i){ decIM.setMatrixAt(i,_dm); decOwner[i]=-1; ch=true; } if(ch) decIM.instanceMatrix.needsUpdate=true; }
+// Derrumbe: montaña de escombros apoyada en el suelo, restos de paredes en pie y vigas caídas (nada flota)
 function rubble(b,g){
-  const n=Math.round(clamp(b.w*b.d/2.5,16,48)), im=new THREE.InstancedMesh(rubGeo,new THREE.MeshLambertMaterial({color:0xffffff}),n+4);
-  const m=new THREE.Matrix4(), q=new THREE.Quaternion(), e=new THREE.Euler(), col=new THREE.Color(), H=b.top-b.base;
-  for(let i=0;i<n+4;i++){
-    const beam=i>=n, lx=rand(-b.w*.65,b.w*.65), lz=rand(-b.d*.65,b.d*.65), c=Math.cos(b.a), sn=Math.sin(b.a);
-    const x=b.x+lx*c+lz*sn, z=b.z-lx*sn+lz*c, sz=beam?new THREE.Vector3(.25,.25,rand(2.5,4.5)):new THREE.Vector3(rand(.5,1.8),rand(.3,1.1),rand(.5,1.6));
-    const near=1-Math.hypot(lx/b.w,lz/b.d), y=heightAt(x,z)+.35+sz.y*.4+(beam?rand(.4,1.4):Math.max(0,near)*rand(0,H*.35));
-    e.set(rand(-.6,.6),rand(0,3.14),rand(-.6,.6)); q.setFromEuler(e); m.compose(new THREE.Vector3(x,y,z),q,sz); im.setMatrixAt(i,m);
-    im.setColorAt(i,beam?col.set(0x5b4632):col.set(i%3===0?b.roof:i%3===1?0x8a8178:b.wall).multiplyScalar(rand(.5,.8)));
+  const H=b.top-b.base, c=Math.cos(b.a), sn=Math.sin(b.a), W2=b.w/2, D2=b.d/2, pileH=Math.min(H*.28,2.6)+.5;
+  const heap=(lx,lz)=>{ const r=Math.max(Math.abs(lx)/(W2*1.2),Math.abs(lz)/(D2*1.2)); return r>=1?0:pileH*(1-r*r)*(.85+.15*Math.sin(lx*1.7+lz*1.3)); };
+  const W=(lx,lz)=>[b.x+lx*c+lz*sn, b.z-lx*sn+lz*c];
+  const n=Math.round(clamp(b.w*b.d/1.6,26,110)), stubs=[];
+  for(const [ax,len,off,nx,nz] of [[0,b.w,D2,0,1],[0,b.w,-D2,0,-1],[1,b.d,W2,1,0],[1,b.d,-W2,-1,0]]){ if(Math.random()<.35) continue;
+    const L=len*rand(.25,.65), h=rand(1,Math.max(1.3,H*.55)), u=rand(-(len-L)/2,(len-L)/2); stubs.push(ax?{lx:off,lz:u,w:.35,d:L,h}:{lx:u,lz:off,w:L,d:.35,h}); }
+  const tot=n+6+stubs.length, im=new THREE.InstancedMesh(rubGeo,new THREE.MeshLambertMaterial({color:0xffffff}),tot);
+  const m=new THREE.Matrix4(), q=new THREE.Quaternion(), e=new THREE.Euler(), col=new THREE.Color(); let i=0;
+  for(const S of stubs){ const [x,z]=W(S.lx,S.lz), gy=Math.min(heightAt(x,z),g); q.setFromAxisAngle(new THREE.Vector3(0,1,0),b.a);
+    m.compose(new THREE.Vector3(x,gy+S.h/2-.3,z),q,new THREE.Vector3(S.w,S.h+.3,S.d)); im.setMatrixAt(i,m); im.setColorAt(i,col.set(b.wall).multiplyScalar(rand(.6,.8))); i++; }
+  for(let k=0;k<n+6;k++,i++){
+    const beam=k>=n, lx=rand(-W2*1.15,W2*1.15), lz=rand(-D2*1.15,D2*1.15), [x,z]=W(lx,lz), hp=heap(lx,lz), gy=heightAt(x,z);
+    const sz=beam?new THREE.Vector3(.25,.25,rand(2.5,4.5)):new THREE.Vector3(rand(.5,1.9),rand(.25,.9),rand(.5,1.7));
+    const y=gy+hp+(beam?.12:sz.y*.15)-(hp>0?.1:0);
+    e.set(beam?rand(-.35,.35):rand(-.4,.4),rand(0,3.14),beam?rand(-.35,.35):rand(-.4,.4)); q.setFromEuler(e); m.compose(new THREE.Vector3(x,y,z),q,sz); im.setMatrixAt(i,m);
+    im.setColorAt(i,beam?col.set(0x5b4632):col.set(k%3===0?b.roof:k%3===1?0x8a8178:b.wall).multiplyScalar(rand(.5,.8)));
   }
   im.castShadow=im.receiveShadow=true; im.instanceMatrix.needsUpdate=true; im.instanceColor.needsUpdate=true; worldGroup.add(im);
-  smolder.push({x:b.x,z:b.z,y:g,t:25});
+  b.heap={pileH}; smolder.push({x:b.x,z:b.z,y:g,t:25});
 }
 const smolder=[];
 function damageBuilding(b,dmg,fromNet){
@@ -1394,7 +1437,7 @@ function damageBuilding(b,dmg,fromNet){
   if(b.hp<=0){
     b.box.dead=true; mmDirty=true;
     const m=new THREE.Matrix4(), q=new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0,1,0),b.a), g=heightAt(b.x,b.z);
-    m.compose(new THREE.Vector3(b.x,g+.1,b.z),q,new THREE.Vector3(b.w*1.05,.5,b.d*1.05)); wallsIM.setMatrixAt(b.i,m); wallsIM.setColorAt(b.i,col.set(0x7a7166));
+    const gl=b.base+1; m.compose(new THREE.Vector3(b.x,gl+.05,b.z),q,new THREE.Vector3(b.w*.98,.6,b.d*.98)); wallsIM.setMatrixAt(b.i,m); wallsIM.setColorAt(b.i,col.set(0x6f675d)); clearMarks(b);
     m.makeScale(0,0,0); roofsIM.setMatrixAt(b.i,m); m.makeScale(0,0,0); gablesIM.setMatrixAt(b.i,m);
     wallsIM.instanceMatrix.needsUpdate=roofsIM.instanceMatrix.needsUpdate=gablesIM.instanceMatrix.needsUpdate=true; wallsIM.instanceColor.needsUpdate=true;
     for(let k=0;k<6;k++) puff(new THREE.Vector3(b.x+rand(-3,3),g+rand(1,4),b.z+rand(-3,3)),0x9a8f80,rand(4,7),rand(2,3.5),1.5,.8);
@@ -1402,6 +1445,9 @@ function damageBuilding(b,dmg,fromNet){
     if(!sfx('expl',new THREE.Vector3(b.x,g,b.z),.6,{rate:.6})) boom(distVol(new THREE.Vector3(b.x,g,b.z),.5),1.2,400);
   } else {
     wallsIM.setColorAt(b.i,col.multiplyScalar(.5+.5*b.hp/b.max)); wallsIM.instanceColor.needsUpdate=true;
+    if(!b.sag&&b.hp<b.max*.45){ b.sag=true; const m=new THREE.Matrix4(), q=new THREE.Quaternion().setFromEuler(new THREE.Euler(rand(-.12,.12),b.a,rand(-.12,.12)));
+      if(b.pitched){ m.compose(new THREE.Vector3(b.x,b.top-.35,b.z),q,new THREE.Vector3(b.w+.3,Math.min(b.w,b.d)*.3,b.d+.2)); gablesIM.setMatrixAt(b.i,m); gablesIM.instanceMatrix.needsUpdate=true; }
+      else { m.compose(new THREE.Vector3(b.x,b.top-.2,b.z),q,new THREE.Vector3(b.w+.3,.24,b.d+.3)); roofsIM.setMatrixAt(b.i,m); roofsIM.instanceMatrix.needsUpdate=true; } }
     const g=heightAt(b.x,b.z);
     for(let k=0;k<2;k++) puff(new THREE.Vector3(b.x+rand(-b.w/3,b.w/3),g+rand(1,b.top-g),b.z+rand(-b.d/3,b.d/3)),0xa89c8a,rand(2.5,4),rand(1,1.8),.8,.6);
     debris(new THREE.Vector3(b.x,g+2,b.z),6,dirtMat,4,.9);
@@ -1910,10 +1956,13 @@ function movingLoop(name,vol,{rate=1,start=0,ref=60,lp=6000}={}){
   const f=AC.createBiquadFilter(); f.type='lowpass'; f.frequency.value=lp; const g=AC.createGain(); g.gain.value=vol;
   const pn=AC.createPanner(); pn.panningModel='equalpower'; pn.distanceModel='inverse'; pn.refDistance=ref; pn.rolloffFactor=1;
   src.connect(f).connect(g).connect(pn).connect(extBus); src.start(0,start);
-  return { set(p){ if(pn.positionX){pn.positionX.value=p.x;pn.positionY.value=p.y;pn.positionZ.value=p.z;} else pn.setPosition(p.x,p.y,p.z);
+  const L={ dead:false, set(p){ if(pn.positionX){pn.positionX.value=p.x;pn.positionY.value=p.y;pn.positionZ.value=p.z;} else pn.setPosition(p.x,p.y,p.z);
       const d=p.distanceTo(camera.position); f.frequency.value=Math.max(500,lp*Math.exp(-d/500)); },
-    stop(){ g.gain.setTargetAtTime(0,AC.currentTime,.4); src.stop(AC.currentTime+2); } };
+    stop(){ if(L.dead) return; L.dead=true; liveLoops.delete(L); try{ g.gain.setTargetAtTime(0,AC.currentTime,.4); src.stop(AC.currentTime+2); }catch(e){} } };
+  liveLoops.add(L); return L;
 }
+const liveLoops=new Set();
+function stopAllLoops(){ for(const L of [...liveLoops]) L.stop(); }
 // Intro: ambiente de batalla lejana en el menú y la previa de cada escenario.
 // Detonación nuclear por capas, sin esperar a que el sonido "viaje": golpe inmediato, rugido largo y onda expansiva.
 function nukeSound(p){
@@ -2530,12 +2579,12 @@ function updateShells(dt){
       hits=hits.filter(x=>{const tr=treeOf(x); if(!tr) return true; if(!tr.fallen){knockTree(tr,dir.x,dir.z);debris(x.point,4,dirtMat,3,.6);} return false;});
       if(hits.length){ const hit=hits[0];
         if(hit.object.userData.plane){ explode(hit.point,'metal'); if(!s.fx) planeHit(hit.object.userData.plane,s.A.kind==='ke'?55:110,s.owner); done=true; break; }
-        if(s.fx){ const tk=hit.object.userData.tank; explode(hit.point,tk?'metal':'ground'); if(tk) clang(distVol(hit.point,.25)); else boom(distVol(hit.point,.25),.5,500); done=true; break; }
+        if(s.fx){ const tk=hit.object.userData.tank; explode(hit.point,tk?'metal':'ground'); { const fb=bldOf(hit); if(fb) markBuilding(hit,fb,rand(.6,1.2),'big'); } if(tk) clang(distVol(hit.point,.25)); else boom(distVol(hit.point,.25),.5,500); done=true; break; }
         if(s.rocket){ blast(hit.point,.25); noise(hit.point,80); }
         infBlast(hit.point,(s.A.kind==='he'?6:s.A.kind==='hesh'?4:1.8)*(s.A.sc<1?.4:1),s.owner);
         if(hit.object.userData.tank) hitTank(s.owner,hit,dir,(s.A.kind==='ke'?s.A.pen*Math.max(.5,1-s.travel/3000):s.A.pen)*(s.owner.penK||1),'shell',s.A);
         else { if((s.A.kind==='he'||s.A.kind==='hesh')&&s.A.sc<1){explode(hit.point,'ground');heSplash(hit.point,s.owner,s.A);} else if(s.A.kind==='he'||s.A.kind==='hesh'){blast(hit.point,.35);heSplash(hit.point,s.owner,s.A);} else {explode(hit.point,'ground');boom(distVol(hit.point,.25),.5,500);}
-          const b=bldOf(hit); if(b) damageBuilding(b,(15+s.owner.T.m.gr*250)*({ke:.6,heat:1,hesh:2.2,he:2.2})[s.A.kind]*(s.A.sc||1));}
+          const b=bldOf(hit); if(b){ const big=s.A.kind==='he'||s.A.kind==='hesh'; markBuilding(hit,b,big?rand(1.1,1.7)*(s.A.sc<1?.7:1):s.A.kind==='heat'?rand(.6,.85):rand(.4,.6),big||s.A.kind==='heat'?'big':'ke'); damageBuilding(b,(15+s.owner.T.m.gr*250)*({ke:.6,heat:1,hesh:2.2,he:2.2})[s.A.kind]*(s.A.sc||1)); } }
         done=true; break; }
       const gh=hAtY(s.p.x,s.p.z,s.p.y);
       if(s.p.y<gh&&s.fx){ s.p.y=gh; explode(s.p,'ground'); boom(distVol(s.p,.25),.5,500); done=true; }
@@ -2792,7 +2841,7 @@ function fireMG(t){
   if(t.mgN++%3===0) tracer(o,end,t.team===0?0xffd080:0xff9a70);
   if(hit&&hit.object.userData.plane){ debris(hit.point,2,sparkMat,2,.5); planeHit(hit.object.userData.plane,2,t); hit=null; }
   if(hit){ const tr=treeOf(hit); if(tr){ tr.hp-=1; debris(hit.point,2,leafMat,2,.5); if(tr.hp<=0) knockTree(tr,d.x,d.z); }
-    else if(hit.object.userData.tank){ if(!net.guest) hitTank(t,hit,d,mgPen(mgCal(t)),'mg'); } else debris(hit.point,2,dirtMat,2,.5); }
+    else if(hit.object.userData.tank){ if(!net.guest) hitTank(t,hit,d,mgPen(mgCal(t)),'mg'); } else { debris(hit.point,2,dirtMat,2,.5); const b=bldOf(hit); if(b){ if(Math.random()<.6) markBuilding(hit,b,rand(.14,.24)*(mgCal(t)>=12?1.6:1),'mg'); if(Math.random()<.15) damageBuilding(b,mgCal(t)>=12?8:2.5); } } }
   if(t.isPlayer&&LOOPS.mgburst){ mgLastShot=AC.currentTime; } else if(!sfx('mgshot',o,.55,{rate:rand(.95,1.1),maxD:700})) boom(t.isPlayer?.12:distVol(o,.08),.06,2500);
 }
 
@@ -2997,13 +3046,13 @@ function updateNuke(dt){
     const sw=new THREE.Mesh(ringGeo,new THREE.MeshBasicMaterial({color:0xfff2d8,transparent:true,opacity:.8,depthWrite:false,fog:false}));
     sw.position.copy(p).setY(p.y+.5); scene.add(sw); fx.push({m:sw,life:3.5,max:3.5,shock:true,size:420});
     { const d=Math.round(Math.hypot(p.x-camera.position.x,p.z-camera.position.z)); hitMsg(`¡Detonación nuclear a ${d} m!`,'#ffb060'); }
-    if(!net.guest){ for(const t of tanks) if(!t.dead){ t.immuneT=0; destroy(t,t.team===nuke.team?null:by,Math.random()<.5); }
-      for(const c of crews) c.out=true; }
+    if(!net.guest){ for(const t of tanks) if(!t.dead){ if(tut&&t.isPlayer) continue; t.immuneT=0; destroy(t,t.team===nuke.team?null:by,Math.random()<.5); }
+      if(!tut) for(const c of crews) c.out=true; }
     for(const P of infantry) if(!P.dead) killInf(P,null,'blast');
     buildings.filter(B=>B.hp>0&&isFinite(B.hp)).sort((a,b)=>Math.hypot(a.x-p.x,a.z-p.z)-Math.hypot(b.x-p.x,b.z-p.z)).slice(0,160).forEach(B=>damageBuilding(B,1e5));
     for(const tr of trees) if(!tr.fallen&&Math.hypot(tr.x-p.x,tr.z-p.z)<450) knockTree(tr,tr.x-p.x,tr.z-p.z);
     feed('Ataque nuclear: no quedó nada en pie','var(--enemy)');
-  } else if(nuke.phase===1&&now>=nuke.end){ nuke.phase=2; tickets[1-nuke.team]=0; }
+  } else if(nuke.phase===1&&now>=nuke.end){ nuke.phase=2; if(!tut) tickets[1-nuke.team]=0; }
 }
 /* ---------- Marcas para el equipo (tecla Q): enemigo, punto o atención ---------- */
 const pings=[];
@@ -3971,11 +4020,11 @@ function updateWeather(dt){
 function clearBattle(){
   tanks.slice().forEach(removeTank); colliders=[];
   shells.forEach(s=>scene.remove(s.m)); shells.length=0; arty.length=0; scorches.forEach(S=>{scene.remove(S.m);S.m.material.dispose();}); scorches.length=0;
-  marks.forEach(M=>scene.remove(M.g)); marks.length=0; planes.forEach(P=>{scene.remove(P.g); if(P.snd) P.snd.stop();}); planes.length=0; bombs.forEach(B=>scene.remove(B.m)); bombs.length=0;
+  marks.forEach(M=>scene.remove(M.g)); marks.length=0; planes.forEach(P=>{scene.remove(P.g); if(P.snd) P.snd.stop();}); planes.length=0; stopAllLoops(); bombs.forEach(B=>scene.remove(B.m)); bombs.length=0;
   if(builtKey){buildWorld(builtKey);}
   tickets=[400,400]; tickT=0; resetZones(); player=null; hitDirs.length=0; smolder.length=0; smokes.length=0; pings.length=0; a10s.forEach(A=>{scene.remove(A.g); if(A.snd) A.snd.stop();}); a10s.length=0; { const o=document.getElementById('oob'); if(o) o.style.opacity=0; }
   infantry.slice().forEach(removeInf); infantry.length=0; clearCivLife();
-  if(nuke){ if(nuke.plane) scene.remove(nuke.plane.g); if(nuke.bomb) scene.remove(nuke.bomb.m); if(nuke.cloud&&!nuke.cloud.done){ scene.remove(nuke.cloud.g); nuke.cloud.parts.forEach(P=>P.m.material.dispose()); } } nuke=null;
+  if(nuke){ if(nuke.plane){ scene.remove(nuke.plane.g); if(nuke.plane.snd) nuke.plane.snd.stop(); } if(nuke.bomb) scene.remove(nuke.bomb.m); if(nuke.cloud&&!nuke.cloud.done){ scene.remove(nuke.cloud.g); nuke.cloud.parts.forEach(P=>P.m.material.dispose()); } } nuke=null;
   if(camera.far!==1000){ camera.far=1000; camera.updateProjectionMatrix(); }
   nukeView=null; { const b=document.getElementById('nukeSum'); if(b) b.style.display='none'; }
 }
@@ -4005,7 +4054,7 @@ function startBattle(spectator=false,forceMap=null,special=null,noBrief=false){ 
   crews=[...(playerCrew?[playerCrew]:[]),...guests.map(remoteCrew),...allyCrews,...NATIONS[foeNation].names.slice(0,Math.max(1,5-gB.length)).map(n=>newCrew(n,1,foeNation,false))];
   if(net.host){ net.startMsg={t:'start',seed:net.seed,map:builtKey,ally:allyNation,foe:foeNation,br:battleBR,wx:wxKey}; net.inBattle=true; guests.forEach(c=>c.send({...net.startMsg,side:sideOf(c)})); }
   for(const c of crews){ if(c.isPlayer||c.peer) continue; const pts=W.sp[c.team]; spawnCrew(c,c.lineup[0],pts[(Math.random()*pts.length)|0]); }
-  now=0; noises.length=0; battleKills=0; lastKillCrew=null; teamSup[0]={arty:20,air:40}; teamSup[1]={arty:20,air:40}; updateInfantry.t=40; if(!net.guest){ for(const tm of [0,1]){spawnSquad(tm);spawnSquad(tm);} spawnCivilians(streetSegs.length?20:12); spawnTraffic(streetSegs.length>20?8:0); } updateHud();
+  now=0; noises.length=0; battleKills=0; lastKillCrew=null; teamSup[0]={arty:20,air:40}; teamSup[1]={arty:20,air:40}; if(!tut) for(const c of crews){ c.artyCD=ARTY_CD; c.airCD=AIR_CD; } updateInfantry.t=40; if(!net.guest){ for(const tm of [0,1]){spawnSquad(tm);spawnSquad(tm);} spawnCivilians(streetSegs.length?20:12); spawnTraffic(streetSegs.length>20?8:0); } updateHud();
   if(noBrief) openDeploy(); else openBriefing(spectator);
 }
 let allyMixed=false;
@@ -4175,12 +4224,12 @@ function updateTutorial(dt){
   if(scoped) tut.scope=(tut.scope||0)+dt;
   for(const t of tut.d) if(!t.dead) t.spottedT=3;
   if(tut.okT>0){ tut.okT-=dt; if(tut.okT<=0){ do{ tut.step++; }while(tut.step<tut.steps.length-1&&tut.steps[tut.step].skip&&tut.steps[tut.step].skip(tut));
-      showTut(); if(tut.step===tut.steps.length-1) setTimeout(()=>{ if(tut&&state==='play') tutDone(); },9000); } return; }
+      showTut(); if(tut.step===tut.steps.length-1) setTimeout(()=>{ if(tut&&state==='play') tutDone(); },14000); } return; }
   if(tut.steps[tut.step].ok(tut)){ hitMsg('¡Bien hecho!','var(--ally)'); tut.okT=1.4; }
 }
 function tutDone(failed){
   if(document.pointerLockElement) document.exitPointerLock();
-  const key=tut&&tut.key; tut=null; document.body.classList.remove('tut'); state='summary'; document.body.classList.add('menu'); $('overlay').style.display='flex';
+  stopAllLoops(); const key=tut&&tut.key; tut=null; document.body.classList.remove('tut'); state='summary'; document.body.classList.add('menu'); $('overlay').style.display='flex';
   $('panel').innerHTML=failed?`<h1>Te destruyeron</h1><p>Probá de nuevo: en el tutorial conviene mostrar el frente y usar la mira.</p>
     <button class="go" id="tgo">Repetir el tutorial</button><button class="go alt" id="tmenu">Volver al hangar</button>`:`<h1>Tutorial completo</h1><p>Ya sabés moverte, apuntar, aprovechar el blindaje, capturar, reabastecer, reparar, recuperar tripulantes y pedir apoyo.</p>
     <button class="go" id="tgo">Repetir con este tanque</button><button class="go alt" id="tmenu">Volver al hangar</button>`;
@@ -4202,7 +4251,7 @@ function guide(){
 function nextMapKey(){ const ks=Object.keys(WORLDS); return ks[(ks.indexOf(builtKey)+1)%ks.length]; }
 function summary(winner){
   if(document.pointerLockElement) document.exitPointerLock();
-  state='summary'; document.body.classList.add('menu'); document.body.classList.remove('deploy','spec');
+  stopAllLoops(); state='summary'; document.body.classList.add('menu'); document.body.classList.remove('deploy','spec');
   $('banner').style.opacity=0; bannerT=0; $('overlay').style.display='flex';
   const table=team=>{const rows=crews.filter(c=>c.team===team).sort((a,b)=>b.score-a.score);
     return `<h2>${NATIONS[team===0?allyNation:foeNation].label}${team===winner?', ganador':''}</h2><table class="sum"><thead><tr><th>Jugador</th><th>Tanques</th><th class="n">Bajas</th><th class="n">Asist.</th><th class="n">Muertes</th><th class="n">Capturas</th><th class="n">Puntos</th></tr></thead><tbody>${
@@ -4238,6 +4287,7 @@ const normalNations=()=>Object.fromEntries(Object.entries(NATIONS).filter(([k,v]
 function menuSec(id,label,html){ return `<button class="mi${menuOpen===id?' open':''}" data-s="${id}">${label}<i>▾</i></button><div class="sec"${menuOpen===id?'':' hidden'}>${html}</div>`; }
 let menuScreen='home', playMode='battle';
 function mainMenu(){
+  stopAllLoops();
   if(net.on) netLeave(); if(wxKey!=='dia') applyWeather('dia');
   if(document.pointerLockElement) document.exitPointerLock();
   state='menu'; tut=null; bindCapture=null; document.body.classList.add('menu'); document.body.classList.remove('deploy','spec','tut','home'); if(!PROG) loadProg();
