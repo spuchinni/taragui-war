@@ -113,6 +113,23 @@ body.menu.home:not(.deploy) #overlay{background:#0d0c0a}
 .rpbox{margin:10px 0;padding:10px;background:rgba(0,0,0,.35);border-left:3px solid var(--amber)} .rpbox .pbar{height:7px;background:rgba(255,255,255,.12);margin-top:6px} .rpbox .pbar i{display:block;height:100%;background:var(--amber)}
 .setB{position:fixed;z-index:10;top:calc(16px + env(safe-area-inset-top,0px));right:18px;width:46px;height:46px;font-size:26px;line-height:1;background:rgba(20,18,14,.7);color:var(--paper);border:1px solid rgba(239,231,210,.35);cursor:pointer}
 .setB:hover{background:rgba(60,55,40,.85)}
+/* Cuenta: botón en el inicio y ventana para entrar con Google o con mail */
+.acctB{position:fixed;z-index:10;top:calc(16px + env(safe-area-inset-top,0px));right:122px;height:46px;max-width:min(260px,calc(100vw - 140px));padding:0 16px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+  font:700 15px system-ui,sans-serif;color:var(--paper);background:rgba(20,18,14,.7);border:1px solid rgba(239,231,210,.35);cursor:pointer}
+.acctB:hover{background:rgba(60,55,40,.85)}
+#acct{position:fixed;inset:0;z-index:30;background:rgba(0,0,0,.55);display:grid;place-items:center;padding:16px}
+#acct[hidden]{display:none}
+#acct .aBox{width:min(400px,100%);max-height:calc(100vh - 32px);overflow:auto;background:rgba(18,20,23,.97);border:1px solid #6a7280;padding:18px 20px;box-sizing:border-box}
+#acct h2{margin:0 0 8px;color:var(--khaki);font-size:26px;overflow-wrap:anywhere} #acct .s{font-size:15px;margin:0 0 12px;overflow-wrap:anywhere}
+#acct label{display:block;font-size:14px;margin-bottom:10px;color:var(--paper)}
+#acct input{display:block;width:100%;box-sizing:border-box;margin-top:4px;padding:9px 10px;font:16px system-ui,sans-serif;color:#f2eee4;background:#1c2026;border:1px solid #5b6576}
+#acct input:focus{outline:2px solid var(--khaki);outline-offset:0}
+#acct .go{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;margin:0 0 8px;font-size:19px}
+#acct .go.alt{margin-left:0;outline:1px solid rgba(239,231,210,.5)} #acct .go[disabled]{opacity:.55;cursor:wait}
+#acct .aG{background:#fff;color:#1f1f1f} #acct .aG:hover{background:#eceff1} #acct .aG svg{width:20px;height:20px;flex:none}
+#acct .aMsg{margin:4px 0 10px;padding:8px 10px;font-size:15px;background:rgba(255,198,92,.12);border-left:3px solid var(--amber)}
+#acct .aLs{display:flex;flex-wrap:wrap;gap:4px 14px;margin-top:4px}
+#acct .aL{font:500 15px inherit;font-family:inherit;padding:4px 0;background:none;border:0;color:var(--khaki);text-decoration:underline;cursor:pointer}
 .side.home .go.big{display:block;width:100%;max-width:340px;font-size:26px;padding:14px 0;margin:10px 0}
 .binds{display:grid;grid-template-columns:1fr auto;gap:4px 14px;align-items:center;font-size:16px;margin-bottom:14px;max-width:440px}
 .binds .kb{min-width:120px;padding:4px 10px;font:600 15px inherit;font-family:inherit;background:rgba(0,0,0,.4);color:var(--paper);border:1px solid rgba(239,231,210,.35);cursor:pointer}

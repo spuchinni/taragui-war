@@ -12,14 +12,17 @@ function vehTree(n){ return vehTreeE(n,curEra); }
 // Garaje: uno por nación y por época
 const garRef=(n,e=curEra)=>PROG.garage[n+'@'+e]||(PROG.garage[n+'@'+e]=[]);
 let PROG=null;
-// Progreso nuevo (tw2_progress): la versión 1 guardaba en tw_progress y sigue intacto para /v1/
-function loadProg(){ try{ PROG=JSON.parse(localStorage.getItem('tw2_progress')||'null'); }catch(e){ PROG=null; }
+// Progreso nuevo (tw2_progress): la versión 1 guardaba en tw_progress y sigue intacto para /v1/.
+// Con cuenta iniciada la clave pasa a tw2_progress@<uid> (ver nube.js), así cada cuenta tiene el suyo en este navegador.
+let PROG_KEY='tw2_progress';
+function loadProg(){ try{ PROG=JSON.parse(localStorage.getItem(PROG_KEY)||'null'); }catch(e){ PROG=null; }
   if(!PROG||PROG.v!==2) PROG={v:2,unlocked:{},rp:{},garage:{},stats:{battles:0,wins:0},eraOpen:{1:1},camp:{}};
   PROG.eraOpen=PROG.eraOpen||{1:1}; PROG.camp=PROG.camp||{};
   for(const e of eraList()) for(const n in NATIONS){ if(NATIONS[n].special) continue; const T=vehTreeE(n,e); if(!T.length) continue;
     T.slice(0,e===1?1:2).forEach(k=>PROG.unlocked[k]=1); const G=garRef(n,e); if(!G.length) G.push(...T.filter(k=>PROG.unlocked[k]).slice(-3)); }
   if(PROG.era&&PROG.eraOpen[PROG.era]) curEra=PROG.era; }
-function saveProg(){ try{ PROG.era=curEra; localStorage.setItem('tw2_progress',JSON.stringify(PROG)); }catch(e){} }
+function saveProg(){ if(!PROG) return; PROG.era=curEra; PROG.t=Date.now(); try{ localStorage.setItem(PROG_KEY,JSON.stringify(PROG)); }catch(e){}
+  if(typeof nubeGuardar==='function') nubeGuardar(); }
 // Se abre la época siguiente (con vehículos) al terminar el árbol de una nación o el capítulo de la campaña
 function checkEraUnlock(){ const out=[]; const E=eraList();
   for(let i=0;i<E.length;i++){ const e=E[i]; if(!PROG.eraOpen[e]) continue; const nx=E.slice(i+1).find(eraReady); if(!nx||PROG.eraOpen[nx]) continue;

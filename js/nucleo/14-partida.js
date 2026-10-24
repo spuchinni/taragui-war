@@ -336,7 +336,7 @@ function mainMenu(){
   if(menuScreen==='tree'){ renderTree(); return; }
   {
     document.body.classList.add('home');
-    $('panel').innerHTML=`${gear}<div class="homeArt"></div><div class="homeShade"></div>
+    $('panel').innerHTML=`${gear}<button class="acctB" id="acctB" hidden></button><div class="homeArt"></div><div class="homeShade"></div>
       <div class="homeBar"><button class="hb main" id="playB">Jugar ahora</button><button class="hb" id="campB">Campaña</button><button class="hb" id="vehB">Vehículos</button><button class="hb" id="tutB">Tutorial</button><button class="hb" id="optB">Opciones</button></div>
       <div class="homeCopy">Taragüí War · Frente de Acero · necesita teclado y mouse</div>`;
     const toPlay=()=>{menuScreen='hangar';if(playMode==='tut')playMode='battle';mainMenu();};
@@ -345,6 +345,7 @@ function mainMenu(){
     $('campB').onclick=()=>{menuScreen='hangar';playMode='camp';mainMenu();hgCampaign();};
     $('tutB').onclick=()=>{menuScreen='hangar';playMode='tut';mainMenu();};
     $('optB').onclick=()=>{menuScreen='settings';mainMenu();};
+    if(typeof nubeChip==='function'){ $('acctB').onclick=nubeAbrir; nubeChip(); }
   }
   $('setB').onclick=()=>{menuScreen='settings';mainMenu();};
 }
