@@ -84,7 +84,8 @@ function updateAI(t,dt){
     if(t.team===0&&playerFocus&&!playerFocus.dead&&now-playerFocusT<10){ const d=playerFocus.pos.distanceTo(t.pos); if(d<380&&los(e,eyeOf(playerFocus))) best=playerFocus; }
     // cualquier bando: enemigo marcado por un compañero, si lo ven
     if(!best){ let bd=1e9; for(const o of tanks){ if(o.dead||o.team===t.team||o.spottedT<=0) continue; const d=o.pos.distanceTo(t.pos); if(d<380&&d<bd&&los(e,eyeOf(o))){best=o;bd=d;} } }
-    if(best!==t.target){ t.target=best; t.errScale=1; t.flankTried=false; if(t.mode==='cover'||t.mode==='peek'||t.mode==='flank') t.mode='adv'; }
+    // blanco nuevo: tarda en reaccionar antes del primer disparo (menos cuanto más hábil)
+    if(best!==t.target){ t.target=best; t.errScale=1; t.flankTried=false; t.reactT=now+rand(1.2,2.5)*(1.6-sk); if(t.mode==='cover'||t.mode==='peek'||t.mode==='flank') t.mode='adv'; }
     if(best&&t.mode==='adv') planFlank(t,best);
     if(t.target) t.target.spottedT=3;
     if(!best&&(!t.infT||t.infT.dead)){ t.infT=null; let bi=160; for(const P of infantry){ if(P.dead||isCiv(P)||P.team===t.team) continue; const d=P.pos.distanceTo(t.pos); if(d<bi&&los(e,infEye(P))){bi=d;t.infT=P;} } }
@@ -112,13 +113,14 @@ function updateAI(t,dt){
     else if(!nodes&&d>t.prefRange){ const diff=wrap(want-t.heading); steer=clamp(diff*2,-1,1); throttle=Math.abs(diff)<.8?1:.3; }
     else if(sk>.4&&!(t.repairT>0)){ // quieto: mostrar el frente un poco girado (ángulo) para que reboten los impactos
       const diff=wrap(want+t.angleOff*(.6+sk*.4)-t.heading); steer=Math.abs(diff)>.06?clamp(diff*2,-1,1):0; }
-    t.errScale=Math.max(.12+(1-sk)*.25,t.errScale-dt*.12*(.5+sk));
+    // el error baja mientras apunta, pero nunca a cero: los menos hábiles siguen errando bastante
+    t.errScale=Math.max(.2+(1-sk)*.5,t.errScale-dt*.12*(.5+sk));
     { const arm=Math.max(tgt.T.armor.hull.front,tgt.T.armor.turret.front); let bi=0,bv=-1;
       t.T.ammo.forEach((A,i)=>{ const p=A.kind==='ke'?A.pen*(1-d/3000):A.pen; const v=p>arm*1.2?1000+(A.kind==='he'?50:0):p; if(v>bv){bv=v;bi=i;} }); t.ammoIdx=bi; }
     aimErr=aimAt(t,tgt.pos.clone().setY(tgt.pos.y+tgt.aimH),dt,t.eY*t.errScale,t.eP*t.errScale);
     // sin torre (barbetas, casamatas, cañones de campaña): gira el casco para que el blanco entre en el arco del cañón
     if(t.T.arc!=null){ const off=wrap(want-t.heading-(t.T.arcC||0)); if(Math.abs(off)>t.T.arc*.85){ steer=clamp(off*2.5,-1,1); if(!mv) throttle=Math.min(throttle,.15); } }
-    if(t.reloadT<=0&&aimErr<.02&&Math.abs(t.speed)<(t.T.stab?9:4)&&t.mode!=='cover'&&t.mode!=='retreat'){ fireGun(t); t.eY=rand(-1,1)*.035*(1.6-sk); t.eP=rand(-1,1)*.01*(1.6-sk); t.errScale*=.7;
+    if(t.reloadT<=0&&now>(t.reactT||0)&&aimErr<.02&&Math.abs(t.speed)<(t.T.stab?9:4)&&t.mode!=='cover'&&t.mode!=='retreat'){ fireGun(t); t.eY=rand(-1,1)*.035*(1.6-sk); t.eP=rand(-1,1)*.01*(1.6-sk); t.errScale*=.7;
       // dispara y se cubre mientras recarga (tirar y esconderse)
       if(t.mode==='adv'&&sk>.35&&t.reloadMax>2.5&&Math.random()<sk*.9){ const cp=findCover(t,tgt); if(cp){ t.coverP=cp; t.peekP=t.pos.clone(); t.mode='cover'; t.modeT=now+t.reloadMax+2; } } }
     if(d<220&&aimErr<.06&&!t.mgLock&&now>t.mgNext){

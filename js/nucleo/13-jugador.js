@@ -5,12 +5,12 @@ const ACTIONS=[['fwd','Avanzar','KeyW'],['back','Retroceder','KeyS'],['left','Gi
   ['ammoAuto','Munición automática','Digit4'],['arty','Artillería','KeyF'],['air','Ataque aéreo','KeyG'],['nuke','Nuke','KeyN'],['thermal','Visión térmica','KeyT'],
   ['aerial','Vista aérea (la IA maneja)','KeyV'],['troops','Bajar la infantería','KeyE'],['fullscreen','Pantalla completa','KeyP'],['repair','Reparar','KeyR'],['crewSwap','Reemplazar tripulante (infantería)','KeyC'],['smoke','Granadas de humo','KeyX'],['ping','Marcar: enemigo / punto / atención','KeyQ'],['ext','Extintor (apagar incendio)','KeyZ']];
 const DEF_BINDS=Object.fromEntries(ACTIONS.map(a=>[a[0],a[2]]));
-let binds={...DEF_BINDS}, bindCapture=null;
+let binds={...DEF_BINDS}, bindCapture=null, difficulty='normal';
 const keyName=c=>!c?'—':c.startsWith('Key')?c.slice(3):c.startsWith('Digit')?c.slice(5):c.startsWith('Numpad')?'Num '+c.slice(6):
   ({ShiftLeft:'Shift izq.',ShiftRight:'Shift der.',ControlLeft:'Ctrl izq.',ControlRight:'Ctrl der.',AltLeft:'Alt',AltRight:'Alt Gr',Space:'Espacio',Tab:'Tab',CapsLock:'Bloq Mayús',
     Enter:'Enter',Backspace:'Retroceso',ArrowUp:'↑',ArrowDown:'↓',ArrowLeft:'←',ArrowRight:'→',Backquote:'º',Minus:'-',Equal:'=',Comma:',',Period:'.',Slash:'-',Semicolon:'Ñ',Quote:'´',BracketLeft:'`',BracketRight:'+'}[c]||c);
 const down=a=>{ const c=binds[a]; return !!(keys[c]||(c==='ShiftLeft'&&keys.ShiftRight)||(c==='ControlLeft'&&keys.ControlRight)); };
-function saveSettings(){ try{ localStorage.setItem('tw_settings',JSON.stringify({sens,binds,vol:volMaster,radio:radioOn,fs:fsAuto,gfx})); }catch(e){} }
+function saveSettings(){ try{ localStorage.setItem('tw_settings',JSON.stringify({sens,binds,vol:volMaster,radio:radioOn,fs:fsAuto,gfx,dif:difficulty})); }catch(e){} }
 let player=null, playerCrew=null, crews=[], camYaw=0, camPitch=.12, sens=1.2, scoped=false, mouseDown=false, rightDown=false, shake=0, vig=0, lastAim=null, camDist=14, playerDeadT=0, specIdx=0;
 const keys={};
 function aimPoint(){

@@ -76,7 +76,7 @@ function startBattle(spectator=false,forceMap=null,special=null,noBrief=false){ 
   for(const c of crews){ if(c.isPlayer||c.peer) continue; const pts=W.sp[c.team]; spawnCrew(c,c.lineup[0],pts[(Math.random()*pts.length)|0]); }
   if(special&&special.tickets) tickets=special.tickets.slice();
   if(RULE().guns&&!net.guest){ const g=special&&special.guns||[1,2]; placeGuns(0,allyNation,g[0]); placeGuns(1,foeNation,g[1]); }
-  now=0; noises.length=0; battleKills=0; lastKillCrew=null; teamSup[0]={arty:20,air:40}; teamSup[1]={arty:20,air:40}; if(!tut) for(const c of crews){ c.artyCD=ARTY_CD; c.airCD=AIR_CD; } updateInfantry.t=40;
+  now=0; noises.length=0; battleKills=0; lastKillCrew=null; teamSup[0]={...SUP_START}; teamSup[1]={...SUP_START}; if(!tut) for(const c of crews){ c.artyCD=ARTY_CD; c.airCD=AIR_CD; } updateInfantry.t=40;
   if(!net.guest){ const sq=special&&special.squads||[2,2]; for(const tm of [0,1]) for(let i=0;i<sq[tm];i++) spawnSquad(tm); if(RULE().civ){ spawnCivilians(streetSegs.length?20:12); spawnTraffic(W.city?16:streetSegs.length>20?8:0); } if(W.setup) W.setup(); }
   updateHud();
   if(noBrief) openDeploy(); else openBriefing(spectator);

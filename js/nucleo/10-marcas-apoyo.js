@@ -98,12 +98,16 @@ function updateA10(dt){
 }
 /* ---------- Dificultad de los bots según la habilidad del jugador ---------- */
 const skillName=k=>k<.45?'Recluta':k<.65?'Regular':k<.82?'Veterano':'Élite';
-function enemySkill(){ return clamp(PROG&&PROG.skill!=null?PROG.skill:.35,.25,1); }
+// Dificultad elegida en Ajustes: habilidad fija de los enemigos y cuánto esperan entre apoyos. "Se adapta a vos" usa PROG.skill.
+const DIF={facil:{n:'Fácil',sk:.3,sup:1.8},normal:{n:'Normal',sk:.45,sup:1.3},dificil:{n:'Difícil',sk:.7,sup:1},auto:{n:'Se adapta a vos',sk:null,sup:1}};
+const difOf=()=>DIF[difficulty]||DIF.normal;
+function enemySkill(){ const D=difOf(); return D.sk!=null?D.sk:clamp(PROG&&PROG.skill!=null?PROG.skill:.35,.25,1); }
 function updateSkill(me,win){ if(!PROG||!me) return; const perf=clamp(.25+.12*me.kills-.08*me.deaths+.05*me.caps+(win?.15:0),0,1);
   PROG.skill=clamp(enemySkill()*.75+perf*.25,.25,1); saveProg(); }
-// Cupo por bando: los bots de cada bando comparten una espera de 45 s para artillería y 90 s para ataque aéreo.
+// Cupo por bando: los bots de cada bando comparten una espera de 60 s para artillería y 120 s para ataque aéreo
+// (más larga para los enemigos en Fácil y Normal), y nadie pide apoyo en el primer minuto.
 // Lo que pide el jugador también cuenta para su bando, así los dos bandos tienen el mismo ritmo.
-const TEAM_ARTY_CD=45, TEAM_AIR_CD=90, teamSup={0:{arty:20,air:40},1:{arty:20,air:40}};
+const TEAM_ARTY_CD=60, TEAM_AIR_CD=120, SUP_START={arty:60,air:90}, teamSup={0:{...SUP_START},1:{...SUP_START}};
 function botSupport(dt){
   for(const tm of [0,1]){ teamSup[tm].arty=Math.max(0,teamSup[tm].arty-dt); teamSup[tm].air=Math.max(0,teamSup[tm].air-dt); }
   for(const t of tanks){ if(t.dead||t.isPlayer||t.dummy) continue; const c=t.crew;
@@ -112,10 +116,11 @@ function botSupport(dt){
     let tg=t.target&&!t.target.dead?t.target:null;
     if(!tg){ let bd=1e9; for(const o of tanks){ if(o.dead||o.team===t.team||o.spottedT<=0) continue; for(const a of tanks){ if(a.dead||a.team!==t.team) continue; const d=a.pos.distanceTo(o.pos)*(a.isPlayer?.6:1); if(d<bd&&d<250){bd=d;tg=o;} } } }
     if(!tg) continue;
-    const p=tg.pos.clone().add(new THREE.Vector3(rand(-3,3),0,rand(-3,3))), S=teamSup[t.team];
+    // el observador no da la posición exacta: el error crece cuanto menos hábil es el bot
+    const e=4+14*(1-(t.sk||.6)), p=tg.pos.clone().add(new THREE.Vector3(rand(-e,e),0,rand(-e,e))), S=teamSup[t.team], k=t.team===1?difOf().sup:1;
     if(c.sp>=NUKE_COST&&callNuke(t)) continue;
-    if(RULE().sup.air&&c.sp>=AIR_COST&&c.airCD<=0&&Math.random()<.55){ callAirstrike(t,p); }
-    else if(c.sp>=ARTY_COST&&c.artyCD<=0&&Math.random()<.7){ callArtillery(t,p); }
+    if(RULE().sup.air&&S.air<=0&&c.sp>=AIR_COST&&c.airCD<=0&&Math.random()<.4){ if(callAirstrike(t,p)) S.air=TEAM_AIR_CD*k; }
+    else if(S.arty<=0&&c.sp>=ARTY_COST&&c.artyCD<=0&&Math.random()<.5){ if(callArtillery(t,p)) S.arty=TEAM_ARTY_CD*k; }
   }
 }
 

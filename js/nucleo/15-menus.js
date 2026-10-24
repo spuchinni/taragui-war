@@ -141,6 +141,8 @@ function renderSettings(){
     <p class="s">Clic izquierdo: cañón. Clic derecho: ametralladora. Rueda: zoom de la mira.</p>
     <h2>Sonido</h2><label class="sens">Volumen <input type="range" id="volR" min="0" max="1" step="0.05" value="${volMaster}"><span id="volV">${Math.round(volMaster*100)} %</span></label>
     <label class="chk"><input type="checkbox" id="radioC" ${radioOn?'checked':''}> Radio de la tripulación (voces en el idioma de cada nación)</label>
+    <h2>Dificultad de los enemigos</h2><div class="hgOpt" id="difR">${Object.entries(DIF).map(([k,D])=>`<button class="${difficulty===k?'sel':''}" data-d="${k}">${D.n}</button>`).join('')}</div>
+    <p class="s">Fácil y Normal: apuntan peor y piden artillería y aviones con menos frecuencia. "Se adapta a vos" sube o baja según cómo jugás. Se aplica en la próxima partida.</p>
     <h2>Calidad gráfica</h2><div class="hgOpt" id="gfxR">${['baja','media','alta'].map(k=>`<button class="${gfx===k?'sel':''}" data-q="${k}">${k[0].toUpperCase()+k.slice(1)}</button>`).join('')}</div>
     <p class="s">Baja: sin sombras ni pasto, para PCs viejas. Alta: todo al máximo. Se aplica en la próxima partida.</p>
     <h2>Pantalla</h2><label class="chk"><input type="checkbox" id="fsC" ${fsAuto?'checked':''}> Pantalla completa al salir a la partida</label>
@@ -151,6 +153,7 @@ function renderSettings(){
   $('volR').oninput=e=>{volMaster=+e.target.value;$('volV').textContent=Math.round(volMaster*100)+' %'; if(master) master.gain.value=volMaster; saveSettings();};
   $('radioC').onchange=e=>{radioOn=e.target.checked; saveSettings();};
   $('fsC').onchange=e=>{fsAuto=e.target.checked; saveSettings();};
+  document.querySelectorAll('#difR button').forEach(b=>b.onclick=()=>{ difficulty=b.dataset.d; saveSettings(); renderSettings(); });
   document.querySelectorAll('#gfxR button').forEach(b=>b.onclick=()=>{ gfx=b.dataset.q; saveSettings(); applyGfx(); renderSettings(); });
   document.querySelectorAll('.kb').forEach(b=>b.onclick=()=>{ bindCapture=bindCapture===b.dataset.k?null:b.dataset.k; renderSettings(); });
   $('resetB').onclick=()=>{ binds={...DEF_BINDS}; bindCapture=null; saveSettings(); renderSettings(); };
@@ -340,4 +343,4 @@ function frame(dt){
   if(!(hangarOn()&&hgRender(dt))) renderer.render(scene,camera);
   drawOverlay(); if(state!=='menu'&&state!=='summary') drawMinimap();
 }
-try{ const S=JSON.parse(localStorage.getItem('tw_settings')||'null'); if(S){ if(S.sens) sens=+S.sens; if(S.binds) binds={...DEF_BINDS,...S.binds}; if(S.vol!=null) volMaster=+S.vol; if(S.radio!=null) radioOn=!!S.radio; if(S.fs!=null) fsAuto=!!S.fs; } }catch(e){}
+try{ const S=JSON.parse(localStorage.getItem('tw_settings')||'null'); if(S){ if(S.sens) sens=+S.sens; if(S.binds) binds={...DEF_BINDS,...S.binds}; if(S.vol!=null) volMaster=+S.vol; if(S.radio!=null) radioOn=!!S.radio; if(S.fs!=null) fsAuto=!!S.fs; if(DIF[S.dif]) difficulty=S.dif; } }catch(e){}
