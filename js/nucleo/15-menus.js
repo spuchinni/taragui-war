@@ -35,8 +35,16 @@ function hgRender(dt){
   renderer.render(H.sc,H.cam); return true;
 }
 const CLS_ES={ligero:'Ligero',medio:'Medio',pesado:'Pesado',principal:'Principal'};
-function hgStatus(k){ const own=!!PROG.unlocked[k], n=VEH[k].nation, inG=garageOf(chosenNation).includes(k), res=k===nextResearch(chosenNation);
-  return {own,inG,res,have:PROG.rp[k]||0,cost:rpCost(k)}; }
+// Estado de un tanque: comprado (own), investigado sin comprar (bought=false), investigándose (res), investigable (can) o bloqueado (why)
+function hgStatus(k){ const own=owned(k), done=researched(k), inG=garageOf(chosenNation).includes(k), res=!done&&k===nextResearch(VEH[k].nation);
+  return {own,done,inG,res,can:canResearch(k),have:PROG.rp[k]||0,cost:rpCost(k),yc:ypCost(k),why:lockReason(k)}; }
+// Bloque de compra / investigación de un tanque que todavía no tenés (hangar)
+function hgGetHTML(k,S){
+  if(S.done){ const falta=S.yc-(PROG.yp||0); return `<div class="lvl">Investigado. Compralo por <b>${ypTxt(S.yc)}</b> · tenés ${ypTxt(PROG.yp)}
+    <div class="btns"><button class="hgB" id="hgBuy" ${falta>0?'disabled':''}>${falta>0?`Te faltan ${ypTxt(falta)}`:`Comprar · ${ypTxt(S.yc)}`}</button></div></div>`; }
+  if(S.res) return `<div class="lvl">Investigando: ${S.have.toLocaleString('es-AR')} / ${S.cost.toLocaleString('es-AR')} PI<i class="pb"><i style="width:${Math.round(S.have/S.cost*100)}%"></i></i><small>Ganás PI en cada batalla con esta nación. Después lo comprás con ${YP}.</small></div>`;
+  if(S.can) return `<div class="lvl">Se puede investigar · ${S.cost.toLocaleString('es-AR')} PI${S.have?` (llevás ${S.have.toLocaleString('es-AR')})`:''}<div class="btns"><button class="hgB" id="hgRes">Investigar este</button></div></div>`;
+  return `<div class="lvl">🔒 ${S.why} · ${S.cost.toLocaleString('es-AR')} PI</div>`; }
 function renderHangar(){
   if(!PROG) loadProg(); menuScreen='hangar'; document.body.classList.remove('home');
   const NN=Object.fromEntries(eraNations(curEra).map(k=>[k,NATIONS[k]])); if(!NN[chosenNation]) chosenNation=Object.keys(NN)[0];
@@ -45,8 +53,8 @@ function renderHangar(){
   const V=VEH[hgSel], S=hgStatus(hgSel), lv=tankLv(hgSel), xp=tankXP(hgSel);
   const eq=[`Mira ${V.optic.join('/')}×`,`Ametralladora ${String(V.mgc||MG_CAL[hgSel]||7.62).replace('.',',')} mm`,V.arc!=null?`Sin torre: ±${Math.round(V.arc*180/Math.PI)}°`:'',V.trench?`Cruza trincheras de ${String(V.trench).replace('.',',')} m`:'',V.fcs?'Telémetro':'',V.stab?'Estabilizador':'',V.thermal?'Térmica':'',V.autoL?'Cargador automático':'',V.auto?'Cañón automático':'',V.troops?`Lleva ${V.troops} soldados`:''].filter(Boolean);
   const card=k=>{ const W2=VEH[k], s=hgStatus(k);
-    return `<button class="hgc${k===hgSel?' sel':''}${s.own?'':' lock'}" data-k="${k}"><span class="br">${brTxt(W2.br)}</span>${s.inG?'<span class="gar" title="En el garaje">★</span>':''}
-      <b>${W2.label}</b><small>${s.own?`${CLS_ES[W2.cls]||W2.cls} · Nv ${tankLv(k)}`:s.res?'Investigando':'🔒 Bloqueado'}</small>
+    return `<button class="hgc${k===hgSel?' sel':''}${s.own?'':' lock'}" data-k="${k}"><span class="br">${RANK_ROMAN[rankOf(k)]} · ${brTxt(W2.br)}</span>${s.inG?'<span class="gar" title="En el garaje">★</span>':''}
+      <b>${W2.label}</b><small>${s.own?`${CLS_ES[W2.cls]||W2.cls} · Nv ${tankLv(k)}`:s.done?`Comprar · ${ypTxt(s.yc)}`:s.res?'Investigando':s.can?'Se puede investigar':'🔒 Bloqueado'}</small>
       ${s.res?`<i class="pb"><i style="width:${Math.round(s.have/s.cost*100)}%"></i></i>`:''}</button>`; };
   const upg=[2,3,4,5].map(l=>`<li class="${lv>=l?'ok':''}"><b>Nv ${l}</b> ${lvUp(l,hgSel).n}</li>`).join('');
   const modes={battle:'Batalla',camp:'Campaña',...(curEra===5?{esp:'Ctes. vs. Resistencia'}:{}),watch:'Ver partida',online:'Online',tut:'Tutorial'}; if(!modes[playMode]) playMode='battle';
@@ -64,11 +72,10 @@ function renderHangar(){
       ${S.own?`<div class="lvl"><b>Nivel ${lv}</b>${lv<5?` · ${xp.toLocaleString('es-AR')} / ${LV_XP[lv].toLocaleString('es-AR')} XP<i class="pb"><i style="width:${Math.round(xp/LV_XP[lv]*100)}%"></i></i>`:' · máximo'}<ul>${upg}</ul></div>
         ${(()=>{ const T=(PROG.tstat||{})[hgSel]; return T?`<small>Partidas ${T.b} · victorias ${T.w} · bajas ${T.k} · muertes ${T.d}${T.d?` · K/D ${(T.k/T.d).toFixed(1).replace('.',',')}`:''}</small>`:'<small>Todavía no jugaste con este tanque.</small>'; })()}
         <div class="btns"><button class="hgB" id="hgGar">${S.inG?'Quitar del garaje':'Al garaje'}</button><button class="hgB" id="hgCam">Camuflaje</button><button class="hgB" id="hgTut">Tutorial</button></div>`
-       :S.res?`<div class="lvl">Investigando: ${S.have.toLocaleString('es-AR')} / ${S.cost.toLocaleString('es-AR')} PI<i class="pb"><i style="width:${Math.round(S.have/S.cost*100)}%"></i></i><small>Ganás PI en cada partida con esta nación.</small></div>`
-       :`<div class="lvl">🔒 Requiere investigar el anterior · ${S.cost.toLocaleString('es-AR')} PI</div>`}
+       :hgGetHTML(hgSel,S)}
     </div>
     <div class="hgRow">${T.map(card).join('')}</div>
-    <div class="hgRank">${(()=>{ const xp=PROG.pxp||0, r=rankIdx(xp), nx=RANKS[r+1]; return `<b>${RANKS[r][1]}</b> · ${xp.toLocaleString('es-AR')} XP · 🎖 ${PROG.medals||0}${nx?`<i class="pb"><i style="width:${Math.round((xp-RANKS[r][0])/(nx[0]-RANKS[r][0])*100)}%"></i></i><small>Próximo: ${nx[1]} (${nx[0].toLocaleString('es-AR')} XP)</small>`:''}`; })()}
+    <div class="hgRank">${(()=>{ const xp=PROG.pxp||0, r=rankIdx(xp), nx=RANKS[r+1]; return `<b>${RANKS[r][1]}</b> · ${xp.toLocaleString('es-AR')} XP · 🎖 ${PROG.medals||0} · <span title="${YP}">${ypTxt(PROG.yp||0)}</span>${nx?`<i class="pb"><i style="width:${Math.round((xp-RANKS[r][0])/(nx[0]-RANKS[r][0])*100)}%"></i></i><small>Próximo: ${nx[1]} (${nx[0].toLocaleString('es-AR')} XP)</small>`:''}`; })()}
       <div class="btns"><button class="hgB" id="hgCh">Desafíos ${(()=>{const D=ensureDaily(); return D.list.filter(c=>c.done).length+'/'+D.list.length;})()}</button><button class="hgB" id="hgTree">Árbol ▸</button></div></div>
     <div class="hgGo"><div class="garTxt">Garaje: ${garageOf(chosenNation).map(k=>VEH[k].label).join(', ')||'vacío'} · BR ${brTxt(garageBR(chosenNation))} · Enemigos: ${skillName(enemySkill())}</div>
       <div class="hgModes">${Object.entries(modes).map(([k,l])=>`<button class="${k===playMode?'sel':''}" data-m="${k}">${l}</button>`).join('')}</div>
@@ -86,6 +93,8 @@ function renderHangar(){
   if($('hgGar')) $('hgGar').onclick=()=>{ const G=garRef(chosenNation); const i=G.indexOf(hgSel);
     if(i>=0){ if(G.length>1) G.splice(i,1); } else { if(G.length>=3) G.shift(); G.push(hgSel); } saveProg(); renderHangar(); };
   if($('hgTut')) $('hgTut').onclick=goWrap(()=>startTutorial(hgSel));
+  if($('hgBuy')) $('hgBuy').onclick=()=>{ if(buyTank(hgSel)) renderHangar(); };
+  if($('hgRes')) $('hgRes').onclick=()=>{ setResearch(hgSel); renderHangar(); };
   if($('hgCam')) $('hgCam').onclick=()=>hgCamo();
   $('hgCh').onclick=()=>hgChallenges();
   $('hgPlay').onclick=goWrap(()=>{
@@ -116,20 +125,24 @@ function hgOnline(){
 let treeNation=null;
 function renderTree(){
   const NN=Object.fromEntries(eraNations(curEra).map(k=>[k,NATIONS[k]])); treeNation=treeNation&&NN[treeNation]?treeNation:NN[chosenNation]?chosenNation:Object.keys(NN)[0]; const n=treeNation, T=vehTree(n), g=garageOf(n), nx=nextResearch(n);
-  const row=k=>{ const V=VEH[k], own=!!PROG.unlocked[k], inG=g.includes(k), res=k===nx, have=PROG.rp[k]||0, cost=rpCost(k);
-    return `<div class="vrow ${own?'own':res?'res':'lock'} ${inG?'in':''}" data-k="${k}"><div class="br">${brTxt(V.br)}</div><div><b>${V.label}</b><small>${V.cls}${V.uses?' · uso limitado':''} · blindaje frontal ${V.armor.hull.front} mm · penetración ${V.pen} mm</small>
-      ${res?`<div class="pbar"><i style="width:${Math.round(have/cost*100)}%"></i></div><small>Investigando: ${have.toLocaleString('es-AR')} / ${cost.toLocaleString('es-AR')} PI</small>`:own?'':`<small><br>Requiere investigar el anterior · ${cost.toLocaleString('es-AR')} PI</small>`}</div>
-      <div>${own?`<button data-k="${k}" class="tg">${inG?'Quitar':'Al garaje'}</button>`:''}</div></div>`; };
+  const row=k=>{ const V=VEH[k], S=hgStatus(k), inG=g.includes(k), q=reqOf(k);
+    const st=S.own?'':S.done?`<small><br>Investigado · cuesta ${ypTxt(S.yc)}</small>`:S.res?`<div class="pbar"><i style="width:${Math.round(S.have/S.cost*100)}%"></i></div><small>Investigando: ${S.have.toLocaleString('es-AR')} / ${S.cost.toLocaleString('es-AR')} PI</small>`
+      :S.can?`<small><br>Se puede investigar · ${S.cost.toLocaleString('es-AR')} PI</small>`:`<small><br>🔒 ${S.why} · ${S.cost.toLocaleString('es-AR')} PI</small>`;
+    const bt=S.own?`<button data-k="${k}" data-a="gar" class="tg">${inG?'Quitar':'Al garaje'}</button>`:S.done?`<button data-k="${k}" data-a="buy" class="tg" ${(PROG.yp||0)<S.yc?'disabled':''}>Comprar</button>`:S.can&&!S.res?`<button data-k="${k}" data-a="res" class="tg">Investigar</button>`:'';
+    return `<div class="vrow ${S.own?'own':S.res||S.done?'res':'lock'} ${inG?'in':''}" data-k="${k}"><div class="br">${RANK_ROMAN[rankOf(k)]}<small style="display:block;font-size:12px">${brTxt(V.br)}</small></div><div><b>${V.label}</b><small>${CLS_ES[V.cls]||V.cls}${V.year?' · '+V.year:''}${q?' · viene del '+VEH[q].label:''} · blindaje ${V.armor.hull.front} mm · penetración ${V.pen} mm</small>${st}</div>
+      <div>${bt}</div></div>`; };
   $('panel').innerHTML=`<div class="side" style="width:min(640px,96vw)"><button class="setB" id="setB" title="Ajustes" aria-label="Ajustes">⚙</button><h1 class="logo" style="font-size:54px!important">Vehículos</h1><div class="hgTop treeEra">${eraStripHTML()}</div><p class="s">${ERAS[curEra].n} (${ERAS[curEra].y}). ${ERAS[curEra].desc}</p>
     ${radios('tn',Object.fromEntries(Object.entries(NN).map(([k,N])=>[k,{label:N.label,desc:''}])),n,'two')}
     <p class="s">Garaje (hasta 3): ${g.map(k=>VEH[k].label).join(', ')||'vacío'} · <b>BR de batalla ${brTxt(garageBR(n))}</b> (el de tu vehículo más alto). Enemigos y aliados salen con BR de ±1.0.
-    Ganás puntos de investigación (PI) en cada partida; se suman al próximo vehículo del árbol.</p>
+    Cada batalla da puntos de investigación (PI) para el tanque que estás investigando y ${YP} para comprarlo. Tenés <b>${ypTxt(PROG.yp||0)}</b>.
+    Para pasar al rango siguiente hay que investigar ${RANK_NEED} tanques del rango actual.</p>
     <div class="tree">${T.map(row).join('')}</div><p class="s">Tocá un vehículo para verlo en el hangar.</p>
     <button class="go alt" id="back">Volver</button></div>`;
   document.querySelectorAll('.tk').forEach(b=>b.onclick=()=>{ if(b.dataset.g==='tn'){ treeNation=b.dataset.k; renderTree(); } });
   wireEraStrip(()=>{ treeNation=null; renderTree(); });
-  document.querySelectorAll('.tg').forEach(b=>b.onclick=()=>{ const k=b.dataset.k, G=garRef(n); const i=G.indexOf(k);
-    if(i>=0){ if(G.length>1) G.splice(i,1); } else { if(G.length>=3) G.shift(); G.push(k); } saveProg(); renderTree(); });
+  document.querySelectorAll('.tg').forEach(b=>b.onclick=()=>{ const k=b.dataset.k;
+    if(b.dataset.a==='buy'){ buyTank(k); renderTree(); return; } if(b.dataset.a==='res'){ setResearch(k); renderTree(); return; }
+    const G=garRef(n), i=G.indexOf(k); if(i>=0){ if(G.length>1) G.splice(i,1); } else { if(G.length>=3) G.shift(); G.push(k); } saveProg(); renderTree(); });
   $('back').onclick=()=>{menuScreen='hangar';chosenNation=treeNation;mainMenu();}; $('setB').onclick=()=>{menuScreen='settings';mainMenu();};
   document.querySelectorAll('.vrow').forEach(r=>r.onclick=e=>{ if(e.target.closest('button')) return; chosenNation=treeNation; hgSel=r.dataset.k; menuScreen='hangar'; mainMenu(); });
 }

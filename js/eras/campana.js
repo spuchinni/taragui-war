@@ -40,8 +40,12 @@ WW1_CFG.berry={seed:1917.4,label:'Berry-au-Bac (Chemin des Dames, 1917)',desc:'1
 const allMissions=()=>CAMPAIGN.flatMap(ch=>ch.missions.map(m=>({...m,era:ch.era})));
 const missionById=id=>allMissions().find(m=>m.id===id);
 const missionDone=id=>!!(PROG&&PROG.camp&&PROG.camp[id]);
-function missionOpen(id){ const L=allMissions(), i=L.findIndex(m=>m.id===id); if(i<=0) return true; const m=L[i];
+// Una misión se juega si tenés comprado alguno de sus tanques (y cumpliste la anterior del capítulo)
+const missionTank=M=>M.plu.some(owned);
+const missionNeed=M=>`comprar el ${M.plu.map(k=>VEH[k].label).join(' o el ')}`;
+function missionPrevDone(id){ const L=allMissions(), i=L.findIndex(m=>m.id===id); if(i<=0) return true; const m=L[i];
   if(!PROG.eraOpen[m.era]) return false; const prev=L.slice(0,i).reverse().find(x=>x.era===m.era); return !prev||missionDone(prev.id); }
+const missionOpen=id=>missionPrevDone(id)&&missionTank(missionById(id));
 function campChapterDone(e){ const ch=CAMPAIGN.find(c=>c.era===e); return !!ch&&ch.missions.every(m=>missionDone(m.id)); }
 const nextMission=id=>{ const L=allMissions(), i=L.findIndex(m=>m.id===id); return L[i+1]||null; };
 
@@ -60,19 +64,21 @@ function missionBriefHTML(M){
 // Resultado de la misión (se agrega al resumen de la partida)
 function missionResult(M,win){
   if(!win) return {html:`<div class="rpbox"><b>Misión fallida.</b> Podés reintentarla las veces que quieras.</div>`,next:null};
-  const first=!missionDone(M.id); PROG.camp[M.id]=1; let html=`<div class="rpbox"><b>¡Misión cumplida: ${M.title}!</b>`;
-  if(first){ const un=addRP(M.ally,1500); html+=`<br>+1.500 PI para ${NATIONS[M.ally].label}`+un.map(k=>`<br>¡Desbloqueaste el <b>${VEH[k].label}</b>!`).join(''); }
-  const N=nextMission(M.id); if(N&&N.era===M.era) html+=`<br>Se abrió la próxima misión: <b>${N.title}</b> (${N.date}).`;
+  const first=!missionDone(M.id); PROG.camp[M.id]=1; let html=`<div class="rpbox"><b>¡Misión cumplida: ${M.title}!</b>`, un=[];
+  // premio extra la primera vez (no regala tanques: suma PI y Yaguaretés como una buena batalla)
+  if(first){ const K=RANK_K[M.era]||1, rp=Math.round(600*K), yp=Math.round(2000*K); un=addRP(M.ally,rp); PROG.yp=(PROG.yp||0)+yp;
+    html+=`<br>Premio por la misión: +${rp.toLocaleString('es-AR')} PI y +${ypTxt(yp)}`; }
+  const N=nextMission(M.id); if(N&&N.era===M.era) html+=`<br>Próxima misión: <b>${N.title}</b> (${N.date})${missionOpen(N.id)?'.':` · necesitás ${missionNeed(N)}.`}`;
   else if(campChapterDone(M.era)) html+=`<br><b>¡Terminaste el capítulo "${CAMPAIGN.find(c=>c.era===M.era).title}"!</b>`;
-  const eu=checkEraUnlock(); eu.forEach(e=>{ html+=`<br>🔓 Nueva época disponible: <b>${ERAS[e].n}</b> (${ERAS[e].y}).`; });
-  saveProg(); return {html:html+'</div>',next:N&&missionOpen(N.id)?N:null}; }
+  saveProg(); return {html:html+'</div>',next:N&&missionOpen(N.id)?N:null,un}; }
 
 // Ventana de la campaña (en el hangar)
 function hgCampaign(){ const box=$('hgModal'); if(!box) return;
-  const rows=CAMPAIGN.map(ch=>`<h2 style="margin:10px 0 4px">${ERAS[ch.era].n} <small style="opacity:.7">(${ERAS[ch.era].y})</small></h2>`+ch.missions.map((m,i)=>{ const open=missionOpen(m.id), done=missionDone(m.id);
-      return `<button class="camM${open?'':' lock'}${done?' ok':''}" data-m="${m.id}" ${open?'':'disabled'}><span class="n">${i+1}</span><b>${m.title}</b><small>${m.date} · ${NATIONS[m.ally]?(NAT_ERA[ch.era]&&NAT_ERA[ch.era][m.ally]||NATIONS[m.ally]).label:''} · ${m.plu.map(k=>VEH[k].label).join(' / ')}</small><i>${done?'✔ Cumplida':open?'Jugar ▸':'🔒'}</i></button>`; }).join('')).join('')
+  const rows=CAMPAIGN.map(ch=>`<h2 style="margin:10px 0 4px">${ERAS[ch.era].n} <small style="opacity:.7">(${ERAS[ch.era].y})</small></h2>`+ch.missions.map((m,i)=>{ const M={...m,era:ch.era}, open=missionOpen(m.id), done=missionDone(m.id), tank=missionTank(M);
+      const why=!missionPrevDone(m.id)?'🔒 Cumplí la anterior':!tank?`🔒 Necesitás ${M.plu.map(k=>VEH[k].label).join(' o ')}`:'';
+      return `<button class="camM${open?'':' lock'}${done?' ok':''}" data-m="${m.id}" ${open?'':'disabled'}><span class="n">${i+1}</span><b>${m.title}</b><small>${m.date} · ${NATIONS[m.ally]?(NAT_ERA[ch.era]&&NAT_ERA[ch.era][m.ally]||NATIONS[m.ally]).label:''} · ${m.plu.map(k=>VEH[k].label).join(' / ')}${why?` · ${why}`:''}</small><i>${done?'✔ Cumplida':open?'Jugar ▸':'🔒'}</i></button>`; }).join('')).join('')
     +[2,3,4].map(e=>`<h2 style="margin:10px 0 4px;opacity:.55">${ERAS[e].n} <small>(${ERAS[e].y})</small></h2><p class="s" style="opacity:.55">Próximamente.</p>`).join('');
-  box.innerHTML=`<div class="hgM camW"><h2>Campaña histórica</h2><p class="s">Las batallas reales, en orden. Cada misión cumplida da 1.500 PI a esa nación; al terminar el capítulo se abre la época siguiente.</p>
+  box.innerHTML=`<div class="hgM camW"><h2>Campaña histórica</h2><p class="s">Las batallas reales, en orden. Cada misión se abre cuando cumpliste la anterior y tenés comprado su tanque. La primera vez que la ganás da un premio extra de PI y ${YP}.</p>
     <div class="camL">${rows}</div><button class="go alt" id="mClose" style="margin:8px 0 0">Cerrar</button></div>`;
   $('mClose').onclick=()=>{ box.innerHTML=''; };
   box.querySelectorAll('.camM:not(.lock)').forEach(b=>b.onclick=goWrap(()=>startMission(b.dataset.m))); }
@@ -83,6 +89,6 @@ function eraStripHTML(){ return `<span class="hgEra">${eraList().map(e=>{ const 
 function wireEraStrip(redraw){ document.querySelectorAll('.hgE').forEach(b=>b.onclick=()=>{ const e=+b.dataset.e;
   if(eraReady(e)&&PROG.eraOpen[e]){ curEra=e; applyEraNations(e); saveProg(); redraw(); return; }
   const box=$('hgModal'), msg=!eraReady(e)?`<b>${ERAS[e].n}</b> (${ERAS[e].y}) todavía está en construcción: ${ERAS[e].desc}`
-    :`<b>${ERAS[e].n}</b> se abre cuando termines la campaña de la época anterior o investigues todos los tanques de una nación.`;
+    :`<b>${ERAS[e].n}</b> es el rango ${RANK_ROMAN[e]}: se abre en una nación cuando investigás ${RANK_NEED} de sus tanques de rango ${RANK_ROMAN[e-1]}.${eraList().slice(0,e-1).some(x=>x>1&&!eraReady(x))?' Antes tienen que estar las épocas del medio, que están en construcción.':''}`;
   if(box){ box.innerHTML=`<div class="hgM"><h2>Época cerrada</h2><p class="s">${msg}</p><button class="go alt" id="mClose" style="margin:6px 0 0">Cerrar</button></div>`; $('mClose').onclick=()=>{ box.innerHTML=''; }; }
   else hitMsg(msg.replace(/<[^>]+>/g,''),'var(--paper)'); }); }

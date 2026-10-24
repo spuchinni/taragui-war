@@ -230,8 +230,8 @@ function tutAttack(U){
 }
 function startTutorial(key){
   if(!PROG) loadProg();
-  const ok=k=>k&&VEH[k]&&PROG.unlocked[k];
-  key=ok(key)?key:(garageOf(chosenNation)[0]||vehTree(chosenNation).find(k=>PROG.unlocked[k]));
+  const ok=k=>k&&VEH[k]&&owned(k);
+  key=ok(key)?key:(garageOf(chosenNation)[0]||vehTree(chosenNation).find(owned));
   const e=eraOf(key); battleBR=null; startBattle(false,e===1?'villers':'campo',null,true); battleBR=null; tut={step:0,okT:0,start:null,d:[],arty:false,key};
   { const T=vehTreeE(foeNation,e); tut.foeL=T.length?[T[0],T[Math.min(1,T.length-1)],T[T.length-1]]:NATIONS[foeNation].lineup.slice(); }
   infantry.slice().forEach(removeInf); infantry.length=0; tanks.slice().forEach(removeTank);
@@ -278,7 +278,7 @@ function guide(){
   $('gtut').onclick=()=>{initAudio(); if(AC.state==='suspended')AC.resume(); startTutorial();}; $('gback').onclick=()=>mainMenu();
 }
 // Lo que un tanque tiene de especial (para ofrecer el tutorial al desbloquearlo)
-function vehSpecial(k){ const T=VEH[k], L=[T.arc!=null&&'cañón sin torre',T.thermal&&'visión térmica',T.fcs&&'telémetro',T.troops&&'infantería a bordo',
+function vehSpecial(k){ const T=VEH[k], L=[T.arc!=null&&(T.auto&&T.pen<15?'armas en las barbetas, sin torre':'cañón sin torre'),T.thermal&&'visión térmica',T.fcs&&'telémetro',T.troops&&'infantería a bordo',
     T.auto&&(T.pen<15?'ametralladoras en vez de cañón':'cañón automático'),!T.auto&&T.autoL&&'cargador automático',T.ammo&&T.ammo.length>1&&`${T.ammo.length} tipos de munición`].filter(Boolean);
   return L.length>1?L.slice(0,-1).join(', ')+' y '+L[L.length-1]:L[0]||''; }
 // Probar en batalla: lo pone primero en el garaje y sale a una partida
@@ -298,22 +298,22 @@ function summary(winner){
   const N=NATIONS[winner===0?allyNation:foeNation].label;
   let rpHtml=''; const me=crews.find(c=>c.isPlayer||c.name==='Vos'||c.name==='Vos (IA)');
   const MS=curSpecial&&curSpecial.mission?missionById(curSpecial.mission):null; let mres=null, unl=[];
-  if(!spectating&&(!curSpecial||MS)&&me&&PROG&&!summary._done){ summary._done=true; const n=MS?MS.ally:chosenNation, rp=(winner===0?600:300)+me.score*6;
-    if(MS) mres=missionResult(MS,winner===0);
-    PROG.stats.battles++; if(winner===0) PROG.stats.wins++; updateSkill(me,winner===0); const un=addRP(n,rp), nx=nextResearch(n); unl=un;
-    const used=Object.keys(me.uses||{}).filter(k=>VEH[k]); let xpHtml='', progHtml='';
+  if(!spectating&&(!curSpecial||MS)&&me&&PROG&&!summary._done){ summary._done=true; const n=MS?MS.ally:chosenNation, win=winner===0;
+    // premio según el rango más alto que usaste: PI para investigar y Yaguaretés de plata para comprar
+    const used=Object.keys(me.uses||{}).filter(k=>VEH[k]), rk=Math.max(1,...used.map(rankOf)), R=battleReward(rk,win,me.score|0), rp=R.rp;
+    if(MS) mres=missionResult(MS,win);
+    PROG.stats.battles++; if(win) PROG.stats.wins++; updateSkill(me,win); PROG.yp=(PROG.yp||0)+R.yp; const un=addRP(n,rp).concat(mres&&mres.un||[]), nx=nextResearch(n); unl=un;
+    let xpHtml='', progHtml='';
     { const st=me.st||{}, win=winner===0, v={kills:me.kills|0,side:st.side|0,caps:me.caps|0,assists:me.assists|0,inf:st.inf|0,wins:win?1:0,badwx:['noche','niebla','lluvia','tormenta'].includes(wxKey)?1:0,smoke:st.smoke|0};
       const gx=Math.max(0,Math.round(me.score*2+(win?500:200))), r0=rankIdx(PROG.pxp||0); PROG.pxp=(PROG.pxp||0)+gx; const dn=progressDaily(v,n), r1=rankIdx(PROG.pxp);
       PROG.tstat=PROG.tstat||{}; for(const k of used){ const S=PROG.tstat[k]||(PROG.tstat[k]={b:0,w:0,k:0,d:0}); S.b++; if(win) S.w++; const tk=(me.tk||{})[k]; if(tk){ S.k+=tk.k|0; S.d+=tk.d|0; } }
       progHtml=`<br><b>+${gx.toLocaleString('es-AR')} XP de jugador</b> · ${RANKS[r1][1]}${r1>r0?` <b style="color:var(--amber)">¡Ascendiste a ${RANKS[r1][1]}!</b>`:''}`+dn.map(c=>`<br>Desafío cumplido: ${chText(c)} · <b>+1 medalla</b> y +1.000 XP`).join(''); saveProg(); }
     for(const k of used){ const xp=Math.round(rp/used.length), ups=addTankXP(k,xp), L=tankLv(k);
       xpHtml+=`<br>${VEH[k].label}: +${xp.toLocaleString('es-AR')} XP · nivel ${L}${L<5?` (${tankXP(k).toLocaleString('es-AR')} / ${LV_XP[L].toLocaleString('es-AR')})`:' (máximo)'}`+ups.map(l=>`<br>&nbsp;&nbsp;¡Nivel ${l}! <b>${lvUp(l,k).n}</b>: ${lvUp(l,k).d}`).join(''); }
-    { const eu=MS?[]:checkEraUnlock(); progHtml+=eu.map(e=>`<br>🔓 Nueva época disponible: <b>${ERAS[e].n}</b> (${ERAS[e].y}).`).join(''); }
-    rpHtml=(mres?mres.html:'')+`<div class="rpbox"><b>+${rp.toLocaleString('es-AR')} PI</b> (puntos de investigación)${un.map(k=>`<br>¡Desbloqueaste el <b>${VEH[k].label}</b> (BR ${brTxt(VEH[k].br)})!`).join('')}
-      ${xpHtml}${progHtml}${nx?`<br>Investigando: ${VEH[nx].label} (BR ${brTxt(VEH[nx].br)}) · ${(PROG.rp[nx]||0).toLocaleString('es-AR')} / ${rpCost(nx).toLocaleString('es-AR')} PI<div class="pbar"><i style="width:${Math.round((PROG.rp[nx]||0)/rpCost(nx)*100)}%"></i></div>`:'<br>Árbol de '+NATIONS[n].label+' completo.'}</div>`;
-    if(unl.length&&!net.on) rpHtml+=`<div class="rpbox unl">${unl.map(k=>{ const sp=vehSpecial(k);
-      return `<p><b>¡Nuevo: ${VEH[k].label}!</b> ${sp?`Tiene ${sp}. ¿Querés aprender a usarlo en el tutorial o probarlo directo en batalla?`:'¿Querés probarlo en batalla?'}</p>
-        <div class="unlB"><button class="go" data-try="${k}">Probar en batalla</button>${sp?`<button class="go alt" data-tut="${k}">Tutorial con este tanque</button>`:''}</div>`; }).join('')}</div>`; }
+    { const eu=checkEraUnlock(); progHtml+=eu.map(e=>`<br>🔓 Se abrió el rango ${RANK_ROMAN[e]}: <b>${ERAS[e].n}</b> (${ERAS[e].y}).`).join(''); }
+    rpHtml=(mres?mres.html:'')+`<div class="rpbox"><b>+${rp.toLocaleString('es-AR')} PI</b> y <b>+${ypTxt(R.yp)}</b> ${YP} <small>(rango ${RANK_ROMAN[rk]})</small> · tenés <b>${ypTxt(PROG.yp)}</b>
+      ${xpHtml}${progHtml}${nx?`<br>Investigando: ${VEH[nx].label} (rango ${RANK_ROMAN[rankOf(nx)]}) · ${(PROG.rp[nx]||0).toLocaleString('es-AR')} / ${rpCost(nx).toLocaleString('es-AR')} PI<div class="pbar"><i style="width:${Math.round((PROG.rp[nx]||0)/rpCost(nx)*100)}%"></i></div>`:'<br>No queda nada para investigar en '+NATIONS[n].label+' por ahora.'}</div>`;
+    if(unl.length&&!net.on) rpHtml+=`<div class="rpbox unl">${unl.map(k=>`<div class="unlI" data-k="${k}">${unlHTML(k)}</div>`).join('')}</div>`; }
   $('panel').innerHTML=`<h1>${spectating?'Fin de la partida':MS?(winner===0?'Misión cumplida':'Misión fallida'):winner===0?'Victoria':'Derrota'}</h1>${rpHtml}
     <p>Gana ${N}. Tickets finales: ${allyLabel()} ${Math.max(0,Math.ceil(tickets[0]))}, ${NATIONS[foeNation].label} ${Math.max(0,Math.ceil(tickets[1]))}. Puntos: penetrar 20, destruir 100, capturar 60 y artillería 10 por impacto.</p>
     <div class="sumwrap">${table(0)}${table(1)}</div>
@@ -322,9 +322,17 @@ function summary(winner){
   if(net.host) $('menuB').textContent='Cerrar la sala';
   $('again').onclick=()=>{initAudio(); if(MS) startMission(mres&&mres.next?mres.next.id:MS.id); else if(curSpecial) startBattle(spectating,'puente',curSpecial); else startBattle(spectating,nextMapKey());};
   $('menuB').onclick=()=>{ if(MS){ menuScreen='hangar'; playMode='camp'; } mainMenu(); if(MS) setTimeout(()=>hgCampaign(),0); };
-  document.querySelectorAll('#panel [data-try]').forEach(b=>b.onclick=()=>tryTank(b.dataset.try));
-  document.querySelectorAll('#panel [data-tut]').forEach(b=>b.onclick=()=>{ initAudio(); startTutorial(b.dataset.tut); });
+  const ub=document.querySelector('#panel .rpbox.unl');
+  if(ub) ub.onclick=e=>{ const b=e.target.closest('button'), it=e.target.closest('.unlI'); if(!b||!it||b.disabled) return; const k=it.dataset.k;
+    if(b.dataset.buy!=null){ if(buyTank(k)) it.innerHTML=unlHTML(k,true); }
+    else if(b.dataset.try!=null) tryTank(k); else if(b.dataset.tut!=null){ initAudio(); startTutorial(k); } };
 }
+// Tanque recién investigado: comprarlo y después probarlo (o hacer el tutorial si tiene algo especial)
+function unlHTML(k,justBought){ const V=VEH[k], c=ypCost(k), sp=vehSpecial(k);
+  if(!owned(k)) return `<p><b>¡Investigaste el ${V.label}!</b> Para usarlo tenés que comprarlo: cuesta <b>${ypTxt(c)}</b> y tenés ${ypTxt(PROG.yp)}.</p>
+    <div class="unlB">${PROG.yp>=c?`<button class="go" data-buy>Comprar · ${ypTxt(c)}</button>`:`<button class="go" disabled>Te faltan ${ypTxt(c-PROG.yp)}</button>`}</div>`;
+  return `<p><b>${justBought?'¡Compraste el':'Ya tenés el'} ${V.label}!</b> ${sp?`Tiene ${sp}. ¿Querés aprender a usarlo en el tutorial o probarlo directo en batalla?`:'¿Querés probarlo en batalla?'}</p>
+    <div class="unlB"><button class="go" data-try>Probar en batalla</button>${sp?`<button class="go alt" data-tut>Tutorial con este tanque</button>`:''}</div>`; }
 function radios(group,obj,cur,cls,dis){
   return `<div class="pick ${cls||''}" role="radiogroup">${Object.entries(obj).map(([k,T])=>
     `<button class="tk" role="radio" data-g="${group}" data-k="${k}" aria-checked="${k===cur}" aria-disabled="${k===dis}"><b>${T.label}</b>${T.desc}</button>`).join('')}</div>`;

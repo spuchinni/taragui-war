@@ -19,10 +19,31 @@ function deploySmoke(t,force){
   if(net.host) netAll({t:'smk',x,y,z});
   return true;
 }
+// Follaje: las copas de los árboles tapan la vista. Grilla de copas (centro y radio) que se rearma si cambia el bosque.
+let _crowns=null, _crownsFor=null, _crownsN=-1;
+const CROWN_CELL=10, crownKey=(i,j)=>i*4096+j;
+function crownOf(sp){ const S=SPECIES[sp]; if(!S._c){ const g=S.crown(); g.scale(...S.cs); g.computeBoundingSphere(); S._c={r:g.boundingSphere.radius,y:S.cy+g.boundingSphere.center.y}; g.dispose(); } return S._c; }
+function crownGrid(){
+  if(_crownsFor===trees&&_crownsN===trees.length) return _crowns;
+  _crowns=new Map(); _crownsFor=trees; _crownsN=trees.length;
+  for(const tr of trees){ const c=crownOf(tr.sp); tr.cy=tr.y+c.y*tr.s*tr.hs; tr.cr=c.r*tr.s*.8;
+    const k=crownKey(Math.floor(tr.x/CROWN_CELL),Math.floor(tr.z/CROWN_CELL)); let L=_crowns.get(k); if(!L) _crowns.set(k,L=[]); L.push(tr); }
+  return _crowns;
+}
+// ¿Cuántos metros de copas cruza la línea? Se ignoran los 4 m de cada punta (un tanque metido entre arbustos igual ve afuera)
+function foliageBlocks(a,b){
+  if(!trees.length) return false; const G=crownGrid(), d=a.distanceTo(b), n=Math.ceil(d/2); let inside=0;
+  for(let i=1;i<n;i++){ const k=i/n; if(k*d<4||(1-k)*d<4) continue; const x=a.x+(b.x-a.x)*k, y=a.y+(b.y-a.y)*k, z=a.z+(b.z-a.z)*k;
+    const L=G.get(crownKey(Math.floor(x/CROWN_CELL),Math.floor(z/CROWN_CELL))); if(!L) continue;
+    // cada árbol tapa como un cilindro del suelo a la copa (troncos, ramas bajas y monte bajo), un poco más angosto que la copa
+    for(const tr of L){ if(tr.fallen||tr.gone||y>tr.cy+tr.cr) continue; const dx=x-tr.x, dz=z-tr.z, r=tr.cr*.75; if(dx*dx+dz*dz<r*r){ if(++inside>=2) return true; break; } } }
+  return false;
+}
 function los(a,b){
   if(smokes.length&&smokeBlocks(a,b)) return false;
   const d=a.distanceTo(b), n=Math.ceil(d/4);
   for(let i=1;i<n;i++){const k=i/n, x=a.x+(b.x-a.x)*k, y=a.y+(b.y-a.y)*k, z=a.z+(b.z-a.z)*k; if(y<hAtY(x,z,y)+.4) return false;}
+  if(foliageBlocks(a,b)) return false;
   ray.set(a,b.clone().sub(a).normalize()); ray.far=d; const h=ray.intersectObjects(houseMeshes,false).length; ray.far=Infinity;
   return h===0;
 }

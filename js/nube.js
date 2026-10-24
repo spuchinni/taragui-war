@@ -6,7 +6,7 @@ const nube={on:false,user:null,ok:false,vista:null,msg:'',ocupado:false,timer:0,
 try{ if(typeof firebase!=='undefined'&&typeof FIREBASE_CONFIG!=='undefined'){ firebase.initializeApp(FIREBASE_CONFIG); firebase.auth().languageCode='es'; nube.on=true; } }catch(e){ nube.on=false; }
 const nubeDoc=()=>firebase.firestore().collection('jugadores').doc(nube.user.uid);
 const escH=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-const progDe=s=>{ try{ const P=JSON.parse(s||'null'); return P&&P.v===2?P:null; }catch(e){ return null; } };
+const progDe=s=>{ try{ const P=JSON.parse(s||'null'); return P&&P.v===3?P:null; }catch(e){ return null; } };
 const progJugado=s=>{ const P=progDe(s); return P?((P.stats&&P.stats.battles)||0)+Object.keys(P.camp||{}).length:0; };
 const progT=s=>{ const P=progDe(s); return (P&&P.t)||0; };
 const leerLS=k=>{ try{ return localStorage.getItem(k); }catch(e){ return null; } };

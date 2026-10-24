@@ -38,7 +38,7 @@ function introUI(){
   el=document.createElement('div'); el.id='introUI';
   el.innerHTML=`<div class="iBar t"></div><div class="iBar b"></div><div class="iFade" id="iFade"></div>
     <div class="iTxt" id="iTxt"><div class="iEra" id="iEra"></div><div class="iSub" id="iSub"></div></div>
-    <div class="iLogo" id="iLogo">Taragüí War<small>Frente de Acero</small></div>
+    <div class="iLogo" id="iLogo"><img src="img/logo.jpg" alt="Taragüí War: Frente de Acero"></div>
     <div class="iStart" id="iStart"><b>Taragüí War</b><span>Hacé clic para empezar</span></div>
     <button class="iSkip" id="iSkip">Saltar intro ⏭</button>`;
   document.body.appendChild(el);
@@ -47,15 +47,23 @@ function introUI(){
   return el;
 }
 document.addEventListener('keydown',e=>{ if(state!=='intro') return; if(['Escape','Enter','Space'].includes(e.code)){ e.preventDefault(); e.stopImmediatePropagation(); if(intro&&!intro.on&&e.code!=='Escape') $('iStart').click(); else introEnd(); } },true);
+// Intro en video: al subir video/intro.mp4, poner INTRO_VIDEO_ON=true y se muestra ese video en vez de la hecha con el motor
+const INTRO_VIDEO='video/intro.mp4', INTRO_VIDEO_ON=false;
+let introVideoOk=INTRO_VIDEO_ON;
+function introVideo(){
+  const ui=introUI(); let v=$('iVid'); if(!v){ v=document.createElement('video'); v.id='iVid'; v.src=INTRO_VIDEO; v.playsInline=true; v.preload='auto'; ui.insertBefore(v,ui.firstChild); v.onended=()=>introEnd(); v.onerror=()=>{ introVideoOk=false; introEnd(); }; }
+  v.hidden=false; v.currentTime=0; $('iFade').style.opacity=0; ui.querySelectorAll('.iBar').forEach(b=>b.hidden=true);
+  if(typeof musStop==='function') musStop(); v.volume=Math.min(1,volMaster); v.play().catch(()=>{});
+}
 // Arranca la intro. Sin sonido habilitado todavía (primera visita) muestra "Hacé clic para empezar": el clic habilita el audio.
 function introStart(){
-  if(!INTRO_SHOTS.length) return;
+  if(!INTRO_SHOTS.length&&!introVideoOk) return;
   if(document.pointerLockElement) document.exitPointerLock();
   stopAllLoops(); state='intro'; intro=intro||introScene(); intro.on=false; intro.i=-1; intro.t=0;
   const ui=introUI(); ui.hidden=false; document.body.classList.add('intro'); $('iLogo').style.opacity=0; $('iTxt').style.opacity=0; $('iFade').style.opacity=1;
   if(AC&&AC.state==='running') introPlay(); else $('iStart').hidden=false;
 }
-function introPlay(){ $('iStart').hidden=true; intro.on=true; intro.i=-1; introNext(); }
+function introPlay(){ $('iStart').hidden=true; if(introVideoOk){ intro.on=false; intro.vid=true; introVideo(); return; } intro.vid=false; intro.on=true; intro.i=-1; introNext(); }
 function introTank(key){
   const t=makeTank({name:'',team:0,nation:VEH[key].nation,isPlayer:false,cams:{}},key,0,0,0);
   const i=tanks.indexOf(t); if(i>=0) tanks.splice(i,1); colliders=colliders.filter(c=>c.userData.tank!==t);
@@ -100,7 +108,7 @@ function introCam(S,u,P){
 }
 // Un cuadro de la intro (frame() lo llama en vez del juego mientras state==='intro')
 function introFrame(dt){
-  const I=intro; syncIntro(); quietEngine();
+  const I=intro; if(I.vid){ quietEngine(); return; } syncIntro(); quietEngine();
   if(I.on&&I.i<INTRO_SHOTS.length){
     const S=INTRO_SHOTS[I.i], t=I.tank; I.t+=dt; const u=Math.min(1,I.t/S.dur);
     I.z+=S.v*dt; t.root.position.set(0,0,I.z); t.root.rotation.x=Math.sin(I.t*2.3)*.006;
@@ -112,7 +120,7 @@ function introFrame(dt){
     $('iTxt').style.opacity=I.t<.5?I.t/.5:I.t>S.dur-.7?Math.max(0,(S.dur-I.t)/.7):1;
     $('iFade').style.opacity=I.t<.35?1-I.t/.35:I.t>S.dur-.35?Math.min(1,(I.t-(S.dur-.35))/.35):0;
     if(I.t>=S.dur) introNext();
-  } else if(I.on){ I.logoT+=dt; $('iFade').style.opacity=I.logoT<.4?1-I.logoT/.4*.6:I.logoT>2.6?Math.min(1,.4+(I.logoT-2.6)/.5):.4; // velo oscuro para que se lea el logo
+  } else if(I.on){ I.logoT+=dt; $('iFade').style.opacity=I.logoT<.4?1-I.logoT/.4*.3:I.logoT>2.6?Math.min(1,.7+(I.logoT-2.6)/.5):.7; // fondo casi negro detrás del logo
     const C=I.cam; C.position.set(Math.sin(I.logoT*.1)*30,8,-40); C.lookAt(0,1,20); if(I.logoT>3.2) introEnd(); }
   else { const C=I.cam; C.position.set(12,4,-10); C.lookAt(0,1,10); }
   I.shake=Math.max(0,(I.shake||0)-dt); if(I.light) I.light.intensity=Math.max(0,I.light.intensity-dt*22);
@@ -124,7 +132,8 @@ function introFrame(dt){
 function introEnd(){
   if(state!=='intro') return;
   try{ localStorage.setItem('tw_intro_vista','1'); }catch(e){}
-  const I=intro; if(I.tank){ I.sc.remove(I.tank.root); I.tank=null; } I.fx.forEach(F=>{ I.sc.remove(F.m); F.m.material.dispose(); }); I.fx.length=0; I.on=false;
+  const I=intro; if(I.tank){ I.sc.remove(I.tank.root); I.tank=null; } I.fx.forEach(F=>{ I.sc.remove(F.m); F.m.material.dispose(); }); I.fx.length=0; I.on=false; I.vid=false;
+  const v=$('iVid'); if(v){ v.pause(); v.hidden=true; } document.querySelectorAll('#introUI .iBar').forEach(b=>b.hidden=false);
   $('introUI').hidden=true; document.body.classList.remove('intro');
   state='menu'; menuScreen='home'; mainMenu();
 }
