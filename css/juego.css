@@ -92,8 +92,8 @@ body.deploy #ammobar,body.spec #ammobar,body.menu #ammobar{display:none}
 body:not(.menu) #fsBtn{right:14px;top:auto;bottom:calc(240px + env(safe-area-inset-bottom,0px));width:34px;height:34px;font-size:18px;opacity:.75}
 /* Pantalla principal con la ilustración: el arte se escala como "cover" y los botones tapan la barra dibujada */
 body.menu.home:not(.deploy) #overlay{background:#0d0c0a}
-.homeArt{position:fixed;left:50%;top:50%;width:max(100vw,calc(100vh*2.2648));height:max(100vh,calc(100vw/2.2648));transform:translate(-50%,-50%);
-  background:url(../img/portada.jpg) center/100% 100% no-repeat;pointer-events:none}
+.homeArt{position:fixed;left:50%;top:50%;width:max(100vw,calc(100vh*1.7778));height:max(100vh,calc(100vw/1.7778));transform:translate(-50%,-50%);
+  background:url(../img/portada-logo.jpg) center/100% 100% no-repeat;pointer-events:none}
 .homeShade{position:fixed;left:0;right:0;bottom:0;height:150px;background:linear-gradient(180deg,rgba(10,10,8,0),rgba(10,10,8,.85) 55%,rgba(10,10,8,.95));pointer-events:none}
 .homeArt .press{position:absolute;left:50%;top:83.8%;transform:translate(-50%,-50%);padding:.45em 1.8em;background:rgba(14,13,11,.97);border:1px solid rgba(239,231,210,.25);
   font:700 clamp(13px,1.5vw,22px) system-ui,sans-serif;letter-spacing:.12em;color:var(--paper);white-space:nowrap;pointer-events:auto;cursor:pointer;animation:pressP 1.6s ease-in-out infinite}
@@ -129,7 +129,7 @@ body.intro #overlay,body.intro #acct{display:none!important}
 #introUI .iLogo{position:absolute;inset:0;display:grid;place-items:center;opacity:0;transition:opacity .6s}
 #introUI .iLogo img{width:min(760px,86vw);height:auto;-webkit-mask-image:radial-gradient(ellipse 62% 64% at center,#000 78%,transparent 100%);mask-image:radial-gradient(ellipse 62% 64% at center,#000 78%,transparent 100%)}
 #introUI .iStart{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;background:#0b0c0d;color:var(--paper);cursor:pointer;pointer-events:auto}
-#introUI .iStart[hidden]{display:none} #introUI .iStart b{font-size:clamp(46px,8vw,96px);line-height:1} #introUI .iStart span{font-size:22px;color:var(--khaki);animation:pressP 1.6s infinite}
+#introUI .iStart[hidden]{display:none} #introUI .iStart{background:#0b0c0d url(../img/portada-logo.jpg) center/cover no-repeat;justify-content:flex-end;padding-bottom:12vh} #introUI .iStart span{font-size:22px;color:var(--khaki);animation:pressP 1.6s infinite}
 #introUI .iSkip{position:absolute;right:16px;bottom:calc(9vh + 16px);pointer-events:auto;font:700 16px system-ui,sans-serif;padding:9px 16px;color:var(--paper);background:rgba(20,18,14,.7);border:1px solid rgba(239,231,210,.45);cursor:pointer}
 #introUI .iSkip:hover{background:rgba(60,55,40,.9)}
 /* Cuenta: botón en el inicio y ventana para entrar con Google o con mail */

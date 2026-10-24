@@ -1,5 +1,5 @@
 /* ---------- Intro: presentación hecha con el motor del juego, de la 1ª Guerra a los tanques modernos ----------
-   Sale una vez por cada versión de la intro (tw_intro_vista guarda INTRO_ID: al cambiar la intro, subir INTRO_ID) y se vuelve a ver desde el inicio o Ajustes.
+   Sale cada vez que se abre el juego (se saltea con el botón, Esc o Enter) y se vuelve a ver desde el inicio o Ajustes.
    Usa una escena propia (como el hangar): un campo, un tanque por toma, cámara de cine, fogonazo y textos. */
 const INTRO_SHOTS=[
   {k:'mk1',t:'1916 · Primera Guerra Mundial',s:'Los primeros tanques de la historia cruzan las trincheras del Somme',sky:0x9d9a8c,gr:0x5b4c3a,ww1:1,v:1.5,cam:'side',fire:3.2,dur:6.5},
@@ -40,7 +40,7 @@ function introUI(){
   el.innerHTML=`<div class="iBar t"></div><div class="iBar b"></div><div class="iFade" id="iFade"></div>
     <div class="iTxt" id="iTxt"><div class="iEra" id="iEra"></div><div class="iSub" id="iSub"></div></div>
     <div class="iLogo" id="iLogo"><img src="img/logo.jpg" alt="Taragüí War: Frente de Acero"></div>
-    <div class="iStart" id="iStart"><b>Taragüí War</b><span>Hacé clic para empezar</span></div>
+    <div class="iStart" id="iStart"><span>Hacé clic para empezar</span></div>
     <button class="iSkip" id="iSkip">Saltar intro ⏭</button>`;
   document.body.appendChild(el);
   $('iSkip').onclick=e=>{ e.stopPropagation(); introEnd(); };
@@ -48,8 +48,8 @@ function introUI(){
   return el;
 }
 document.addEventListener('keydown',e=>{ if(state!=='intro') return; if(['Escape','Enter','Space'].includes(e.code)){ e.preventDefault(); e.stopImmediatePropagation(); if(intro&&!intro.on&&e.code!=='Escape') $('iStart').click(); else introEnd(); } },true);
-// Intro en video: al subir video/intro.mp4, poner INTRO_VIDEO_ON=true y se muestra ese video en vez de la hecha con el motor
-const INTRO_VIDEO='video/intro.mp4', INTRO_VIDEO_ON=false;
+// Intro en video (video/intro.mp4, armado con los videos de Gemini): se muestra en vez de la hecha con el motor, que queda si el video no carga
+const INTRO_VIDEO='video/intro.mp4', INTRO_VIDEO_ON=true;
 let introVideoOk=INTRO_VIDEO_ON;
 function introVideo(){
   const ui=introUI(); let v=$('iVid'); if(!v){ v=document.createElement('video'); v.id='iVid'; v.src=INTRO_VIDEO; v.playsInline=true; v.preload='auto'; ui.insertBefore(v,ui.firstChild); v.onended=()=>introEnd(); v.onerror=()=>{ introVideoOk=false; introEnd(); }; }

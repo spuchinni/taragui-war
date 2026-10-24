@@ -1,7 +1,7 @@
 // Arranque: arma el primer mapa, muestra el menú y empieza el bucle del juego
 builtKey=chosenMap==='rand'?'villers':chosenMap; buildWorld(builtKey); assignSpawns(chosenNation); resetZones();
 mainMenu();
-if(!introSeen()) introStart();   // la primera vez que se abre el juego
+introStart();   // cada vez que se abre el juego (se puede saltear)
 document.getElementById('fsBtn').onclick=e=>{ e.stopPropagation(); toggleFS(); };
 requestAnimationFrame(loop);
 // ¿Hay una versión nueva publicada? (version.json no se guarda en caché). Si la hay, un aviso para recargar con la nueva.
