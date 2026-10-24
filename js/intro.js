@@ -1,5 +1,5 @@
 /* ---------- Intro: presentación hecha con el motor del juego, de la 1ª Guerra a los tanques modernos ----------
-   Sale la primera vez que se abre el juego (tw_intro_vista) y se puede volver a ver desde Ajustes.
+   Sale una vez por cada versión de la intro (tw_intro_vista guarda INTRO_ID: al cambiar la intro, subir INTRO_ID) y se vuelve a ver desde el inicio o Ajustes.
    Usa una escena propia (como el hangar): un campo, un tanque por toma, cámara de cine, fogonazo y textos. */
 const INTRO_SHOTS=[
   {k:'mk1',t:'1916 · Primera Guerra Mundial',s:'Los primeros tanques de la historia cruzan las trincheras del Somme',sky:0x9d9a8c,gr:0x5b4c3a,ww1:1,v:1.5,cam:'side',fire:3.2,dur:6.5},
@@ -9,7 +9,8 @@ const INTRO_SHOTS=[
   {k:'leo2a4',t:'Hoy',s:'Visión térmica, telémetro y estabilizador',sky:0x8d97a1,gr:0x6a6650,v:2.2,cam:'front',fire:2.6,dur:5.5}
 ].filter(S=>VEH[S.k]);
 let intro=null;
-const introSeen=()=>{ try{ return localStorage.getItem('tw_intro_vista')==='1'; }catch(e){ return true; } };
+const INTRO_ID='3';
+const introSeen=()=>{ try{ return localStorage.getItem('tw_intro_vista')===INTRO_ID; }catch(e){ return true; } };
 function introScene(){
   const sc=new THREE.Scene(); sc.fog=new THREE.Fog(0xaaaaaa,40,190); sc.background=new THREE.Color(0xaaaaaa);
   const hemi=new THREE.HemisphereLight(0xe8ecef,0x3a342a,.85); sc.add(hemi);
@@ -131,7 +132,7 @@ function introFrame(dt){
 }
 function introEnd(){
   if(state!=='intro') return;
-  try{ localStorage.setItem('tw_intro_vista','1'); }catch(e){}
+  try{ localStorage.setItem('tw_intro_vista',INTRO_ID); }catch(e){}
   const I=intro; if(I.tank){ I.sc.remove(I.tank.root); I.tank=null; } I.fx.forEach(F=>{ I.sc.remove(F.m); F.m.material.dispose(); }); I.fx.length=0; I.on=false; I.vid=false;
   const v=$('iVid'); if(v){ v.pause(); v.hidden=true; } document.querySelectorAll('#introUI .iBar').forEach(b=>b.hidden=false);
   $('introUI').hidden=true; document.body.classList.remove('intro');

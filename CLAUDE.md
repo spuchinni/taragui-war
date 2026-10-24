@@ -52,3 +52,4 @@ Cada vehículo y mapa tiene `era`; garaje por nación y época (`garRef`).
 ## Cómo trabajar
 - Probar en Chromium headless (Playwright) antes de entregar: sin errores de consola, partida y misión completas.
 - Commits en español; subir a `main` (GitHub Pages publica desde ahí) salvo que pida otra cosa.
+- Antes de cada commit que cambie el juego: `sh version.sh` (pone `?v=<versión>` en los scripts y estilos de index.html y actualiza version.json). Así el navegador no mezcla archivos viejos y nuevos (GitHub Pages los guarda 10 min) y el juego abierto avisa "Hay una versión nueva". Si cambia la intro, subir `INTRO_ID` en intro.js para que vuelva a salir una vez.

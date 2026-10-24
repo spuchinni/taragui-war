@@ -114,6 +114,8 @@ body.menu.home:not(.deploy) #overlay{background:#0d0c0a}
 .rpbox{margin:10px 0;padding:10px;background:rgba(0,0,0,.35);border-left:3px solid var(--amber)} .rpbox .pbar{height:7px;background:rgba(255,255,255,.12);margin-top:6px} .rpbox .pbar i{display:block;height:100%;background:var(--amber)}
 .setB{position:fixed;z-index:10;top:calc(16px + env(safe-area-inset-top,0px));right:18px;width:46px;height:46px;font-size:26px;line-height:1;background:rgba(20,18,14,.7);color:var(--paper);border:1px solid rgba(239,231,210,.35);cursor:pointer}
 .setB:hover{background:rgba(60,55,40,.85)}
+.introL{font:inherit;padding:2px 4px;background:none;border:0;color:var(--khaki);cursor:pointer;text-decoration:underline} .homeCopy{font-size:13px!important}
+.newV{position:fixed;z-index:45;left:50%;top:calc(74px + env(safe-area-inset-top,0px));transform:translateX(-50%);max-width:calc(100vw - 32px);padding:10px 18px;font:700 15px system-ui,sans-serif;color:#221e17;background:var(--amber);border:0;cursor:pointer;box-shadow:0 4px 14px rgba(0,0,0,.45)}
 /* Intro con el motor del juego: franjas de cine, textos por época, logo final y botón para saltar */
 body.intro #overlay,body.intro #acct{display:none!important}
 #introUI{position:fixed;inset:0;z-index:35;pointer-events:none;font-family:'Saira Condensed',system-ui,sans-serif}
