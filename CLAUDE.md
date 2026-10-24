@@ -16,6 +16,7 @@ Hablar siempre en español rioplatense (vos), respuestas concretas y breves.
   - `gm1-mapas.js`: generador de frentes de trincheras con semilla fija (Somme, Cambrai, Villers-Bretonneux, Saint-Mihiel): trincheras en zigzag que los tanques largos cruzan (`W.trench`, `curSpan`), alambradas (`W.wire`), embudos, pueblos en ruinas.
   - `campana.js`: campaña histórica (`CAMPAIGN`, 6 misiones 1916–1918 + mapa Berry-au-Bac), selector de épocas del hangar/árbol.
 - `js/nube.js` + `js/nube-config.js` → cuentas con Firebase (proyecto `taragui-war`): entrar con Google (principal) o con mail y contraseña (con verificación por mail y recuperación). Sin cuenta se juega igual con el progreso en el navegador. Con cuenta verificada el progreso (`PROG`) se guarda en Firestore en `jugadores/<uid>` (campo `prog`, JSON) y en el navegador en `tw2_progress@<uid>`; gana el más nuevo según `PROG.t`. Reglas de Firestore: cada uno solo lee y escribe su documento y con mail verificado. Dominio autorizado: `spuchinni.github.io`.
+- `js/intro.js` → intro hecha con el motor (escena propia, como el hangar): Mark I 1916 → Renault FT → Sherman (2ª Guerra, próximamente) → TAM (Guerra Fría) → Leopard 2 y el logo. Sale la primera vez (`tw_intro_vista`), "Hacé clic para empezar" habilita el sonido, se salta con el botón, Esc o Enter, y se vuelve a ver desde Ajustes. `frame()` llama a `introFrame` mientras `state==='intro'`.
 - `snd/`, `voz/`, `img/` → sonidos CC0, voces de radio por idioma (es, en-gb, en-us, de, ru) y portada. Compartidos por v1 y v2.
 
 ## Épocas

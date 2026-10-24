@@ -192,7 +192,7 @@ function musStart(mode){
 }
 function syncIntro(){
   if(!AC) return;
-  const want=['menu','summary','lobby','brief'].includes(state)?(state==='menu'&&menuScreen==='hangar'?'hangar':'music'):null;
+  const want=['menu','summary','lobby','brief','intro'].includes(state)?(state==='menu'&&menuScreen==='hangar'?'hangar':'music'):null;
   if(want===musMode) return; musMode=want; musStop(); if(want) musStart(want);
 }
 document.addEventListener('pointerdown',()=>{ initAudio(); if(AC.state==='suspended') AC.resume(); syncIntro(); });

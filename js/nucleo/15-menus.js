@@ -146,6 +146,7 @@ function renderSettings(){
     <h2>Calidad gráfica</h2><div class="hgOpt" id="gfxR">${['baja','media','alta'].map(k=>`<button class="${gfx===k?'sel':''}" data-q="${k}">${k[0].toUpperCase()+k.slice(1)}</button>`).join('')}</div>
     <p class="s">Baja: sin sombras ni pasto, para PCs viejas. Alta: todo al máximo. Se aplica en la próxima partida.</p>
     <h2>Pantalla</h2><label class="chk"><input type="checkbox" id="fsC" ${fsAuto?'checked':''}> Pantalla completa al salir a la partida</label>
+    <button class="go alt" id="introB" style="margin:4px 0 0">Ver la intro</button>
     <h2>Teclas</h2><p class="s">Hacé clic en una acción y presioná la tecla nueva. Esc cancela. Si la tecla ya estaba usada, se intercambian.</p>
     <div class="binds">${rows}</div>
     <button class="go alt" id="resetB">Restablecer teclas</button><button class="go alt" id="guideB">Guía completa</button><button class="go" id="back">Volver</button></div>`;
@@ -153,6 +154,7 @@ function renderSettings(){
   $('volR').oninput=e=>{volMaster=+e.target.value;$('volV').textContent=Math.round(volMaster*100)+' %'; if(master) master.gain.value=volMaster; saveSettings();};
   $('radioC').onchange=e=>{radioOn=e.target.checked; saveSettings();};
   $('fsC').onchange=e=>{fsAuto=e.target.checked; saveSettings();};
+  $('introB').onclick=goWrap(()=>{ bindCapture=null; introStart(); });
   document.querySelectorAll('#difR button').forEach(b=>b.onclick=()=>{ difficulty=b.dataset.d; saveSettings(); renderSettings(); });
   document.querySelectorAll('#gfxR button').forEach(b=>b.onclick=()=>{ gfx=b.dataset.q; saveSettings(); applyGfx(); renderSettings(); });
   document.querySelectorAll('.kb').forEach(b=>b.onclick=()=>{ bindCapture=bindCapture===b.dataset.k?null:b.dataset.k; renderSettings(); });
@@ -281,6 +283,7 @@ function loop(ts){
 }
 // Un cuadro del juego: simulación + dibujo (separado del bucle para poder probarlo paso a paso)
 function frame(dt){
+  if(state==='intro'&&typeof introFrame==='function'){ introFrame(dt); return; }
   const sim=['play','deploy','spectate','end'].includes(state)||(net.on&&(state==='paused'||state==='brief'));
   camera.up.set(0,1,0); boardMode=false; infAmbTick(dt);
   if(sim){
