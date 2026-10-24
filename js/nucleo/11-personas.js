@@ -187,7 +187,7 @@ function killInf(P,by,how){
   if(P.board) P.board.boarding=null;
   const crew=by&&by.crew&&!by.inf?by.crew:null;
   if(isCiv(P)){ if(crew) award(crew,P.kind==='dog'?'Animal herido':'Civil abatido',P.kind==='dog'?-20:-50,P.kind==='dog'?-20:-60); return; }
-  if(crew&&by.team!==P.team){ addSP(by,8,10); if(crew.st) crew.st.inf++; if(by.isPlayer) hitMsg(`${P.name} abatido`,'var(--amber)'); }
+  if(crew&&by.team!==P.team){ addSP(by,8,10); if(crew.st) crew.st.inf++; if(by.isPlayer) hitMsg(`Baja: ${P.name.toLowerCase()}`,'var(--amber)'); }
 }
 function infBlast(p,r,by){
   for(const P of infantry){ if(P.dead||(by&&!isCiv(P)&&P.team===by.team)) continue; const d=P.pos.distanceTo(p);

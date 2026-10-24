@@ -110,6 +110,7 @@ body.menu.home:not(.deploy) #overlay{background:#0d0c0a}
 .tree .vrow.own{border-color:rgba(127,176,105,.5)} .tree .vrow.res{border-color:var(--amber)} .tree .vrow.lock{opacity:.5}
 .tree .vrow.in{background:rgba(127,176,105,.18)} .tree .pbar{height:6px;background:rgba(255,255,255,.12);margin-top:5px} .tree .pbar i{display:block;height:100%;background:var(--amber)}
 .tree button{font:600 14px inherit;font-family:inherit;padding:5px 10px;background:rgba(0,0,0,.45);color:var(--paper);border:1px solid rgba(239,231,210,.35);cursor:pointer}
+.rpbox.unl{border-left-color:var(--ally)} .rpbox.unl p{margin:0 0 8px} .unlB{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:6px} .unlB .go{font-size:18px;padding:9px 18px} .unlB .go.alt{margin-left:0}
 .rpbox{margin:10px 0;padding:10px;background:rgba(0,0,0,.35);border-left:3px solid var(--amber)} .rpbox .pbar{height:7px;background:rgba(255,255,255,.12);margin-top:6px} .rpbox .pbar i{display:block;height:100%;background:var(--amber)}
 .setB{position:fixed;z-index:10;top:calc(16px + env(safe-area-inset-top,0px));right:18px;width:46px;height:46px;font-size:26px;line-height:1;background:rgba(20,18,14,.7);color:var(--paper);border:1px solid rgba(239,231,210,.35);cursor:pointer}
 .setB:hover{background:rgba(60,55,40,.85)}

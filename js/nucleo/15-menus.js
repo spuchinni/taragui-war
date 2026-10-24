@@ -48,7 +48,7 @@ function renderHangar(){
     return `<button class="hgc${k===hgSel?' sel':''}${s.own?'':' lock'}" data-k="${k}"><span class="br">${brTxt(W2.br)}</span>${s.inG?'<span class="gar" title="En el garaje">★</span>':''}
       <b>${W2.label}</b><small>${s.own?`${CLS_ES[W2.cls]||W2.cls} · Nv ${tankLv(k)}`:s.res?'Investigando':'🔒 Bloqueado'}</small>
       ${s.res?`<i class="pb"><i style="width:${Math.round(s.have/s.cost*100)}%"></i></i>`:''}</button>`; };
-  const upg=[2,3,4,5].map(l=>`<li class="${lv>=l?'ok':''}"><b>Nv ${l}</b> ${LV_UP[l].n}</li>`).join('');
+  const upg=[2,3,4,5].map(l=>`<li class="${lv>=l?'ok':''}"><b>Nv ${l}</b> ${lvUp(l,hgSel).n}</li>`).join('');
   const modes={battle:'Batalla',camp:'Campaña',...(curEra===5?{esp:'Ctes. vs. Resistencia'}:{}),watch:'Ver partida',online:'Online',tut:'Tutorial'}; if(!modes[playMode]) playMode='battle';
   const playTxt=playMode==='camp'?'Abrir la campaña':playMode==='tut'?(S.own?'Tutorial con este tanque':'Tanque bloqueado'):playMode==='watch'?'Mirar una partida':playMode==='online'?'Jugar online':playMode==='esp'?'¡Al puente!':'¡A la batalla!';
   $('panel').innerHTML=`<div class="hg">
@@ -238,7 +238,7 @@ document.addEventListener('keydown',e=>{
   if(state==='play'&&player&&!player.dead){
     for(let i=0;i<3;i++) if(e.code===binds['ammo'+(i+1)]&&i<player.T.ammo.length){ if(player.ammoCount&&player.ammoCount[i]<=0) hitMsg('No queda munición de ese tipo','var(--enemy)'); else selectAmmo(player,i); }
     if(e.code===binds.repair) startRepair(player);
-    if(e.code===binds.smoke&&!e.repeat) deploySmoke(player);
+    if(e.code===binds.smoke&&!e.repeat&&!player.noSmk) deploySmoke(player);
     if(e.code===binds.ext&&!e.repeat){ if(net.guest) net.hostConn.send({t:'ext'}); else extinguish(player); }
     if(e.code===binds.crewSwap) callCrew(player);
     if(e.code===binds.ammoAuto&&player.T.ammo.length>1){ if(tut&&tut.manual) tut.autoBack=true; player.ammoManual=null; hitMsg('Munición automática','var(--paper)'); } }

@@ -76,14 +76,15 @@ function updateAI(t,dt){
   t.thinkT-=dt;
   const mine=t.team===0?1:-1, inZone=zones.some(Z=>Z.owner!==mine&&Math.hypot(t.pos.x-Z.x,t.pos.z-Z.z)<Z.r-3);
   if(t.thinkT<=0){
-    const sk=t.sk||.6, vr0=260+120*sk, vr=vr0*(t.T.thermal?1:(WX.see||1)); t.thinkT=rand(.4,.7)*(1.6-sk);
+    // no ven más lejos de lo que ve el jugador: el tope es la mitad de la niebla del mapa (salvo con térmica)
+    const sk=t.sk||.6, fg=WX.fog||W.fog||[150,460], fogV=(fg[0]+fg[1])/2, vr0=Math.min(260+120*sk,fogV*1.15), vr=t.T.thermal?vr0:Math.min(vr0*(WX.see||1),fogV); t.thinkT=rand(.4,.7)*(1.6-sk);
     const e=eyeOf(t); let best=null,bd=1e9;
     for(const o of tanks){ if(o.dead||o.team===t.team) continue; const d=o.pos.distanceTo(t.pos);
       if(d<((o.firedT||-9)>now-3?vr0:vr)&&d<bd&&los(e,eyeOf(o))){best=o;bd=d;} }
     // aliados: si el jugador está peleando con alguien que ven, se suman
     if(t.team===0&&playerFocus&&!playerFocus.dead&&now-playerFocusT<10){ const d=playerFocus.pos.distanceTo(t.pos); if(d<380&&los(e,eyeOf(playerFocus))) best=playerFocus; }
     // cualquier bando: enemigo marcado por un compañero, si lo ven
-    if(!best){ let bd=1e9; for(const o of tanks){ if(o.dead||o.team===t.team||o.spottedT<=0) continue; const d=o.pos.distanceTo(t.pos); if(d<380&&d<bd&&los(e,eyeOf(o))){best=o;bd=d;} } }
+    if(!best){ let bd=1e9; for(const o of tanks){ if(o.dead||o.team===t.team||o.spottedT<=0) continue; const d=o.pos.distanceTo(t.pos); if(d<Math.min(380,vr0)&&d<bd&&los(e,eyeOf(o))){best=o;bd=d;} } }
     // blanco nuevo: tarda en reaccionar antes del primer disparo (menos cuanto más hábil)
     if(best!==t.target){ t.target=best; t.errScale=1; t.flankTried=false; t.reactT=now+rand(1.2,2.5)*(1.6-sk); if(t.mode==='cover'||t.mode==='peek'||t.mode==='flank') t.mode='adv'; }
     if(best&&t.mode==='adv') planFlank(t,best);
@@ -120,7 +121,7 @@ function updateAI(t,dt){
     aimErr=aimAt(t,tgt.pos.clone().setY(tgt.pos.y+tgt.aimH),dt,t.eY*t.errScale,t.eP*t.errScale);
     // sin torre (barbetas, casamatas, cañones de campaña): gira el casco para que el blanco entre en el arco del cañón
     if(t.T.arc!=null){ const off=wrap(want-t.heading-(t.T.arcC||0)); if(Math.abs(off)>t.T.arc*.85){ steer=clamp(off*2.5,-1,1); if(!mv) throttle=Math.min(throttle,.15); } }
-    if(t.reloadT<=0&&now>(t.reactT||0)&&aimErr<.02&&Math.abs(t.speed)<(t.T.stab?9:4)&&t.mode!=='cover'&&t.mode!=='retreat'){ fireGun(t); t.eY=rand(-1,1)*.035*(1.6-sk); t.eP=rand(-1,1)*.01*(1.6-sk); t.errScale*=.7;
+    if(t.reloadT<=0&&now>(t.reactT||0)&&aimErr<.02&&Math.abs(t.speed)<(t.T.stab?9:4)&&t.mode!=='cover'&&t.mode!=='retreat'){ fireGun(t); if(tgt.isPlayer) t.spottedT=Math.max(t.spottedT||0,6); /* el fogonazo lo delata: queda marcado */ t.eY=rand(-1,1)*.035*(1.6-sk); t.eP=rand(-1,1)*.01*(1.6-sk); t.errScale*=.7;
       // dispara y se cubre mientras recarga (tirar y esconderse)
       if(t.mode==='adv'&&sk>.35&&t.reloadMax>2.5&&Math.random()<sk*.9){ const cp=findCover(t,tgt); if(cp){ t.coverP=cp; t.peekP=t.pos.clone(); t.mode='cover'; t.modeT=now+t.reloadMax+2; } } }
     if(d<220&&aimErr<.06&&!t.mgLock&&now>t.mgNext){

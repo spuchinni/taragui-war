@@ -29,7 +29,10 @@ Cada vehículo y mapa tiene `era`; garaje por nación y época (`garRef`).
 - Prioridad: que corra bien en una PC común (cuidar triángulos y llamadas de dibujo; instanciar).
 - Menús estilo War Thunder sin scroll: hangar con tanque 3D, árbol aparte, ⚙ para sensibilidad y teclas. Intro de mapa antes de cada partida. HUD estilo War Thunder.
 - Niveles por tanque según experiencia; el tutorial se adapta al tanque y suma prácticas al subir de nivel.
-- Dificultad en Ajustes (`DIF` en 10-marcas-apoyo.js, por defecto Normal): Fácil, Normal, Difícil o "Se adapta a vos" (la de antes, con `PROG.skill`). Los bots no pueden ser "muy pro": error de puntería mínimo, demora antes del primer disparo, y artillería/aviones con espera compartida por bando (60/120 s, más en Fácil y Normal), nada en el primer minuto y con error de varios metros.
+- Dificultad en Ajustes (`DIF` en 10-marcas-apoyo.js, por defecto Normal): Fácil, Normal, Difícil o "Se adapta a vos" (la de antes, con `PROG.skill`). Los bots no pueden ser "muy pro": error de puntería mínimo, demora antes del primer disparo, y artillería/aviones con espera compartida por bando (60/120 s, más en Fácil y Normal), nada en el primer minuto y con error de varios metros. Los bots no ven más lejos que la mitad de la niebla del mapa/clima (salvo térmica) y el que le dispara al jugador queda marcado 6 s.
+- Fidelidad de época: `ERAS[e].smoke===0` (1ª Guerra) = sin lanzahumos; ahí el nivel 2 da cintas extra de ametralladora (`lvUp`). Los extintores se quedan (los tanques británicos llevaban extintores Pyrene).
+- Mensajes de ametralladora: solo "Impacto"; detalle si rompe algo (oruga, daño, cañón, destruido). Infantería: "Baja: fusilero".
+- Al desbloquear un tanque, el resumen ofrece "Probar en batalla" y, si tiene algo especial (`vehSpecial`), "Tutorial con este tanque".
 - Daño realista: blindaje por zonas, orugas que aguantan mucho la ametralladora, cañón que se daña, reparación con un tripulante afuera y ayuda de ingenieros, hundirse en agua profunda.
 - Sonido: grabaciones reales CC0 (Freesound); voces de radio TTS en el idioma de cada nación con efecto de radio.
 - Online P2P (PeerJS/WebRTC) con su PC de anfitrión; sus amigos tienen que poder jugar sin tener Claude.

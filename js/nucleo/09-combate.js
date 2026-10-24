@@ -154,7 +154,9 @@ function hitTank(by,hit,dir,pen,kind,A){
   if(kind==='shell'&&by.isPlayer&&!t.dead){ if(res==='Rebote') radio('¡Rebotó!'); else if(res==='No penetró') radio('No penetró.'); else if(res==='Penetración') radio('¡Penetración!'); }
   if(kind==='shell'&&t.isPlayer){ if(res==='Penetración') radio('¡Nos penetraron!',2); else if(res==='Rebote') radio('¡Rebotó en el blindaje!'); else if(res==='No penetró') radio('El blindaje aguantó.'); }
   if(by.isPlayer||isRemote(by)){
-    if(kind==='mg'){ if(res==='Oruga cortada') tell(by,'¡Oruga cortada con la ametralladora!','var(--amber)'); else if(res==='trk'){ if(by.isPlayer?mgMsgT<=0:(by.mgMsgT||0)<now){ by.mgMsgT=now+.6; if(by.isPlayer) mgMsgT=.6; tell(by,`Ametralladora en la oruga · ${Math.max(0,Math.round(Math.min(...t.trkHP)))} %`,'var(--amber)'); } } else if(by.isPlayer?mgMsgT<=0:(by.mgMsgT||0)<now){ by.mgMsgT=now+.8; tell(by,res==='mg'?(t.dead?'Destruido':'Ametralladora: perfora el blindaje'):'Ametralladora: no perfora', res==='mg'?'var(--amber)':'var(--paper)'); if(by.isPlayer) mgMsgT=.8; } }
+    // ametralladora: solo "Impacto"; el detalle aparece cuando rompe algo (oruga, daño que pasa el blindaje, destruido)
+    if(kind==='mg'){ const big=t.dead||res==='Oruga cortada', m=t.dead?'Destruido':res==='Oruga cortada'?'Impacto · oruga cortada':res==='mg'?'Impacto · daño':'Impacto';
+      if(big||(by.isPlayer?mgMsgT<=0:(by.mgMsgT||0)<now)){ by.mgMsgT=now+.8; if(by.isPlayer) mgMsgT=.8; tell(by,m,big||res==='mg'?'var(--amber)':'var(--paper)'); } }
     else tell(by,res+(['Penetración','No penetró','Rebote'].includes(res)?' · '+(spot||FACE_ES[face]):'')+det, ['Penetración','Destruido','Estiba de munición'].includes(res)?'var(--amber)':'var(--paper)');
   }
   if(t.isPlayer&&by) hitFrom(by.pos.x,by.pos.z,kind==='mg'?.5:1);
@@ -172,7 +174,8 @@ function barrelHit(t,by,kind,pen,A){
   t.mod.barrel=Math.max(0,b0-dmg); t.lastBy=by; noteHit(t,by); setBarrelLook(t);
   const st=t.mod.barrel<=0?'cañón destruido':t.mod.barrel<60?'cañón dañado':'cañón rozado';
   if(kind!=='mg'&&(by.isPlayer||isRemote(by))) tell(by,'Impacto en el cañón · '+st,'var(--amber)');
-  if(kind==='mg'&&(by.isPlayer||isRemote(by))&&(by.isPlayer?mgMsgT<=0:(by.mgMsgT||0)<now)){ by.mgMsgT=now+.8; if(by.isPlayer) mgMsgT=.8; tell(by,`Ametralladora en el cañón · ${Math.round(t.mod.barrel)} %`,'var(--paper)'); }
+  if(kind==='mg'&&(by.isPlayer||isRemote(by))){ const ch=(b0>0&&t.mod.barrel<=0)||(b0>=60&&t.mod.barrel<60);
+    if(ch||(by.isPlayer?mgMsgT<=0:(by.mgMsgT||0)<now)){ by.mgMsgT=now+.8; if(by.isPlayer) mgMsgT=.8; tell(by,ch?'Impacto · '+st:'Impacto',ch?'var(--amber)':'var(--paper)'); } }
   if((t.isPlayer||isRemote(t))&&(kind!=='mg'||(b0>0&&t.mod.barrel<=0)||(b0>=60&&t.mod.barrel<60))) tell(t,'Te pegaron en el cañón · '+st+(t.mod.barrel<=0?': repará para volver a disparar':t.mod.barrel<60?': dispara con menos precisión':''),'var(--enemy)');
   if(kind!=='mg'&&!(A.sc<1)) addSP(by,8,15);
   if(t.isPlayer&&by) hitFrom(by.pos.x,by.pos.z,kind==='mg'?.4:.8); else if(by&&isRemote(t)) netTo(t,{t:'hf',x:by.pos.x,z:by.pos.z,s:.8});

@@ -160,7 +160,7 @@ function updateAmmoBar(t){
   const slots=[...L.map((A,i)=>({id:'a'+i,key:binds['ammo'+(i+1)],ic:shellIcon(A.kind),title:`${A.n} (${KIND_ES[A.kind]})`})),
     ...(L.length>1?[{id:'auto',key:binds.ammoAuto,ic:'<span style="font-size:13px">AUTO</span>',title:'Munición automática'}]:[]),{gap:1},
     {id:'arty',key:binds.arty,ic:'✸',title:'Artillería'},...(RULE().sup.air?[{id:'air',key:binds.air,ic:'✈',title:'Ataque aéreo'}]:[]),...(RULE().sup.nuke?[{id:'nuke',key:binds.nuke,ic:'☢',title:'Nuke'}]:[]),
-    {id:'rep',key:binds.repair,ic:'🔧',title:'Reparar'},{id:'crew',key:binds.crewSwap,ic:'👤',title:'Reemplazar tripulante con infantería'},{id:'smk',key:binds.smoke,ic:'☁',title:'Granadas de humo (nivel 2)'},{id:'ext',key:binds.ext,ic:'🧯',title:'Extintor'},
+    {id:'rep',key:binds.repair,ic:'🔧',title:'Reparar'},{id:'crew',key:binds.crewSwap,ic:'👤',title:'Reemplazar tripulante con infantería'},...(t.noSmk?[]:[{id:'smk',key:binds.smoke,ic:'☁',title:'Granadas de humo (nivel 2)'}]),{id:'ext',key:binds.ext,ic:'🧯',title:'Extintor'},
     ...(t.T.thermal?[{id:'th',key:binds.thermal,ic:'◐',title:'Visión térmica'}]:[]),...(t.troops?[{id:'tr',key:binds.troops,ic:'⇩',title:'Bajar infantería'}]:[])];
   const sig=t.T.label+'|'+(W.era||5)+'|'+JSON.stringify(binds);
   if(box._sig!==sig){ box._sig=sig; box.innerHTML=slots.map(S=>S.gap?'<span class="gap"></span>':`<div class="as" data-id="${S.id}" title="${S.title}"><div class="k">${keyName(S.key)}</div><div class="ic">${S.ic}<span class="n"></span><span class="cd"></span></div></div>`).join('');

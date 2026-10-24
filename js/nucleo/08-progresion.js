@@ -52,7 +52,9 @@ const CH_TYPES=[{id:'kills',n:k=>`Destruí ${k} tanques`,a:3,b:6},{id:'side',n:k
 const dayKey=()=>{ const d=new Date(); return `${d.getFullYear()}-${d.getMonth()+1}-${d.getDate()}`; };
 function ensureDaily(){ if(!PROG) loadProg(); const k=dayKey(); if(PROG.daily&&PROG.daily.day===k) return PROG.daily;
   let h=0; for(const ch of k) h=(h*31+ch.charCodeAt(0))>>>0; const rnd=()=>{ h=(h*1664525+1013904223)>>>0; return h/4294967296; };
-  const pool=CH_TYPES.slice(), list=[], NN=Object.keys(normalNations());
+  // el desafío del humo solo si ya tiene abierta alguna época con lanzahumos
+  const humo=Object.keys(PROG.eraOpen||{}).some(e=>eraReady(+e)&&ERAS[e].smoke!==0);
+  const pool=CH_TYPES.filter(T=>T.id!=='smoke'||humo), list=[], NN=Object.keys(normalNations());
   for(let i=0;i<3;i++){ const T=pool.splice((rnd()*pool.length)|0,1)[0]; list.push({t:T.id,need:T.a+Math.round(rnd()*(T.b-T.a)),have:0,done:false,nat:NN[(rnd()*NN.length)|0]}); }
   PROG.daily={day:k,list}; saveProg(); return PROG.daily; }
 const chText=c=>{ const T=CH_TYPES.find(x=>x.id===c.t); return T?T.n(c.need,c.nat):'?'; };
@@ -76,11 +78,15 @@ const mgCal=t=>t.mgCal||(t.T&&(t.T.mgc||MG_CAL[t.key]))||7.62, mgPen=c=>c>=14?32
 const LV_XP=[0,1500,4000,8000,14000];
 const LV_UP=[null,null,{k:'smoke',n:'Lanzahumos',d:'2 granadas de humo por salida (tecla de humo)'},{k:'rep',n:'Reparación rápida',d:'Reparás un 40 % más rápido'},
   {k:'ammo',n:'Munición mejorada',d:'+8 % de penetración y 20 % más proyectiles'},{k:'fcs',n:'Control de tiro',d:'Telémetro (o recarga 10 % más rápida si ya lo tenía)'}];
+// En épocas sin lanzahumos (1ª Guerra) el nivel 2 da cintas extra de ametralladora
+const LV2_NOSMOKE={k:'mg',n:'Cintas extra',d:'2 cintas más de ametralladora por salida'};
+const noSmokeEra=k=>ERAS[eraOf(k)]&&ERAS[eraOf(k)].smoke===0;
+const lvUp=(l,k)=>l===2&&noSmokeEra(k)?LV2_NOSMOKE:LV_UP[l];
 const tankXP=k=>(PROG&&PROG.txp&&PROG.txp[k])||0;
 const tankLv=k=>{ const x=tankXP(k); let l=1; for(let i=1;i<LV_XP.length;i++) if(x>=LV_XP[i]) l=i+1; return l; };
 function addTankXP(k,xp){ if(!PROG||!VEH[k]) return []; PROG.txp=PROG.txp||{}; const before=tankLv(k); PROG.txp[k]=tankXP(k)+xp; const after=tankLv(k); saveProg();
   const ups=[]; for(let l=before+1;l<=after;l++) ups.push(l); return ups; }
-function applyLevel(t,lv){ t.lv=lv=clamp(lv|0,1,5); t.smoke=lv>=2?2:0; t.repairK=lv>=3?.6:1; t.penK=lv>=4?1.08:1; t.fcsX=lv>=5&&!t.T.fcs;
+function applyLevel(t,lv){ t.lv=lv=clamp(lv|0,1,5); t.noSmk=noSmokeEra(t.key); t.smoke=lv>=2&&!t.noSmk?2:0; t.mgX=lv>=2&&t.noSmk; t.repairK=lv>=3?.6:1; t.penK=lv>=4?1.08:1; t.fcsX=lv>=5&&!t.T.fcs;
   if(lv>=5&&t.T.fcs) t.reloadMax*=.9; }
 const hasFcs=t=>!!(t&&(t.T.fcs||t.fcsX));
 const usesOf=(crew,key)=>crew.uses[key]||0;

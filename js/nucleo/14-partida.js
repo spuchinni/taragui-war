@@ -203,7 +203,7 @@ function buildTutSteps(P){
       const b=player.heading+Math.PI; for(let i=0;i<2;i++) makePerson('rifle',0,player.pos.x+Math.sin(b)*22+i*2,player.pos.z+Math.cos(b)*22); },
     ok:()=>crewAlive(player)===player.crewM.length});
   // Habilidades según el tanque y su nivel
-  if(P.lv>=2) S.push({t:'Humo (nivel 2)',x:`Tu tanque tiene lanzahumos. Apretá ${K('smoke')}: la nube corta la vista del enemigo unos 20 segundos. Tenés 2 granadas por salida.`,ok:U=>U.smoke});
+  if(P.smoke>0) S.push({t:'Humo (nivel 2)',x:`Tu tanque tiene lanzahumos. Apretá ${K('smoke')}: la nube corta la vista del enemigo unos 20 segundos. Tenés 2 granadas por salida.`,ok:U=>U.smoke});
   if(T.thermal) S.push({t:'Visión térmica',x:`Apretá ${K('thermal')} para la visión térmica: los tanques se ven brillantes aunque haya humo o poca luz.`,ok:()=>player.thermal});
   if(hasFcs(P)) S.push({t:'Telémetro',x:`Tu tanque tiene telémetro${P.fcsX?' (mejora de nivel 5)':''}: compensa solo la caída del proyectil. Mirá con ${K('scope')} al tanque lejano y leé la distancia.`,enter:U=>{U.scope=0;},ok:U=>(U.scope||0)>2});
   if(T.troops) S.push({t:'Infantería',x:`Tu vehículo lleva soldados. Apretá ${K('troops')} para bajarlos: capturan puntos y tienen un antitanque.`,ok:()=>!player.troops});
@@ -217,7 +217,7 @@ function buildTutSteps(P){
     enter:U=>{ playerCrew.sp=Math.max(playerCrew.sp,600); playerCrew.artyCD=0; $('spT').textContent=playerCrew.sp; player.immuneT=120; tutAttack(U); },ok:U=>U.attack&&U.attack.filter(t=>t.dead).length>=2});
   else S.push({t:'¡Ataque enemigo! Nuke',x:`¡Entran 5 tanques enemigos! Te damos ${NUKE_COST} puntos: apretá ${K('nuke')}. Un B-29 cruza, suelta la bomba y arrasa a todos. Tu tanque está protegido en esta prueba.`,
     enter:U=>{ playerCrew.sp=Math.max(playerCrew.sp,NUKE_COST); $('spT').textContent=playerCrew.sp; player.immuneT=90; tutAttack(U); },ok:()=>nuke&&nuke.phase>=1});
-  const nx=[2,3,4,5].filter(l=>l>P.lv).map(l=>`nivel ${l}: ${LV_UP[l].n.toLowerCase()}`);
+  const nx=[2,3,4,5].filter(l=>l>P.lv).map(l=>`nivel ${l}: ${lvUp(l,P.key).n.toLowerCase()}`);
   S.push({t:'Listo',x:`¡Terminaste! ${nx.length?`Este tanque mejora con la experiencia (${nx.join(', ')}); cada mejora suma su práctica a este tutorial.`:'Este tanque ya tiene todas las mejoras.'} También tenés la vista aérea (${K('aerial')}).`,ok:()=>false});
   return S;
 }
@@ -277,6 +277,13 @@ function guide(){
   <button class="go" id="gtut">Hacer el tutorial</button><button class="go alt" id="gback">Volver</button>`;
   $('gtut').onclick=()=>{initAudio(); if(AC.state==='suspended')AC.resume(); startTutorial();}; $('gback').onclick=()=>mainMenu();
 }
+// Lo que un tanque tiene de especial (para ofrecer el tutorial al desbloquearlo)
+function vehSpecial(k){ const T=VEH[k], L=[T.arc!=null&&'cañón sin torre',T.thermal&&'visión térmica',T.fcs&&'telémetro',T.troops&&'infantería a bordo',
+    T.auto&&(T.pen<15?'ametralladoras en vez de cañón':'cañón automático'),!T.auto&&T.autoL&&'cargador automático',T.ammo&&T.ammo.length>1&&`${T.ammo.length} tipos de munición`].filter(Boolean);
+  return L.length>1?L.slice(0,-1).join(', ')+' y '+L[L.length-1]:L[0]||''; }
+// Probar en batalla: lo pone primero en el garaje y sale a una partida
+function tryTank(k){ const n=VEH[k].nation, G=garRef(n,eraOf(k)), i=G.indexOf(k); if(i>=0) G.splice(i,1); G.unshift(k); if(G.length>3) G.pop(); saveProg();
+  chosenNation=n; hgSel=k; playMode='battle'; menuScreen='hangar'; initAudio(); startBattle(false); }
 function nextMapKey(){ const ks=eraMaps(W.era||5); return ks[(ks.indexOf(builtKey)+1)%ks.length]||ks[0]; }
 function summary(winner){
   if(document.pointerLockElement) document.exitPointerLock();
@@ -290,20 +297,23 @@ function summary(winner){
       <tfoot><tr><td>Total</td><td></td><td class="n">${sm('kills')}</td><td class="n">${sm('assists')}</td><td class="n">${sm('deaths')}</td><td class="n">${sm('caps')}</td><td class="n">${sm('score').toLocaleString('es-AR')}</td></tr></tfoot></table>`;};
   const N=NATIONS[winner===0?allyNation:foeNation].label;
   let rpHtml=''; const me=crews.find(c=>c.isPlayer||c.name==='Vos'||c.name==='Vos (IA)');
-  const MS=curSpecial&&curSpecial.mission?missionById(curSpecial.mission):null; let mres=null;
+  const MS=curSpecial&&curSpecial.mission?missionById(curSpecial.mission):null; let mres=null, unl=[];
   if(!spectating&&(!curSpecial||MS)&&me&&PROG&&!summary._done){ summary._done=true; const n=MS?MS.ally:chosenNation, rp=(winner===0?600:300)+me.score*6;
     if(MS) mres=missionResult(MS,winner===0);
-    PROG.stats.battles++; if(winner===0) PROG.stats.wins++; updateSkill(me,winner===0); const un=addRP(n,rp), nx=nextResearch(n);
+    PROG.stats.battles++; if(winner===0) PROG.stats.wins++; updateSkill(me,winner===0); const un=addRP(n,rp), nx=nextResearch(n); unl=un;
     const used=Object.keys(me.uses||{}).filter(k=>VEH[k]); let xpHtml='', progHtml='';
     { const st=me.st||{}, win=winner===0, v={kills:me.kills|0,side:st.side|0,caps:me.caps|0,assists:me.assists|0,inf:st.inf|0,wins:win?1:0,badwx:['noche','niebla','lluvia','tormenta'].includes(wxKey)?1:0,smoke:st.smoke|0};
       const gx=Math.max(0,Math.round(me.score*2+(win?500:200))), r0=rankIdx(PROG.pxp||0); PROG.pxp=(PROG.pxp||0)+gx; const dn=progressDaily(v,n), r1=rankIdx(PROG.pxp);
       PROG.tstat=PROG.tstat||{}; for(const k of used){ const S=PROG.tstat[k]||(PROG.tstat[k]={b:0,w:0,k:0,d:0}); S.b++; if(win) S.w++; const tk=(me.tk||{})[k]; if(tk){ S.k+=tk.k|0; S.d+=tk.d|0; } }
       progHtml=`<br><b>+${gx.toLocaleString('es-AR')} XP de jugador</b> · ${RANKS[r1][1]}${r1>r0?` <b style="color:var(--amber)">¡Ascendiste a ${RANKS[r1][1]}!</b>`:''}`+dn.map(c=>`<br>Desafío cumplido: ${chText(c)} · <b>+1 medalla</b> y +1.000 XP`).join(''); saveProg(); }
     for(const k of used){ const xp=Math.round(rp/used.length), ups=addTankXP(k,xp), L=tankLv(k);
-      xpHtml+=`<br>${VEH[k].label}: +${xp.toLocaleString('es-AR')} XP · nivel ${L}${L<5?` (${tankXP(k).toLocaleString('es-AR')} / ${LV_XP[L].toLocaleString('es-AR')})`:' (máximo)'}`+ups.map(l=>`<br>&nbsp;&nbsp;¡Nivel ${l}! <b>${LV_UP[l].n}</b>: ${LV_UP[l].d}`).join(''); }
+      xpHtml+=`<br>${VEH[k].label}: +${xp.toLocaleString('es-AR')} XP · nivel ${L}${L<5?` (${tankXP(k).toLocaleString('es-AR')} / ${LV_XP[L].toLocaleString('es-AR')})`:' (máximo)'}`+ups.map(l=>`<br>&nbsp;&nbsp;¡Nivel ${l}! <b>${lvUp(l,k).n}</b>: ${lvUp(l,k).d}`).join(''); }
     { const eu=MS?[]:checkEraUnlock(); progHtml+=eu.map(e=>`<br>🔓 Nueva época disponible: <b>${ERAS[e].n}</b> (${ERAS[e].y}).`).join(''); }
     rpHtml=(mres?mres.html:'')+`<div class="rpbox"><b>+${rp.toLocaleString('es-AR')} PI</b> (puntos de investigación)${un.map(k=>`<br>¡Desbloqueaste el <b>${VEH[k].label}</b> (BR ${brTxt(VEH[k].br)})!`).join('')}
-      ${xpHtml}${progHtml}${nx?`<br>Investigando: ${VEH[nx].label} (BR ${brTxt(VEH[nx].br)}) · ${(PROG.rp[nx]||0).toLocaleString('es-AR')} / ${rpCost(nx).toLocaleString('es-AR')} PI<div class="pbar"><i style="width:${Math.round((PROG.rp[nx]||0)/rpCost(nx)*100)}%"></i></div>`:'<br>Árbol de '+NATIONS[n].label+' completo.'}</div>`; }
+      ${xpHtml}${progHtml}${nx?`<br>Investigando: ${VEH[nx].label} (BR ${brTxt(VEH[nx].br)}) · ${(PROG.rp[nx]||0).toLocaleString('es-AR')} / ${rpCost(nx).toLocaleString('es-AR')} PI<div class="pbar"><i style="width:${Math.round((PROG.rp[nx]||0)/rpCost(nx)*100)}%"></i></div>`:'<br>Árbol de '+NATIONS[n].label+' completo.'}</div>`;
+    if(unl.length&&!net.on) rpHtml+=`<div class="rpbox unl">${unl.map(k=>{ const sp=vehSpecial(k);
+      return `<p><b>¡Nuevo: ${VEH[k].label}!</b> ${sp?`Tiene ${sp}. ¿Querés aprender a usarlo en el tutorial o probarlo directo en batalla?`:'¿Querés probarlo en batalla?'}</p>
+        <div class="unlB"><button class="go" data-try="${k}">Probar en batalla</button>${sp?`<button class="go alt" data-tut="${k}">Tutorial con este tanque</button>`:''}</div>`; }).join('')}</div>`; }
   $('panel').innerHTML=`<h1>${spectating?'Fin de la partida':MS?(winner===0?'Misión cumplida':'Misión fallida'):winner===0?'Victoria':'Derrota'}</h1>${rpHtml}
     <p>Gana ${N}. Tickets finales: ${allyLabel()} ${Math.max(0,Math.ceil(tickets[0]))}, ${NATIONS[foeNation].label} ${Math.max(0,Math.ceil(tickets[1]))}. Puntos: penetrar 20, destruir 100, capturar 60 y artillería 10 por impacto.</p>
     <div class="sumwrap">${table(0)}${table(1)}</div>
@@ -312,6 +322,8 @@ function summary(winner){
   if(net.host) $('menuB').textContent='Cerrar la sala';
   $('again').onclick=()=>{initAudio(); if(MS) startMission(mres&&mres.next?mres.next.id:MS.id); else if(curSpecial) startBattle(spectating,'puente',curSpecial); else startBattle(spectating,nextMapKey());};
   $('menuB').onclick=()=>{ if(MS){ menuScreen='hangar'; playMode='camp'; } mainMenu(); if(MS) setTimeout(()=>hgCampaign(),0); };
+  document.querySelectorAll('#panel [data-try]').forEach(b=>b.onclick=()=>tryTank(b.dataset.try));
+  document.querySelectorAll('#panel [data-tut]').forEach(b=>b.onclick=()=>{ initAudio(); startTutorial(b.dataset.tut); });
 }
 function radios(group,obj,cur,cls,dis){
   return `<div class="pick ${cls||''}" role="radiogroup">${Object.entries(obj).map(([k,T])=>

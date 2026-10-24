@@ -5,6 +5,7 @@ const ERAS={
   1:{n:'Primera Guerra Mundial',y:'1916–1918',ready:1,
      desc:'Los primeros tanques de la historia: lentos, de blindaje fino y hechos para cruzar trincheras bajo fuego de ametralladoras.',
      sup:{arty:1,air:0,nuke:0},civ:0,traffic:0,mgPen:11,female:0,guns:1,
+     smoke:0,                                        // los tanques de la época no tenían lanzahumos (sí extintores Pyrene)
      sides:[['uk','fr','us'],['de']],               // Entente contra los Imperios Centrales
      at:{n:'Fusil antitanque 13 mm',kind:'ke',pen:22,v:780},
      mortar:{n:'Mortero de trinchera',kind:'he',pen:10,v:80,sc:.6}},

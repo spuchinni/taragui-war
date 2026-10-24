@@ -149,7 +149,7 @@ function makeTank(crew,key,x,z,heading,id){
   t.crewM=seats.map(st=>({seat:st,hp:100,alive:true})); t.mod={engine:100,breech:100,trans:100,barrel:100}; t.trkHP=[100,100]; t.ext=2; t.trackT=0; t.engT=0; t.breechT=0; t.fireT=0; t.swapT=0;
   t.ammoIdx=0; t.thermal=false; t.troops=T.troops||0; t.id=id||++net.seq; t.mgCount=0; t.cid=cid&&CAMOS[cid]?cid:'base';
   applyLevel(t,crew&&crew.isPlayer?tankLv(key):crew&&crew.lvs?crew.lvs[key]||1:1);
-  if(!crew.isPlayer){ t.sk=clamp((crew.team===1?enemySkill():.6)+rand(-.07,.07),.2,1); t.reloadMax*=1.3-t.sk*.3; t.eY*=1.6-t.sk; t.eP*=1.6-t.sk; t.smokeN=t.sk>.8?2:t.sk>.45?1:0; t.mode='adv'; }
+  if(!crew.isPlayer){ t.sk=clamp((crew.team===1?enemySkill():.6)+rand(-.07,.07),.2,1); t.reloadMax*=1.3-t.sk*.3; t.eY*=1.6-t.sk; t.eP*=1.6-t.sk; t.smokeN=t.noSmk?0:t.sk>.8?2:t.sk>.45?1:0; t.mode='adv'; }
   if(crew&&crew.isPlayer) initAmmo(t);
   const root=new THREE.Group(); t.root=root; root.rotation.order='YXZ';
   t.wheels=_wl=[]; t.mud=mud; buildModel(t,M,mat); _wl=null; scene.add(root);
@@ -203,7 +203,7 @@ function groundMark(p,r){
 }
 // Munición limitada (jugador): carga según el vehículo, repartida entre los tipos; ametralladora en cintas de 250.
 function initAmmo(t){ const L=t.T.ammo, tot=t.T.auto?Math.round(t.T.auto.mag*14):(t.T.ammoCap||(t.T.hp>=130?42:t.T.hp>=90?36:30));
-  const sh=L.length===1?[1]:L.length===2?[.6,.4]:[.5,.3,.2]; t.ammoMax=L.map((_,i)=>Math.max(2,Math.round(tot*sh[i]*(t.lv>=4?1.2:1)))); t.ammoCount=t.ammoMax.slice(); t.mgBelt=250; t.mgBelts=3; t.mgRel=0; }
+  const sh=L.length===1?[1]:L.length===2?[.6,.4]:[.5,.3,.2]; t.ammoMax=L.map((_,i)=>Math.max(2,Math.round(tot*sh[i]*(t.lv>=4?1.2:1)))); t.ammoCount=t.ammoMax.slice(); t.mgBelt=250; t.mgBelts=t.mgX?5:3; t.mgRel=0; }
 const needsRepair=t=>t.trackT>0||t.mod.engine<100||t.mod.breech<100||t.mod.trans<100||(t.mod.barrel??100)<100||t.fireT>0||(t.trkHP&&Math.min(...t.trkHP)<100);
 function removeTank(t){
   if(t.mech){ scene.remove(t.mech.g); t.mech=null; }
