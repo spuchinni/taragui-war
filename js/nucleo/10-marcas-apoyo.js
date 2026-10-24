@@ -5,7 +5,7 @@ function doPing(){
   const foe=tanks.find(o=>!o.dead&&o.team!==player.team&&(o.visP||o.spottedT>0)&&o.pos.distanceTo(P)<14);
   const Z=zones.find(Z=>Math.hypot(Z.x-P.x,Z.z-P.z)<Z.r+6);
   if(foe){ k='foe'; foe.spottedT=Math.max(foe.spottedT,10); } else if(Z){ k='zone'; zid=Z.id; }
-  if(net.guest){ net.hostConn.send({t:'ping',k,zid,p:[P.x,P.y,P.z]}); }
+  if(net.guest){ hostSend({t:'ping',k,zid,p:[P.x,P.y,P.z]}); }
   makePing(0,P.x,P.y,P.z,k,playerCrew?playerCrew.name:'Vos',zid,!net.guest);
 }
 function makePing(team,x,y,z,k,name,zid,relay){
@@ -32,7 +32,7 @@ function oobCheck(t,dt){
   const out=!t.dead&&!tut&&state==='play'&&outOfBounds(t.pos);
   if(out&&!t.a10){ t.oobT=(t.oobT??OOB_T)-dt; if(bannerT>0){ bannerT=0; $('banner').style.opacity=0; }
     el.innerHTML=`¡FUERA DEL CAMPO DE BATALLA!<small>Volvé dentro de la línea roja en <b>${Math.max(0,Math.ceil(t.oobT))}</b> s o ${W.era===1?'te cae encima la artillería':'te ataca un A-10'}</small>`; el.style.opacity=1;
-    if(t.oobT<=0){ t.a10=true; if(net.guest) net.hostConn.send({t:'oob'}); else a10Strike(t); } }
+    if(t.oobT<=0){ t.a10=true; if(net.guest) hostSend({t:'oob'}); else a10Strike(t); } }
   else { if(!out) t.oobT=null; el.style.opacity=t.a10&&!t.dead&&state==='play'?1:0; if(t.a10&&!t.dead){ const A=a10s.find(a=>a.t===t); el.innerHTML=W.era===1?`¡ARTILLERÍA SOBRE TU POSICIÓN!<small>Te pasaste del límite</small>`:`¡A-10 EN CAMINO!<small>Te pasaste del límite${A?` · a ${Math.round(A.g.position.distanceTo(t.pos))} m`:''}</small>`; } }
 }
 function makeA10(){

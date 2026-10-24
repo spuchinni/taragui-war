@@ -267,3 +267,15 @@ button:focus-visible{outline:3px solid var(--paper);outline-offset:3px}
 .camM i{grid-row:1/3;grid-column:3;font-style:normal;font-weight:700;color:var(--amber)} .camM.ok{border-color:rgba(127,176,105,.6)} .camM.ok i{color:var(--ally)}
 .camM.lock{opacity:.45;cursor:not-allowed} .camM:not(.lock):hover{filter:brightness(1.2)}
 @media (max-width:900px){.hgE small{display:none}}
+/* Vehículos: miniatura del tanque en cada fila y ficha técnica grande al pasar el mouse */
+.tree{grid-template-columns:repeat(auto-fill,minmax(360px,1fr))!important}
+.tree .vrow{grid-template-columns:96px 34px 1fr auto!important;gap:8px!important}
+.tree .vrow .vmini{width:96px;height:54px;object-fit:contain;opacity:0;transition:opacity .3s;filter:drop-shadow(0 3px 3px rgba(0,0,0,.5))} .tree .vrow .vmini.ok{opacity:1}
+.tree .vrow.lock .vmini{filter:grayscale(.7) drop-shadow(0 3px 3px rgba(0,0,0,.5))}
+#vficha{position:fixed;z-index:30;padding:12px 14px;background:rgba(16,15,12,.96);border:1px solid rgba(239,231,210,.3);box-shadow:0 10px 30px rgba(0,0,0,.6);color:var(--paper);pointer-events:none;font-family:'Saira Condensed',system-ui,sans-serif}
+#vficha[hidden]{display:none}
+#vficha img{display:block;width:100%;aspect-ratio:16/9;object-fit:contain;opacity:0;transition:opacity .3s;background:radial-gradient(ellipse at 50% 70%,rgba(239,231,210,.12),transparent 70%)} #vficha img.ok{opacity:1}
+#vficha .vfN{font-size:24px;font-weight:700;line-height:1.1;margin-top:4px} #vficha .vfS{font-size:14px;color:var(--khaki)}
+#vficha .vfG{display:grid;grid-template-columns:auto 1fr;gap:2px 12px;margin:8px 0;font-size:15px} #vficha .vfG span{opacity:.7} #vficha .vfG b{text-align:right}
+#vficha .vfA{font-size:14px;border-top:1px solid rgba(239,231,210,.15);padding-top:6px} #vficha .vfA small{opacity:.7}
+#vficha p{font-size:14px;line-height:1.3;margin:8px 0 2px;opacity:.85} #vficha .vfF{font-size:12px;opacity:.5}

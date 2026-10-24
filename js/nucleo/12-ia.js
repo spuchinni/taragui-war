@@ -12,7 +12,7 @@ function deploySmoke(t,force){
   if(!t||t.dead) return false;
   if(!force){ if(!t.lv||t.lv<2){ tell(t,'Este tanque todavía no tiene lanzahumos (se desbloquea en el nivel 2)','var(--paper)'); return false; }
     if(!(t.smoke>0)){ tell(t,'No quedan granadas de humo','var(--enemy)'); return false; } t.smoke--; }
-  if(net.guest&&t===player){ net.hostConn.send({t:'smk'}); tell(t,'¡Humo!','var(--ally)'); if(t.isPlayer) radio('¡Humo!'); return true; }
+  if(net.guest&&t===player){ hostSend({t:'smk'}); tell(t,'¡Humo!','var(--ally)'); if(t.isPlayer) radio('¡Humo!'); return true; }
   const f=t.turretYaw+t.heading, x=t.pos.x+Math.sin(f)*10, z=t.pos.z+Math.cos(f)*10, y=heightAt(x,z);
   if(tut&&t.isPlayer) tut.smoke=true; if(t.crew&&t.crew.st) t.crew.st.smoke++;
   addSmoke(x,y,z); sfx('metal',t.pos,.3,{rate:1.4}); if(t.isPlayer){ tell(t,'¡Humo!','var(--ally)'); radio('¡Humo!'); }

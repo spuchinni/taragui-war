@@ -72,7 +72,7 @@ function startBattle(spectator=false,forceMap=null,special=null,noBrief=false){ 
   allyMixed=allyCrews.some(c=>c.nation!==allyNation);
   playerCrew=spectator?null:newCrew(net.on?net.name:'Vos',0,allyNation,true);
   crews=[...(playerCrew?[playerCrew]:[]),...guests.map(remoteCrew),...allyCrews,...Array.from({length:vsN?vsN-gB.length:Math.max(special&&special.mission?0:1,nE-gB.length)},(_,i)=>NATIONS[foeNation].names[i%NATIONS[foeNation].names.length]).map(n=>newCrew(n,1,foeNation,false))];
-  if(net.host){ net.startMsg={t:'start',seed:net.seed,map:builtKey,ally:allyNation,foe:foeNation,br:battleBR,wx:wxKey}; net.inBattle=true; guests.forEach(c=>c.send({...net.startMsg,side:sideOf(c)})); }
+  if(net.host){ net.startMsg={t:'start',seed:net.seed,map:builtKey,ally:allyNation,foe:foeNation,br:battleBR,wx:wxKey}; net.inBattle=true; net.o=0; guests.forEach(c=>c.send({...net.startMsg,side:sideOf(c)})); }
   for(const c of crews){ if(c.isPlayer||c.peer) continue; const pts=W.sp[c.team]; spawnCrew(c,c.lineup[0],pts[(Math.random()*pts.length)|0]); }
   if(special&&special.tickets) tickets=special.tickets.slice();
   if(RULE().guns&&!net.guest){ const g=special&&special.guns||[1,2]; placeGuns(0,allyNation,g[0]); placeGuns(1,foeNation,g[1]); }
@@ -151,7 +151,7 @@ function renderDeploy(){
 function doDeploy(){
   const c=playerCrew;
   if(!selKey||!c.lineup.includes(selKey)||!available(c,selKey)){renderDeploy();return;}
-  if(net.guest){ net.hostConn.send({t:'sp',key:selKey,i:selSp}); $('panel').innerHTML='<h1>Desplegando…</h1><p>Esperando al anfitrión.</p>'; return; }
+  if(net.guest){ hostSend({t:'sp',key:selKey,i:selSp}); $('panel').innerHTML='<h1>Desplegando…</h1><p>Esperando al anfitrión.</p>'; return; }
   const pts=spawnPoints(0); const p=pts[Math.min(selSp,pts.length-1)];
   player=spawnCrew(c,selKey,p);
   camYaw=player.heading; camPitch=.1; camDist=14; state='play';
@@ -319,7 +319,8 @@ function summary(winner){
     <div class="sumwrap">${table(0)}${table(1)}</div>
     <button class="go" id="again">${MS?(mres&&mres.next?'Siguiente misión: '+mres.next.title:'Reintentar la misión'):curSpecial?'Revancha en el puente':'Continuar: '+WORLDS[nextMapKey()].label}</button><button class="go alt" id="menuB">${MS?'Volver a la campaña':'Menú principal'}</button>`;
   if(net.guest){ $('again').textContent='Esperando que el anfitrión siga…'; $('again').disabled=true; $('menuB').textContent='Salir de la sala'; }
-  if(net.host) $('menuB').textContent='Cerrar la sala';
+  if(net.host) $('menuB').textContent=net.quick?'Salir de la partida':'Cerrar la sala';
+  if(net.host&&net.quick) setTimeout(salaSeguir,0);
   $('again').onclick=()=>{initAudio(); if(MS) startMission(mres&&mres.next?mres.next.id:MS.id); else if(curSpecial) startBattle(spectating,'puente',curSpecial); else startBattle(spectating,nextMapKey());};
   $('menuB').onclick=()=>{ if(MS){ menuScreen='hangar'; playMode='camp'; } mainMenu(); if(MS) setTimeout(()=>hgCampaign(),0); };
   const ub=document.querySelector('#panel .rpbox.unl');
@@ -342,7 +343,7 @@ const normalNations=()=>Object.fromEntries(Object.entries(NATIONS).filter(([k,v]
 function menuSec(id,label,html){ return `<button class="mi${menuOpen===id?' open':''}" data-s="${id}">${label}<i>▾</i></button><div class="sec"${menuOpen===id?'':' hidden'}>${html}</div>`; }
 let menuScreen='home', playMode='battle';
 function mainMenu(){
-  stopAllLoops();
+  stopAllLoops(); if(typeof vfichaOff==='function') vfichaOff();
   if(net.on) netLeave(); if(wxKey!=='dia') applyWeather('dia');
   if(document.pointerLockElement) document.exitPointerLock();
   state='menu'; tut=null; bindCapture=null; document.body.classList.add('menu'); document.body.classList.remove('deploy','spec','tut','home'); if(!PROG) loadProg();

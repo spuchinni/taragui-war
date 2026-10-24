@@ -57,7 +57,7 @@ function renderHangar(){
       <b>${W2.label}</b><small>${s.own?`${CLS_ES[W2.cls]||W2.cls} · Nv ${tankLv(k)}`:s.done?`Comprar · ${ypTxt(s.yc)}`:s.res?'Investigando':s.can?'Se puede investigar':'🔒 Bloqueado'}</small>
       ${s.res?`<i class="pb"><i style="width:${Math.round(s.have/s.cost*100)}%"></i></i>`:''}</button>`; };
   const upg=[2,3,4,5].map(l=>`<li class="${lv>=l?'ok':''}"><b>Nv ${l}</b> ${lvUp(l,hgSel).n}</li>`).join('');
-  const modes={battle:'Batalla',camp:'Campaña',...(curEra===5?{esp:'Ctes. vs. Resistencia'}:{}),watch:'Ver partida',online:'Online',tut:'Tutorial'}; if(!modes[playMode]) playMode='battle';
+  const modes={battle:'Batalla',camp:'Campaña',...(curEra===5?{esp:'Ctes. vs. Resistencia'}:{}),watch:'Ver partida',tut:'Tutorial'}; if(!modes[playMode]) playMode='battle';
   const playTxt=playMode==='camp'?'Abrir la campaña':playMode==='tut'?(S.own?'Tutorial con este tanque':'Tanque bloqueado'):playMode==='watch'?'Mirar una partida':playMode==='online'?'Jugar online':playMode==='esp'?'¡Al puente!':'¡A la batalla!';
   $('panel').innerHTML=`<div class="hg">
     <div class="hgTop"><button class="hgBack" id="hgBack" title="Inicio">⌂</button>${eraStripHTML()}<span class="hgBr"></span>
@@ -98,7 +98,7 @@ function renderHangar(){
   if($('hgCam')) $('hgCam').onclick=()=>hgCamo();
   $('hgCh').onclick=()=>hgChallenges();
   $('hgPlay').onclick=goWrap(()=>{
-    if(playMode==='camp') hgCampaign(); else if(playMode==='battle') startBattle(false); else if(playMode==='watch') startBattle(true);
+    if(playMode==='camp') hgCampaign(); else if(playMode==='battle') jugarOnline(); else if(playMode==='watch') startBattle(true);
     else if(playMode==='esp') startBattle($('espWatch').checked,'puente',{ally:specialSide,foe:specialSide==='ctes'?'chaco':'ctes'});
     else if(playMode==='tut') startTutorial(hgSel); else if(playMode==='online') hgOnline(); });
 }
@@ -129,14 +129,14 @@ function renderTree(){
     const st=S.own?'':S.done?`<small><br>Investigado · cuesta ${ypTxt(S.yc)}</small>`:S.res?`<div class="pbar"><i style="width:${Math.round(S.have/S.cost*100)}%"></i></div><small>Investigando: ${S.have.toLocaleString('es-AR')} / ${S.cost.toLocaleString('es-AR')} PI</small>`
       :S.can?`<small><br>Se puede investigar · ${S.cost.toLocaleString('es-AR')} PI</small>`:`<small><br>🔒 ${S.why} · ${S.cost.toLocaleString('es-AR')} PI</small>`;
     const bt=S.own?`<button data-k="${k}" data-a="gar" class="tg">${inG?'Quitar':'Al garaje'}</button>`:S.done?`<button data-k="${k}" data-a="buy" class="tg" ${(PROG.yp||0)<S.yc?'disabled':''}>Comprar</button>`:S.can&&!S.res?`<button data-k="${k}" data-a="res" class="tg">Investigar</button>`:'';
-    return `<div class="vrow ${S.own?'own':S.res||S.done?'res':'lock'} ${inG?'in':''}" data-k="${k}"><div class="br">${RANK_ROMAN[rankOf(k)]}<small style="display:block;font-size:12px">${brTxt(V.br)}</small></div><div><b>${V.label}</b><small>${CLS_ES[V.cls]||V.cls}${V.year?' · '+V.year:''}${q?' · viene del '+VEH[q].label:''} · blindaje ${V.armor.hull.front} mm · penetración ${V.pen} mm</small>${st}</div>
+    return `<div class="vrow ${S.own?'own':S.res||S.done?'res':'lock'} ${inG?'in':''}" data-k="${k}">${miniHTML(k)}<div class="br">${RANK_ROMAN[rankOf(k)]}<small style="display:block;font-size:12px">${brTxt(V.br)}</small></div><div><b>${V.label}</b><small>${CLS_ES[V.cls]||V.cls}${V.year?' · '+V.year:''}${q?' · viene del '+VEH[q].label:''} · blindaje ${V.armor.hull.front} mm · penetración ${V.pen} mm</small>${st}</div>
       <div>${bt}</div></div>`; };
-  $('panel').innerHTML=`<div class="side" style="width:min(640px,96vw)"><button class="setB" id="setB" title="Ajustes" aria-label="Ajustes">⚙</button><h1 class="logo" style="font-size:54px!important">Vehículos</h1><div class="hgTop treeEra">${eraStripHTML()}</div><p class="s">${ERAS[curEra].n} (${ERAS[curEra].y}). ${ERAS[curEra].desc}</p>
+  $('panel').innerHTML=`<div class="side" style="width:min(800px,96vw)"><button class="setB" id="setB" title="Ajustes" aria-label="Ajustes">⚙</button><h1 class="logo" style="font-size:54px!important">Vehículos</h1><div class="hgTop treeEra">${eraStripHTML()}</div><p class="s">${ERAS[curEra].n} (${ERAS[curEra].y}). ${ERAS[curEra].desc}</p>
     ${radios('tn',Object.fromEntries(Object.entries(NN).map(([k,N])=>[k,{label:N.label,desc:''}])),n,'two')}
     <p class="s">Garaje (hasta 3): ${g.map(k=>VEH[k].label).join(', ')||'vacío'} · <b>BR de batalla ${brTxt(garageBR(n))}</b> (el de tu vehículo más alto). Enemigos y aliados salen con BR de ±1.0.
     Cada batalla da puntos de investigación (PI) para el tanque que estás investigando y ${YP} para comprarlo. Tenés <b>${ypTxt(PROG.yp||0)}</b>.
     Para pasar al rango siguiente hay que investigar ${RANK_NEED} tanques del rango actual.</p>
-    <div class="tree">${T.map(row).join('')}</div><p class="s">Tocá un vehículo para verlo en el hangar.</p>
+    <div class="tree">${T.map(row).join('')}</div><p class="s">Pasá el mouse por un vehículo para ver su ficha técnica. Tocalo para verlo en el hangar.</p>
     <button class="go alt" id="back">Volver</button></div>`;
   document.querySelectorAll('.tk').forEach(b=>b.onclick=()=>{ if(b.dataset.g==='tn'){ treeNation=b.dataset.k; renderTree(); } });
   wireEraStrip(()=>{ treeNation=null; renderTree(); });
@@ -144,7 +144,9 @@ function renderTree(){
     if(b.dataset.a==='buy'){ buyTank(k); renderTree(); return; } if(b.dataset.a==='res'){ setResearch(k); renderTree(); return; }
     const G=garRef(n), i=G.indexOf(k); if(i>=0){ if(G.length>1) G.splice(i,1); } else { if(G.length>=3) G.shift(); G.push(k); } saveProg(); renderTree(); });
   $('back').onclick=()=>{menuScreen='hangar';chosenNation=treeNation;mainMenu();}; $('setB').onclick=()=>{menuScreen='settings';mainMenu();};
-  document.querySelectorAll('.vrow').forEach(r=>r.onclick=e=>{ if(e.target.closest('button')) return; chosenNation=treeNation; hgSel=r.dataset.k; menuScreen='hangar'; mainMenu(); });
+  document.querySelectorAll('.vrow').forEach(r=>{ r.onclick=e=>{ if(e.target.closest('button')) return; vfichaOff(); chosenNation=treeNation; hgSel=r.dataset.k; menuScreen='hangar'; mainMenu(); };
+    r.onmouseenter=()=>vficha(r.dataset.k,r); r.onmouseleave=vfichaOff; });
+  vfichaOff(); miniPedir(T);
 }
 function applyGfx(){ renderer.setPixelRatio(Math.min(devicePixelRatio,Q().pr)); renderer.setSize(innerWidth,innerHeight,false); sun.castShadow=!!Q().sh; if(Q().sh&&sun.shadow.map&&sun.shadow.mapSize.x!==Q().sh){ sun.shadow.map.dispose(); sun.shadow.map=null; sun.shadow.mapSize.set(Q().sh,Q().sh); } }
 function renderSettings(){
@@ -245,16 +247,16 @@ document.addEventListener('keydown',e=>{
     bindCapture=null; renderSettings(); return; }
   keys[e.code]=true;
   if(e.code===binds.ping&&state==='play'&&player&&!player.dead&&!e.repeat){ doPing(); return; }
-  if(net.guest&&state==='play'&&player&&!player.dead&&lastAim&&[binds.arty,binds.air,binds.nuke].includes(e.code)&&!e.repeat){ net.hostConn.send({t:'sup',k:e.code===binds.arty?'arty':e.code===binds.air?'air':'nuke',p:[lastAim.x,lastAim.y,lastAim.z]}); return; }
-  if(net.guest&&state==='play'&&e.code===binds.troops&&player&&!player.dead&&!e.repeat){ net.hostConn.send({t:'troops'}); return; }
+  if(net.guest&&state==='play'&&player&&!player.dead&&lastAim&&[binds.arty,binds.air,binds.nuke].includes(e.code)&&!e.repeat){ hostSend({t:'sup',k:e.code===binds.arty?'arty':e.code===binds.air?'air':'nuke',p:[lastAim.x,lastAim.y,lastAim.z]}); return; }
+  if(net.guest&&state==='play'&&e.code===binds.troops&&player&&!player.dead&&!e.repeat){ hostSend({t:'troops'}); return; }
   if(net.on&&state==='play'&&[binds.aerial].includes(e.code)){ hitMsg('No disponible en online (por ahora)','var(--paper)'); return; }
-  if(net.guest&&state==='play'&&player&&!player.dead&&(e.code===binds.repair||e.code===binds.crewSwap)&&!e.repeat){ net.hostConn.send({t:e.code===binds.repair?'rep':'crew'}); return; }
+  if(net.guest&&state==='play'&&player&&!player.dead&&(e.code===binds.repair||e.code===binds.crewSwap)&&!e.repeat){ hostSend({t:e.code===binds.repair?'rep':'crew'}); return; }
   if(e.code===binds.fullscreen&&!e.repeat) toggleFS();
   if(state==='play'&&player&&!player.dead){
     for(let i=0;i<3;i++) if(e.code===binds['ammo'+(i+1)]&&i<player.T.ammo.length){ if(player.ammoCount&&player.ammoCount[i]<=0) hitMsg('No queda munición de ese tipo','var(--enemy)'); else selectAmmo(player,i); }
     if(e.code===binds.repair) startRepair(player);
     if(e.code===binds.smoke&&!e.repeat&&!player.noSmk) deploySmoke(player);
-    if(e.code===binds.ext&&!e.repeat){ if(net.guest) net.hostConn.send({t:'ext'}); else extinguish(player); }
+    if(e.code===binds.ext&&!e.repeat){ if(net.guest) hostSend({t:'ext'}); else extinguish(player); }
     if(e.code===binds.crewSwap) callCrew(player);
     if(e.code===binds.ammoAuto&&player.T.ammo.length>1){ if(tut&&tut.manual) tut.autoBack=true; player.ammoManual=null; hitMsg('Munición automática','var(--paper)'); } }
   if(state==='spectate'){ if(e.code==='ArrowRight'){specIdx++;aerial=false;} if(e.code==='ArrowLeft'){specIdx--;aerial=false;} if(e.code==='Space'){aerial=!aerial;e.preventDefault();}

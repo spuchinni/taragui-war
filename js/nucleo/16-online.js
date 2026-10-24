@@ -5,6 +5,7 @@ const cleanName=s=>String(s||'').replace(/[^\p{L}\p{N} ._-]/gu,'').trim().slice(
 const isRemote=t=>!!(t&&t.crew&&t.crew.peer);
 function netTo(t,msg){ const c=net.conns.find(c=>c.peer===t.crew.peer); if(c&&c.open) c.send(msg); }
 function tell(t,txt,color){ if(t.isPlayer) hitMsg(txt,color); else if(isRemote(t)) netTo(t,{t:'hm',txt,color}); }
+function hostSend(msg){ const c=net.hostConn; if(c&&c.open) c.send(msg); } // invitado → anfitrión (durante un relevo no hay a quién mandar)
 function netAll(msg,exceptPeer){ for(const c of net.conns) if(c.ready&&c.open&&c.peer!==exceptPeer) c.send(msg); }
 // Mismo azar en todas las PC para armar el mapa (árboles, casas, texturas)
 function withSeed(seed,f){ if(!seed) return f(); const R=Math.random; let a=seed>>>0;
@@ -36,20 +37,22 @@ function lobbyShell(){ state='lobby'; document.body.classList.add('menu'); docum
 function myName(){ return netName||(net.host?'Anfitrión':'Invitado'); }
 
 // ----- Anfitrión -----
-async function netHost(){
-  try{ await loadPeer(); }catch(e){ netErr(e.message); return; }
+async function netHost(quick){
+  try{ await loadPeer(); }catch(e){ if(quick) jugarSolo('No se pudo cargar la red: jugás con bots.'); else netErr(e.message); return; }
   const A='ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; let code=''; for(let i=0;i<5;i++) code+=A[(Math.random()*A.length)|0];
   $('onErr')&&($('onErr').textContent='Creando sala…');
   const peer=new Peer(ROOM_PFX+code.toLowerCase(),peerOpts());
-  peer.on('open',()=>{ Object.assign(net,{on:true,host:true,guest:false,peer,conns:[],code,name:myName(),inBattle:false}); hostLobby(); });
-  peer.on('error',e=>{ if(e.type==='unavailable-id'){ peer.destroy(); netHost(); } else if(!net.on) netErr('No se pudo crear la sala ('+e.type+').'); else console.warn(e); });
+  peer.on('open',()=>{ Object.assign(net,{on:true,host:true,guest:false,peer,conns:[],code,name:myName(),inBattle:false,quick:!!quick,o:0});
+    if(quick){ net.mode='vs'; startBattle(false); salaAbrir(); } else hostLobby(); }); // sala rápida: arranca enseguida y los que lleguen reemplazan bots
+  peer.on('error',e=>{ if(e.type==='unavailable-id'){ peer.destroy(); netHost(quick); } else if(!net.on){ if(quick){ try{peer.destroy();}catch(_){} jugarSolo('No se pudo abrir la partida online ('+e.type+'): jugás con bots.'); } else netErr('No se pudo crear la sala ('+e.type+').'); } else console.warn(e); });
   peer.on('disconnected',()=>{ if(net.on&&net.peer===peer) try{peer.reconnect();}catch(e){} });
-  peer.on('connection',conn=>{
-    if(net.conns.length>=MAX_GUESTS){ conn.on('open',()=>{conn.send({t:'full'}); setTimeout(()=>conn.close(),500);}); return; }
-    net.conns.push(conn); conn.lastT=performance.now();
-    conn.on('data',d=>{ try{ hostData(conn,d); }catch(e){ console.error(e); } });
-    conn.on('close',()=>hostDrop(conn)); conn.on('error',()=>hostDrop(conn));
-  });
+  peer.on('connection',hostAccept);
+}
+function hostAccept(conn){
+  if(net.conns.length>=MAX_GUESTS){ conn.on('open',()=>{conn.send({t:'full'}); setTimeout(()=>conn.close(),500);}); return; }
+  net.conns.push(conn); conn.lastT=performance.now();
+  conn.on('data',d=>{ try{ hostData(conn,d); }catch(e){ console.error(e); } });
+  conn.on('close',()=>hostDrop(conn)); conn.on('error',()=>hostDrop(conn));
 }
 function lobbyInfo(){ return {t:'lobby',code:net.code,host:net.name,mode:net.mode,players:[[net.name,chosenNation,0],...net.conns.filter(c=>c.ready).map(c=>[c.name,c.nation,sideOf(c)])]}; }
 const plOne=([n,nat],i)=>esc(n)+(NATIONS[nat]?' · '+esc(NATIONS[nat].label):'')+(i===0?' (anfitrión)':'');
@@ -74,18 +77,20 @@ function remoteCrew(conn){ const nat=conn.nation||allyNation, c=newCrew(conn.nam
   // el invitado juega en la época de la partida: si su garaje es de otra, sale con los primeros tanques de esa época
   { const e=W.era||5; c.lineup=c.lineup.filter(k=>eraOf(k)===e); if(!c.lineup.length){ const n2=eraNations(e).includes(nat)?nat:(sideOf(conn)===0?allyNation:foeNation); c.nation=n2; c.lineup=vehTreeE(n2,e).slice(0,2); } }
   c.peer=conn.peer; c.wasHuman=true; c.lvs=conn.lvs||{}; c.cams=conn.cams||{}; conn.crew=c; return c; }
-const battleOn=()=>['play','deploy','spectate','end','paused'].includes(state)&&crews.length&&!tut;
+const battleOn=()=>['brief','play','deploy','spectate','end','paused'].includes(state)&&crews.length&&!tut;
 function hostData(conn,d){
   if(!d||typeof d!=='object') return;
   conn.lastT=performance.now(); if(d.t==='p') return;
   if(d.t==='side'){ if(battleOn()) return; /* en plena batalla no se puede cambiar de bando */ conn.side=d.s?1:0; if(state==='lobby') hostLobby(); else conn.send(lobbyInfo()); return; }
   if(d.t==='hi'){
     let n=cleanName(d.name)||'Invitado'; const used=new Set([net.name,...net.conns.filter(c=>c.ready).map(c=>c.name)]); let k=2,b=n; while(used.has(n)) n=b+' '+(k++);
-    conn.name=n; conn.ready=true; conn.side=d.side?1:0; conn.nation=normalNations()[d.nation]?d.nation:chosenNation;
+    conn.name=n; conn.ready=true; conn.side=d.side?1:0;
+    if(net.quick){ const hum=tm=>crews.filter(c=>c.team===tm&&!c.out&&(c.isPlayer||c.peer)).length+net.conns.filter(c=>c.ready&&c!==conn&&!c.crew&&c.side===tm).length; conn.side=hum(1)<=hum(0)?1:0; } conn.nation=normalNations()[d.nation]?d.nation:chosenNation;
     conn.garage=(Array.isArray(d.garage)?d.garage:[]).filter(k=>typeof k==='string'&&VEH[k]).slice(0,3);
     conn.lvs={}; if(d.lvs&&typeof d.lvs==='object') for(const k of conn.garage) conn.lvs[k]=clamp((+d.lvs[k])|0,1,5);
     conn.cams={}; if(d.cams&&typeof d.cams==='object') for(const k of conn.garage) if(CAMOS[d.cams[k]]) conn.cams[k]=d.cams[k];
-    if(net.inBattle&&battleOn()){ const c=joinBattle(conn,n); conn.send({...net.startMsg,side:c.team}); }
+    salaPublicar();
+    if(net.inBattle&&battleOn()){ const c=joinBattle(conn,n); conn.send({...net.startMsg,side:c.team,sw:c.team^(net.o|0)}); }
     else if(state==='summary'){ conn.send(lobbyInfo()); }
     else hostLobby();
     return;
@@ -135,15 +140,15 @@ function joinBattle(conn,n){
   if(back){ back.peer=conn.peer; back.name=n; back.rejoin=null; back.out=false; conn.crew=back; conn.side=back.team;
     if(back.tank&&!back.tank.dead) back.tank.name=n;
     feed(`${n} volvió a la batalla`,'var(--ally)'); return back; }
-  const bots=tm=>crews.filter(x=>x.team===tm&&!x.out&&!x.isPlayer&&!x.peer&&!x.wasHuman);
-  const c=remoteCrew(conn), alive=tm=>crews.filter(x=>x.team===tm&&!x.out).length;
-  if(net.mode==='vs'){ const o=1-c.team; if(!bots(c.team).length&&bots(o).length||alive(c.team)>alive(o)&&bots(o).length){ c.team=o; conn.side=o; } }
+  const bots=tm=>crews.filter(x=>x.team===tm&&!x.out&&!x.isPlayer&&!x.peer&&!x.wasHuman&&!x.rejoin&&!x.lineup.every(k=>VEH[k]&&VEH[k].static));
+  const c=remoteCrew(conn), alive=tm=>crews.filter(x=>x.team===tm&&!x.out&&!x.lineup.every(k=>VEH[k]&&VEH[k].static)).length;
+  if(net.mode==='vs'){ const o=1-c.team; if(!bots(c.team).length&&bots(o).length||!net.quick&&alive(c.team)>alive(o)&&bots(o).length){ c.team=o; conn.side=o; } }
   const B=bots(c.team).sort((a,b)=>((a.tank&&!a.tank.dead)?1:0)-((b.tank&&!b.tank.dead)?1:0)||a.score-b.score)[0];
   if(B){ B.out=true; feed(`${n} entra a la batalla y reemplaza a ${B.name}`,'var(--ally)'); } else feed(`${n} se unió a la batalla`,'var(--ally)');
   crews.splice(1,0,c); return c;
 }
 function hostDrop(conn){
-  const i=net.conns.indexOf(conn); if(i<0) return; net.conns.splice(i,1);
+  const i=net.conns.indexOf(conn); if(i<0) return; net.conns.splice(i,1); salaPublicar();
   const c=conn.crew;
   if(c){ c.peer=null; c.rejoin=conn.name; c.name=conn.name+' (IA)'; if(c.tank){ c.tank.net=false; c.tank.name=c.name; c.tank.tgt=null; } else c.respawnT=3;
     if(battleOn()) feed(`${conn.name} se desconectó; la IA toma su lugar hasta que vuelva`,'var(--paper)'); }
@@ -152,7 +157,7 @@ function hostDrop(conn){
 // Disparo: el anfitrión avisa a todos (menos al que disparó); el invitado avisa al anfitrión
 function netShot(t,mp,dir,F){
   if(net.host) netAll({t:'shot',id:t.id,a:t.ammoIdx,p:[r2(mp.x),r2(mp.y),r2(mp.z)],d:[r3(dir.x),r3(dir.y),r3(dir.z)]},t.crew&&t.crew.peer);
-  else if(net.guest&&t===player&&!F) net.hostConn.send({t:'f',a:t.ammoIdx,p:[mp.x,mp.y,mp.z],d:[dir.x,dir.y,dir.z]});
+  else if(net.guest&&t===player&&!F) hostSend({t:'f',a:t.ammoIdx,p:[mp.x,mp.y,mp.z],d:[dir.x,dir.y,dir.z]});
 }
 function netTick(dt){
   net.sendT+=dt;
@@ -169,7 +174,7 @@ function netTick(dt){
       conn.send({...base,me}); }
   } else if(net.guest){
     if(net.sendT<1/20) return; net.sendT=0;
-    if(player&&!player.dead){ const p=player; net.hostConn.send({t:'u',x:r2(p.pos.x),z:r2(p.pos.z),h:r3(p.heading),ty:r3(p.turretYaw),gp:r3(p.gunPitch),spd:r2(p.speed),mg:p.mgCount}); p.mgCount=0; }
+    if(player&&!player.dead){ const p=player; hostSend({t:'u',x:r2(p.pos.x),z:r2(p.pos.z),h:r3(p.heading),ty:r3(p.turretYaw),gp:r3(p.gunPitch),spd:r2(p.speed),mg:p.mgCount}); p.mgCount=0; }
   }
 }
 // Movimiento suave de los tanques que maneja otra PC
@@ -184,18 +189,34 @@ function netLerp(t,dt){
 }
 
 // ----- Invitado -----
-async function netJoin(code){
+// onFail: en la partida rápida, si la sala ya no existe se prueba la siguiente
+async function netJoin(code,onFail,quick,peerId){
   code=(code||'').toUpperCase(); if(code.length<4){ netErr('Escribí el código de la sala.'); return; }
-  try{ await loadPeer(); }catch(e){ netErr(e.message); return; }
-  $('onErr')&&($('onErr').textContent='Conectando…');
+  try{ await loadPeer(); }catch(e){ if(quick) jugarSolo('No se pudo cargar la red: jugás con bots.'); else netErr(e.message); return; }
+  !quick&&$('onErr')&&($('onErr').textContent='Conectando…');
   const peer=new Peer(undefined,peerOpts()); let opened=false;
-  peer.on('error',e=>{ if(!net.on||!opened){ netErr(e.type==='peer-unavailable'?'No existe una sala con ese código, o ya se cerró.':'No se pudo conectar ('+e.type+').'); try{peer.destroy();}catch(_){} } else console.warn(e); });
+  peer.on('connection',c=>{ if(net.host) hostAccept(c); else (net.pend=net.pend||[]).push(c); }); // por si después le toca ser el anfitrión
+  peer.on('error',e=>{ if(!net.on||!opened){ try{peer.destroy();}catch(_){} if(onFail){ const f=onFail; onFail=null; f(); return; } if(!onFail&&quick) return; netErr(e.type==='peer-unavailable'?'No existe una sala con ese código, o ya se cerró.':'No se pudo conectar ('+e.type+').'); try{peer.destroy();}catch(_){} } else console.warn(e); });
   peer.on('open',()=>{
-    const conn=peer.connect(ROOM_PFX+code.toLowerCase(),{reliable:true,serialization:'json'});
-    conn.on('open',()=>{ opened=true; net.lastT=performance.now(); Object.assign(net,{on:true,host:false,guest:true,peer,hostConn:conn,code,name:myName()}); conn.send({t:'hi',name:net.name,side:net.side?1:0,nation:chosenNation,garage:garageOf(chosenNation),lvs:Object.fromEntries(garageOf(chosenNation).map(k=>[k,tankLv(k)])),cams:PROG.camo||{}}); guestWait(null); });
-    conn.on('data',d=>{ try{ guestData(d); }catch(e){ console.error(e); } });
-    conn.on('close',()=>{ if(net.guest&&net.hostConn===conn){ netLeave(true); mainMenu(); banner('Se cortó la conexión','El anfitrión cerró la sala o se desconectó',4); } });
+    guestConnect(peer,peerId||ROOM_PFX+code.toLowerCase(),code,quick,()=>{ opened=true; });
+    if(onFail) setTimeout(()=>{ if(!opened&&onFail){ const f=onFail; onFail=null; try{peer.destroy();}catch(_){} f(); } },9000); // la sala no contesta: la siguiente
   });
+}
+// Conecta este peer con el anfitrión (al entrar, o con el que lo reemplaza si el anfitrión se va)
+function guestConnect(peer,target,code,quick,onOpen){
+  const conn=peer.connect(target,{reliable:true,serialization:'json'});
+  conn.on('open',()=>{ onOpen&&onOpen(); net.lastT=performance.now(); Object.assign(net,{on:true,host:false,guest:true,peer,hostConn:conn,code,name:myName(),quick:!!quick}); sala.busca=false;
+    conn.send({t:'hi',name:net.name,side:net.side?1:0,nation:chosenNation,garage:garageOf(chosenNation),lvs:Object.fromEntries(garageOf(chosenNation).map(k=>[k,tankLv(k)])),cams:PROG.camo||{}});
+    if(!battleOn()&&state!=='summary') guestWait(null); });
+  conn.on('data',d=>{ try{ guestData(d); }catch(e){ console.error(e); } });
+  conn.on('close',()=>{ if(net.guest&&net.hostConn===conn) hostGone(); });
+  return conn;
+}
+// Se fue el anfitrión: si hay datos para seguir, la partida pasa a otro jugador (relevo.js); si no, se corta
+function hostGone(){
+  if(net.mig&&relevo()) return;
+  const q=net.quick; netLeave(true); mainMenu();
+  if(q){ banner('El anfitrión se fue','Buscando otra sala…',4); jugarOnline(); } else banner('Se cortó la conexión','El anfitrión cerró la sala o se desconectó',4);
 }
 function guestWait(L){
   lobbyShell();
@@ -204,14 +225,17 @@ function guestWait(L){
     ${L&&L.mode==='vs'?`<h2>Tu equipo</h2><div class="hgOpt" style="max-width:420px"><button data-sd="0" class="${!net.side?'sel':''}">Equipo A (con el anfitrión)</button><button data-sd="1" class="${net.side?'sel':''}">Equipo B (contra el anfitrión)</button></div>`:''}
     <button class="go alt" id="lbQuit">Salir de la sala</button>`;
   $('lbQuit').onclick=()=>mainMenu();
-  document.querySelectorAll('[data-sd]').forEach(b=>b.onclick=()=>{ net.side=+b.dataset.sd; net.hostConn.send({t:'side',s:net.side}); });
+  document.querySelectorAll('[data-sd]').forEach(b=>b.onclick=()=>{ net.side=+b.dataset.sd; hostSend({t:'side',s:net.side}); });
 }
 const netTanks=new Map(), netInf=new Map();
 function guestStart(m){
   if(!WORLDS[m.map]||!NATIONS[m.ally]||!NATIONS[m.foe]) return;
-  net.swap=m.side?1:0;
-  curEra=WORLDS[m.map].era||5; applyEraNations(curEra); tut=null; curSpecial=null; spectating=false; allyNation=net.swap?m.foe:m.ally; foeNation=net.swap?m.ally:m.foe; builtKey=m.map; battleBR=+m.br||1; allyMixed=false; summary._done=false; menuScreen='home';
-  netInf.clear(); withSeed(m.seed,()=>{ clearBattle(); assignSpawns(m.ally); if(net.swap){ const a=W.sp[0]; W.sp[0]=W.sp[1]; W.sp[1]=a; } }); applyWeather(m.wx||'dia'); $('feed').innerHTML=''; netTanks.clear();
+  const sw=(m.sw!=null?m.sw:m.side)?1:0; // sw: mi bando en el mapa original; side: mi bando para el anfitrión actual
+  if(net.startMsg&&net.startMsg.seed===m.seed&&builtKey===m.map&&['play','deploy','paused','end','brief'].includes(state)){ // el anfitrión nuevo sigue la misma batalla
+    net.swap=m.side?1:0; net.startMsg=m; if(player&&!player.dead) hostSend({t:'sp',key:player.key,i:0}); return; }
+  net.swap=m.side?1:0; net.startMsg=m;
+  curEra=WORLDS[m.map].era||5; applyEraNations(curEra); tut=null; curSpecial=null; spectating=false; allyNation=sw?m.foe:m.ally; foeNation=sw?m.ally:m.foe; builtKey=m.map; battleBR=+m.br||1; allyMixed=false; summary._done=false; menuScreen='home';
+  netInf.clear(); withSeed(m.seed,()=>{ clearBattle(); assignSpawns(m.ally); if(sw){ const a=W.sp[0]; W.sp[0]=W.sp[1]; W.sp[1]=a; } }); applyWeather(m.wx||'dia'); $('feed').innerHTML=''; netTanks.clear();
   const gn=eraNations(curEra).includes(chosenNation)?chosenNation:allyNation;
   playerCrew=newCrew(net.name,0,gn,true); if(!playerCrew.lineup.length) playerCrew.lineup=vehTreeE(gn,curEra).slice(0,2); crews=[playerCrew]; now=0; noises.length=0; updateHud();
   initAudio(); openBriefing(false);
@@ -273,11 +297,14 @@ function guestData(d){
   net.lastT=performance.now(); if(d.t==='p') return;
   switch(d.t){
     case 'lobby': if(state==='lobby') guestWait(d); break;
-    case 'full': netLeave(); netErr('La sala está llena.'); break;
+    case 'full': { const q=net.quick; netLeave(); if(q){ mainMenu(); jugarOnline(); } else netErr('La sala está llena.'); } break;
     case 'start': guestStart(d); break;
+    case 'mig': net.mig=d; break;
     case 's': guestSnap(d); break;
     case 'ok': {
-      if(!VEH[d.key]) return; if(player&&player.dead){ removeTank(player); } { const dup=netTanks.get(d.id); if(dup){ removeTank(dup); netTanks.delete(d.id); } }
+      if(!VEH[d.key]) return;
+      if(player&&player.id===d.id&&!player.dead){ playerCrew.tank=player; if(state==='deploy'){ state='play'; $('overlay').style.display='none'; document.body.classList.remove('deploy'); } break; } // el anfitrión nuevo le devolvió su tanque
+      if(player&&player.dead){ removeTank(player); } { const dup=netTanks.get(d.id); if(dup){ removeTank(dup); netTanks.delete(d.id); } }
       player=makeTank(playerCrew,d.key,+d.x,+d.z,+d.h,d.id); playerCrew.tank=player;
       camYaw=player.heading; camPitch=.1; camDist=14; state='play'; syncIntro(); setTimeout(()=>radio('¡Tripulación lista! ¡Adelante!',2),600);
       $('overlay').style.display='none'; document.body.classList.remove('deploy');
@@ -306,7 +333,7 @@ function guestData(d){
 // Latido: si alguien deja de responder 10 s, se lo da por desconectado
 setInterval(()=>{ if(!net.on) return; const T=performance.now();
   if(net.host){ for(const c of net.conns.slice()){ if(c.open) c.send({t:'p'}); if(c.lastT&&T-c.lastT>10000){ try{c.close();}catch(e){} hostDrop(c); } } }
-  else if(net.guest&&net.hostConn){ if(net.hostConn.open) net.hostConn.send({t:'p'}); if(net.lastT&&T-net.lastT>10000){ netLeave(); mainMenu(); banner('Se cortó la conexión','El anfitrión no responde',4); } }
+  else if(net.guest&&net.hostConn){ if(net.hostConn.open) hostSend({t:'p'}); if(net.lastT&&T-net.lastT>10000){ const c=net.hostConn; net.hostConn=null; try{c.close();}catch(e){} hostGone(); } }
 },2000);
 // Apoyos online: el anfitrión los ejecuta y avisa a todos para que vean la artillería, los aviones y la nuke
 function supNet(k,by,p){ if(!net.host||!p) return; netAll({t:'sup',k,x:p.x,y:p.y,z:p.z,team:by.team,name:by.name,bx:by.pos?by.pos.x:0,bz:by.pos?by.pos.z:0}); }
@@ -317,8 +344,8 @@ function supFx(d){
 }
 function netLeave(silent){
   const p=net.peer;
-  if(net.host) netAll({t:'bye'});
-  Object.assign(net,{on:false,host:false,guest:false,peer:null,conns:[],hostConn:null,inBattle:false,startMsg:null});
+  if(net.host){ netAll({t:'bye'}); salaCerrar(); }
+  Object.assign(net,{on:false,host:false,guest:false,peer:null,conns:[],hostConn:null,inBattle:false,startMsg:null,quick:false,mig:null,pend:null,o:0});
   netTanks.clear();
   if(p) setTimeout(()=>{ try{p.destroy();}catch(e){} },300);
 }

@@ -1,0 +1,28 @@
+rules_version = '2';
+// Reglas de Firestore del proyecto taragui-war. Se pegan en la consola de Firebase:
+// Firestore Database → Reglas → reemplazar todo por este archivo → Publicar.
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Progreso de cada jugador: solo lo lee y escribe su dueño, con el mail verificado
+    match /jugadores/{uid} {
+      allow read, write: if request.auth != null && request.auth.uid == uid && request.auth.token.email_verified == true;
+    }
+
+    // Partidas online abiertas (js/salas.js): las ve cualquiera; se anuncian sin cuenta,
+    // pero solo con estos campos y tamaños. Las viejas (más de un día) se pueden borrar.
+    match /salas/{code} {
+      allow read: if true;
+      allow create, update: if code.matches('^[A-Z0-9]{5}$')
+        && request.resource.data.keys().hasOnly(['c', 'p', 'e', 'br', 'm', 'n', 't'])
+        && request.resource.data.c == code
+        && request.resource.data.p is string && request.resource.data.p.size() <= 64
+        && request.resource.data.e is int && request.resource.data.e >= 1 && request.resource.data.e <= 9
+        && request.resource.data.br is number && request.resource.data.br >= 0 && request.resource.data.br <= 20
+        && request.resource.data.m is string && request.resource.data.m.size() <= 32
+        && request.resource.data.n is int && request.resource.data.n >= 0 && request.resource.data.n <= 6
+        && request.resource.data.t == request.time;
+      allow delete: if resource.data.t < request.time - duration.value(1, 'd');
+    }
+  }
+}
