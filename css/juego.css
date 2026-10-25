@@ -279,3 +279,6 @@ button:focus-visible{outline:3px solid var(--paper);outline-offset:3px}
 #vficha .vfG{display:grid;grid-template-columns:auto 1fr;gap:2px 12px;margin:8px 0;font-size:15px} #vficha .vfG span{opacity:.7} #vficha .vfG b{text-align:right}
 #vficha .vfA{font-size:14px;border-top:1px solid rgba(239,231,210,.15);padding-top:6px} #vficha .vfA small{opacity:.7}
 #vficha p{font-size:14px;line-height:1.3;margin:8px 0 2px;opacity:.85} #vficha .vfF{font-size:12px;opacity:.5}
+/* Despliegue: miniatura del tanque arriba de cada tarjeta */
+.pick .tk .vmini{display:block;width:100%;height:92px;object-fit:contain;margin:-4px 0 4px;opacity:0;transition:opacity .3s;filter:drop-shadow(0 4px 4px rgba(0,0,0,.55))} .pick .tk .vmini.ok{opacity:1}
+.pick .tk[aria-disabled="true"] .vmini{filter:grayscale(.8) drop-shadow(0 4px 4px rgba(0,0,0,.55))}

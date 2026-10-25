@@ -102,7 +102,7 @@ function openBriefing(spectator){
 }
 function cardsHTML(items,group,cur){
   return `<div class="pick ${items.length===2?'two':''}" role="radiogroup">${items.map(it=>
-    `<button class="tk" role="radio" data-g="${group}" data-k="${it.k}" aria-checked="${it.k===cur}" aria-disabled="${!!it.off}"><b>${it.label}</b>${it.desc||''}${it.tag?`<em>${it.tag}</em>`:''}</button>`).join('')}</div>`;
+    `<button class="tk" role="radio" data-g="${group}" data-k="${it.k}" aria-checked="${it.k===cur}" aria-disabled="${!!it.off}">${it.img?miniHTML(it.k):''}<b>${it.label}</b>${it.desc||''}${it.tag?`<em>${it.tag}</em>`:''}</button>`).join('')}</div>`;
 }
 function openDeploy(){
   state='deploy'; syncIntro(); mouseDown=false; rightDown=false; if(engGain) engGain.gain.value=0;
@@ -128,7 +128,7 @@ function renderDeploy(){
   }
   const veh=c.lineup.map(k=>{const V=VEH[k],cost=costOf(c,k),u=usesOf(c,k);
     const eq=[`mira ${V.optic.join('/')}×`,V.fcs?'telémetro':'',V.stab?'estabilizador':'',V.thermal?'térmica':''].filter(Boolean);
-    return {k,label:V.label,desc:`Tanque ${V.cls}. ${V.desc} Munición: ${V.ammo.map(A=>A.n).join(', ')}.${eq.length?' Equipo: '+eq.join(', ')+'.':''}`,off:!available(c,k),
+    return {k,img:1,label:V.label,desc:`Tanque ${V.cls}. ${V.desc} Munición: ${V.ammo.map(A=>A.n).join(', ')}.${eq.length?' Equipo: '+eq.join(', ')+'.':''}`,off:!available(c,k),
       tag:(u>=usesMax(k)?'Sin usos':cost===0?'Gratis':`${cost} puntos${cost>c.sp?', te faltan '+(cost-c.sp):''}`)+(isFinite(usesMax(k))?`. Usos ${u} de ${usesMax(k)}`:`. Salidas: ${u}`)};});
   if(!selKey||!c.lineup.includes(selKey)||!available(c,selKey)) selKey=(veh.find(v=>!v.off)||{}).k;
   const pts=spawnPoints(0); if(selSp>=pts.length) selSp=0;
@@ -139,6 +139,7 @@ function renderDeploy(){
     <h2>Punto de reaparición</h2>${cardsHTML(sp,'sp',String(selSp))}
     <button class="go" id="deployBtn">Desplegar</button><button class="go alt" id="specBtn">Mirar desde el aire</button><button class="go alt" id="quit">Abandonar</button>
     <div class="note">Tickets: ${allyLabel()} ${Math.max(0,Math.ceil(tickets[0]))}, ${NATIONS[foeNation].label} ${Math.max(0,Math.ceil(tickets[1]))}. La batalla sigue mientras elegís.</div>`;
+  miniPedir(c.lineup); // miniatura de cada tanque (se dibujan una vez y quedan guardadas)
   document.querySelectorAll('.tk').forEach(b=>b.onclick=()=>{
     if(b.getAttribute('aria-disabled')==='true') return;
     if(b.dataset.g==='veh') selKey=b.dataset.k; else selSp=+b.dataset.k;
