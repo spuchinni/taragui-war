@@ -141,7 +141,7 @@ function hitTank(by,hit,dir,pen,kind,A){
     if(zone==='turret'&&face==='front'&&Math.random()<.22*(A.sc||1)&&t.mod.breech>0){ t.mod.breech=0; t.breechT=12; hurt.push('cañón dañado'); }
     if(cos<ric&&k!=='he') res='Rebote';
     else if(pen*rand(.9,1.1)>eff){
-      res='Penetración'; if(!(A.sc<1)||Math.random()<.25) addSP(by,15,20); if(by.crew&&by.crew.st&&(face==='side'||face==='rear')) by.crew.st.side++;
+      res='Penetración'; if(!(A.sc<1)||Math.random()<.25) addSP(by,15,20,'Penetración'); if(by.crew&&by.crew.st&&(face==='side'||face==='rear')) by.crew.st.side++;
       hurt=hurt.concat(spall(t,hit.point,k==='hesh'||k==='he'?wn.clone().negate():dir,k,by,A.sc||1,k==='ke'?pen/eff:1));
       if(t.dead) res=t.rack?'Estiba de munición':'Destruido';
     } else {
@@ -179,7 +179,7 @@ function barrelHit(t,by,kind,pen,A){
   if(kind==='mg'&&(by.isPlayer||isRemote(by))){ const ch=(b0>0&&t.mod.barrel<=0)||(b0>=60&&t.mod.barrel<60);
     if(ch||(by.isPlayer?mgMsgT<=0:(by.mgMsgT||0)<now)){ by.mgMsgT=now+.8; if(by.isPlayer) mgMsgT=.8; tell(by,ch?'Impacto · '+st:'Impacto',ch?'var(--amber)':'var(--paper)'); } }
   if((t.isPlayer||isRemote(t))&&(kind!=='mg'||(b0>0&&t.mod.barrel<=0)||(b0>=60&&t.mod.barrel<60))) tell(t,'Te pegaron en el cañón · '+st+(t.mod.barrel<=0?': repará para volver a disparar':t.mod.barrel<60?': dispara con menos precisión':''),'var(--enemy)');
-  if(kind!=='mg'&&!(A.sc<1)) addSP(by,8,15);
+  if(kind!=='mg'&&!(A.sc<1)) addSP(by,8,15,'Cañón dañado');
   if(t.isPlayer&&by) hitFrom(by.pos.x,by.pos.z,kind==='mg'?.4:.8); else if(by&&isRemote(t)) netTo(t,{t:'hf',x:by.pos.x,z:by.pos.z,s:.8});
   if(!t.isPlayer&&t.team!==by.team){ if(by.inf) t.infT=by; else t.target=by; }
   updateHud();
@@ -273,12 +273,14 @@ let battleKills=0, lastKillCrew=null;
 function noteHit(t,by){ if(!by||!by.crew||by.team===t.team) return; (t.hitters||(t.hitters=new Map())).set(by.crew,now); t.tookDmg=true; }
 function award(c,name,sp,score){
   if(!c) return; c.sp+=sp; c.score+=score; c.awards=c.awards||{}; c.awards[name]=(c.awards[name]||0)+1;
-  if(c.isPlayer){ $('spT').textContent=c.sp; showAward(name,score); }
-  else if(c.peer){ const k=net.conns.find(x=>x.peer===c.peer); if(k&&k.open) k.send({t:'aw',n:name,s:score}); }
+  if(c.isPlayer) $('spT').textContent=c.sp; awardNote(c,name,score);
 }
+// muestra la acción (en tu pantalla, o en la del invitado que la hizo)
+function awardNote(c,name,score){ if(c.isPlayer) showAward(name,score); else if(c.peer){ const k=net.conns.find(x=>x.peer===c.peer); if(k&&k.open) k.send({t:'aw',n:name,s:score}); } }
 function showAward(name,score){
   let box=$('awards'); if(!box){ box=document.createElement('div'); box.id='awards'; box.className='hud'; document.body.appendChild(box); }
-  const d=document.createElement('div'); d.innerHTML=`<b${score<0?' style="color:var(--enemy)"':''}>${name}</b> ${score<0?score:'+'+score}`; box.appendChild(d); setTimeout(()=>d.classList.add('out'),2600); setTimeout(()=>d.remove(),3300);
+  const R=actionReward(score), sg=v=>v<0?String(v):'+'+v.toLocaleString('es-AR'); // PI y Yaguaretés que suma la acción
+  const d=document.createElement('div'); d.innerHTML=`<b${score<0?' style="color:var(--enemy)"':''}>${name}</b><small><em>${sg(R.rp)} PI</em><u>🐆 ${sg(R.yp)}</u></small>`; box.appendChild(d); setTimeout(()=>d.classList.add('out'),2600); setTimeout(()=>d.remove(),3300);
   sfx('metal',null,.25,{near:true,rate:1.8});
 }
 function killAwards(t,by){
@@ -303,7 +305,7 @@ function destroy(t,by,rack){
   if(t.trk) t.trk.mats.forEach(m=>m.color.setHex(0x555555)); if(t.ant) t.ant.visible=false; if(t.deco) t.deco.forEach(o=>o.visible=false); if(t.mud) t.mud.color.setHex(0x2e2a26);
   t.popV=rack?rand(6,9):0;
   t.crew.deaths++;
-  if(by&&by.team!==t.team&&by.crew){by.crew.kills++; addSP(by,90,100); if(by.key&&by.crew.tk){ (by.crew.tk[by.key]||(by.crew.tk[by.key]={k:0,d:0})).k++; } }
+  if(by&&by.team!==t.team&&by.crew){by.crew.kills++; addSP(by,90,100,'Tanque destruido'); if(by.key&&by.crew.tk){ (by.crew.tk[by.key]||(by.crew.tk[by.key]={k:0,d:0})).k++; } }
   if(t.crew&&t.crew.tk){ (t.crew.tk[t.key]||(t.crew.tk[t.key]={k:0,d:0})).d++; }
   killAwards(t,by);
   tickets[t.team]-=TICKET_KILL;
@@ -373,7 +375,7 @@ function splash(p,by,r,power,bldDmg){
   for(const t of tanks){ if(t.dead) continue; const d=t.pos.distanceTo(p); if(d>r) continue;
     if(t.team===by.team) continue;
     const top=t.T.armor.hull.top, side=t.T.armor.hull.side, k=Math.pow(1-d/(r+1),1.4), thin=clamp(35/Math.max(top,10),.6,3), dmg=power*55*k*thin;
-    if(t.immuneT<=0) addSP(by,10,10);
+    if(t.immuneT<=0) addSP(by,10,10,'Daño por explosión');
     if(t.isPlayer) hitFrom(p.x,p.z,1);
     if(t.immuneT<=0){ if(Math.random()<k*.85) t.trackT=Math.max(t.trackT,10); if(Math.random()<k*.5){t.mod.engine-=60*k*power; if(t.mod.engine<=0)t.engT=20;}
       if(d<2.5&&top<=power*25&&Math.random()<.5) t.fireT=Math.max(t.fireT,30);

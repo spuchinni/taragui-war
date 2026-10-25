@@ -535,6 +535,9 @@ function cullUpdate(){ if(!cullList.length) return; _cullPM.multiplyMatrices(cam
 function cells(list,cell,X=e=>e.x,Z=e=>e.z){ const M=new Map(); for(const e of list){ const k=Math.floor(X(e)/cell)+','+Math.floor(Z(e)/cell); if(!M.has(k)) M.set(k,[]); M.get(k).push(e); } return M; }
 function buildWorld(key){
   W=WORLDS[key]; craters.length=0; cullList.length=0;
+  // misiones de campaña con un punto como objetivo (tomar, llegar, defender, escoltar, incursión): figura solo ese punto
+  if(!W.zones0) W.zones0=W.zones; { const ob=typeof curSpecial!=='undefined'&&curSpecial&&curSpecial.obj, keep=ob&&(ob.zones||(ob.zone&&[ob.zone]));
+    W.zones=keep?W.zones0.filter(Z=>keep.includes(Z.id)):W.zones0; }
   worldGroup.children.slice().forEach(o=>{worldGroup.remove(o);if(o.geometry)o.geometry.dispose();if(o.material){if(o.material.map&&o.material.map!==grassTex&&o.material.map!==wallTex)o.material.map.dispose();if(o.material!==rockMat)o.material.dispose();}});
   W.mmCanvas=null; W.HG=null; W.deckAt=null; W.propK=1; W.trench=null; W.wire=null; W.trenchCover=null; W.setup=null;
   houseMeshes=[];houseBoxes=[];trees=[];grid=new Map();pierObs=[];bList=[];rList=[];streetSegs=[];buildings=[];waterMesh=null;

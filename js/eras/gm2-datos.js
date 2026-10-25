@@ -1,8 +1,9 @@
 /* ---------- Entreguerras (1919–1938): naciones y vehículos ----------
    Los primeros tanques con torre de verdad: ligeros con ametralladoras, los medios con cañón de 37 a 47 mm, los rápidos BT con
    suspensión Christie y los primeros "tanques de apoyo" con cañón corto de 75/76 mm. La Guerra Civil Española (1936–1939) fue su prueba.
-   Velocidades reales × 1,6 (antes × 1,2, más rápido por los mapas de 1,5 km). Blindaje en mm, penetración a quemarropa. m.ww1='iw' usa el constructor de gm2-modelos.js. */
-const kmh2=v=>+(v/3.6*1.6).toFixed(2);
+   Velocidades: hasta 30 km/h reales × 1,6; los más rápidos, su velocidad real; tope 75 km/h. Blindaje en mm, penetración a quemarropa. m.ww1='iw' usa el constructor de gm2-modelos.js. */
+// hasta 30 km/h reales: × 1,6 (los mapas de 1,5 km); los que ya pasaban los 30 van a su velocidad real; tope 75 km/h (pedido de Sebastián)
+const kmh2=v=>+(Math.min(75,v>30?v:v*1.6)/3.6).toFixed(2);
 Object.assign(ERAS[2],{ready:1,
   desc:'Tanques ligeros con torre, los primeros medios con cañón, los rápidos BT soviéticos y la Guerra Civil Española (1936–1939).',
   sup:{arty:1,air:0,nuke:0},civ:0,traffic:0,mgPen:13,female:0,guns:1,
@@ -159,5 +160,5 @@ Object.assign(VEH.mk1,{climb:.42}); Object.assign(VEH.mk4m,{climb:.42}); Object.
 Object.assign(VEH.a7v,{climb:.3}); Object.assign(VEH.stchamond,{climb:.3}); Object.assign(VEH.schneider,{climb:.33}); Object.assign(VEH.ft17,{climb:.45}); Object.assign(VEH.ftus,{climb:.45});
 Object.assign(VEH.bt5,{climb:.52}); Object.assign(VEH.lt6b,{climb:.5}); Object.assign(VEH.b1bis,{climb:.45}); Object.assign(VEH.t28,{climb:.44}); Object.assign(VEH.vmk2,{climb:.42});
 
-// marcha atrás en la misma proporción que la velocidad (× 1,6 en vez de × 1,2)
-for(const k in VEH) if(VEH[k].era===2&&!VEH[k].static&&VEH[k].maxR) VEH[k].maxR=+(VEH[k].maxR*1.6/1.2).toFixed(2);
+// marcha atrás: los lentos suben en la misma proporción que su velocidad (× 1,6 en vez del × 1,2 original)
+for(const k in VEH) if(VEH[k].era===2&&!VEH[k].static&&VEH[k].maxR&&VEH[k].maxF*3.6<=48.1) VEH[k].maxR=+(VEH[k].maxR*1.6/1.2).toFixed(2);

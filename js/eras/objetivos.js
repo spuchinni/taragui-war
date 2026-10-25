@@ -44,7 +44,7 @@ function objTick(first){
   const o=curObj; if(!o||o.done||!['play','deploy','spectate','paused'].includes(state)) return;
   const left=o.time-(now-o.t0), tTxt=`<span class="ot">${fmtT(left)}</span>`, head=`<b>${OBJ_NAME[o.type]}</b> `;
   if(o.type==='take'){ const own=o.zones.every(id=>{ const Z=zoneById(id); return Z&&Z.owner===1; }); o.holdT=own?o.holdT+1:0;
-    objUI(head+`${o.zones.map(id=>zoneById(id).label).join(', ')}: ${own?`sostené ${fmtT(o.hold-o.holdT)}`:'capturalo'} · ${tTxt}`);
+    objUI(head+`${o.zones.map(id=>`${zoneById(id).label} (punto ${id})`).join(', ')}: ${own?`sostené ${fmtT(o.hold-o.holdT)}`:'capturalo'} · ${tTxt}`);
     if(o.holdT>=o.hold) return objEnd(true,'Lo tomaron y lo sostuvieron'); }
   else if(o.type==='reach'){ const Z=zoneById(o.zone), p=player&&!player.dead?player.pos:null, inZ=p&&Math.hypot(p.x-Z.x,p.z-Z.z)<Z.r+4;
     objUI(head+`llevá tu tanque hasta ${Z.label} (${p?Math.round(Math.hypot(p.x-Z.x,p.z-Z.z))+' m':'desplegá'}) · ${tTxt}`); if(inZ) return objEnd(true,`Llegaste a ${Z.label}`); }
@@ -54,7 +54,7 @@ function objTick(first){
     objUI(head+`${o.what==='guns'?'Baterías':VEH[o.keys[0]].label}: ${Math.min(o.dead.size,o.need)} de ${o.need} · ${tTxt}`);
     if(o.need&&o.dead.size>=o.need) return objEnd(true,'Destruiste todos los blancos'); }
   else if(o.type==='hold'){ const lost=o.zones.find(id=>{ const Z=zoneById(id); return Z&&Z.owner===-1; });
-    objUI(head+`${o.zones.map(id=>zoneById(id).label).join(', ')}: aguantá · ${tTxt}`); if(lost) return objEnd(false,`Perdiste ${zoneById(lost).label}`);
+    objUI(head+`${o.zones.map(id=>`${zoneById(id).label} (punto ${id})`).join(', ')}: aguantá · ${tTxt}`); if(lost) return objEnd(false,`Perdiste ${zoneById(lost).label}`);
     if(left<=0) return objEnd(true,'Aguantaron hasta el final'); }
   else if(o.type==='escort'){ const Z=zoneById(o.zone), live=o.esc.filter(P=>!P.dead), inZ=live.filter(P=>Math.hypot(P.pos.x-Z.x,P.pos.z-Z.z)<Z.r+3).length;
     for(const P of live) if(!P.goal&&Math.hypot(P.pos.x-Z.x,P.pos.z-Z.z)>Z.r) P.goal={x:Z.x+rand(-6,6),z:Z.z+rand(-6,6)};

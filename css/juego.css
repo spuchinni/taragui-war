@@ -17,6 +17,7 @@ html,body{margin:0;height:100%;overflow:hidden;background:#000;color:var(--paper
 .zb{width:34px;height:34px;display:grid;place-items:center;font-size:20px;background:rgba(20,18,14,.7);outline:2px solid var(--paper);position:relative;overflow:hidden}
 .zb i{position:absolute;left:0;bottom:0;width:100%;height:0;opacity:.55}
 .zb span{position:relative}
+.zw{display:flex;flex-direction:column;align-items:center;gap:3px} .zw small{font-size:13px;color:var(--paper);text-shadow:0 1px 2px #000;white-space:nowrap;min-height:15px}
 #specT{left:0;right:0;bottom:calc(22px + env(safe-area-inset-bottom,0px));text-align:center;font-size:20px;display:none}
 body.spec #specT{display:block}
 #nflash{position:fixed;inset:0;background:#fffaf0;opacity:0;pointer-events:none;z-index:6}
@@ -210,7 +211,7 @@ label.sens input{flex:1;accent-color:var(--khaki)}
 .lbT{display:grid;grid-template-columns:1fr 1fr;gap:12px;max-width:520px} .lbT>div{background:rgba(0,0,0,.3);border:1px solid rgba(239,231,210,.2);padding:8px 10px;font-size:17px}
 #awards{right:16px;top:38%;display:flex;flex-direction:column;align-items:flex-end;gap:4px}
 #awards div{background:linear-gradient(90deg,rgba(20,18,14,0),rgba(20,18,14,.75) 30%);padding:3px 12px 3px 40px;font-size:20px;color:var(--paper);transition:opacity .6s,transform .6s}
-#awards div b{color:var(--amber);margin-right:6px} #awards div.out{opacity:0;transform:translateX(30px)}
+#awards div b{color:var(--amber);margin-right:6px} #awards div{text-align:right} #awards div small{display:block;font-size:15px;line-height:1.1} #awards div em{font-style:normal;color:#9fd0ff} #awards div u{text-decoration:none;color:#d8d2c0;margin-left:10px} #awards div.out{opacity:0;transform:translateX(30px)}
 #oob{left:0;right:0;top:calc(96px + env(safe-area-inset-top,0px));text-align:center;font:700 40px 'Saira Condensed',sans-serif;color:#ff4a32;opacity:0;transition:opacity .2s;letter-spacing:.04em}
 #oob small{display:block;font-size:20px;color:var(--paper);font-weight:500} #oob b{color:#ffc65c;font-size:26px}
 

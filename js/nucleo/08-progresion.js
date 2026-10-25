@@ -1,5 +1,7 @@
 /* ---------- Puntos de reaparición (SP) ---------- */
-function addSP(tank,n,score=0){ if(!tank||!tank.crew) return; tank.crew.sp+=n; tank.crew.score+=score; if(tank.crew.isPlayer) $('spT').textContent=tank.crew.sp; }
+function addSP(tank,n,score=0,label){ if(!tank||!tank.crew) return; tank.crew.sp+=n; tank.crew.score+=score; if(tank.crew.isPlayer) $('spT').textContent=tank.crew.sp; if(label&&score) awardNote(tank.crew,label,score); }
+// Lo que vale una acción al final de la batalla (la misma cuenta que battleReward, sin el premio por ganar): PI y Yaguaretés según el rango de tu tanque
+function actionReward(score){ const k=(player&&player.key)||selKey, K=RANK_K[k&&VEH[k]?rankOf(k):1]||1; return {rp:Math.round(score*2.5*K),yp:Math.round(score*.5*K)}; }
 // ---------- Progresión estilo War Thunder ----------
 // Cada época es un rango (I = 1ª Guerra … V = Guerra Fría). Cada nación tiene líneas por clase en orden de año: un tanque pide el
 // anterior de su línea (y el primero de una clase pide el último de esa clase del rango anterior). Para pasar de rango hay que tener
