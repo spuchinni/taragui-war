@@ -49,7 +49,7 @@ function introUI(){
 }
 document.addEventListener('keydown',e=>{ if(state!=='intro') return; if(['Escape','Enter','Space'].includes(e.code)){ e.preventDefault(); e.stopImmediatePropagation(); if(intro&&!intro.on&&e.code!=='Escape') $('iStart').click(); else introEnd(); } },true);
 // Intro en video (video/intro.mp4, armado con los videos de Gemini): se muestra en vez de la hecha con el motor, que queda si el video no carga
-const INTRO_VIDEO='video/intro.mp4', INTRO_VIDEO_ON=true;
+const INTRO_VIDEO='video/intro.mp4?v='+(window.GAME_V||''), INTRO_VIDEO_ON=true;
 let introVideoOk=INTRO_VIDEO_ON;
 function introVideo(){
   const ui=introUI(); let v=$('iVid'); if(!v){ v=document.createElement('video'); v.id='iVid'; v.src=INTRO_VIDEO; v.playsInline=true; v.preload='auto'; ui.insertBefore(v,ui.firstChild); v.onended=()=>introEnd(); v.onerror=()=>{ introVideoOk=false; introEnd(); }; }
