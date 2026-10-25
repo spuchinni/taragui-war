@@ -107,7 +107,7 @@ function updateAI(t,dt){
     // cualquier bando: enemigo marcado por un compañero, si lo ven
     if(!best){ let bd=1e9; for(const o of tanks){ if(o.dead||o.team===t.team||o.spottedT<=0) continue; const d=o.pos.distanceTo(t.pos); if(d<Math.min(380,vr0)&&d<bd&&los(e,eyeOf(o))){best=o;bd=d;} } }
     // blanco nuevo: tarda en reaccionar antes del primer disparo (menos cuanto más hábil)
-    if(best!==t.target){ t.target=best; t.errScale=1; t.flankTried=false; t.reactT=now+rand(1.2,2.5)*(1.6-sk); if(t.mode==='cover'||t.mode==='peek'||t.mode==='flank') t.mode='adv'; }
+    if(best!==t.target){ t.target=best; t.errScale=1; t.flankTried=false; t.reactT=now+rand(2,4)*(1.6-sk); if(t.mode==='cover'||t.mode==='peek'||t.mode==='flank') t.mode='adv'; }
     if(best&&t.mode==='adv') planFlank(t,best);
     if(t.target) t.target.spottedT=3;
     if(!best&&(!t.infT||t.infT.dead)){ t.infT=null; let bi=160; for(const P of infantry){ if(P.dead||isCiv(P)||P.team===t.team) continue; const d=P.pos.distanceTo(t.pos); if(d<bi&&los(e,infEye(P))){bi=d;t.infT=P;} } }
@@ -142,7 +142,7 @@ function updateAI(t,dt){
     aimErr=aimAt(t,tgt.pos.clone().setY(tgt.pos.y+tgt.aimH),dt,t.eY*t.errScale,t.eP*t.errScale);
     // sin torre (barbetas, casamatas, cañones de campaña): gira el casco para que el blanco entre en el arco del cañón
     if(t.T.arc!=null){ const off=wrap(want-t.heading-(t.T.arcC||0)); if(Math.abs(off)>t.T.arc*.85){ steer=clamp(off*2.5,-1,1); if(!mv) throttle=Math.min(throttle,.15); } }
-    if(t.reloadT<=0&&now>(t.reactT||0)&&aimErr<.02&&Math.abs(t.speed)<(t.T.stab?9:4)&&t.mode!=='cover'&&t.mode!=='retreat'){ fireGun(t); if(tgt.isPlayer) t.spottedT=Math.max(t.spottedT||0,6); /* el fogonazo lo delata: queda marcado */ t.eY=rand(-1,1)*.035*(1.6-sk); t.eP=rand(-1,1)*.01*(1.6-sk); t.errScale*=.7;
+    if(t.reloadT<=0&&now>(t.reactT||0)&&aimErr<.02&&Math.abs(t.speed)<(t.T.stab?9:4)&&t.mode!=='cover'&&t.mode!=='retreat'){ botFire(t,tgt,d,sk); if(tgt.isPlayer) t.spottedT=Math.max(t.spottedT||0,6); /* el fogonazo lo delata: queda marcado */ t.eY=rand(-1,1)*.035*(1.6-sk); t.eP=rand(-1,1)*.01*(1.6-sk); t.errScale*=.7;
       // dispara y se cubre mientras recarga (tirar y esconderse)
       if(t.mode==='adv'&&sk>.35&&t.reloadMax>2.5&&Math.random()<sk*.9){ const cp=findCover(t,tgt); if(cp){ t.coverP=cp; t.peekP=t.pos.clone(); t.mode='cover'; t.modeT=now+t.reloadMax+2; } } }
     if(d<220&&aimErr<.06&&!t.mgLock&&now>t.mgNext){
@@ -213,3 +213,20 @@ function updateZones(dt){
 }
 const teamNation=team=>team===0?allyNation:foeNation;
 
+
+// Disparo de un bot: no todos sus tiros pegan. La chance de acertar depende de la habilidad, la distancia y si el blanco se mueve;
+// contra un jugador humano, el primer tiro de cada bot siempre pasa cerca (aviso). El que falla, falla de verdad: corto, largo o al costado.
+function botHitChance(t,tgt,d,sk){
+  const human=tgt.isPlayer||(tgt.crew&&tgt.crew.peer)||tgt.net;
+  let p=(.08+.55*sk*sk)*clamp(1.2-d/350,.3,1)*(Math.abs(tgt.speed||0)>2?.6:1);
+  if(human&&t.warnTgt!==tgt){ t.warnTgt=tgt; return 0; }
+  return human?p:p*1.6; // entre bots se pegan más, así la batalla avanza
+}
+function botFire(t,tgt,d,sk){
+  if(Math.random()<botHitChance(t,tgt,d,sk)){ fireGun(t); return; }
+  const yaw=t.turretYaw, pitch=t.gunPitch, m=rand(3,7)/Math.max(d,20)*(Math.random()<.5?-1:1);
+  if(Math.random()<.5){ t.turretYaw+=m; } else t.gunPitch+=rand(.6,1.4)*(Math.random()<.6?-1:1)*2.5/Math.max(d,20);
+  t.turret.rotation.y=t.turretYaw; t.gunPivot.rotation.x=-t.gunPitch;
+  fireGun(t);
+  t.turretYaw=yaw; t.gunPitch=pitch; t.turret.rotation.y=yaw; t.gunPivot.rotation.x=-pitch;
+}

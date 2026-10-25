@@ -99,11 +99,11 @@ function updateA10(dt){
 /* ---------- Dificultad de los bots según la habilidad del jugador ---------- */
 const skillName=k=>k<.45?'Recluta':k<.65?'Regular':k<.82?'Veterano':'Élite';
 // Dificultad elegida en Ajustes: habilidad fija de los enemigos y cuánto esperan entre apoyos. "Se adapta a vos" usa PROG.skill.
-const DIF={facil:{n:'Fácil',sk:.3,sup:1.8},normal:{n:'Normal',sk:.45,sup:1.3},dificil:{n:'Difícil',sk:.7,sup:1},auto:{n:'Se adapta a vos',sk:null,sup:1}};
+const DIF={facil:{n:'Fácil',sk:.2,sup:1.8},normal:{n:'Normal',sk:.35,sup:1.3},dificil:{n:'Difícil',sk:.7,sup:1},auto:{n:'Se adapta a vos',sk:null,sup:1}};
 const difOf=()=>DIF[difficulty]||DIF.normal;
-function enemySkill(){ const D=difOf(); return D.sk!=null?D.sk:clamp(PROG&&PROG.skill!=null?PROG.skill:.35,.25,1); }
+function enemySkill(){ const D=difOf(); return D.sk!=null?D.sk:clamp(PROG&&PROG.skill!=null?PROG.skill:.3,.2,1); }
 function updateSkill(me,win){ if(!PROG||!me) return; const perf=clamp(.25+.12*me.kills-.08*me.deaths+.05*me.caps+(win?.15:0),0,1);
-  PROG.skill=clamp(enemySkill()*.75+perf*.25,.25,1); saveProg(); }
+  PROG.skill=clamp(enemySkill()*.75+perf*.25,.2,1); saveProg(); }
 // Cupo por bando: los bots de cada bando comparten una espera de 60 s para artillería y 120 s para ataque aéreo
 // (más larga para los enemigos en Fácil y Normal), y nadie pide apoyo en el primer minuto.
 // Lo que pide el jugador también cuenta para su bando, así los dos bandos tienen el mismo ritmo.
