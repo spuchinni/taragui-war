@@ -206,8 +206,8 @@ function updateZones(dt){
   }
   tickT+=dt; if(tickT>=1){tickT=0; spIncome(); const o0=zones.filter(Z=>Z.owner===1).length, o1=zones.filter(Z=>Z.owner===-1).length;
     // Sangrado de tickets estilo War Thunder: pierde el equipo con menos zonas; cuanto mayor la diferencia, más rápido.
-    const dif=Math.abs(o0-o1), big=W.bx>400, rate=(dif===0||(big&&now<150)?0:dif===1?1.2:dif===2?2.6:4.5)*(big?.3:1); // mapas grandes: más lento y nada los primeros 2,5 min (todavía se están acercando) bleed=o0>o1?-1:o1>o0?1:0;
-    if(o0>o1) tickets[1]-=rate; else if(o1>o0) tickets[0]-=rate; checkEnd();}
+    const dif=Math.abs(o0-o1), big=W.bx>400, rate=(dif===0||(big&&now<150)||(typeof curObj!=='undefined'&&curObj)?0:dif===1?1.2:dif===2?2.6:4.5)*(big?.3:1); // mapas grandes: más lento y nada los primeros 2,5 min (todavía se están acercando) bleed=o0>o1?-1:o1>o0?1:0;
+    if(o0>o1) tickets[1]-=rate; else if(o1>o0) tickets[0]-=rate; if(typeof objTick==='function') objTick(); checkEnd();}
   { const a=$('tkA'),e=$('tkE'); if(a&&e){ a.classList.toggle('bleed',bleed===1); e.classList.toggle('bleed',bleed===-1); } }
   $('tkA').textContent=Math.max(0,Math.ceil(tickets[0])); $('tkE').textContent=Math.max(0,Math.ceil(tickets[1]));
 }

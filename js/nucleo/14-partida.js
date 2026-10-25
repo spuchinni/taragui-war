@@ -79,6 +79,7 @@ function startBattle(spectator=false,forceMap=null,special=null,noBrief=false){ 
   now=0; noises.length=0; battleKills=0; lastKillCrew=null; teamSup[0]={...SUP_START}; teamSup[1]={...SUP_START}; if(!tut) for(const c of crews){ c.artyCD=ARTY_CD; c.airCD=AIR_CD; } updateInfantry.t=40;
   if(!net.guest){ const sq=special&&special.squads||[2,2]; for(const tm of [0,1]) for(let i=0;i<sq[tm];i++) spawnSquad(tm); if(RULE().civ){ spawnCivilians(streetSegs.length?20:12); spawnTraffic(W.city?16:streetSegs.length>20?8:0); } if(W.setup) W.setup(); }
   updateHud();
+  if(typeof objStart==='function'){ curObj=null; objUI(''); if(special&&special.obj&&!spectator) objStart(special.obj); } // objetivo de la misión (objetivos.js)
   if(noBrief) openDeploy(); else openBriefing(spectator);
 }
 let allyMixed=false;
@@ -180,7 +181,7 @@ function finish(winner){
   if(lastKillCrew&&!net.guest){ award(lastKillCrew,'Último derribo',30,50); lastKillCrew=null; }
   if(net.host) netAll({t:'end',w:winner,crews:crews.map(c=>({st:c.st,tk:c.tk,name:c.name,team:c.team,uses:c.uses,kills:c.kills,assists:c.assists||0,deaths:c.deaths,caps:c.caps,score:c.score,peer:c.peer||null,h:c.isPlayer||c.peer||c.wasHuman?1:0}))});
   if(nuke&&nuke.phase>=1&&nuke.cloud){ nukeEnd(winner); return; }
-  state='end'; const N=NATIONS[winner===0?allyNation:foeNation].label;
+  state='end'; if(typeof objUI==='function') objUI(''); const N=NATIONS[winner===0?allyNation:foeNation].label;
   banner(spectating?`Gana ${N}`:winner===0?'Victoria':'Derrota',spectating?'':`Gana ${N}`,99);
   setTimeout(()=>{if(state==='end') summary(winner);},2800);
 }
@@ -344,7 +345,7 @@ const normalNations=()=>Object.fromEntries(Object.entries(NATIONS).filter(([k,v]
 function menuSec(id,label,html){ return `<button class="mi${menuOpen===id?' open':''}" data-s="${id}">${label}<i>▾</i></button><div class="sec"${menuOpen===id?'':' hidden'}>${html}</div>`; }
 let menuScreen='home', playMode='battle';
 function mainMenu(){
-  stopAllLoops(); if(typeof vfichaOff==='function') vfichaOff();
+  stopAllLoops(); if(typeof objUI==='function'){ objUI(''); curObj=null; } if(typeof vfichaOff==='function') vfichaOff();
   if(net.on) netLeave(); if(wxKey!=='dia') applyWeather('dia');
   if(document.pointerLockElement) document.exitPointerLock();
   state='menu'; tut=null; bindCapture=null; document.body.classList.add('menu'); document.body.classList.remove('deploy','spec','tut','home'); if(!PROG) loadProg();

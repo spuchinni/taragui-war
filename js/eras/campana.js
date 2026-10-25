@@ -51,7 +51,7 @@ const nextMission=id=>{ const L=allMissions(), i=L.findIndex(m=>m.id===id); retu
 
 // Arranca una misión: bandos, tanques y ayudas fijas (las del hecho histórico)
 function startMission(id){ const M=missionById(id); if(!M) return; curEra=M.era; applyEraNations(M.era);
-  startBattle(false,M.map,{mission:M.id,era:M.era,ally:M.ally,foe:M.foe,plu:M.plu,lu:M.lu,nAlly:M.nAlly,nFoe:M.nFoe,guns:M.guns,squads:M.squads,tickets:M.tickets,wx:M.wx}); }
+  startBattle(false,M.map,{mission:M.id,era:M.era,ally:M.ally,foe:M.foe,plu:M.plu,lu:M.lu,nAlly:M.nAlly,nFoe:M.nFoe,guns:M.guns,squads:M.squads,tickets:M.tickets,wx:M.wx,obj:M.obj}); }
 
 // Intro de la misión (reemplaza a la de la batalla común)
 function missionBriefHTML(M){
