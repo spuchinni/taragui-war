@@ -154,3 +154,7 @@ FC.lt6b.autoL=1; FC.pz1a.autoL=1; FC.m2a2.autoL=1;
 Object.assign(VEH.lt6b,{req:'whippet'}); Object.assign(VEH.pz1a,{req:'lk2'}); Object.assign(VEH.pz3a,{req:'pz2a'}); Object.assign(VEH.t28,{req:'bt5'});
 // Cañones antitanque de cada nación en esta época (placeGuns)
 const GUN_ERA={2:{de:'pak36',ru:'at45',uk:'pdr2',fr:'at25',us:'at37us'}};
+// Pendiente máxima (rad) de los que se apartan del promedio de la época (CLIMB_ERA en 07-tanques.js)
+Object.assign(VEH.mk1,{climb:.42}); Object.assign(VEH.mk4m,{climb:.42}); Object.assign(VEH.mk4f,{climb:.42}); Object.assign(VEH.mk5,{climb:.44}); Object.assign(VEH.mk5us,{climb:.44}); Object.assign(VEH.beute4,{climb:.42});
+Object.assign(VEH.a7v,{climb:.3}); Object.assign(VEH.stchamond,{climb:.3}); Object.assign(VEH.schneider,{climb:.33}); Object.assign(VEH.ft17,{climb:.45}); Object.assign(VEH.ftus,{climb:.45});
+Object.assign(VEH.bt5,{climb:.52}); Object.assign(VEH.lt6b,{climb:.5}); Object.assign(VEH.b1bis,{climb:.45}); Object.assign(VEH.t28,{climb:.44}); Object.assign(VEH.vmk2,{climb:.42});

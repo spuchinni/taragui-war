@@ -223,6 +223,9 @@ function placeOnGround0(t,dt){
   const cl=h=>clamp(h,hc-1.4,hc+1.4);
   const hF=cl(HA(p.x+s*L,p.z+c*L)), hB=cl(HA(p.x-s*L,p.z-c*L)); hL=cl(hL); hR=cl(hR);
   const tp=clamp(Math.atan2(hF-hB,L*2),-.6,.6), tr=clamp(Math.atan2(hL-hR,Wd*2),-.55,.55);
+  t.gP=Math.atan2(HA(p.x+s*L,p.z+c*L)-HA(p.x-s*L,p.z-c*L),L*2); t.gR=Math.atan2(HA(p.x+c*Wd,p.z-s*Wd)-HA(p.x-c*Wd,p.z+s*Wd),Wd*2); // pendiente real del suelo (sin recortar), para la física de drive
+  // ladera muy inclinada de costado: el tanque se desliza hacia abajo
+  if(!t.air&&!t.dead&&dt<.5&&Math.abs(t.gR)>MU*.9){ const k=Math.sign(t.gR)*(Math.abs(t.gR)-MU*.9)*G*dt*.6; p.x-=c*k; p.z+=s*k; }
   const gy=(hF+hB+hL+hR)/4;
   // Gravedad: si el suelo quedó más abajo (se fue de un borde), cae; al tocar el suelo, el golpe lastima a la tripulación
   if(!t.dead&&dt<.5&&(t.air||p.y>gy+.9)){
@@ -246,9 +249,16 @@ function drive0(t,throttle,steer,dt){
   if(!canMove(t)||t.air){throttle=0;steer=0;}
   // Potencia según el daño: motor dañado = menos velocidad y aceleración; transmisión rota = sin marchas altas
   const T=t.T, pw=(t.mod.engine>=100?1:.35+.65*clamp(t.mod.engine,0,100)/100)*(WX.mud?.82:1), tx=t.mod.trans>0, vF=Math.min(T.maxF*pw,tx?1e9:4.2), vR=Math.min(T.maxR*pw,tx?1e9:2);
-  const want=throttle>0?throttle*vF:throttle<0?throttle*vR:0;
-  const d=want-t.speed; t.speed+=clamp(d,-dt*(want===0?6:5),dt*(Math.sign(d)===Math.sign(t.speed)||t.speed===0?3.5*pw:6));
-  t.speed-=Math.sin(t.pitch)*dt*3;
+  // Pendientes: la gravedad empuja cuesta abajo (g·sen a); el motor la compensa hasta la pendiente máxima del tanque (climbOf)
+  // y la oruga agarra hasta MU (≈37°). Más empinado: no sube, patina y se va para atrás. Cerca del límite sube muy despacio.
+  const a=t.air?0:(t.gP||0), cl=climbOf(T)*Math.sqrt(pw), gA=-G*Math.sin(a), dirT=Math.sign(throttle)||0, upA=a*dirT;
+  let vF2=vF, vR2=vR; if(upA>0){ const f=clamp(1-Math.sin(upA)/Math.sin(cl),.08,1)**.6; if(dirT>0) vF2*=f; else vR2*=f; }
+  const want=throttle>0?throttle*vF2:throttle<0?throttle*vR2:0;
+  { const d=want-t.speed, dAcc=clamp(d/dt,-(want===0?6:5),Math.sign(d)===Math.sign(t.speed)||t.speed===0?3.5*pw:6); // aceleración buscada (como en llano)
+    let req=dAcc-gA; // lo que tiene que hacer el motor (o los frenos) además de la gravedad
+    const cap=Math.min(dirT&&Math.sign(req)===dirT?G*Math.sin(cl)*Math.abs(throttle):6,G*MU*Math.cos(a)); // empuje del motor / frenos, y agarre de la oruga
+    t.slip=Math.abs(req)>cap&&Math.abs(a)>.12; req=clamp(req,-cap,cap); t.speed+=(req+gA)*dt;
+    if(!dirT&&!t.slip&&Math.abs(t.speed)<.2) t.speed=0; }
   const gk=T.gears?.35+.65*t.crewM.filter(m=>m.alive&&m.seat.startsWith('gear')).length/2:1;
   t.heading=wrap(t.heading+steer*dt*gk*(T.turn-Math.min(T.turn*.3,Math.abs(t.speed)*.015)));
   const p=t.pos, ox=p.x, oz=p.z, yO=p.y;
@@ -286,7 +296,10 @@ function drive0(t,throttle,steer,dt){
 }
 
 /* ---------- Puntería ---------- */
-const VEL=330, G=9.8, IMMUNE=6;
+const VEL=330, G=9.8, IMMUNE=6, MU=.65; // MU: agarre de la oruga en tierra (≈33°, con tierra suelta)
+// Pendiente máxima que sube cada tanque (rad), según potencia y peso: los de la 1ª Guerra ~22°, entreguerras ~27°, modernos ~31°
+const CLIMB_ERA={1:.38,2:.47,3:.52,4:.54,5:.55};
+const climbOf=T=>T.climb||CLIMB_ERA[T.era||5]||.55;
 let lastTh=false;
 const thermalOn=()=>state==='play'&&player&&!player.dead&&player.thermal;
 // Elige la munición según lo que se apunta mientras dura la recarga; una vez cargada, queda.
