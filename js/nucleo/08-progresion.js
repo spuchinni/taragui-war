@@ -163,5 +163,5 @@ function spawnCrew(crew,key,sp){
 const treeMeshes=()=>{const out=[];for(const sp in treeSets)out.push(...treeSets[sp]);return out;};
 function knockTree(tr,dx,dz){ if(tr.fallen) return; const l=Math.hypot(dx,dz)||1; tr.fallen=true; tr.axis=new THREE.Vector3(dz/l,0,-dx/l); }
 const treeOf=h=>h.object.userData.treeList?h.object.userData.treeList[h.instanceId]:null;
-const bldOf=h=>((h.object===wallsIM||h.object===roofsIM||h.object===gablesIM)&&buildings[h.instanceId])||null;
+const bldOf=h=>(h.object.userData.bIdx&&buildings[h.object.userData.bIdx[h.instanceId]])||((h.object===wallsIM||h.object===roofsIM||h.object===gablesIM)&&buildings[h.instanceId])||null;
 

@@ -1016,6 +1016,7 @@ const heightAt=(x,z)=>{ const ex=W.ex||W.bx+30, ez=W.ez||W.bz+30;
 function findGround(){ groundMeshes=[]; worldGroup.traverse(o=>{ if(o.isMesh&&o.geometry&&o.geometry.type==='PlaneGeometry'&&(o.userData.ground||o.geometry.attributes.position.count>4000)) groundMeshes.push(o); }); }
 function addCrater(p,r,d){
   if(W&&W.onDeck&&W.onDeck(p.x,p.z)&&p.y>pH0(p.x,p.z)+2) return; // sobre el puente no se abren cráteres
+  if(W&&W.deckAt){ const d=W.deckAt(p.x,p.z); if(d!==null&&p.y>d-2) return; }
   if(!W||W.water!==undefined&&W.h(p.x,p.z)<W.water+.2) return; // en el agua no queda cráter
   const C={x:p.x,z:p.z,r,d}; craters.push(C); if(craters.length>90) craters.shift();
   for(const m of groundMeshes){ const pos=m.geometry.attributes.position, R=r*1.4; let ch=false;

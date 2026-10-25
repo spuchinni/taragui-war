@@ -1,0 +1,15 @@
+{
+  "centro":      {"nombre":"Corrientes, centro","lat":-27.4712,"lon":-58.8270,"hx":750,"hz":750,"pisos":[1,2,2,3,4,6]},
+  "costanera":   {"nombre":"Costanera de Corrientes","lat":-27.4690,"lon":-58.8470,"hx":750,"hz":750,"pisos":[1,2,2,3,4]},
+  "rotonda":     {"nombre":"Ruta 12 y Av. Independencia","lat":-27.4890,"lon":-58.7815,"hx":750,"hz":750,"pisos":[1,1,1,2]},
+  "carrefour":   {"nombre":"Av. Independencia (Carrefour)","lat":-27.4780,"lon":-58.8113,"hx":750,"hz":750,"pisos":[1,1,2,2,3]},
+  "aeropuerto":  {"nombre":"Ruta 12, aeropuerto","lat":-27.4450,"lon":-58.7536,"hx":800,"hz":750,"pisos":[1,1,1,2]},
+  "lagunabrava": {"nombre":"Laguna Brava","lat":-27.4905,"lon":-58.7150,"hx":750,"hz":750,"pisos":[1,1,1,2]},
+  "pasopatria":  {"nombre":"Paso de la Patria","lat":-27.3187,"lon":-58.5720,"hx":750,"hz":750,"pisos":[1,1,1,2]},
+  "itati":       {"nombre":"Itatí","lat":-27.2723,"lon":-58.2440,"hx":750,"hz":750,"pisos":[1,1,1,2]},
+  "puente":      {"nombre":"Corrientes – Resistencia","lat":-27.4685,"lon":-58.8620,"hx":1120,"hz":430,"rot":44.5,"pisos":[1,1,2,3]},
+  "posadas":     {"nombre":"Posadas – Encarnación","lat":-27.37193,"lon":-55.8688,"hx":1480,"hz":520,"rot":156.5,"pisos":[1,1,2,3]},
+  "salto":       {"nombre":"Represa de Salto Grande","lat":-31.27595,"lon":-57.94134,"hx":1250,"hz":420,"rot":30.5,"pisos":[1,1,2]},
+  "cordillera":  {"nombre":"Paso Cristo Redentor","lat":-32.8253,"lon":-70.0708,"hx":750,"hz":750,"zrel":14,"montana":1,"sinAgua":1,"pico":120,"pisos":[1]},
+  "malvinas":    {"nombre":"Islas Malvinas","lat":-51.6965,"lon":-57.8830,"hx":750,"hz":750,"pisos":[1,1,2]}
+}

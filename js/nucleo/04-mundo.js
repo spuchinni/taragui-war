@@ -5,7 +5,15 @@ const CELL=16; let grid=new Map();
 const gk=(i,j)=>i*100003+j;
 function gridAdd(b){for(let i=Math.floor(b.min.x/CELL);i<=Math.floor(b.max.x/CELL);i++)for(let j=Math.floor(b.min.z/CELL);j<=Math.floor(b.max.z/CELL);j++){const k=gk(i,j);if(!grid.has(k))grid.set(k,[]);grid.get(k).push(b);}}
 function gridQuery(x,z,r){const out=[];for(let i=Math.floor((x-r)/CELL);i<=Math.floor((x+r)/CELL);i++)for(let j=Math.floor((z-r)/CELL);j<=Math.floor((z+r)/CELL);j++){const a=grid.get(gk(i,j));if(a)for(const b of a)if(!b.dead)out.push(b);}return out;}
-function nearestSeg(x,z,segs){let m=1e9,best=null;for(const s of segs){const dx=s.bx-s.ax,dz=s.bz-s.az,l=dx*dx+dz*dz;let t=l?((x-s.ax)*dx+(z-s.az)*dz)/l:0;t=clamp(t,0,1);
+// Con muchos tramos (mapas reales) se busca en una grilla de 24 m alrededor del punto; más allá de ~70 m da "lejos" (1e9)
+const segGridC=new WeakMap();
+function segGrid(segs){ let G=segGridC.get(segs); if(G&&G.n===segs.length) return G; G={n:segs.length,m:new Map()};
+  for(const s of segs) for(let i=Math.floor(Math.min(s.ax,s.bx)/24);i<=Math.floor(Math.max(s.ax,s.bx)/24);i++) for(let j=Math.floor(Math.min(s.az,s.bz)/24);j<=Math.floor(Math.max(s.az,s.bz)/24);j++){ const k=i*7919+j; let a=G.m.get(k); if(!a){a=[];G.m.set(k,a);} a.push(s); }
+  segGridC.set(segs,G); return G; }
+function nearestSeg(x,z,segs){ if(segs.length>300){ const G=segGrid(segs), ci=Math.floor(x/24), cj=Math.floor(z/24), seen=new Set(), near=[];
+    for(let i=ci-3;i<=ci+3;i++) for(let j=cj-3;j<=cj+3;j++){ const a=G.m.get(i*7919+j); if(a) for(const s of a) if(!seen.has(s)){ seen.add(s); near.push(s); } }
+    return nearestSeg0(x,z,near); } return nearestSeg0(x,z,segs); }
+function nearestSeg0(x,z,segs){let m=1e9,best=null;for(const s of segs){const dx=s.bx-s.ax,dz=s.bz-s.az,l=dx*dx+dz*dz;let t=l?((x-s.ax)*dx+(z-s.az)*dz)/l:0;t=clamp(t,0,1);
   const px=s.ax+dx*t,pz=s.az+dz*t,d=Math.hypot(x-px,z-pz);if(d<m){m=d;best={d,px,pz};}}return best||{d:1e9,px:x,pz:z};}
 const distSegs=(x,z,segs)=>nearestSeg(x,z,segs).d;
 // Choque círculo contra edificio orientado: devuelve el empuje para sacar el círculo
@@ -51,6 +59,7 @@ function facadeMat(){ const m=new THREE.MeshLambertMaterial({map:facadeTex});
     else { float w=abs(normal.x)>.5?sc.z:sc.x; float nw=max(1.,floor(w/3.5+.5)); vUv=vec2(uv.x*nw,(uv.y*sc.y-1.15)/3.0); }
   #endif`); }; return m; }
 function finalizeBuildings(){
+  if(bList.length>1500) return finalizeBuildingsSec();
   const n=bList.length, geo=new THREE.BoxGeometry(1,1,1);
   const walls=new THREE.InstancedMesh(geo,facadeMat(),n);
   const roofs=new THREE.InstancedMesh(geo,new THREE.MeshLambertMaterial({color:0xffffff}),n);
@@ -75,6 +84,31 @@ function finalizeBuildings(){
   if(rList.length) finalizeRocks();
 }
 
+// Muchos edificios (mapas reales de 1,5 km): una malla por sector de 260 m que se dibuja solo si se ve (cullAdd).
+// wallsIM, roofsIM, gablesIM y rtankIM pasan a ser "repartidores": reciben el índice del edificio y escriben en la malla de su sector.
+function finalizeBuildingsSec(){
+  const geo=new THREE.BoxGeometry(1,1,1), wm=facadeMat(), rm=new THREE.MeshLambertMaterial({color:0xffffff}), gm=new THREE.MeshLambertMaterial({color:0xffffff}), tm=new THREE.MeshLambertMaterial({color:0xffffff});
+  const tri=new THREE.Shape(); tri.moveTo(-.5,0); tri.lineTo(.5,0); tri.lineTo(0,1); tri.lineTo(-.5,0);
+  const pg=new THREE.ExtrudeGeometry(tri,{depth:1,bevelEnabled:false}); pg.translate(0,0,-.5); const tg=new THREE.CylinderGeometry(.55,.6,1.1,8); tg.translate(0,.55,0);
+  const m=new THREE.Matrix4(), q=new THREE.Quaternion(), up=new THREE.Vector3(0,1,0), col=new THREE.Color(), Z0=new THREE.Matrix4().makeScale(0,0,0), all=[];
+  for(const [,list] of cells(bList,260)){ const N=list.length, mk=(g,mt)=>{ const im=new THREE.InstancedMesh(g,mt,N); im.castShadow=im.receiveShadow=true; im.frustumCulled=false; im.userData.bIdx=list.map(b=>b.i); worldGroup.add(im); return im; };
+    const S={w:mk(geo,wm),r:mk(geo,rm),g:mk(pg,gm),t:mk(tg,tm)}; S.t.receiveShadow=false;
+    let cx=0,cz=0,top=0,bot=1e9; list.forEach((b,j)=>{ b.S=S; b.j=j; cx+=b.x; cz+=b.z; top=Math.max(top,b.top); bot=Math.min(bot,b.base);
+      q.setFromAxisAngle(up,b.a); const H=b.top-b.base;
+      m.compose(new THREE.Vector3(b.x,b.base+H/2,b.z),q,new THREE.Vector3(b.w,H,b.d)); S.w.setMatrixAt(j,m); S.w.setColorAt(j,col.set(b.wall));
+      if(b.pitched){ m.compose(new THREE.Vector3(b.x,b.top,b.z),q,new THREE.Vector3(b.w+.5,Math.min(b.w,b.d)*.38,b.d+.4)); S.g.setMatrixAt(j,m); S.g.setColorAt(j,col.set(b.roof)); S.r.setMatrixAt(j,Z0); S.r.setColorAt(j,col); }
+      else { m.compose(new THREE.Vector3(b.x,b.top+.12,b.z),q,new THREE.Vector3(b.w+.5,.24,b.d+.5)); S.r.setMatrixAt(j,m); S.r.setColorAt(j,col.set(b.roof)); S.g.setMatrixAt(j,Z0); S.g.setColorAt(j,col); }
+      if(b.pitched||H>16||b.w<5||b.d<5||Math.random()<.4){ S.t.setMatrixAt(j,Z0); S.t.setColorAt(j,col.set(0xffffff)); }
+      else { const ox=rand(-b.w/4,b.w/4), oz=rand(-b.d/4,b.d/4), c=Math.cos(b.a), s2=Math.sin(b.a); m.compose(new THREE.Vector3(b.x+ox*c+oz*s2,b.top+.24,b.z-ox*s2+oz*c),q.identity(),new THREE.Vector3(1,1,1)); S.t.setMatrixAt(j,m); S.t.setColorAt(j,col.set(Math.random()<.6?0x1c1c1c:0xd8cfb0)); } });
+    cx/=N; cz/=N; const r=Math.max(...list.map(b=>Math.hypot(b.x-cx,b.z-cz)+Math.max(b.w,b.d)*.71)), cy=(top+bot)/2, R=Math.hypot(r,(top-bot)/2)+2;
+    for(const im of [S.w,S.r,S.g,S.t]){ im.instanceMatrix.needsUpdate=true; im.instanceColor.needsUpdate=true; cullAdd(im,cx,cy,cz,R,im===S.t?230:0); }
+    if(!list.some(b=>b.pitched)) S.g.count=0; // sin techos a dos aguas en el sector: una llamada de dibujo menos
+    all.push(S.w,S.r,S.g); }
+  const prox=f=>({setMatrixAt(i,mx){ const b=buildings[i], im=b.S[f]; im.setMatrixAt(b.j,mx); im.instanceMatrix.needsUpdate=true; },
+    setColorAt(i,c){ const b=buildings[i], im=b.S[f]; im.setColorAt(b.j,c); im.instanceColor.needsUpdate=true; }, instanceMatrix:{}, instanceColor:{}});
+  buildings=bList; wallsIM=prox('w'); roofsIM=prox('r'); gablesIM=prox('g'); rtankIM=prox('t'); houseMeshes=all; bList=[];
+  if(rList.length) finalizeRocks();
+}
 const rubGeo=new THREE.BoxGeometry(1,1,1), beamMat=new THREE.MeshLambertMaterial({color:0x5b4632});
 // Agujeros de bala y de proyectil en las paredes (calcomanías) y cascotes que caen al pie
 const holeTex=(()=>{ const c=document.createElement('canvas'); c.width=c.height=64; const x=c.getContext('2d');
@@ -205,7 +239,7 @@ function buildTrees(list){
     const crown=new THREE.InstancedMesh(cg,new THREE.MeshLambertMaterial({color:0xffffff}),items.length);
     treeSets[key]=[trunk,crown]; const recs=[]; trunk.userData.treeList=recs; crown.userData.treeList=recs;
     if(CELL<1e6){ let cx=0,cz=0; items.forEach(t=>{cx+=t.x;cz+=t.z;}); cx/=items.length; cz/=items.length; const r=Math.max(...items.map(t=>Math.hypot(t.x-cx,t.z-cz)))+12;
-      cullAdd(trunk,cx,heightAt(cx,cz)+5,cz,r); cullAdd(crown,cx,heightAt(cx,cz)+5,cz,r); }
+      cullAdd(trunk,cx,heightAt(cx,cz)+5,cz,r,300); cullAdd(crown,cx,heightAt(cx,cz)+5,cz,r); }
     items.forEach((t,i)=>{const tr={sp,key,i,x:t.x,z:t.z,y:heightAt(t.x,t.z)-.1,s:t.s||rand(.8,1.15),hs:t.hs||1,fallen:false,t:0,axis:null,r:S.tr*2};
       tr.hp=sp==='timbo'?14:sp==='tojo'||sp==='tussac'||sp==='espinillo'?3:8; recs.push(tr); trees.push(tr); setTreeMatrix(tr); crown.setColorAt(i,col.set(S.col[(Math.random()*S.col.length)|0]));});
     [trunk,crown].forEach(im=>{im.castShadow=true;im.frustumCulled=false;if(im.instanceColor)im.instanceColor.needsUpdate=true;worldGroup.add(im);});
@@ -230,9 +264,9 @@ function buildProps(){
   const posts=[], fences=[], cars=[];
   // a lo largo de las calles: postes de luz cada ~24 m, autos estacionados y tramos de cerco
   for(const S of streetSegs){ const dx=S.bx-S.ax, dz=S.bz-S.az, L=Math.hypot(dx,dz); if(L<2) continue; const ux=dx/L, uz=dz/L, nx=-uz, nz=ux, a=Math.atan2(ux,uz);
-    for(let d=rand(0,24); d<L; d+=24){ const sd=Math.random()<.5?1:-1, x=S.ax+ux*d+nx*sd*6, z=S.az+uz*d+nz*sd*6; if(freeSpot(x,z,.6)) posts.push({x,z}); }
-    for(let d=rand(5,40); d<L; d+=rand(26,60)){ const sd=Math.random()<.5?1:-1, x=S.ax+ux*d+nx*sd*4.2, z=S.az+uz*d+nz*sd*4.2; if(freeSpot(x,z,2.6)&&distSegs(x,z,streetSegs)>3.4) cars.push({x,z,a:a+(Math.random()<.5?0:Math.PI)}); }
-    if(Math.random()<.35){ const sd=Math.random()<.5?1:-1, d0=rand(0,Math.max(1,L-12)); for(let d=d0; d<Math.min(L,d0+rand(8,20)); d+=2.4){ const x=S.ax+ux*d+nx*sd*8, z=S.az+uz*d+nz*sd*8; if(freeSpot(x,z,1.3)) fences.push({x,z,a}); } } }
+    for(let d=rand(0,24); d<L; d+=24/W.propK){ const sd=Math.random()<.5?1:-1, x=S.ax+ux*d+nx*sd*6, z=S.az+uz*d+nz*sd*6; if(freeSpot(x,z,.6)) posts.push({x,z}); }
+    for(let d=rand(5,40); d<L; d+=rand(26,60)/W.propK){ const sd=Math.random()<.5?1:-1, x=S.ax+ux*d+nx*sd*4.2, z=S.az+uz*d+nz*sd*4.2; if(freeSpot(x,z,2.6)&&distSegs(x,z,streetSegs)>3.4) cars.push({x,z,a:a+(Math.random()<.5?0:Math.PI)}); }
+    if(Math.random()<.35*W.propK){ const sd=Math.random()<.5?1:-1, d0=rand(0,Math.max(1,L-12)); for(let d=d0; d<Math.min(L,d0+rand(8,20)); d+=2.4){ const x=S.ax+ux*d+nx*sd*8, z=S.az+uz*d+nz*sd*8; if(freeSpot(x,z,1.3)) fences.push({x,z,a}); } } }
   for(const o of W.extraCars||[]) if(freeSpot(o.x,o.z,2.2)) cars.push(o);
   // sin calles (campo): alambrados y postes en líneas sueltas
   if(!streetSegs.length) for(let k=0;k<14;k++){ const x0=rand(-W.bx*.8,W.bx*.8), z0=rand(-W.bz*.8,W.bz*.8), a=rand(0,Math.PI);
@@ -388,13 +422,17 @@ function buildSor(){
   for(let i=0;i<nodes.length;i++)for(let j=i+1;j<nodes.length;j++){const a=nodes[i],b=nodes[j];
     if(a.s!==b.s&&a.p.distanceTo(b.p)<6.5){a.nb.push(b);b.nb.push(a);}}
 }
-function nearestNode(x,z){let best=null,bd=1e9;for(const n of nodes){const d=(n.p.x-x)**2+(n.p.z-z)**2;if(d<bd){bd=d;best=n;}}return best;}
-function astar(a,b){
-  const open=new Set([a]),g=new Map([[a,0]]),f=new Map([[a,a.p.distanceTo(b.p)]]),from=new Map();
-  while(open.size){let cur=null,cf=1e18;for(const n of open){const v=f.get(n);if(v<cf){cf=v;cur=n;}}
+function nearestNode(x,z){
+  if(nodes.near){ const ci=Math.floor(x/10), cj=Math.floor(z/10); for(let r=0;r<=8;r++){ let best=null,bd=1e9; for(let i=ci-r;i<=ci+r;i++) for(let j=cj-r;j<=cj+r;j++){ if(Math.max(Math.abs(i-ci),Math.abs(j-cj))!==r) continue; const L=nodes.near.get(i*7919+j); if(L) for(const n of L){ const d=(n.p.x-x)**2+(n.p.z-z)**2; if(d<bd){bd=d;best=n;} } } if(best) return best; } }
+  let best=null,bd=1e9;for(const n of nodes){const d=(n.p.x-x)**2+(n.p.z-z)**2;if(d<bd){bd=d;best=n;}}return best;}
+function astar(a,b){ // con montículo binario: en los mapas reales hay miles de nodos
+  const g=new Map([[a,0]]),from=new Map(),done=new Set(),H=[[a.p.distanceTo(b.p),a]];
+  const push=e=>{H.push(e);let i=H.length-1;while(i){const p=(i-1)>>1;if(H[p][0]<=H[i][0])break;[H[p],H[i]]=[H[i],H[p]];i=p;}};
+  const pop=()=>{const top=H[0],last=H.pop();if(H.length){H[0]=last;let i=0;for(;;){const l=2*i+1,r=l+1;let m=i;if(l<H.length&&H[l][0]<H[m][0])m=l;if(r<H.length&&H[r][0]<H[m][0])m=r;if(m===i)break;[H[m],H[i]]=[H[i],H[m]];i=m;}}return top[1];};
+  while(H.length){let cur=pop(); if(done.has(cur)) continue;
     if(cur===b){const path=[cur];while(from.has(cur)){cur=from.get(cur);path.unshift(cur);}return path;}
-    open.delete(cur);
-    for(const nb of cur.nb){const ng=g.get(cur)+cur.p.distanceTo(nb.p);if(ng<(g.has(nb)?g.get(nb):1e18)){from.set(nb,cur);g.set(nb,ng);f.set(nb,ng+nb.p.distanceTo(b.p));open.add(nb);}}}
+    done.add(cur);
+    for(const nb of cur.nb){ if(done.has(nb)) continue; const ng=g.get(cur)+cur.p.distanceTo(nb.p);if(ng<(g.has(nb)?g.get(nb):1e18)){from.set(nb,cur);g.set(nb,ng);push([ng+nb.p.distanceTo(b.p),nb]);}}}
   return [b];
 }
 // Mapa con textura pintada a partir del relieve (Malvinas)
@@ -486,7 +524,9 @@ function buildMinimapBg(){
 // cada sector se dibuja solo si está dentro de la cámara y más cerca que la niebla (los instanciados no se recortan solos).
 const cullList=[], _frus=new THREE.Frustum(), _cullPM=new THREE.Matrix4();
 // maxD: distancia máxima a la que vale la pena dibujarlo (detalles chicos); lod: versión liviana que se usa de lejos (a más de lod.d metros)
-function cullAdd(o,cx,cy,cz,r,maxD,lod){ cullList.push({o,s:new THREE.Sphere(new THREE.Vector3(cx,cy,cz),r),maxD:maxD||1e9,lod}); }
+function cullAdd(o,cx,cy,cz,r,maxD,lod){ const s=new THREE.Sphere(new THREE.Vector3(cx,cy,cz),r); cullList.push({o,s,maxD:maxD||1e9,lod});
+  // los rayos (tiros, visión de la IA) prueban primero la esfera del sector antes de revisar cada instancia
+  if(o.isInstancedMesh&&!o.userData.rc){ const f=o.raycast; o.userData.rc=1; o.raycast=function(rc,out){ if(rc.ray.intersectsSphere(s)&&rc.ray.origin.distanceTo(s.center)-s.radius<=rc.far) f.call(this,rc,out); }; } }
 function cullUpdate(){ if(!cullList.length) return; _cullPM.multiplyMatrices(camera.projectionMatrix,camera.matrixWorldInverse); _frus.setFromProjectionMatrix(_cullPM);
   const far=scene.fog.far+40, cp=camera.position;
   for(const c of cullList){ const d=c.s.center.distanceTo(cp)-c.s.radius, v=d<far&&d<c.maxD&&_frus.intersectsSphere(c.s);
@@ -496,10 +536,10 @@ function cells(list,cell,X=e=>e.x,Z=e=>e.z){ const M=new Map(); for(const e of l
 function buildWorld(key){
   W=WORLDS[key]; craters.length=0; cullList.length=0;
   worldGroup.children.slice().forEach(o=>{worldGroup.remove(o);if(o.geometry)o.geometry.dispose();if(o.material){if(o.material.map&&o.material.map!==grassTex&&o.material.map!==wallTex)o.material.map.dispose();if(o.material!==rockMat)o.material.dispose();}});
-  W.mmCanvas=null; W.HG=null; W.trench=null; W.wire=null; W.trenchCover=null; W.setup=null;
+  W.mmCanvas=null; W.HG=null; W.deckAt=null; W.propK=1; W.trench=null; W.wire=null; W.trenchCover=null; W.setup=null;
   houseMeshes=[];houseBoxes=[];trees=[];grid=new Map();pierObs=[];bList=[];rList=[];streetSegs=[];buildings=[];waterMesh=null;
   scene.background.set(W.sky||0xbcc6c4); scene.fog.near=(W.fog||[150,460])[0]; scene.fog.far=(W.fog||[150,460])[1]; scene.fog.color.set(W.sky||0xbcc6c4);
-  if(key==='sor') buildSor(); else if(key==='malvinas') buildMalvinas(); else if(key==='aeropuerto') buildAeropuerto(); else if(key==='costanera') buildCostanera(); else if(key==='puente') buildPuente(); else if(key==='cordillera') buildCordillera(); else if(key==='salto'||key==='posadas') buildCross(key); else if(WORLDS[key].ww1) buildWW1Map(key); else if(WORLDS[key].city) buildCity(key); else if(WORLDS[key].town) buildTown(key); else buildCampo();
+  if(WORLDS[key].osm) buildOSM(key); else if(key==='sor') buildSor(); else if(key==='malvinas') buildMalvinas(); else if(key==='aeropuerto') buildAeropuerto(); else if(key==='costanera') buildCostanera(); else if(key==='puente') buildPuente(); else if(key==='cordillera') buildCordillera(); else if(key==='salto'||key==='posadas') buildCross(key); else if(WORLDS[key].ww1) buildWW1Map(key); else if(WORLDS[key].city) buildCity(key); else if(WORLDS[key].town) buildTown(key); else buildCampo();
   if(!W.ww1) buildProps(); else { props=[]; }
   buildZones(); buildMinimapBg(); findGround(); buildOuter();
   // armas de la infantería y nombres de las naciones según la época del mapa
@@ -511,8 +551,8 @@ function buildOuter(){
   for(const o of worldGroup.children){ if(o===waterMesh||!o.geometry||o.isInstancedMesh) continue; o.geometry.computeBoundingBox(); tmp.copy(o.geometry.boundingBox).applyMatrix4(o.matrixWorld);
     if(tmp.max.x-tmp.min.x>60&&tmp.max.x-tmp.min.x<1500) bb.union(tmp); }
   if(!bb.isEmpty()){ ex=Math.max(W.bx+5,Math.min(Math.abs(bb.min.x),bb.max.x)); ez=Math.max(W.bz+5,Math.min(Math.abs(bb.min.z),bb.max.z)); }
-  W.ex=ex; W.ez=ez;
-  if(W.ww1) ww1Outer(); else {
+  W.ex=ex; W.ez=ez; if(W.osm){ W.ex=W.mmEX; W.ez=W.mmEZ; }
+  if(W.ww1) ww1Outer(); else if(W.osm){ W.ex=W.mmEX; W.ez=W.mmEZ; osmOuter(); } else {
   // Copias en espejo del escenario alrededor (terreno, casas, árboles, postes): sin pasto para que corra liviano
   const mq=Q().mir, big=o=>o.isMesh&&!o.isInstancedMesh&&o.geometry&&(o.geometry.boundingSphere||o.geometry.computeBoundingSphere()||o.geometry.boundingSphere).radius>40;
   const isB=o=>o===wallsIM||o===roofsIM||o===gablesIM;
