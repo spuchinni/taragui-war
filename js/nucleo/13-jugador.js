@@ -95,7 +95,7 @@ function aerialCam(dt){
   if(down('fwd')||keys.ArrowUp) aer.zoom=clamp(aer.zoom*(1-dt*.8),.25,1.4); if(down('back')||keys.ArrowDown) aer.zoom=clamp(aer.zoom*(1+dt*.8),.25,1.4);
   let spread=60; live.forEach(t=>{spread=Math.max(spread,Math.hypot(t.pos.x-cx,t.pos.z-cz));});
   aer.sp=(aer.sp||spread)+(spread-(aer.sp||spread))*k;
-  const D=clamp(aer.sp*2.3,110,Math.max(W.bx,W.bz)*2)*aer.zoom, el=.9, gy=heightAt(aer.fx,aer.fz);
+  const D=Math.min(700,clamp(aer.sp*2.3,110,Math.max(W.bx,W.bz)*2)*aer.zoom); aer.D=D; const el=.9, gy=heightAt(aer.fx,aer.fz);
   camera.position.set(aer.fx+Math.sin(aer.yaw)*Math.cos(el)*D, gy+Math.sin(el)*D, aer.fz+Math.cos(aer.yaw)*Math.cos(el)*D);
   camera.lookAt(aer.fx,gy,aer.fz); camera.fov=55; camera.updateProjectionMatrix(); boardMode=true;
   txt('specT','Vista aérea. Rueda o W/S: zoom. A/D: girar. Clic en un tanque: seguirlo. Espacio: volver al aire');

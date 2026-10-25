@@ -169,7 +169,7 @@ function dismount(t){
   return true;
 }
 function spawnSquad(team){
-  const pts=W.sp[team], sp=pts[(Math.random()*pts.length)|0], r0=Math.random();
+  const pts=(W.infSp&&W.infSp[team])||W.sp[team], sp=pts[(Math.random()*pts.length)|0], r0=Math.random(); // en los mapas grandes, la infantería entra por su trinchera
   const special=r0<.3?'hmg':r0<.5?'sniper':r0<.75?'eng':'mortar';
   ['rifle','rifle','at',special,Math.random()<.5?'rifle':'at'].forEach(k=>{ const a=rand(0,6.28), r=rand(4,10); makePerson(k,team,sp.x+Math.cos(a)*r,sp.z+Math.sin(a)*r); });
 }

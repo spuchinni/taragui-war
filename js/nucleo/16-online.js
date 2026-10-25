@@ -235,7 +235,7 @@ function guestStart(m){
     net.swap=m.side?1:0; net.startMsg=m; if(player&&!player.dead) hostSend({t:'sp',key:player.key,i:0}); return; }
   net.swap=m.side?1:0; net.startMsg=m;
   curEra=WORLDS[m.map].era||5; applyEraNations(curEra); tut=null; curSpecial=null; spectating=false; allyNation=sw?m.foe:m.ally; foeNation=sw?m.ally:m.foe; builtKey=m.map; battleBR=+m.br||1; allyMixed=false; summary._done=false; menuScreen='home';
-  netInf.clear(); withSeed(m.seed,()=>{ clearBattle(); assignSpawns(m.ally); if(sw){ const a=W.sp[0]; W.sp[0]=W.sp[1]; W.sp[1]=a; } }); applyWeather(m.wx||'dia'); $('feed').innerHTML=''; netTanks.clear();
+  netInf.clear(); withSeed(m.seed,()=>{ clearBattle(); assignSpawns(m.ally); if(sw){ const a=W.sp[0]; W.sp[0]=W.sp[1]; W.sp[1]=a; if(W.infSp){ const b=W.infSp[0]; W.infSp[0]=W.infSp[1]; W.infSp[1]=b; } } }); applyWeather(m.wx||'dia'); $('feed').innerHTML=''; netTanks.clear();
   const gn=eraNations(curEra).includes(chosenNation)?chosenNation:allyNation;
   playerCrew=newCrew(net.name,0,gn,true); if(!playerCrew.lineup.length) playerCrew.lineup=vehTreeE(gn,curEra).slice(0,2); crews=[playerCrew]; now=0; noises.length=0; updateHud();
   initAudio(); openBriefing(false);

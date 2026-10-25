@@ -33,8 +33,8 @@ Object.assign(WW1_CFG,{
       {x:0,z:-60,r:30,n:90,dead:0,sp:['espinillo','quebracho']},{x:-40,z:30,r:20,n:60,dead:0,sp:['espinillo']}],
     zones:[{id:'A',x:-110,z:10,r:19,label:'Picada oeste'},{id:'B',x:0,z:85,r:19,label:'Fortín Nanawa'},{id:'C',x:110,z:-10,r:18,label:'Aguada'}]}
 });
-for(const k of ['sesena','jarama','ebro','chaco']){ const C=WW1_CFG[k];
+for(const k of ['sesena','jarama','ebro','chaco']){ const C=ww1Big(WW1_CFG[k]);
   WORLDS[k]={key:k,label:C.label,desc:C.desc,era:2,ww1:true,bx:C.bx,bz:C.bz,sky:C.sky,fog:C.fog,dust:0x8a7a5a,cfg:C,
     h:(x,z)=>ww1Sample(WORLDS[k],x,z),zones:C.zones,
-    spawns:{0:[{label:'Partida oeste',x:-60,z:-(C.bz-14)},{label:'Partida este',x:60,z:-(C.bz-14)}],
-            1:[{label:'Retaguardia oeste',x:-60,z:C.bz-14},{label:'Retaguardia este',x:60,z:C.bz-14}]}}; }
+    spawns:{0:[{label:'Base oeste',x:-90,z:-C.spawnZ},{label:'Base este',x:90,z:-C.spawnZ}],
+            1:[{label:'Retaguardia oeste',x:-90,z:C.spawnZ},{label:'Retaguardia este',x:90,z:C.spawnZ}]}}; }

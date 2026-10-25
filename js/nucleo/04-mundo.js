@@ -190,20 +190,23 @@ function setTreeMatrix(tr){
   if(tr.fallen) tq.setFromAxisAngle(tr.axis,tr.t*tr.t*Math.PI/2*.92); else tq.identity();
   const k=tr.sink?Math.max(0,1-tr.sink):1, sc=tr.gone?0:tr.s*(.4+.6*k);
   tm4.compose(new THREE.Vector3(tr.x,tr.y-(tr.sink||0)*2.5,tr.z),tq,new THREE.Vector3(sc,sc*tr.hs,sc));
-  const set=treeSets[tr.sp]; set[0].setMatrixAt(tr.i,tm4); set[1].setMatrixAt(tr.i,tm4);
+  const set=treeSets[tr.key||tr.sp]; set[0].setMatrixAt(tr.i,tm4); set[1].setMatrixAt(tr.i,tm4);
   set[0].instanceMatrix.needsUpdate=set[1].instanceMatrix.needsUpdate=true;
 }
 function buildTrees(list){
   treeSets={}; trees=[]; const col=new THREE.Color();
-  const by={}; list.forEach(t=>{const sp=t.sp||'timbo';(by[sp]=by[sp]||[]).push(t);});
-  for(const sp in by){
-    const S=SPECIES[sp], items=by[sp];
+  const by={}, CELL=list.length>400?160:1e6; // muchos árboles (mapas grandes): un grupo por especie y por sector de 160 m
+  list.forEach(t=>{const sp=t.sp||'timbo', k=sp+'@'+Math.floor(t.x/CELL)+','+Math.floor(t.z/CELL);(by[k]=by[k]||[]).push(t);});
+  for(const key in by){
+    const sp=key.split('@')[0], S=SPECIES[sp], items=by[key];
     const tg=new THREE.CylinderGeometry(S.tr*.75,S.tr,S.th,6); tg.translate(0,S.th/2,0);
     const cg=S.crown(); cg.scale(...S.cs); cg.translate(0,S.cy,0);
     const trunk=new THREE.InstancedMesh(tg,new THREE.MeshLambertMaterial({color:sp==='pindo'?0x7a6e5c:0x4a3826}),items.length);
     const crown=new THREE.InstancedMesh(cg,new THREE.MeshLambertMaterial({color:0xffffff}),items.length);
-    treeSets[sp]=[trunk,crown]; const recs=[]; trunk.userData.treeList=recs; crown.userData.treeList=recs;
-    items.forEach((t,i)=>{const tr={sp,i,x:t.x,z:t.z,y:heightAt(t.x,t.z)-.1,s:t.s||rand(.8,1.15),hs:t.hs||1,fallen:false,t:0,axis:null,r:S.tr*2};
+    treeSets[key]=[trunk,crown]; const recs=[]; trunk.userData.treeList=recs; crown.userData.treeList=recs;
+    if(CELL<1e6){ let cx=0,cz=0; items.forEach(t=>{cx+=t.x;cz+=t.z;}); cx/=items.length; cz/=items.length; const r=Math.max(...items.map(t=>Math.hypot(t.x-cx,t.z-cz)))+12;
+      cullAdd(trunk,cx,heightAt(cx,cz)+5,cz,r); cullAdd(crown,cx,heightAt(cx,cz)+5,cz,r); }
+    items.forEach((t,i)=>{const tr={sp,key,i,x:t.x,z:t.z,y:heightAt(t.x,t.z)-.1,s:t.s||rand(.8,1.15),hs:t.hs||1,fallen:false,t:0,axis:null,r:S.tr*2};
       tr.hp=sp==='timbo'?14:sp==='tojo'||sp==='tussac'||sp==='espinillo'?3:8; recs.push(tr); trees.push(tr); setTreeMatrix(tr); crown.setColorAt(i,col.set(S.col[(Math.random()*S.col.length)|0]));});
     [trunk,crown].forEach(im=>{im.castShadow=true;im.frustumCulled=false;if(im.instanceColor)im.instanceColor.needsUpdate=true;worldGroup.add(im);});
   }
@@ -479,8 +482,19 @@ function buildMinimapBg(){
   for(const b of houseBoxes){if(b.dead)continue;const o=b.ob; x.save(); x.translate(tx(o.cx),tz(o.cz)); x.rotate(o.s?Math.atan2(o.s,o.c):0); x.fillRect(-o.hw*k,-o.hd*k,o.hw*2*k,o.hd*2*k); x.restore();}
   if(W.boundary){x.strokeStyle='rgba(255,255,255,.5)';x.setLineDash([6,5]);x.lineWidth=2;x.beginPath();W.boundary.forEach((p,i)=>i?x.lineTo(tx(p[0]),tz(p[1])):x.moveTo(tx(p[0]),tz(p[1])));x.closePath();x.stroke();}
 }
+// Recorte por sectores: en los mapas grandes el terreno, los árboles y el revestimiento de trincheras van partidos en sectores;
+// cada sector se dibuja solo si está dentro de la cámara y más cerca que la niebla (los instanciados no se recortan solos).
+const cullList=[], _frus=new THREE.Frustum(), _cullPM=new THREE.Matrix4();
+// maxD: distancia máxima a la que vale la pena dibujarlo (detalles chicos); lod: versión liviana que se usa de lejos (a más de lod.d metros)
+function cullAdd(o,cx,cy,cz,r,maxD,lod){ cullList.push({o,s:new THREE.Sphere(new THREE.Vector3(cx,cy,cz),r),maxD:maxD||1e9,lod}); }
+function cullUpdate(){ if(!cullList.length) return; _cullPM.multiplyMatrices(camera.projectionMatrix,camera.matrixWorldInverse); _frus.setFromProjectionMatrix(_cullPM);
+  const far=scene.fog.far+40, cp=camera.position;
+  for(const c of cullList){ const d=c.s.center.distanceTo(cp)-c.s.radius, v=d<far&&d<c.maxD&&_frus.intersectsSphere(c.s);
+    if(c.lod){ const near=d<c.lod.d; c.o.visible=v&&near; c.lod.m.visible=v&&!near; } else c.o.visible=v; } }
+// Agrupa una lista de elementos (con x,z) en sectores cuadrados de 'cell' metros
+function cells(list,cell,X=e=>e.x,Z=e=>e.z){ const M=new Map(); for(const e of list){ const k=Math.floor(X(e)/cell)+','+Math.floor(Z(e)/cell); if(!M.has(k)) M.set(k,[]); M.get(k).push(e); } return M; }
 function buildWorld(key){
-  W=WORLDS[key]; craters.length=0;
+  W=WORLDS[key]; craters.length=0; cullList.length=0;
   worldGroup.children.slice().forEach(o=>{worldGroup.remove(o);if(o.geometry)o.geometry.dispose();if(o.material){if(o.material.map&&o.material.map!==grassTex&&o.material.map!==wallTex)o.material.map.dispose();if(o.material!==rockMat)o.material.dispose();}});
   W.mmCanvas=null; W.HG=null; W.trench=null; W.wire=null; W.trenchCover=null; W.setup=null;
   houseMeshes=[];houseBoxes=[];trees=[];grid=new Map();pierObs=[];bList=[];rList=[];streetSegs=[];buildings=[];waterMesh=null;

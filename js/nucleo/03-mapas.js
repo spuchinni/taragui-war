@@ -1013,7 +1013,7 @@ const hAtY=(x,z,y)=>{ if(W.under){ const u=W.under(x,z,y); if(u!=null) return u;
 const heightAt=(x,z)=>{ const ex=W.ex||W.bx+30, ez=W.ez||W.bz+30;
   if(x>ex||x<-ex||z>ez||z<-ez){ if(x>ex) x=2*ex-x; else if(x<-ex) x=-2*ex-x; if(z>ez) z=2*ez-z; else if(z<-ez) z=-2*ez-z; x=clamp(x,-ex,ex); z=clamp(z,-ez,ez); }
   return W.h(x,z)+(craters.length?craterH(x,z):0); };
-function findGround(){ groundMeshes=[]; worldGroup.traverse(o=>{ if(o.isMesh&&o.geometry&&o.geometry.type==='PlaneGeometry'&&o.geometry.attributes.position.count>4000) groundMeshes.push(o); }); }
+function findGround(){ groundMeshes=[]; worldGroup.traverse(o=>{ if(o.isMesh&&o.geometry&&o.geometry.type==='PlaneGeometry'&&(o.userData.ground||o.geometry.attributes.position.count>4000)) groundMeshes.push(o); }); }
 function addCrater(p,r,d){
   if(W&&W.onDeck&&W.onDeck(p.x,p.z)&&p.y>pH0(p.x,p.z)+2) return; // sobre el puente no se abren cráteres
   if(!W||W.water!==undefined&&W.h(p.x,p.z)<W.water+.2) return; // en el agua no queda cráter

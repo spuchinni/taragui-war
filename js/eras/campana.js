@@ -34,8 +34,8 @@ WW1_CFG.berry={seed:1917.4,label:'Berry-au-Bac (Chemin des Dames, 1917)',desc:'1
   bx:170,bz:150,sky:0xb6b6ae,fog:[120,400],ground:['#8a8266','#7a7458','#9a9274','#6a6448'],grass:.35,craters:300,crR:[1.2,4.5],front:58,tw:[2.0,2.4],td:1.9,wire:[1,2],ridge:9,
   village:{x:-8,z:18,n:14,ruin:.7,r:24,name:'Juvincourt',church:1},woods:[{x:-105,z:6,r:26,n:90,dead:.6}],hamlet:{x:104,z:-6,n:6,ruin:.6,r:12},
   zones:[{id:'A',x:-105,z:6,r:19,label:'Bosque de Beau-Marais'},{id:'B',x:-8,z:18,r:18,label:'Juvincourt'},{id:'C',x:104,z:-6,r:18,label:'Granja del Choléra'}]};
-{ const k='berry', C=WW1_CFG[k]; WORLDS[k]={key:k,label:C.label,desc:C.desc,era:1,ww1:true,bx:C.bx,bz:C.bz,sky:C.sky,fog:C.fog,dust:0x8a7e62,cfg:C,h:(x,z)=>ww1Sample(WORLDS[k],x,z),zones:C.zones,
-  spawns:{0:[{label:'Trinchera de partida oeste',x:-55,z:-(C.bz-14)},{label:'Trinchera de partida este',x:55,z:-(C.bz-14)}],1:[{label:'Retaguardia oeste',x:-55,z:C.bz-14},{label:'Retaguardia este',x:55,z:C.bz-14}]}}; }
+{ const k='berry', C=ww1Big(WW1_CFG[k]); WORLDS[k]={key:k,label:C.label,desc:C.desc,era:1,ww1:true,bx:C.bx,bz:C.bz,sky:C.sky,fog:C.fog,dust:0x8a7e62,cfg:C,h:(x,z)=>ww1Sample(WORLDS[k],x,z),zones:C.zones,
+  spawns:{0:[{label:'Base oeste',x:-90,z:-C.spawnZ},{label:'Base este',x:90,z:-C.spawnZ}],1:[{label:'Retaguardia oeste',x:-90,z:C.spawnZ},{label:'Retaguardia este',x:90,z:C.spawnZ}]}}; }
 
 const allMissions=()=>CAMPAIGN.flatMap(ch=>ch.missions.map(m=>({...m,era:ch.era})));
 const missionById=id=>allMissions().find(m=>m.id===id);

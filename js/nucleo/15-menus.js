@@ -354,11 +354,12 @@ function frame(dt){
   if(bannerT>0){bannerT-=dt;if(bannerT<=0)$('banner').style.opacity=0;}
   $('scope').style.opacity=scoped&&state==='play'?1:0;
   const fg=WX.fog||W.fog||[150,460]; const fm=boardMode?3:nukeView?2.2:1; scene.fog.near=fg[0]*fm; scene.fog.far=fg[1]*fm;
+  if(aerial&&aer.D&&(state==='spectate'||state==='end'||state==='deploy')){ scene.fog.near=Math.max(scene.fog.near,aer.D*.85); scene.fog.far=Math.max(scene.fog.far,aer.D*1.9); } // desde el aire se ve todo el campo
   document.body.classList.toggle('board',boardMode);
   { const th=thermalOn(); if(th!==lastTh){ lastTh=th; const bw=state==='menu'||state==='lobby'?WXS.dia:WX; hemi.intensity=th?.22:(bw.hemi??.75); sun.intensity=th?.15:(bw.sun??.85);
       const sky=th?0x1c1f1c:(bw.sky??W.sky??0xbcc6c4); scene.background.set(sky); scene.fog.color.set(sky); document.body.classList.toggle('thermal',th); } }
   document.body.classList.toggle('hangar',hangarOn()); syncIntro(); if(!(state==='play'&&player&&!player.dead)) quietEngine();
-  if(!(hangarOn()&&hgRender(dt))) renderer.render(scene,camera);
+  cullUpdate(); if(!(hangarOn()&&hgRender(dt))) renderer.render(scene,camera);
   drawOverlay(); if(state!=='menu'&&state!=='summary') drawMinimap();
 }
 try{ const S=JSON.parse(localStorage.getItem('tw_settings')||'null'); if(S){ if(S.sens) sens=+S.sens; if(S.binds) binds={...DEF_BINDS,...S.binds}; if(S.vol!=null) volMaster=+S.vol; if(S.radio!=null) radioOn=!!S.radio; if(S.fs!=null) fsAuto=!!S.fs; if(DIF[S.dif]) difficulty=S.dif; } }catch(e){}
