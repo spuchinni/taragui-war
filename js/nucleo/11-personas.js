@@ -313,7 +313,7 @@ function soldierThink(P,dt){
     if(P.cover&&Math.hypot(P.cover.x-P.pos.x,P.cover.z-P.pos.z)>1.2&&K!=='hmg'){ walk(P,P.cover.x,P.cover.z,4,dt); P.pose=0; }
     if(P.fireT<=0){ const o=infEye(P), aim=T.inf?infEye(T).setY(T.pos.y+1):T.pos.clone().setY(T.pos.y+(T.aimH||1));
       if(K==='at'&&!T.inf){ P.fireT=rand(12,16);
-        const dx=aim.x-o.x, dz=aim.z-o.z, hd=Math.hypot(dx,dz), yaw=Math.atan2(dx,dz)+rand(-1,1)*.012, pit=ballisticPitch(hd,aim.y-o.y,ROCKET.v)+rand(-1,1)*.01;
+        const miss=!infHit(P,T,d,.12), dx=aim.x-o.x, dz=aim.z-o.z, hd=Math.hypot(dx,dz), yaw=Math.atan2(dx,dz)+rand(-1,1)*.012+(miss?(Math.random()<.5?-1:1)*rand(4,8)/Math.max(hd,20):0), pit=ballisticPitch(hd,aim.y-o.y,ROCKET.v)+rand(-1,1)*.01+(miss?rand(-1,1)*2/Math.max(hd,20):0);
         const v=new THREE.Vector3(Math.sin(yaw)*Math.cos(pit),Math.sin(pit),Math.cos(yaw)*Math.cos(pit)).multiplyScalar(ROCKET.v);
         launchInf(P,o,v,ROCKET,SHELL_MAT.heat); for(let k=0;k<4;k++) puff(o.clone().addScaledVector(v.clone().normalize(),-k*.6),0xcfc8b8,rand(1.5,2.5),1.2,.4,.6); boom(distVol(o,.4),.5,1500); }
       else if(K==='mortar'){ P.fireT=rand(10,14);
@@ -321,14 +321,15 @@ function soldierThink(P,dt){
         if(disc>0){ const pit=Math.atan((v2+Math.sqrt(disc))/(G*hd)), yaw=Math.atan2(dx,dz); launchInf(P,o.clone().setY(o.y+.5),new THREE.Vector3(Math.sin(yaw)*Math.cos(pit),Math.sin(pit),Math.cos(yaw)*Math.cos(pit)).multiplyScalar(MORTAR.v),MORTAR,SHELL_MAT.he);
           puff(o.clone().setY(o.y+1),0xcfc8b8,2,1,.8,.6); sfx('thump',o,.5,{rate:1.3}); } }
       else if(K==='hmg'){ P.fireT=rand(1.8,2.6); // ráfaga de 12,7 mm: hiere infantería y puede cortar orugas
-        for(let k=0;k<5;k++){ const dir=aim.clone().sub(o).normalize(); dir.x+=rand(-1,1)*.012; dir.y+=rand(-1,1)*.008; dir.z+=rand(-1,1)*.012; dir.normalize();
+        const sp=(T.isPlayer||(T.crew&&T.crew.peer)||T.net)?2.8-enemySkill()*2:1; // contra jugadores la ráfaga se abre según la dificultad
+        for(let k=0;k<5;k++){ const dir=aim.clone().sub(o).normalize(); dir.x+=rand(-1,1)*.012*sp; dir.y+=rand(-1,1)*.008*sp; dir.z+=rand(-1,1)*.012*sp; dir.normalize();
           if(!T.inf){ ray.set(o,dir); ray.far=280; const h=ray.intersectObjects(colliders,false).filter(x=>x.object.userData.tank&&x.object.userData.tank.team!==P.team); ray.far=Infinity;
             if(h.length){ hitTank(P,h[0],dir,25,'mg'); infShoot(P,o,h[0].point); } else infShoot(P,o,o.clone().addScaledVector(dir,d)); }
           else { infShoot(P,o,aim.clone().add(new THREE.Vector3(rand(-1,1),rand(-.3,.3),rand(-1,1)))); if(Math.random()<.35) killInf(T,P); } }
         if(T.inf) for(const Q of infantry) if(Q!==T&&!Q.dead&&!isCiv(Q)&&Q.team!==P.team&&Q.pos.distanceTo(T.pos)<2.5&&Math.random()<.3) killInf(Q,P); }
       else if(K==='sniper'){ P.fireT=rand(4,7);
         if(T.inf){ infShoot(P,o,aim,0xfff2c0); if(Math.random()<clamp(.75-d/900,.3,.7)) killInf(T,P); }
-        else if(Math.abs(T.speed)<2.5&&T.crewM.some(m=>m.alive&&m.seat==='commander')&&Math.random()<.3){ const m=T.crewM.find(x=>x.alive&&x.seat==='commander'); m.alive=false; m.hp=0; infShoot(P,o,aim,0xfff2c0);
+        else if(Math.abs(T.speed)<2.5&&T.crewM.some(m=>m.alive&&m.seat==='commander')&&Math.random()<.3&&infHit(P,T,d,.05)){ const m=T.crewM.find(x=>x.alive&&x.seat==='commander'); m.alive=false; m.hp=0; infShoot(P,o,aim,0xfff2c0);
           tell(T,'¡Francotirador! Perdimos al comandante','var(--enemy)'); if(T.isPlayer) radio('¡Perdimos al comandante!',2); T.hp=T.T.hp*T.crewM.reduce((a,x)=>a+Math.max(0,x.hp),0)/(T.crewM.length*100); if(crewAlive(T)<2) destroy(T,P,false); } }
       else if(K==='rifle'){ P.fireT=rand(.7,1.5);
         infShoot(P,o,aim.clone().add(new THREE.Vector3(rand(-1,1),rand(-.5,.5),rand(-1,1)).multiplyScalar(d*.01)));
@@ -343,6 +344,9 @@ function soldierThink(P,dt){
   else if(P.goal&&W.bridge&&Math.sign(P.pos.x)!==Math.sign(P.goal.x)){ walk(P,-Math.sign(P.pos.x)*(DECK_END+3),0,2.6,dt); }
   else if(P.goal){ if(walk(P,P.goal.x,P.goal.z,P.threat?3.8:2.6,dt)) P.goal=Math.random()<.3?null:{x:P.pos.x+rand(-5,5),z:P.pos.z+rand(-5,5)}; }
 }
+// Infantería contra el tanque de un jugador: misma vara que los bots (dificultad, distancia, si se mueve) y el primer tiro de cada soldado falla
+function infHit(P,T,d,base){ const human=T.isPlayer||(T.crew&&T.crew.peer)||T.net; if(!human) return true;
+  if(P.warnT!==T){ P.warnT=T; return false; } const sk=enemySkill(); return Math.random()<(base+.5*sk*sk)*clamp(1.2-d/220,.3,1)*(Math.abs(T.speed||0)>2?.6:1); }
 function launchInf(P,o,v,A,mat){
   const m=new THREE.Mesh(shellGeo,mat); m.position.copy(o); scene.add(m);
   shells.push({p:o.clone(),v:v.clone(),owner:P,m,travel:0,life:A===MORTAR?14:4,A,rocket:A===ROCKET}); noise(o,90);

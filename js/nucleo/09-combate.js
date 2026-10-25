@@ -19,7 +19,9 @@ function fireGun(t,F){
   if(net.on) netShot(t,mp,dir,F);
   const big=t.T.m.gr*10;
   if(t.T.auto){ puff(mp,0xffc060,1.2,.06,0,1,true); boom(t.isPlayer?.18:distVol(mp,.15),.12,2200); if(t.isPlayer) shake=Math.max(shake,.06); return true; }
-  puff(mp,0xffb050,2.5*big,.12,0,1,true); for(let i=0;i<4;i++) puff(mp.clone().addScaledVector(dir,i*.8),0xb0aa9a,rand(1.5,3),rand(.8,1.5),.6,.5);
+  // fogonazo y humo más grandes cuanto más lejos está la cámara: en los mapas de 1,5 km un tiro a 400 m tiene que verse
+  const far=t.isPlayer?0:clamp((camera.position.distanceTo(mp)-60)/100,0,6);
+  puff(mp,0xffb050,2.5*big*(1+far*.7),.12+far*.05,0,1,true); for(let i=0;i<4;i++) puff(mp.clone().addScaledVector(dir,i*.8),0xb0aa9a,rand(1.5,3)*(1+far*.5),rand(.8,1.5)*(1+far*.4),.6,.5);
   if(sfx('cannon',mp,t.isPlayer?1.1:.9,{near:t.isPlayer})){ if(t.isPlayer) boom(.35,.5,260); } else boom(t.isPlayer?.6:distVol(mp,.5),.8,t.isPlayer?1200:700);
   if(t.isPlayer) shake=.4*big;
   return true;
