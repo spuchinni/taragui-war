@@ -1,11 +1,11 @@
 /* ---------- Primera Guerra Mundial (1916–1918): naciones y vehículos ----------
-   Velocidades reales × 1,4 para que las partidas no se hagan eternas. Blindaje en mm, penetración a quemarropa.
+   Velocidades reales × 2,2 (antes × 1,4): en los frentes de 1,5 km un Mark IV a 9 km/h tardaba 3 minutos en llegar. Blindaje en mm, penetración a quemarropa.
    m.ww1 elige el modelo hecho por código (ver gm1-modelos.js). arc = giro máximo del cañón a cada lado (rad), sin torre.
    trench = ancho de trinchera (m) que cruza sin hundirse. seats = puestos de la tripulación (los sobrantes reemplazan a los caídos). */
 COST.pesado=200; COST['cañón']=0;
 NATIONS.fr={label:'Francia',desc:'Schneider CA1, Saint-Chamond y Renault FT.',lineup:['ft17','schneider','stchamond'],
   names:['Sgt. Moreau','Cpl. Girard','Lt. Fontaine','Sdt. Lambert','Sgt. Rousseau'],camo:['#6f7a8a','#596372','#38404a']};
-const kmh=v=>+(v/3.6*1.4).toFixed(2);
+const kmh=v=>+(v/3.6*2.2).toFixed(2);
 Object.assign(VEH,{
   // ---- Reino Unido ----
   mk1:{nation:'uk',era:1,year:1916,br:1.0,cls:'pesado',label:'Mark I (macho)',desc:'El primer tanque en combatir (Flers-Courcelette, 1916). Dos cañones de 6 libras en barbetas laterales y la cola de ruedas para girar. Muy lento.',
@@ -122,5 +122,6 @@ Object.assign(AMMO_DEF,{
   fk96:[['Granada perforante "K"','ke',32,465],['Explosivo 77 mm','he',12,465]]
 });
 for(const k of ['mk1','mk4m','mk4f','whippet','mk5','schneider','ft17','stchamond','beute4','a7v','lk2','ftus','mk5us','qf18','c75','fk96']){
+  if(!VEH[k].static) VEH[k].maxR=+(VEH[k].maxR*2.2/1.4).toFixed(2); // marcha atrás en la misma proporción
   FC[k]={crew:VEH[k].seats.length}; OPTIC[k]=VEH[k].static?[2.5]:['ft17','ftus','a7v','lk2'].includes(k)?[2]:[1.5]; }
 FC.mk4f.autoL=1; FC.whippet.autoL=1;
