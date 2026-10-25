@@ -31,9 +31,9 @@ function oobCheck(t,dt){
   let el=$('oob'); if(!el){ el=document.createElement('div'); el.id='oob'; el.className='hud'; document.body.appendChild(el); }
   const out=!t.dead&&!tut&&state==='play'&&outOfBounds(t.pos);
   if(out&&!t.a10){ t.oobT=(t.oobT??OOB_T)-dt; if(bannerT>0){ bannerT=0; $('banner').style.opacity=0; }
-    el.innerHTML=`¡FUERA DEL CAMPO DE BATALLA!<small>Volvé dentro de la línea roja en <b>${Math.max(0,Math.ceil(t.oobT))}</b> s o ${W.era===1?'te cae encima la artillería':'te ataca un A-10'}</small>`; el.style.opacity=1;
+    el.innerHTML=`¡FUERA DEL CAMPO DE BATALLA!<small>Volvé dentro de la línea roja en <b>${Math.max(0,Math.ceil(t.oobT))}</b> s o ${W.era<=2?'te cae encima la artillería':'te ataca un A-10'}</small>`; el.style.opacity=1;
     if(t.oobT<=0){ t.a10=true; if(net.guest) hostSend({t:'oob'}); else a10Strike(t); } }
-  else { if(!out) t.oobT=null; el.style.opacity=t.a10&&!t.dead&&state==='play'?1:0; if(t.a10&&!t.dead){ const A=a10s.find(a=>a.t===t); el.innerHTML=W.era===1?`¡ARTILLERÍA SOBRE TU POSICIÓN!<small>Te pasaste del límite</small>`:`¡A-10 EN CAMINO!<small>Te pasaste del límite${A?` · a ${Math.round(A.g.position.distanceTo(t.pos))} m`:''}</small>`; } }
+  else { if(!out) t.oobT=null; el.style.opacity=t.a10&&!t.dead&&state==='play'?1:0; if(t.a10&&!t.dead){ const A=a10s.find(a=>a.t===t); el.innerHTML=W.era<=2?`¡ARTILLERÍA SOBRE TU POSICIÓN!<small>Te pasaste del límite</small>`:`¡A-10 EN CAMINO!<small>Te pasaste del límite${A?` · a ${Math.round(A.g.position.distanceTo(t.pos))} m`:''}</small>`; } }
 }
 function makeA10(){
   const g=new THREE.Group(), m=new THREE.MeshLambertMaterial({color:0x4d5459,fog:false}), d=new THREE.MeshLambertMaterial({color:0x33393d,fog:false});
@@ -69,7 +69,7 @@ function oobArty(t){ const by={team:1-t.team,name:'Artillería',T:{label:'fuego 
   for(let i=0;i<9;i++) arty.push({t:now+3+i*.35,p:t.pos.clone().add(new THREE.Vector3(rand(-6,6),0,rand(-6,6))),by});
   markZone(t.pos.clone(),9,0xff4a32,now+6.5); feed(`${t.name} quedó bajo fuego de barrera (fuera del campo de batalla)`,'var(--enemy)'); }
 function a10Strike(t){
-  if(W.era===1){ oobArty(t); return; }
+  if(W.era<=2){ oobArty(t); return; }
   if(!t||t.dead) return;
   if(net.host) netAll({t:'a10',id:t.id});
   // viene de frente a donde mira el jugador (así lo ve venir); los demás, desde el centro del mapa

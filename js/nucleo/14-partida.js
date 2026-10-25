@@ -43,7 +43,7 @@ let curSpecial=null;
 // Cañones de campaña de la IA: defienden posiciones cerca de su base (Primera Guerra Mundial)
 const GUN_OF={uk:'qf18',fr:'c75',us:'c75',de:'fk96'};
 function placeGuns(team,nat,n){
-  const key=GUN_OF[nat]; if(!key||!VEH[key]||!n) return;
+  const key=(typeof GUN_ERA!=='undefined'&&GUN_ERA[W.era]&&GUN_ERA[W.era][nat])||GUN_OF[nat]; if(!key||!VEH[key]||!n) return;
   const spots=(W.gunSpots&&W.gunSpots[team===0?(W.flipGuns?1:0):(W.flipGuns?0:1)])||[];
   for(let i=0;i<n;i++){ const c=newCrew(`Batería ${i+1} (${VEH[key].label})`,team,nat,false); c.lineup=[key]; c.gun=true;
     let p=spots[i]; if(!p){ const b=W.sp[team][0], Z=zones[(Math.random()*zones.length)|0]; const k=rand(.35,.55); p={x:b.x+(Z.x-b.x)*k+rand(-25,25),z:b.z+(Z.z-b.z)*k+rand(-25,25)}; }
@@ -90,7 +90,7 @@ function openBriefing(spectator){
   const natList=[...new Set(crews.filter(c=>c.team===0&&!c.isPlayer).map(c=>NATIONS[c.nation].label))];
   const ally=spectator?(allyMixed?natList.join(', '):NATIONS[allyNation].label):(allyMixed?`Vos (${NATIONS[allyNation].label}) con aliados de ${natList.join(', ')}`:allyLabel());
   if(curSpecial&&curSpecial.mission){ $('panel').innerHTML=missionBriefHTML(missionById(curSpecial.mission)); }
-  else $('panel').innerHTML=`<div class="brief"><div class="kick">${curSpecial?'Corrientes vs. Resistencia':spectator?'Ver una partida':W.era===1?'Batalla · '+ERAS[1].n:'Batalla'}</div>
+  else $('panel').innerHTML=`<div class="brief"><div class="kick">${curSpecial?'Corrientes vs. Resistencia':spectator?'Ver una partida':W.era&&W.era<5?'Batalla · '+ERAS[W.era].n:'Batalla'}</div>
     <h1>${W.label}</h1><p>${W.desc||''}</p>
     <h2>Objetivo</h2><p>Capturá y mantené las zonas ${W.zones.map(z=>`<b>${z.id}</b> (${z.label})`).join(', ')}. Cada zona en manos enemigas descuenta tickets a tu equipo.</p>
     <h2>Condiciones</h2><p>${WX.n}${WX.night?' · la térmica ayuda mucho':WX.mud?' · barro: los tanques andan más lento':WX.see<1?' · se ve poco: los enemigos aparecen cerca':''}</p>
@@ -232,7 +232,7 @@ function startTutorial(key){
   if(!PROG) loadProg();
   const ok=k=>k&&VEH[k]&&owned(k);
   key=ok(key)?key:(garageOf(chosenNation)[0]||vehTree(chosenNation).find(owned));
-  const e=eraOf(key); battleBR=null; startBattle(false,e===1?'villers':'campo',null,true); battleBR=null; tut={step:0,okT:0,start:null,d:[],arty:false,key};
+  const e=eraOf(key); battleBR=null; startBattle(false,e===1?'villers':e===2?'jarama':'campo',null,true); battleBR=null; tut={step:0,okT:0,start:null,d:[],arty:false,key};
   { const T=vehTreeE(foeNation,e); tut.foeL=T.length?[T[0],T[Math.min(1,T.length-1)],T[T.length-1]]:NATIONS[foeNation].lineup.slice(); }
   infantry.slice().forEach(removeInf); infantry.length=0; tanks.slice().forEach(removeTank);
   crews=[playerCrew]; playerCrew.sp=400; playerCrew.lineup=[key];

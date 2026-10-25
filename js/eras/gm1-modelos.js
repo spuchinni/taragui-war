@@ -107,6 +107,7 @@ function buildWW1(t,M,mat){
   if(type==='stchamond') return buildStChamond(t,M,mat,root,lkL,lkR);
   if(type==='whippet'||type==='lk2') return buildWhippet(t,M,mat,root,lkL,lkR,type==='lk2');
   if(type==='gun') return buildFieldGun(t,M,mat,root);
+  if(type==='iw') return buildIW(t,M,mat,root,lkL,lkR); // Entreguerras (gm2-modelos.js)
 }
 
 // Mark I, Mark IV (macho y hembra), Mark V y el Beutepanzer

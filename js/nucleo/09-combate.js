@@ -395,7 +395,7 @@ function callArtillery(by,point){
   const c=by.crew; if(c.sp<ARTY_COST||c.artyCD>0) return false;
   if(tut&&by.isPlayer) tut.arty=true;
   c.sp-=ARTY_COST; c.artyCD=ARTY_CD; teamCD(by.team,'artyCD',ARTY_CD); if(c.isPlayer) $('spT').textContent=c.sp;
-  const ww=W.era===1, nS=ww?10:7, sp=ww?14:10;
+  const ww=W.era<=2, nS=ww?10:7, sp=ww?14:10;
   for(let i=0;i<nS;i++) arty.push({t:now+4+i*.4,p:point.clone().add(new THREE.Vector3(rand(-sp,sp),0,rand(-sp,sp))),by});
   markZone(point,13,0xffb43c,now+4+7*.4+.6);
   if(AC&&SFX.thump&&SFX.thump.length){ for(let i=0;i<4;i++) setTimeout(()=>sfx('thump',null,.35,{rate:rand(.55,.75)}),i*260+rand(0,120)); } else whistle();

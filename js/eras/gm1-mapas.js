@@ -47,12 +47,12 @@ function buildWW1Map(key){
   const bx=C.bx, bz=C.bz, EX=bx+70, EZ=bz+70, res=.8, nx=Math.round(EX*2/res)+1, nz=Math.round(EZ*2/res)+1;
   const G={ex:EX,ez:EZ,r:res,nx,nz,a:new Float32Array(nx*nz),td:new Float32Array(nx*nz)}; W.HG=G;
   const ridge=C.ridge||2.5;
-  const base=(x,z)=>ridge*(.5+.5*Math.tanh(z/80))+2.2*Math.sin(x*.021+C.seed)*Math.cos(z*.017)+1.0*Math.sin(x*.047+1.3)*Math.sin(z*.039+C.seed*.1)+.35*Math.sin(x*.13)*Math.cos(z*.11);
+  const hills=C.hills||[], base=(x,z)=>hills.reduce((a,H)=>a+H.h*Math.exp(-((x-H.x)**2+(z-H.z)**2)/(H.r*H.r)),0)+ridge*(.5+.5*Math.tanh(z/80))+2.2*Math.sin(x*.021+C.seed)*Math.cos(z*.017)+1.0*Math.sin(x*.047+1.3)*Math.sin(z*.039+C.seed*.1)+.35*Math.sin(x*.13)*Math.cos(z*.11);
   // ---- trazado: trincheras (en zigzag, con traviesas), comunicaciones y alambradas ----
   const segs=[], belts=[], posts=[];
   const addLine=(pts,w,d,kind)=>{ for(let i=0;i<pts.length-1;i++) segs.push({ax:pts[i][0],az:pts[i][1],bx:pts[i+1][0],bz:pts[i+1][1],w,d,kind}); };
   const vX=C.village.x, vZ=C.village.z, vR=C.village.r;
-  for(const s of [-1,1]){ const side=s<0?0:1, w=C.tw[side], d=C.td*(side&&C.ridge?1.1:1), F=C.front+(side?4:0);
+  for(const s of (C.noTrench?[]:C.trenchSides||[-1,1])){ const side=s<0?0:1, w=C.tw[side], d=C.td*(side&&C.ridge?1.1:1), F=C.front+(side?4:0);
     // trinchera de primera línea: bahías y traviesas cada 8 m (en "almena")
     let pts=[]; for(let x=-bx-40;x<=bx+40;x+=8){ const k=(Math.round((x+bx)/8))%2, zz=s*(F+(k?3.2:0)+4*Math.sin(x*.02+side));
       if(C.broken&&R()<C.broken*.25){ if(pts.length>1) addLine(pts,w,d,'fire'); pts=[]; continue; }
@@ -64,6 +64,8 @@ function buildWW1Map(key){
     for(const cx of [-120,-60,0,60,120]){ const ox=cx+rr(-12,12); pts=[]; for(let k=0;k<=8;k++){ const zz=s*(F+3+k*8.5); pts.push([ox+5*Math.sin(k*1.3+cx),zz]); } addLine(pts,1.6,d*.9,'com'); }
     // alambradas delante de la primera línea (hacia la tierra de nadie), con huecos
     for(let b=0;b<C.wire[side];b++){ const z0=s*(F-9-b*9), dz=s*-5; belts.push({z0:Math.min(z0,z0+dz),z1:Math.max(z0,z0+dz),gaps:[rr(-140,-100),rr(-30,30),rr(90,140)]}); } }
+  // acequias de riego (Entreguerras): zanjas rectas sin sacos ni tablones
+  for(const D of C.ditches||[]) addLine(D,1.6,1.1,'ditch');
   // ---- caminos hundidos (cruzan el pueblo) ----
   const roads=[]; { const pts=[]; for(let z=-bz-60;z<=bz+60;z+=10) pts.push([vX+9*Math.sin(z*.02+C.seed),z]); roads.push(pts);
     const p2=[]; for(let x=-bx-60;x<=bx+60;x+=10) p2.push([x,vZ+7*Math.sin(x*.025+1)]); roads.push(p2); }
@@ -83,7 +85,7 @@ function buildWW1Map(key){
   const segDistW=(x,z,S)=>{ const dx=S.bx-S.ax, dz=S.bz-S.az, l=dx*dx+dz*dz; let t=l?((x-S.ax)*dx+(z-S.az)*dz)/l:0; t=clamp(t,0,1); return Math.hypot(x-S.ax-dx*t,z-S.az-dz*t); };
   for(const S of segs){ const m=S.w/2+1.8; const cx=(S.ax+S.bx)/2, cz=(S.az+S.bz)/2, rad=Math.hypot(S.bx-S.ax,S.bz-S.az)/2+m;
     stamp(cx,cz,rad,(k,X,Z)=>{ const q=segDistW(X,Z,S); if(q<S.w/2){ const f=clamp((S.w/2-q)/.4,0,1); TD[k]=Math.max(TD[k],S.d*f); }
-      else if(q<m&&S.kind!=='com'){ const zm=(S.az+S.bz)/2, enemy=S.az<0?Z>zm:Z<zm; if(enemy) A[k]+=.55*Math.sin((q-S.w/2)/(m-S.w/2)*Math.PI); } }); }
+      else if(q<m&&S.kind!=='com'&&S.kind!=='ditch'){ const zm=(S.az+S.bz)/2, enemy=S.az<0?Z>zm:Z<zm; if(enemy) A[k]+=.55*Math.sin((q-S.w/2)/(m-S.w/2)*Math.PI); } }); }
   for(let k=0;k<A.length;k++) A[k]-=TD[k];
   // zona de partida y retaguardia más planas (sin embudos encima de la base)
   // ---- consultas para el motor ----
@@ -133,7 +135,7 @@ function buildWW1Map(key){
   // ---- pueblo en ruinas (y caserío) ----
   const houses=[]; const town=(V,small)=>{ const n=V.n; for(let i=0,tries=0;i<n&&tries<n*12;tries++){ const a=R()*Math.PI*2, r=Math.sqrt(R())*V.r, x=V.x+Math.cos(a)*r, z=V.z+Math.sin(a)*r;
       if(roadSegs.some(S=>segDistW(x,z,S)<6.5)) continue; if(segs.some(S=>segDistW(x,z,S)<S.w/2+5)) continue;
-      const w=rr(6,10), d=rr(6,9), h=rr(4.5,7.5), rot=Math.round(R()*2)*Math.PI/2+rr(-.06,.06), wall=pickR([0xb8ab90,0x9e917a,0xa45a44,0xc2b49a,0x8d7f6a]), roof=pickR([0x8a4430,0x7a3c2c,0x4a4e52,0x6a3a2a]);
+      const w=rr(6,10)*(V.sz||1), d=rr(6,9)*(V.sz||1), h=rr(4.5,7.5)*(V.hz||1), rot=Math.round(R()*2)*Math.PI/2+rr(-.06,.06), wall=pickR(V.walls||[0xb8ab90,0x9e917a,0xa45a44,0xc2b49a,0x8d7f6a]), roof=pickR(V.roofs||[0x8a4430,0x7a3c2c,0x4a4e52,0x6a3a2a]);
       if(addBuilding(x,z,w,d,h,rot,wall,roof,true,100,true)){ houses.push({ruin:R()<V.ruin}); i++; } }
     if(V.church){ if(addBuilding(V.x+4,V.z-6,9,18,9,0,0xc4b8a0,0x4a4e52,true,300,true)) houses.push({ruin:R()<V.ruin*.6}); if(addBuilding(V.x+4,V.z+4.5,5,5,17,0,0xc4b8a0,0x4a4e52,true,300,false)) houses.push({ruin:R()<V.ruin*.5}); } };
   town(C.village); if(C.hamlet) town(C.hamlet,true);
@@ -144,10 +146,10 @@ function buildWW1Map(key){
   // ---- bosques (vivos o hechos astillas) y álamos junto a los caminos ----
   const list=[]; const wood=(Wd)=>{ for(let i=0;i<Wd.n;i++){ const a=R()*Math.PI*2, r=Math.sqrt(R())*Wd.r, x=Wd.x+Math.cos(a)*r, z=Wd.z+Math.sin(a)*r;
       if(segs.some(S=>segDistW(x,z,S)<S.w/2+1.2)) continue; if(gridQuery(x,z,4).some(b=>obPush(x,z,3,b))) continue;
-      const dead=R()<Wd.dead; list.push({x,z,sp:dead?(R()<.55?'muerto':'tocon'):(R()<.8?'roble':'alamo'),s:rr(.8,1.2)}); } };
+      const dead=R()<Wd.dead; list.push({x,z,sp:dead?(R()<.55?'muerto':'tocon'):Wd.sp?pickR(Wd.sp):(R()<.8?'roble':'alamo'),s:rr(.8,1.2)*(Wd.s||1)}); } };
   for(const Wd of [...C.woods,...(C.extraWoods||[])]) wood(Wd);
   // árboles sueltos destrozados en la tierra de nadie
-  for(let i=0;i<40;i++){ const x=rr(-bx,bx), z=rr(-C.front+12,C.front-12); if(!gridQuery(x,z,4).some(b=>obPush(x,z,3,b))) list.push({x,z,sp:R()<.6?'tocon':'muerto',s:rr(.7,1.1)}); }
+  for(let i=0;i<(C.deadTrees??40);i++){ const x=rr(-bx,bx), z=rr(-C.front+12,C.front-12); if(!gridQuery(x,z,4).some(b=>obPush(x,z,3,b))) list.push({x,z,sp:R()<.6?'tocon':'muerto',s:rr(.7,1.1)}); }
   if(C.poplars) for(const S of roadSegs) { const L=Math.hypot(S.bx-S.ax,S.bz-S.az); for(let t=3;t<L;t+=9){ if(R()<.35) continue; const k=t/L, x=S.ax+(S.bx-S.ax)*k, z=S.az+(S.bz-S.az)*k, nx2=-(S.bz-S.az)/L, nz2=(S.bx-S.ax)/L;
     for(const sd of [-1,1]){ const X=x+nx2*sd*4.8, Z=z+nz2*sd*4.8; if(Math.abs(X)<bx+20&&Math.abs(Z)<bz+20&&!segs.some(Sg=>segDistW(X,Z,Sg)<Sg.w/2+1)&&!gridQuery(X,Z,3).some(b=>obPush(X,Z,2,b))) list.push({x:X,z:Z,sp:'alamo',s:rr(.9,1.15)}); } } }
   buildTrees(list);
@@ -158,7 +160,7 @@ function buildWW1Map(key){
   // posiciones de los cañones de campaña (detrás de la trinchera de apoyo, mirando al enemigo)
   W.gunSpots={0:[-70,10,85].map(x=>({x:x+rr(-8,8),z:-(C.front+40)})),1:[-80,-5,75].map(x=>({x:x+rr(-8,8),z:C.front+42}))};
   // defensores en la primera línea: ametralladoras y fusileros que se quedan en su puesto
-  W.setup=()=>{ for(const tm of [0,1]){ const s=tm?1:-1, F=C.front+(tm?4:0); for(let i=0;i<6;i++){ const x=-130+i*52+rand(-8,8), z=s*(F+1.6);
+  W.setup=C.noTrench?null:()=>{ for(const tm of (C.trenchSides||[-1,1]).map(s=>s<0?0:1)){ const s=tm?1:-1, F=C.front+(tm?4:0); for(let i=0;i<6;i++){ const x=-130+i*52+rand(-8,8), z=s*(F+1.6);
       const P=makePerson(i%2?'rifle':'hmg',tm,x,z); P.hold=true; P.goal=null; } } };
   nodes=null; W.boundary=null;
 }
@@ -183,7 +185,7 @@ function paintWW1Ground(x,S,C,R,o){
     const g=x.createRadialGradient(X,Y,r*.2,X,Y,r*1.55); g.addColorStop(0,'rgba(40,32,24,.85)'); g.addColorStop(.55,'rgba(70,56,40,.6)'); g.addColorStop(.72,'rgba(150,132,104,.55)'); g.addColorStop(1,'rgba(150,132,104,0)');
     x.fillStyle=g; x.beginPath(); x.arc(X,Y,r*1.55,0,7); x.fill(); }
   // tierra removida en la tierra de nadie
-  for(let i=0;i<2500;i++){ const X=R()*S, zW=rr(-C.front,C.front), Y=py(zW); x.globalAlpha=rr(.1,.3); x.fillStyle=R()<.5?'#3e3226':'#8a7a5e'; x.fillRect(X,Y,rr(1,4),rr(1,4)); }
+  for(let i=0;i<2500*(C.churn??1);i++){ const X=R()*S, zW=rr(-C.front,C.front), Y=py(zW); x.globalAlpha=rr(.1,.3); x.fillStyle=R()<.5?'#3e3226':'#8a7a5e'; x.fillRect(X,Y,rr(1,4),rr(1,4)); }
   x.globalAlpha=1;
   // trincheras: borde de sacos terreros (claro), interior oscuro y pasarela de madera
   for(const S2 of o.segs){ x.strokeStyle='#9b8c6c'; x.lineWidth=(S2.w+1.6)*pm; x.beginPath(); x.moveTo(px(S2.ax),py(S2.az)); x.lineTo(px(S2.bx),py(S2.bz)); x.stroke(); }
@@ -197,7 +199,7 @@ function paintWW1Ground(x,S,C,R,o){
 // Revestimiento de las trincheras (instanciado: miles de piezas, pocas llamadas de dibujo)
 function dressTrenches(segs,G,R){
   const bag=[], board=[], duck=[], post=[], rr=(a,b)=>a+R()*(b-a);
-  for(const S of segs){ const dx=S.bx-S.ax, dz=S.bz-S.az, L=Math.hypot(dx,dz); if(L<.5) continue; const ux=dx/L, uz=dz/L, nx=-uz, nz=ux, ang=Math.atan2(ux,uz);
+  for(const S of segs){ const dx=S.bx-S.ax, dz=S.bz-S.az, L=Math.hypot(dx,dz); if(L<.5||S.kind==='ditch') continue; const ux=dx/L, uz=dz/L, nx=-uz, nz=ux, ang=Math.atan2(ux,uz);
     for(let t=.5,ti=0;t<L;t+=1.25,ti++){ const cx=S.ax+ux*t, cz=S.az+uz*t;
       for(const sd of [-1,1]){ const ex=cx+nx*sd*(S.w/2+.35), ez=cz+nz*sd*(S.w/2+.35), y=ww1Sample(W,ex,ez);
         const front=S.az<0?nz*sd>0:nz*sd<0; // parapeto (del lado enemigo) con dos hileras; atrás, una suelta

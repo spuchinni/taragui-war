@@ -14,6 +14,7 @@ Hablar siempre en español rioplatense (vos), respuestas concretas y breves.
   - `gm1-datos.js`: tanques de la 1ª Guerra (UK, Francia, Imperio alemán, EE. UU.) + cañones de campaña (`static:1`, solo IA). Velocidades reales ×1,4.
   - `gm1-modelos.js`: modelos hechos por código (`buildWW1`): Mark I/IV/V con barbetas (`sponsonAim`), Whippet, Renault FT, Schneider, Saint-Chamond, A7V, LK II, cañones; cascos Brodie/Adrian/Stahlhelm.
   - `gm1-mapas.js`: generador de frentes de trincheras con semilla fija (Somme, Cambrai, Villers-Bretonneux, Saint-Mihiel): trincheras en zigzag que los tanques largos cruzan (`W.trench`, `curSpan`), alambradas (`W.wire`), embudos, pueblos en ruinas.
+  - `gm2-datos.js` / `gm2-modelos.js` / `gm2-mapas.js` / `gm2-campana.js`: **Entreguerras (época 2, rango II)**. 15 tanques: UK (Vickers Medium Mk II, Light Tank Mk VIB, Cruiser A9, A13), Francia (R35, S35, Char B1 bis con obús de casco como 2.ª munición), Alemania (Panzer I A, II A, III A, IV A), URSS (T-26, BT-5, T-28; la URSS no tiene rango I: su rango II abre junto con las demás y recibe el T-26 gratis, ver `rankOpen`/`syncEraOpen`), EE. UU. (M2A2, M2A4); antitanques por nación en `GUN_ERA` (Pak 36, 45 mm, 2 libras, 25 mm, 37 mm). Velocidades reales ×1,2. Modelos: un solo constructor `buildIW` (m.ww1='iw', parámetros en `m.iw`: oruga, ruedas/bogies/Christie, faldones, torre bevel/cyl/cast/oct, cúpula, torrecitas `sub`, segunda torre `twinT`, cañón de casco `hg`, insignias). Mapas con el generador de la 1ª Guerra y opciones nuevas (`noTrench`, `trenchSides`, `ditches` = acequias, `hills`, `deadTrees`, `churn`, colores de pueblo `walls`/`roofs`, especies `sp` por bosque: olivo, quebracho, espinillo): Seseña, Jarama, Fuentes de Ebro y Gran Chaco (Nanawa). Reglas: arty sí, aviones no, sin lanzahumos, ataque fuera del campo = artillería (como la 1ª Guerra). Campaña: Seseña, Jarama (los dos lados) y Fuentes de Ebro.
   - `campana.js`: campaña histórica (`CAMPAIGN`, 6 misiones 1916–1918 + mapa Berry-au-Bac), selector de épocas del hangar/árbol.
 - `js/nube.js` + `js/nube-config.js` → cuentas con Firebase (proyecto `taragui-war`): entrar con Google (principal) o con mail y contraseña (con verificación por mail y recuperación). Sin cuenta se juega igual con el progreso en el navegador. Con cuenta verificada el progreso (`PROG`) se guarda en Firestore en `jugadores/<uid>` (campo `prog`, JSON) y en el navegador en `tw2_progress@<uid>`; gana el más nuevo según `PROG.t`. Reglas de Firestore: cada uno solo lee y escribe su documento y con mail verificado. Dominio autorizado: `spuchinni.github.io`.
 - `js/intro.js` → intro. Sale **cada vez** que se abre el juego (se saltea con el botón, Esc o Enter; "Hacé clic para empezar" sobre la portada habilita el sonido) y se vuelve a ver desde el inicio. Muestra `video/intro.mp4` (`INTRO_VIDEO_ON=true`, 12,7 s): los dos videos de Gemini de Sebastián combinados en orden cronológico (1ª Guerra → 2ª → Guerra Fría → moderno → nuke → logo). Se probó una versión con tomas filmadas con el motor (`herramientas/cine/`) pero Sebastián prefirió la de Gemini. Si el video no carga, queda la intro hecha con el motor (escena propia: Mark I → Renault FT → Sherman → TAM → Leopard 2). `frame()` llama a `introFrame` mientras `state==='intro'`.
@@ -25,7 +26,7 @@ Hablar siempre en español rioplatense (vos), respuestas concretas y breves.
 - `snd/`, `voz/`, `img/` → sonidos CC0, voces de radio por idioma (es, en-gb, en-us, de, ru) y portada. Compartidos por v1 y v2.
 
 ## Épocas
-1 = 1ª Guerra (lista) · 2 Entreguerras · 3 2ª Guerra · 4 Posguerra/Corea (próximamente) · 5 = Guerra Fría (tanques y mapas de la v1).
+1 = 1ª Guerra (lista) · 2 Entreguerras (lista) · 3 2ª Guerra · 4 Posguerra/Corea (próximamente) · 5 = Guerra Fría (tanques y mapas de la v1).
 Cada época es un **rango** (I a V), estilo War Thunder pero siguiendo la línea de tiempo (pedido de Sebastián: "no se puede investigar un Tiger sin el Mark II").
 - Progreso v3 (`tw2_progress`, `PROG.v===3`; las versiones anteriores se reinician): `unlocked` = investigados, `owned` = comprados, `rp` = PI acumulados, `target` = lo que se investiga por nación, `yp` = Yaguaretés de plata.
 - Líneas: `reqOf(k)` = el anterior de la misma clase y nación (el primero de una clase pide el último de esa clase del rango anterior; se puede forzar con `VEH[k].req`). Un rango se abre en una nación con `RANK_NEED` (3) tanques investigados del rango anterior: por eso la Guerra Fría queda cerrada hasta que existan los rangos II a IV.
@@ -50,7 +51,8 @@ Cada vehículo y mapa tiene `era`; garaje por nación y época (`garRef`).
 - Mapas urbanos de Corrientes a partir de capturas satelitales que él pasa.
 
 ## Pendientes / ideas
-- Épocas 2, 3 y 4 (Entreguerras, 2ª Guerra con el Nahuel argentino, Posguerra/Corea) con sus tanques, mapas y capítulos de campaña.
+- Épocas 3 y 4 (2ª Guerra con el Nahuel argentino, Posguerra/Corea) con sus tanques, mapas y capítulos de campaña.
+- Entreguerras: los cañones antitanque usan el modelo del cañón de campaña de la 1ª Guerra (ruedas de rayos); falta uno propio. La Guerra del Chaco no tiene misión (faltan los Vickers 6 toneladas bolivianos).
 - Probar rendimiento real de los mapas de trincheras en su PC.
 - Voces en francés (los franceses usan las de español).
 
