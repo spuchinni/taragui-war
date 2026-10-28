@@ -350,7 +350,7 @@ function soldierThink(P,dt){
     return; }
   if(T){
     P.heading=Math.atan2(T.pos.x-P.pos.x,T.pos.z-P.pos.z); P.fireT-=dt; const d=T.pos.distanceTo(P.pos);
-    if(P.pose!==2) P.pose=K==='hmg'||K==='mortar'||K==='sniper'?(K==='hmg'?2:1):(P.supT>now&&K!=='at'&&!P.cover?2:1); // rodilla en tierra; cuerpo a tierra bajo fuego
+    if(P.pose!==2) P.pose=K==='hmg'||K==='mortar'||K==='sniper'?(K==='hmg'&&!P.nest?2:1):(P.supT>now&&K!=='at'&&!P.cover?2:1); // rodilla en tierra; cuerpo a tierra bajo fuego
     // el antitanque busca el costado: si el tanque lo mira de frente, se mueve antes de tirar
     if(K==='at'&&!T.inf&&!P.flanked){ const face=wrap(T.heading+(T.turretYaw||0)-Math.atan2(P.pos.x-T.pos.x,P.pos.z-T.pos.z));
       if(Math.abs(face)<.8&&d<190){ if(!P.flankP){ const a=Math.atan2(P.pos.x-T.pos.x,P.pos.z-T.pos.z)+(Math.random()<.5?1:-1)*1.1, R=Math.max(40,d*.8), x=T.pos.x+Math.sin(a)*R, z=T.pos.z+Math.cos(a)*R; P.flankP=freeInf(x,z)?{x,z}:null; P.flankT=now+12; }
@@ -383,6 +383,7 @@ function soldierThink(P,dt){
         if(T.inf){ if(Math.random()<clamp(.35-d/400,.06,.3)) killInf(T,P); } else debris(aim,1,sparkMat,2,.4); }
       else P.fireT=1; }
     return; }
+  if(P.nest){ P.pose=1; return; }                                     // el del nido de ametralladora no se mueve
   // sin blanco: avanza por tramos, se cubre si hay amenaza
   if(P.cover&&(P.threat||P.supT>now)){ P.pose=4; if(walk(P,P.cover.x,P.cover.z,4,dt)) P.pose=1; return; }
   P.advT=(P.advT||0)-dt; if(P.advT<=0){ P.hold=!P.hold&&!!P.threat; P.advT=P.hold?rand(2.5,4.5):rand(5,9); }

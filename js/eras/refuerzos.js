@@ -16,18 +16,35 @@ function sandRing(x,z,r,open){ const g=new THREE.Group(), y=heightAt(x,z); scene
   for(let row=0;row<3;row++) for(let i=0;i<14;i++){ const a=i/14*Math.PI*2+(row%2)*.22; if(Math.abs(wrap(a-open))<.5) continue; const b=new THREE.Mesh(sandGeo,sandMat);
     b.position.set(x+Math.cos(a)*r,y+.14+row*.26,z+Math.sin(a)*r); b.rotation.y=-a+Math.PI/2+rand(-.1,.1); b.castShadow=b.receiveShadow=true; g.add(b); }
   return g; }
+// Ametralladora pesada montada en el nido, según la nación: MG 34 en trípode (Alemania, Italia), Maxim con ruedas y escudo (URSS, China),
+// Vickers enfriada por agua (Reino Unido, Francia) o Browning en trípode (EE. UU., Japón, Argentina)
+const nestMat=new THREE.MeshLambertMaterial({color:0x2a2a28}), nestGreen=new THREE.MeshLambertMaterial({color:0x4a5236});
+function nestMG(nat,x,z){ const g=new THREE.Group(), y=heightAt(x,z); g.position.set(x,y,z); scene.add(g); fortProps.push(g);
+  const type=['ru','cn'].includes(nat)?'maxim':['uk','fr'].includes(nat)?'vickers':['de','it'].includes(nat)?'mg34':'browning';
+  const top=new THREE.Group(); top.position.y=type==='maxim'?.55:.78; g.add(top);
+  if(type==='maxim'){ for(const sx of [-.32,.32]){ const w=cyl(g,.24,.24,.06,sx,.24,-.15,12,nestMat); w.rotation.z=Math.PI/2; } box(g,.7,.05,.1,0,.24,-.15,nestMat); rod(g,[0,.24,-.15],[0,.08,-.9],nestMat,1.5);
+    box(top,.5,.42,.03,0,.18,.32,nestGreen); }                                                                 // ruedas, cola y escudo
+  else for(const [a,l] of [[0,.95],[2.3,.85],[-2.3,.85]]) rod(g,[0,top.position.y,0],[Math.sin(a)*l*.7,0,Math.cos(a)*l*.7],nestMat,1.4);   // trípode
+  const jk=type==='maxim'||type==='vickers', len=type==='mg34'?1.1:1.0;
+  box(top,.1,.14,.42,0,.05,-.05,nestMat);                                                                      // cajón de mecanismos
+  if(jk){ const j=cyl(top,.065,.065,.62,0,.05,.45,10,type==='maxim'?nestGreen:nestMat); j.rotation.x=Math.PI/2; }  // camisa de agua
+  const b=cyl(top,type==='mg34'?.03:.018,.018,len,0,.05,len/2+.12,8,nestMat); b.rotation.x=Math.PI/2;
+  box(top,.04,.08,.2,0,-.02,-.33,nestMat); box(top,.12,.14,.2,.13,-.04,0,nestGreen);                            // empuñaduras y caja de munición
+  box(g,.3,.2,.18,.45,.1,-.4,nestGreen); box(g,.3,.2,.18,.45,.3,-.4,nestGreen);                                // cajas de munición de repuesto
+  return {g,top}; }
 // Fortificar un punto recién capturado
 function fortifyZone(Z,team){
   if(net.guest||!RULE().guns) return; const F=Z.fort; if(F&&F.team===team&&((F.mg&&!F.mg.dead)||(F.gun&&!F.gun.dead))) return;
   const eb=baseOf(1-team); let dx=eb.x-Z.x, dz=eb.z-Z.z; const L=Math.hypot(dx,dz)||1; dx/=L; dz/=L; const px=-dz, pz=dx, nat=teamNation(team);
   const mx=Z.x+dx*Z.r*.55+px*rand(-6,6), mz=Z.z+dz*Z.r*.55+pz*rand(-6,6);
   const ring=sandRing(mx,mz,1.7,Math.atan2(-dz,-dx));                                     // abierto hacia atrás
-  const mg=makePerson('hmg',team,mx,mz); mg.hold=true; mg.goal=null; mg.nest=true;
+  const mg=makePerson('hmg',team,mx-dx*.45,mz-dz*.45); mg.hold=true; mg.goal=null; mg.nest={x:mx-dx*.45,z:mz-dz*.45}; mg.noEmb=1e9; mg.heading=Math.atan2(dx,dz); if(mg.parts.wep) mg.parts.wep.visible=false;
+  const mount=nestMG(nat,mx+dx*.25,mz+dz*.25);
   const rf=makePerson('rifle',team,mx+px*1.2,mz+pz*1.2); rf.hold=true; rf.goal=null;
   const key=(typeof GUN_ERA!=='undefined'&&GUN_ERA[W.era]&&GUN_ERA[W.era][nat])||GUN_OF[nat], h=Math.atan2(dx,dz);
   const gun=rfGun(team,key,Z.x+dx*Z.r*.35-px*9,Z.z+dz*Z.r*.35-pz*9,h,`Antitanque del punto ${Z.id}`);
   const aa=W.era===3?rfGun(team,axisOf(team)?'aa_de':'aa_al',Z.x-dx*6+px*5,Z.z-dz*6+pz*5,h,`Antiaéreo del punto ${Z.id}`):null;
-  Z.fort={team,mg,gun,aa,ring}; feed(`${NATIONS[nat].label} fortifica el punto ${Z.id}: ametralladora${gun?', antitanque':''}${aa?' y antiaéreo':''}`,team===0?'var(--ally)':'var(--enemy)');
+  Z.fort={team,mg,rf,gun,aa,ring,mount,nx:mg.nest.x,nz:mg.nest.z}; feed(`${NATIONS[nat].label} fortifica el punto ${Z.id}: ametralladora${gun?', antitanque':''}${aa?' y antiaéreo':''}`,team===0?'var(--ally)':'var(--enemy)');
 }
 function onZoneCaptured(Z,team){ if(net.guest) return; fortifyZone(Z,team);
   if(W.era===3&&now>(Z.refT||0)){ Z.refT=now+100; refPending.push({Z,team,t:now+rand(8,16)}); } }
@@ -129,6 +146,12 @@ function updRefuerzos(dt){
     const q=C.g.position, gh=heightAt(q.x,q.z); if(q.y>gh+.2) continue;
     scene.remove(C.g); chutes.splice(i,1); const P=makePerson(C.kind,C.team,q.x,q.z); P.noEmb=now+90; const a=rand(0,6.28), r=rand(0,C.Z.r*.6); P.goal={x:C.Z.x+Math.cos(a)*r,z:C.Z.z+Math.sin(a)*r}; }
   updateRefugeeCars(dt);
+  // el ametralladorista se queda en el nido y gira el arma; si cae, el fusilero toma su lugar
+  for(const Z of zones||[]){ const F=Z.fort; if(!F||!F.mount) continue; let M=F.mg;
+    if((!M||M.dead)&&F.rf&&!F.rf.dead&&!net.guest){ M=F.mg=F.rf; F.rf=null; M.kind='hmg'; M.name=INF_KIND.hmg; M.nest={x:F.nx,z:F.nz}; M.noEmb=1e9; M.hold=true; if(M.parts.wep) M.parts.wep.visible=false; }
+    if(!M||M.dead) continue; if(Math.hypot(M.pos.x-F.nx,M.pos.z-F.nz)>1.2){ if(net.guest) continue; walk(M,F.nx,F.nz,3,dt); continue; }
+    const h=M.heading, G=F.mount.g.position; M.cover=null; M.goal=null; M.pose=1; F.mount.top.rotation.y=h;     // el arma gira en el trípode y él la sigue por detrás
+    F.nx=G.x-Math.sin(h)*.75; F.nz=G.z-Math.cos(h)*.75; M.pos.x=F.nx; M.pos.z=F.nz; M.nest.x=F.nx; M.nest.z=F.nz; }
 }
 function clearRefuerzos(){ transports.forEach(T=>{ scene.remove(T.g); if(T.snd) T.snd.stop(); unhit(T); }); transports.length=0; chutes.forEach(C=>scene.remove(C.g)); chutes.length=0;
   fortProps.forEach(g=>scene.remove(g)); fortProps.length=0; refPending.length=0; for(const Z of zones||[]){ Z.fort=null; Z.refT=0; } }
