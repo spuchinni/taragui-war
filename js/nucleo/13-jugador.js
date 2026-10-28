@@ -288,7 +288,7 @@ function drawMinimap(){
   for(const Z of zones){const c=Z.owner===1?'#8fd16a':Z.owner===-1?'#ff5a3c':'#ffffff'; mc.strokeStyle=c; mc.lineWidth=3;
     mc.beginPath(); mc.arc(tx(Z.x),tz(Z.z),Z.r*k,0,7); mc.stroke(); mc.fillStyle=c; mc.fillText(Z.id,tx(Z.x),tz(Z.z));}
   for(const s of W.sp[0]){mc.fillStyle='rgba(143,209,106,.85)';mc.fillRect(tx(s.x)-7,tz(s.z)-7,14,14);}
-  if(!playerCrew) for(const s of W.sp[1]){mc.fillStyle='rgba(255,90,60,.85)';mc.fillRect(tx(s.x)-7,tz(s.z)-7,14,14);}
+  for(const s of W.sp[1]){mc.fillStyle='rgba(255,90,60,.85)';mc.fillRect(tx(s.x)-7,tz(s.z)-7,14,14);mc.strokeStyle='#000';mc.lineWidth=1.5;mc.strokeRect(tx(s.x)-7,tz(s.z)-7,14,14);} // bases enemigas
   for(const t of tanks){
     if(t.team===1&&!t.dead&&t.spottedT<=0) continue;
     mc.save(); mc.translate(tx(t.pos.x),tz(t.pos.z)); mc.rotate(-t.heading+Math.PI);
@@ -298,8 +298,14 @@ function drawMinimap(){
   }
   for(const P of infantry){ if(P.dead) continue; if(P.team===1&&playerCrew&&!tanks.some(t=>t.team===0&&!t.dead&&t.pos.distanceTo(P.pos)<120)) continue;
     mc.fillStyle=isCiv(P)?'#e8e2cf':P.team===0?'#8fd16a':'#ff5a3c'; mc.beginPath(); mc.arc(tx(P.pos.x),tz(P.pos.z),isCiv(P)?2.5:3.5,0,7); mc.fill(); }
-  if(artyPick){ for(const [P,c] of [[lastAim,'rgba(255,255,255,.7)'],[artyHover,'#ffb43c']]){ if(!P) continue; const X=tx(P.x), Y=tz(P.z), r=Math.max(6,(W.era<=2?14:10)*k);
+  if(artyPick==='air'&&player) for(const P of [lastAim,artyHover]){ if(!P) continue; const d=Math.hypot(P.x-player.pos.x,P.z-player.pos.z)||1, ux=(P.x-player.pos.x)/d, uz=(P.z-player.pos.z)/d; // línea de las bombas
+      mc.strokeStyle=P===artyHover?'#ff6a3c':'rgba(255,255,255,.6)'; mc.lineWidth=5; mc.beginPath(); mc.moveTo(tx(P.x-ux*20),tz(P.z-uz*20)); mc.lineTo(tx(P.x+ux*20),tz(P.z+uz*20)); mc.stroke(); }
+  if(artyPick){ for(const [P,c] of [[lastAim,'rgba(255,255,255,.7)'],[artyHover,'#ffb43c']]){ if(!P) continue; const X=tx(P.x), Y=tz(P.z), r=Math.max(6,(artyPick==='air'?20:W.era<=2?14:10)*k);
       mc.strokeStyle=c; mc.lineWidth=2.5; mc.beginPath(); mc.arc(X,Y,r,0,7); mc.moveTo(X-r-8,Y); mc.lineTo(X+r+8,Y); mc.moveTo(X,Y-r-8); mc.lineTo(X,Y+r+8); mc.stroke(); } }
+  // dónde apunta tu mira: una cruz en el punto (y la línea desde tu tanque)
+  if(player&&!player.dead&&state==='play'&&lastAim&&!artyPick){ const X=tx(lastAim.x), Y=tz(lastAim.z);
+    mc.strokeStyle='rgba(255,215,90,.75)'; mc.lineWidth=1.5; mc.setLineDash([5,5]); mc.beginPath(); mc.moveTo(tx(player.pos.x),tz(player.pos.z)); mc.lineTo(X,Y); mc.stroke(); mc.setLineDash([]);
+    mc.strokeStyle='#ffd75a'; mc.lineWidth=2.5; mc.beginPath(); mc.arc(X,Y,6,0,7); mc.moveTo(X-11,Y); mc.lineTo(X-3,Y); mc.moveTo(X+3,Y); mc.lineTo(X+11,Y); mc.moveTo(X,Y-11); mc.lineTo(X,Y-3); mc.moveTo(X,Y+3); mc.lineTo(X,Y+11); mc.stroke(); }
   if(player&&!player.dead&&state==='play'){mc.strokeStyle='rgba(255,255,255,.6)';mc.lineWidth=2;mc.beginPath();
     mc.moveTo(tx(player.pos.x),tz(player.pos.z));mc.lineTo(tx(player.pos.x+Math.sin(camYaw)*60),tz(player.pos.z+Math.cos(camYaw)*60));mc.stroke();}
 }

@@ -47,9 +47,9 @@ function introUI(){
   $('iStart').onclick=()=>{ initAudio(); if(AC.state==='suspended') AC.resume(); introPlay(); };
   return el;
 }
-document.addEventListener('keydown',e=>{ if(state!=='intro') return; if(['Escape','Enter','Space'].includes(e.code)){ e.preventDefault(); e.stopImmediatePropagation(); if(intro&&!intro.on&&e.code!=='Escape') $('iStart').click(); else introEnd(); } },true);
+document.addEventListener('keydown',e=>{ if(state!=='intro') return; if(['Escape','Enter','Space'].includes(e.code)){ e.preventDefault(); e.stopImmediatePropagation(); if(intro&&intro.cover){ initAudio(); if(AC.state==='suspended') AC.resume(); introEnd(); return; } if(intro&&!intro.on&&e.code!=='Escape') $('iStart').click(); else introEnd(); } },true);
 // Intro en video (video/intro.mp4, armado con los videos de Gemini): se muestra en vez de la hecha con el motor, que queda si el video no carga
-const INTRO_VIDEO='video/intro.mp4?v='+(window.GAME_V||''), INTRO_VIDEO_ON=true;
+const INTRO_VIDEO='video/intro.mp4?v='+(window.GAME_V||''), INTRO_VIDEO_ON=false; // reemplazado por la portada animada (pedido de Sebastián)
 let introVideoOk=INTRO_VIDEO_ON;
 function introVideo(){
   const ui=introUI(); let v=$('iVid'); if(!v){ v=document.createElement('video'); v.id='iVid'; v.src=INTRO_VIDEO; v.playsInline=true; v.preload='auto'; ui.insertBefore(v,ui.firstChild); v.onended=()=>introEnd(); v.onerror=()=>{ introVideoOk=false; introEnd(); }; }
@@ -57,7 +57,26 @@ function introVideo(){
   if(typeof musStop==='function') musStop(); v.volume=Math.min(1,volMaster); v.play().catch(()=>{});
 }
 // Arranca la intro. Sin sonido habilitado todavía (primera visita) muestra "Hacé clic para empezar": el clic habilita el audio.
+// Portada animada (img/portada-fondo.jpg + img/portada-titulo.webp, recortados de la ilustración de Sebastián): el fondo se acerca
+// despacio y se aclara, a los 1,8 s el cartel del título cae con un golpe (temblor y destello) y después aparece "Hacé clic para empezar".
+// El título queda exactamente donde está en la ilustración (mismas proporciones, 2000 × 1342).
+const INTRO_COVER=true;
+function coverStart(){
+  if(document.pointerLockElement) document.exitPointerLock();
+  stopAllLoops(); state='intro'; intro=intro||{fx:[]}; intro.cover=true; intro.on=false;
+  const ui=introUI(); ui.hidden=false; document.body.classList.add('intro');
+  ui.querySelectorAll('.iBar,.iFade,.iTxt,.iLogo,#iSkip,#iStart').forEach(e=>e.hidden=true);
+  let c=$('iCover'); if(c) c.remove();
+  c=document.createElement('div'); c.id='iCover'; c.innerHTML=`<div class="cvArt"><img class="cvBg" src="img/portada-fondo.jpg" alt=""><img class="cvTit" src="img/portada-titulo.webp" alt="Taragüí War: Frente de Acero"></div>
+    <div class="cvFlash"></div><div class="cvGo">Hacé clic para empezar</div>`;
+  ui.appendChild(c);
+  const go=()=>{ initAudio(); if(AC.state==='suspended') AC.resume(); introEnd(); };
+  c.onclick=go;
+  intro.coverT=[setTimeout(()=>{ if(AC&&AC.state==='running'){ sfx('cannon',null,.8,{near:true,rate:.62}); setTimeout(()=>sfx('expl',null,.5,{near:true,rate:.8}),90); } },1850),
+    setTimeout(()=>c.classList.add('ready'),3600)];
+}
 function introStart(){
+  if(INTRO_COVER) return coverStart();
   if(!INTRO_SHOTS.length&&!introVideoOk) return;
   if(document.pointerLockElement) document.exitPointerLock();
   stopAllLoops(); state='intro'; intro=intro||introScene(); intro.on=false; intro.i=-1; intro.t=0;
@@ -109,7 +128,7 @@ function introCam(S,u,P){
 }
 // Un cuadro de la intro (frame() lo llama en vez del juego mientras state==='intro')
 function introFrame(dt){
-  const I=intro; if(I.vid){ quietEngine(); return; } syncIntro(); quietEngine();
+  const I=intro; if(I.vid||I.cover){ quietEngine(); return; } syncIntro(); quietEngine();
   if(I.on&&I.i<INTRO_SHOTS.length){
     const S=INTRO_SHOTS[I.i], t=I.tank; I.t+=dt; const u=Math.min(1,I.t/S.dur);
     I.z+=S.v*dt; t.root.position.set(0,0,I.z); t.root.rotation.x=Math.sin(I.t*2.3)*.006;
@@ -133,7 +152,7 @@ function introFrame(dt){
 function introEnd(){
   if(state!=='intro') return;
   try{ localStorage.setItem('tw_intro_vista',INTRO_ID); }catch(e){}
-  const I=intro; if(I.tank){ I.sc.remove(I.tank.root); I.tank=null; } I.fx.forEach(F=>{ I.sc.remove(F.m); F.m.material.dispose(); }); I.fx.length=0; I.on=false; I.vid=false;
+  const I=intro; if(I.cover){ (I.coverT||[]).forEach(clearTimeout); const c=$('iCover'); if(c) c.remove(); I.cover=false; $('introUI').hidden=true; document.body.classList.remove('intro'); state='menu'; menuScreen='home'; mainMenu(); return; } if(I.tank){ I.sc.remove(I.tank.root); I.tank=null; } I.fx.forEach(F=>{ I.sc.remove(F.m); F.m.material.dispose(); }); I.fx.length=0; I.on=false; I.vid=false;
   const v=$('iVid'); if(v){ v.pause(); v.hidden=true; } document.querySelectorAll('#introUI .iBar').forEach(b=>b.hidden=false);
   $('introUI').hidden=true; document.body.classList.remove('intro');
   state='menu'; menuScreen='home'; mainMenu();

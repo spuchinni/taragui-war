@@ -94,7 +94,7 @@ body:not(.menu) #fsBtn{right:14px;top:auto;bottom:calc(240px + env(safe-area-ins
 /* Pantalla principal con la ilustración: el arte se escala como "cover" y los botones tapan la barra dibujada */
 body.menu.home:not(.deploy) #overlay{background:#0d0c0a}
 .homeArt{position:fixed;left:50%;top:50%;width:max(100vw,calc(100vh*1.7778));height:max(100vh,calc(100vw/1.7778));transform:translate(-50%,-50%);
-  background:url(../img/portada-logo.jpg) center/100% 100% no-repeat;pointer-events:none}
+  background:url(../img/portada-nueva.jpg) center/cover no-repeat;pointer-events:none}
 .homeShade{position:fixed;left:0;right:0;bottom:0;height:150px;background:linear-gradient(180deg,rgba(10,10,8,0),rgba(10,10,8,.85) 55%,rgba(10,10,8,.95));pointer-events:none}
 .homeArt .press{position:absolute;left:50%;top:83.8%;transform:translate(-50%,-50%);padding:.45em 1.8em;background:rgba(14,13,11,.97);border:1px solid rgba(239,231,210,.25);
   font:700 clamp(13px,1.5vw,22px) system-ui,sans-serif;letter-spacing:.12em;color:var(--paper);white-space:nowrap;pointer-events:auto;cursor:pointer;animation:pressP 1.6s ease-in-out infinite}
@@ -130,7 +130,7 @@ body.intro #overlay,body.intro #acct{display:none!important}
 #introUI .iLogo{position:absolute;inset:0;display:grid;place-items:center;opacity:0;transition:opacity .6s}
 #introUI .iLogo img{width:min(760px,86vw);height:auto;-webkit-mask-image:radial-gradient(ellipse 62% 64% at center,#000 78%,transparent 100%);mask-image:radial-gradient(ellipse 62% 64% at center,#000 78%,transparent 100%)}
 #introUI .iStart{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;background:#0b0c0d;color:var(--paper);cursor:pointer;pointer-events:auto}
-#introUI .iStart[hidden]{display:none} #introUI .iStart{background:#0b0c0d url(../img/portada-logo.jpg) center/cover no-repeat;justify-content:flex-end;padding-bottom:12vh} #introUI .iStart span{font-size:22px;color:var(--khaki);animation:pressP 1.6s infinite}
+#introUI .iStart[hidden]{display:none} #introUI .iStart{background:#0b0c0d url(../img/portada-nueva.jpg) center/cover no-repeat;justify-content:flex-end;padding-bottom:12vh} #introUI .iStart span{font-size:22px;color:var(--khaki);animation:pressP 1.6s infinite}
 #introUI .iSkip{position:absolute;right:16px;bottom:calc(9vh + 16px);pointer-events:auto;font:700 16px system-ui,sans-serif;padding:9px 16px;color:var(--paper);background:rgba(20,18,14,.7);border:1px solid rgba(239,231,210,.45);cursor:pointer}
 #introUI .iSkip:hover{background:rgba(60,55,40,.9)}
 /* Cuenta: botón en el inicio y ventana para entrar con Google o con mail */
@@ -288,3 +288,19 @@ button:focus-visible{outline:3px solid var(--paper);outline-offset:3px}
 #objT{display:none;top:calc(96px + env(safe-area-inset-top,0px));left:50%;transform:translateX(-50%);padding:6px 14px;background:rgba(14,13,11,.72);border:1px solid rgba(239,231,210,.25);font:600 15px 'Saira Condensed',system-ui,sans-serif;color:var(--paper);white-space:nowrap;z-index:6}
 #objT b{color:var(--amber);margin-right:4px} #objT .ot{opacity:.75;margin-left:4px}
 body.menu #objT{display:none!important}
+
+/* Portada animada (coverStart en intro.js): la ilustración mantiene su proporción (2000 × 1342) y cubre la pantalla */
+#iCover{position:absolute;inset:0;background:#000;overflow:hidden;pointer-events:auto;cursor:pointer}
+#iCover .cvArt{position:absolute;left:50%;top:50%;width:max(100vw,calc(100vh*1.4903));height:max(100vh,calc(100vw/1.4903));transform:translate(-50%,-50%) scale(1.14);
+  animation:cvZoom 9s cubic-bezier(.2,.6,.3,1) forwards,cvShake .45s 1.85s linear}
+#iCover .cvBg{position:absolute;inset:0;width:100%;height:100%;filter:brightness(.25);animation:cvLight 2.2s .2s ease-out forwards}
+#iCover .cvTit{position:absolute;left:25%;top:3.13%;width:50.55%;height:auto;opacity:0;transform:scale(2.4);transform-origin:50% 55%;
+  animation:cvSlam .5s 1.4s cubic-bezier(.5,0,.75,0) forwards;filter:drop-shadow(0 8px 18px rgba(0,0,0,.7))}
+#iCover .cvFlash{position:absolute;inset:0;background:#fff3d6;opacity:0;pointer-events:none;animation:cvFlash .6s 1.85s ease-out}
+#iCover .cvGo{position:absolute;left:0;right:0;bottom:7vh;text-align:center;font-size:clamp(18px,2.2vw,26px);color:var(--khaki);letter-spacing:.04em;text-shadow:0 2px 6px #000;opacity:0;transition:opacity .6s}
+#iCover.ready .cvGo{opacity:1;animation:pressP 1.6s infinite}
+@keyframes cvZoom{to{transform:translate(-50%,-50%) scale(1)}}
+@keyframes cvLight{to{filter:brightness(1)}}
+@keyframes cvSlam{0%{opacity:0;transform:scale(2.4)}60%{opacity:1}100%{opacity:1;transform:scale(1)}}
+@keyframes cvFlash{0%{opacity:.55}100%{opacity:0}}
+@keyframes cvShake{0%,100%{margin:0}20%{margin:-6px 0 0 5px}40%{margin:5px 0 0 -6px}60%{margin:-3px 0 0 3px}80%{margin:2px 0 0 -2px}}

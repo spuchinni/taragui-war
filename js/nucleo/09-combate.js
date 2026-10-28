@@ -347,18 +347,22 @@ function fireMG(t){
 }
 
 /* ---------- Apoyo: artillería y ataque aéreo ---------- */
-const ARTY_COST=80, AIR_COST=150, ARTY_CD=30, AIR_CD=45;
+// Pedido de Sebastián: los apoyos no cuestan puntos, se recargan con el tiempo (artillería cada 45 s, bombardeo cada 1:30)
+const ARTY_COST=0, AIR_COST=0, ARTY_CD=45, AIR_CD=90;
 // La recarga es del equipo: cuando alguien pide un apoyo, todo su equipo espera
 const teamCD=(team,k,v)=>{ for(const c of crews) if(c.team===team) c[k]=Math.max(c[k]||0,v); };
 const arty=[], marks=[], planes=[], bombs=[];
 const ringGeo=new THREE.RingGeometry(.9,1,64); ringGeo.rotateX(-Math.PI/2);
-const discGeo=new THREE.CircleGeometry(1,48); discGeo.rotateX(-Math.PI/2);
+// Marca de un apoyo en el suelo: bengalas clavadas (una en el centro y otras alrededor) que brillan, titilan y largan humo de color.
+// Sin luces de verdad (agregar o sacar una luz recompila todos los materiales): el brillo es un sprite aditivo sin niebla.
+const flareGeo=new THREE.CylinderGeometry(.035,.04,.4,5); flareGeo.translate(0,.2,0);
 function markZone(p,r,color,until){
-  const g=new THREE.Group(), y=heightAt(p.x,p.z)+.4;
-  const disc=new THREE.Mesh(discGeo,new THREE.MeshBasicMaterial({color,transparent:true,opacity:.18,depthTest:false,depthWrite:false}));
-  const ring=new THREE.Mesh(ringGeo,new THREE.MeshBasicMaterial({color,transparent:true,opacity:.9,depthTest:false,depthWrite:false}));
-  disc.scale.setScalar(r); ring.scale.setScalar(r); disc.renderOrder=ring.renderOrder=5;
-  g.add(disc,ring); g.position.set(p.x,y,p.z); scene.add(g); marks.push({g,ring,disc,until,p:p.clone(),r,color});
+  const g=new THREE.Group(), fl=[], n=r>40?8:r>15?5:4; scene.add(g);
+  for(let i=0;i<n;i++){ const a=i/n*Math.PI*2+rand(-.4,.4), d=i?r*rand(.35,.7):0, x=p.x+Math.cos(a)*d, z=p.z+Math.sin(a)*d, y=heightAt(x,z);
+    const st=new THREE.Mesh(flareGeo,darkMat); st.position.set(x,y,z); st.rotation.set(rand(-.5,.5),0,rand(-.5,.5)); g.add(st);
+    const glow=new THREE.Sprite(new THREE.SpriteMaterial({map:smokeTex,color,transparent:true,opacity:.95,depthWrite:false,fog:false,blending:THREE.AdditiveBlending}));
+    glow.position.set(x,y+.45,z); glow.scale.setScalar(2.2); g.add(glow); fl.push({glow,x,y,z,ph:rand(0,6),smT:rand(0,.3)}); }
+  marks.push({g,fl,until,p:p.clone(),r,color,smoke:new THREE.Color(color).lerp(new THREE.Color(0x8a8078),.45).getHex()});
 }
 function blast(p,big){
   flash.position.copy(p).setY(p.y+3); flash.intensity=7*big;
@@ -439,8 +443,9 @@ function updateArty(dt){
     const p=B.m.position, gh=heightAt(p.x,p.z);
     if(p.y<=gh+.3){ const q=p.clone().setY(gh); scene.remove(B.m); bombs.splice(i,1); blast(q,1.6); addCrater(q,5.2,1.7); splash(q,B.by,19,2.4,300); } }
   for(let i=marks.length-1;i>=0;i--){ const M=marks[i];
-    if(now>M.until){ scene.remove(M.g); M.ring.material.dispose(); M.disc.material.dispose(); marks.splice(i,1); continue; }
-    M.ring.material.opacity=.55+.4*Math.sin(now*6); M.disc.material.opacity=.12+.08*Math.sin(now*6); }
+    if(now>M.until){ scene.remove(M.g); M.fl.forEach(F=>F.glow.material.dispose()); marks.splice(i,1); continue; }
+    for(const F of M.fl){ const k=.75+.25*Math.sin(now*23+F.ph)*Math.sin(now*7.3+F.ph*2); F.glow.material.opacity=.6+.35*k; F.glow.scale.setScalar(1.6+1.2*k);
+      F.smT-=dt; if(F.smT<=0){ F.smT=.28; puff(new THREE.Vector3(F.x+rand(-.15,.15),F.y+.6,F.z+rand(-.15,.15)),M.smoke,rand(.9,1.4),rand(2.2,3.2),1.6,.42); } } }
 }
 const NUKE_COST=2000; let nuke=null;
 function callNuke(by){

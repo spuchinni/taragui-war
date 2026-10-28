@@ -248,7 +248,7 @@ document.addEventListener('keydown',e=>{
   keys[e.code]=true;
   if(artyPick&&e.code==='Escape'){ artyMap(false); return; }
   if(e.code===binds.ping&&state==='play'&&player&&!player.dead&&!e.repeat){ doPing(); return; }
-  if(net.guest&&state==='play'&&player&&!player.dead&&lastAim&&e.code===binds.arty&&!e.repeat){ if(artyPick) artyFire(lastAim); else artyMap(true); return; }
+  if(net.guest&&state==='play'&&player&&!player.dead&&lastAim&&(e.code===binds.arty||e.code===binds.air)&&!e.repeat){ supKey(e.code===binds.arty?'arty':'air'); return; }
   if(net.guest&&state==='play'&&player&&!player.dead&&lastAim&&[binds.arty,binds.air,binds.nuke].includes(e.code)&&!e.repeat){ hostSend({t:'sup',k:e.code===binds.arty?'arty':e.code===binds.air?'air':'nuke',p:[lastAim.x,lastAim.y,lastAim.z]}); return; }
   if(net.guest&&state==='play'&&e.code===binds.troops&&player&&!player.dead&&!e.repeat){ hostSend({t:'troops'}); return; }
   if(net.on&&state==='play'&&[binds.aerial].includes(e.code)){ hitMsg('No disponible en online (por ahora)','var(--paper)'); return; }
@@ -265,11 +265,7 @@ document.addEventListener('keydown',e=>{
   if(state==='spectate'){ if(e.code==='ArrowRight'){specIdx++;aerial=false;} if(e.code==='ArrowLeft'){specIdx--;aerial=false;} if(e.code==='Space'){aerial=!aerial;e.preventDefault();}
     if(e.code==='Escape'&&!playerCrew){clearBattle();mainMenu();} }
   if(state==='play'&&player&&!player.dead&&lastAim){
-    if(e.code===binds.arty&&!e.repeat&&playerCrew.sp>=ARTY_COST&&playerCrew.artyCD<=0){ if(artyPick) artyFire(lastAim); else artyMap(true); } // F: abre el mapa para elegir dónde; F otra vez: donde apunta la mira
-    else if(e.code===binds.arty) hitMsg(playerCrew.artyCD>0?`Artillería del equipo en espera: ${Math.ceil(playerCrew.artyCD)} s`:`Artillería: te faltan ${ARTY_COST-playerCrew.sp} puntos`,'var(--paper)');
-    if(e.code===binds.air&&callAirstrike(player,lastAim)) teamSup[0].air=Math.max(teamSup[0].air,TEAM_AIR_CD*.6);
-    else if(e.code===binds.air&&!RULE().sup.air) hitMsg('En esta época todavía no hay aviones de ataque a tierra','var(--paper)');
-    else if(e.code===binds.air) hitMsg(playerCrew.airCD>0?`Bombardeo del equipo en espera: ${Math.ceil(playerCrew.airCD)} s`:`Ataque aéreo: te faltan ${AIR_COST-playerCrew.sp} puntos`,'var(--paper)'); }
+    if((e.code===binds.arty||e.code===binds.air)&&!e.repeat) supKey(e.code===binds.arty?'arty':'air'); }
   if(state==='play'&&(e.code===binds.mg||e.code==='Space'||e.code==='Tab')) e.preventDefault();
   if(e.code==='Tab'){ e.preventDefault(); if(!e.repeat) tabBoard(true); }
   if(state==='play'&&e.code===binds.aerial) goSpectate();
@@ -367,16 +363,25 @@ function frame(dt){
 }
 try{ const S=JSON.parse(localStorage.getItem('tw_settings')||'null'); if(S){ if(S.sens) sens=+S.sens; if(S.binds) binds={...DEF_BINDS,...S.binds}; if(S.vol!=null) volMaster=+S.vol; if(S.radio!=null) radioOn=!!S.radio; if(S.fs!=null) fsAuto=!!S.fs; if(DIF[S.dif]) difficulty=S.dif; } }catch(e){}
 
-// ---- Artillería desde el mapa: F agranda el mapa, clic elige el lugar (o F otra vez: donde apunta la mira); Esc cancela ----
+// ---- Apoyos desde el mapa (artillería con F, bombardeo con G): la tecla agranda el mapa, clic elige el lugar
+// (o la misma tecla otra vez: donde apunta la mira); Esc cancela. El bombardeo pasa en línea desde tu tanque hacia el punto. ----
 let artyPick=false, artyHover=null;
-function artyMap(on){ artyPick=on; artyHover=null; document.body.classList.toggle('artyPick',on);
-  if(on){ if(document.pointerLockElement) document.exitPointerLock(); banner('Artillería','Clic en el mapa: dónde cae · F: donde apuntás · Esc: cancelar',3); }
+// tecla de apoyo: abre el mapa si el apoyo está listo; si ya está abierto con ese apoyo, tira donde apunta la mira
+function supKey(k){ const c=playerCrew; if(!c) return;
+  if(k==='air'&&!RULE().sup.air){ hitMsg('En esta época todavía no hay aviones de ataque a tierra','var(--paper)'); return; }
+  const cd=k==='arty'?c.artyCD:c.airCD;
+  if(cd>0&&!net.guest){ hitMsg(`${k==='arty'?'Artillería':'Bombardeo'} del equipo en espera: ${Math.ceil(cd)} s`,'var(--paper)'); return; }
+  if(artyPick===k) artyFire(lastAim); else artyMap(k); }
+function artyMap(on){ artyPick=on; artyHover=null; document.body.classList.toggle('artyPick',!!on);
+  if(on){ if(document.pointerLockElement) document.exitPointerLock(); const K=keyName(on==='air'?binds.air:binds.arty);
+    banner(on==='air'?'Bombardeo':'Artillería',`Clic en el mapa: dónde cae · ${K}: donde apuntás · Esc: cancelar`,3); }
   else if(state==='play'&&!freeAim&&!document.pointerLockElement) lock(); }
 function mmWorld(e){ const r=mm.getBoundingClientRect(), S=400, k=S/(Math.max(W.bx,W.bz)*2+20), px=(e.clientX-r.left)/r.width*S, py=(e.clientY-r.top)/r.height*S;
   const x=(S/2-px)/k, z=(S/2-py)/k; return new THREE.Vector3(x,heightAt(x,z),z); }
-function artyFire(p){ artyMap(false); if(!player||player.dead) return;
-  if(net.guest){ hostSend({t:'sup',k:'arty',p:[p.x,p.y,p.z]}); return; }
-  if(callArtillery(player,p)) teamSup[0].arty=Math.max(teamSup[0].arty,TEAM_ARTY_CD*.6); }
+function artyFire(p){ const k=artyPick||'arty'; artyMap(false); if(!player||player.dead||!p) return;
+  if(net.guest){ hostSend({t:'sup',k,p:[p.x,p.y,p.z]}); return; }
+  if(k==='air'){ if(callAirstrike(player,p)) teamSup[0].air=Math.max(teamSup[0].air,TEAM_AIR_CD*.6); }
+  else if(callArtillery(player,p)) teamSup[0].arty=Math.max(teamSup[0].arty,TEAM_ARTY_CD*.6); }
 mm.addEventListener('mousemove',e=>{ if(artyPick) artyHover=mmWorld(e); });
 mm.addEventListener('mouseleave',()=>{ artyHover=null; });
 mm.addEventListener('mousedown',e=>{ if(!artyPick||e.button!==0) return; e.preventDefault(); e.stopPropagation(); artyFire(mmWorld(e)); });
