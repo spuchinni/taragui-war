@@ -50,7 +50,7 @@ function applyEraNations(e){
     N.label=O&&O.label||B.label; N.names=O&&O.names||B.names; N.uni=O&&O.uni||null; N.helm=O&&O.helm||null; }
 }
 // Naciones que tienen vehículos en una época (sin las especiales de Corrientes vs. Resistencia)
-const eraNations=e=>Object.keys(NATIONS).filter(n=>!NATIONS[n].special&&Object.keys(VEH).some(k=>VEH[k].nation===n&&eraOf(k)===e&&!VEH[k].static));
+const eraNations=e=>Object.keys(NATIONS).filter(n=>!NATIONS[n].special&&Object.keys(VEH).some(k=>VEH[k].nation===n&&eraOf(k)===e&&!VEH[k].static&&!VEH[k].support));
 // Bando de una nación en una época con bandos históricos (0 o 1); -1 si la época no tiene bandos
 const eraSide=(e,n)=>{ const S=ERAS[e]&&ERAS[e].sides; if(!S) return -1; return S[0].includes(n)?0:S[1].includes(n)?1:-1; };
 let curSpan=0; // largo del tanque que se está moviendo (para cruzar trincheras)

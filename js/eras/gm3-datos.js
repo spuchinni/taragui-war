@@ -423,3 +423,26 @@ W2_KEYS.push(...W2_KEYS3);
 for(const k of W2_KEYS3){ FC[k]={crew:VEH[k].seats.length}; OPTIC[k]=VEH[k].static?[3]:['p40','chinu','m4a2fr','m4a4cn'].includes(k)?[2.5,5]:[2.5,4]; }
 FC.l640.autoL=1; Object.assign(FC.m4a2fr,{stab:1}); Object.assign(FC.m4a4cn,{stab:1});
 Object.assign(GUN_ERA[3],{it:'at4732',jp:'at47jp',fr:'at47fr',cn:'pak36cn'});
+
+/* ---- Apoyo (no se juegan ni aparecen en el árbol: support:1) ----
+   Semiorugas que traen infantería a los puntos capturados y antiaéreos que defienden bases y puntos (ver refuerzos.js). */
+Object.assign(VEH,{
+  ht_de:{nation:'de',era:3,support:1,uses:1,br:3,cls:'ligero',label:'Sd.Kfz. 251 (semioruga)',desc:'El semioruga de los Panzergrenadier: lleva 10 soldados y una MG 34 con escudo.',
+    troops:6,auto:{mag:50,rof:.08},maxF:kmh2(50),maxR:3,turn:.85,trav:1.2,reload:5,pen:12,hp:50,crewReal:2,seats:['driver','gunner'],
+    armor:{hull:{front:14,side:8,rear:8,top:0},turret:{front:8,side:8,rear:8,top:0}},camo:W2DE,camoMode:'de',mgc:7.92,
+    m:{ww1:'ht',L:5.8,W:2.1,H:1.75,tz:0,tw:.8,th:.5,tl:.4,gl:.9,gr:.02,ht:{ins:'de'}}},
+  ht_al:{nation:'us',era:3,support:1,uses:1,br:3,cls:'ligero',label:'M3 Half-track',desc:'El semioruga aliado: lo usaron Estados Unidos, el Reino Unido y la URSS. Lleva un pelotón y una ametralladora pesada.',
+    troops:6,auto:{mag:50,rof:.1},maxF:kmh2(64),maxR:3,turn:.85,trav:1.2,reload:5,pen:20,hp:50,crewReal:2,seats:['driver','gunner'],
+    armor:{hull:{front:12,side:6,rear:6,top:0},turret:{front:6,side:6,rear:6,top:0}},camo:W2US,camoMode:'flat',mgc:12.7,
+    m:{ww1:'ht',L:6.2,W:2.2,H:2.0,tz:0,tw:.8,th:.5,tl:.4,gl:1.1,gr:.025,ht:{ins:'us'}}},
+  aa_de:{nation:'de',era:3,support:1,static:1,uses:1,br:3,cls:'cañón',label:'2 cm Flak 38',desc:'El antiaéreo liviano alemán: 20 mm automático, también terrible contra la infantería.',aa:1,elev:1.45,
+    auto:{mag:20,rof:.12},maxF:0,maxR:0,turn:.25,trav:1.4,reload:4,pen:22,hp:40,crewReal:4,seats:['gunner','loader','commander','driver'],
+    armor:{hull:{front:5,side:2,rear:2,top:2},turret:{front:6,side:2,rear:2,top:2}},camo:W2DEG,camoMode:'flat',mgc:7.92,
+    m:{ww1:'aa',L:3,W:2,H:1.6,tz:0,tw:1,th:.6,tl:.4,gl:1.6,gr:.028}},
+  aa_al:{nation:'uk',era:3,support:1,static:1,uses:1,br:3,cls:'cañón',label:'Bofors 40 mm',desc:'El antiaéreo aliado por excelencia, de fabricación sueca: 40 mm automático en cargadores de 4.',aa:1,elev:1.45,
+    auto:{mag:8,rof:.5},maxF:0,maxR:0,turn:.25,trav:1.0,reload:3,pen:45,hp:45,crewReal:4,seats:['gunner','loader','commander','driver'],
+    armor:{hull:{front:5,side:2,rear:2,top:2},turret:{front:6,side:2,rear:2,top:2}},camo:W2UK,camoMode:'flat',mgc:7.7,
+    m:{ww1:'aa',L:3.2,W:2.2,H:1.8,tz:0,tw:1,th:.6,tl:.4,gl:2.2,gr:.035}}
+});
+Object.assign(AMMO_DEF,{ht_de:[['MG 34 perforante','ke',12,800]],ht_al:[['Browning 12,7 mm','ke',20,850]],aa_de:[['Explosivo 20 mm','he',6,900],['Perforante 20 mm','ke',22,830]],aa_al:[['Explosivo 40 mm','he',10,850],['Perforante 40 mm','ke',45,870]]});
+for(const k of ['ht_de','ht_al','aa_de','aa_al']){ FC[k]={crew:VEH[k].seats.length,autoL:1}; OPTIC[k]=[2]; }

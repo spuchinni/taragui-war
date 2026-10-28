@@ -17,12 +17,12 @@ function updateWeather(dt){
   if(WX.storm&&now>boltT){ boltT=now+rand(7,16); hemi.intensity=1.6; scene.background.set(0x8a96a8); setTimeout(()=>{ lastTh=null; },110); setTimeout(()=>boom(.7,3.5,110),rand(600,2600)); }
 }
 function clearBattle(){
-  tanks.slice().forEach(removeTank); colliders=[];
+  tanks.slice().forEach(removeTank); colliders=[]; mechCorpses.forEach(g=>scene.remove(g)); mechCorpses.length=0;
   shells.forEach(s=>scene.remove(s.m)); shells.length=0; arty.length=0; scorches.forEach(S=>{scene.remove(S.m);S.m.material.dispose();}); scorches.length=0;
   marks.forEach(M=>scene.remove(M.g)); marks.length=0; planes.forEach(P=>{scene.remove(P.g); if(P.snd) P.snd.stop();}); planes.length=0; stopAllLoops(); bombs.forEach(B=>scene.remove(B.m)); bombs.length=0;
   if(builtKey){buildWorld(builtKey);}
   tickets=[400,400]; tickT=0; resetZones(); player=null; hitDirs.length=0; smolder.length=0; smokes.length=0; pings.length=0; a10s.forEach(A=>{scene.remove(A.g); if(A.snd) A.snd.stop();}); a10s.length=0; { const o=document.getElementById('oob'); if(o) o.style.opacity=0; }
-  infantry.slice().forEach(removeInf); infantry.length=0; clearCivLife();
+  infantry.slice().forEach(removeInf); infantry.length=0; clearCivLife(); clearRefuerzos();
   if(nuke){ if(nuke.plane){ scene.remove(nuke.plane.g); if(nuke.plane.snd) nuke.plane.snd.stop(); } if(nuke.bomb) scene.remove(nuke.bomb.m); if(nuke.cloud&&!nuke.cloud.done){ scene.remove(nuke.cloud.g); nuke.cloud.parts.forEach(P=>P.m.material.dispose()); } } nuke=null;
   if(camera.far!==1000){ camera.far=1000; camera.updateProjectionMatrix(); }
   nukeView=null; { const b=document.getElementById('nukeSum'); if(b) b.style.display='none'; }
@@ -77,7 +77,7 @@ function startBattle(spectator=false,forceMap=null,special=null,noBrief=false){ 
   if(special&&special.tickets) tickets=special.tickets.slice();
   if(RULE().guns&&!net.guest){ const g=special&&special.guns||[1,2]; placeGuns(0,allyNation,g[0]); placeGuns(1,foeNation,g[1]); }
   now=0; noises.length=0; battleKills=0; lastKillCrew=null; teamSup[0]={...SUP_START}; teamSup[1]={...SUP_START}; if(!tut) for(const c of crews){ c.artyCD=ARTY_CD; c.airCD=AIR_CD; } updateInfantry.t=40;
-  if(!net.guest){ const sq=special&&special.squads||[2,2]; for(const tm of [0,1]) for(let i=0;i<sq[tm];i++) spawnSquad(tm); if(RULE().civ){ spawnCivilians(streetSegs.length?20:12); spawnTraffic(W.city?16:streetSegs.length>20?8:0); } if(W.setup) W.setup(); }
+  if(!net.guest){ const sq=special&&special.squads||[2,2]; for(const tm of [0,1]) for(let i=0;i<sq[tm];i++) spawnSquad(tm); if(RULE().civ){ spawnCivilians(streetSegs.length?20:12); spawnTraffic(W.city?16:streetSegs.length>20?8:0); } if(W.setup) W.setup(); initRefuerzos(); }
   updateHud();
   if(typeof objStart==='function'){ curObj=null; objUI(''); if(special&&special.obj&&!spectator) objStart(special.obj); } // objetivo de la misión (objetivos.js)
   if(noBrief) openDeploy(); else openBriefing(spectator);

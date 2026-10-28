@@ -33,12 +33,13 @@ function updateShells(dt){
       const h=dt/3, p0=s.p.clone();
       s.v.y-=G*h; s.p.addScaledVector(s.v,h); const seg=s.p.distanceTo(p0); s.travel+=seg;
       const dir=s.p.clone().sub(p0).normalize();
-      if(!s.fx&&infOnRay(p0,dir,seg,s.owner,.8)>=0&&s.A.kind!=='ke'){ blast(s.p,.3); infBlast(s.p,3,s.owner); done=true; break; }
+      if(!s.fx&&infOnRay(p0,dir,seg,s.owner,.8,'blast')>=0&&s.A.kind!=='ke'){ blast(s.p,.3); infBlast(s.p,3,s.owner); done=true; break; }
       ray.set(p0,dir); ray.far=seg;
       let hits=ray.intersectObjects(colliders.concat(houseMeshes,treeMeshes(),civHits),false).filter(x=>x.object.userData.tank!==s.owner);
       ray.far=Infinity;
       hits=hits.filter(x=>{const tr=treeOf(x); if(!tr) return true; if(!tr.fallen){knockTree(tr,dir.x,dir.z);debris(x.point,4,dirtMat,3,.6);} return false;});
       if(hits.length){ const hit=hits[0];
+        if(hit.object.userData.wplane){ explode(hit.point,'metal'); if(!s.fx) wplaneHit(hit.object.userData.wplane,s.A.kind==='ke'?40:70,s.owner); done=true; break; }
         if(hit.object.userData.plane){ explode(hit.point,'metal'); if(!s.fx) planeHit(hit.object.userData.plane,s.A.kind==='ke'?55:110,s.owner); done=true; break; }
         if(s.fx){ const tk=hit.object.userData.tank; explode(hit.point,tk?'metal':'ground'); { const fb=bldOf(hit); if(fb) markBuilding(hit,fb,rand(.6,1.2),'big'); } if(tk) clang(distVol(hit.point,.25)); else boom(distVol(hit.point,.25),.5,500); done=true; break; }
         if(s.rocket){ blast(hit.point,.25); noise(hit.point,80); }
@@ -187,14 +188,34 @@ function barrelHit(t,by,kind,pen,A){
 function setBarrelLook(t){ const m=t.barrelMesh; if(!m) return; const b=t.mod.barrel??100;
   if(b<=0){ m.scale.y=.6; m.position.z=t.T.m.gl*.3+.35; m.rotation.x=Math.PI/2+.12; }
   else { m.scale.y=1; m.position.z=t.T.m.gl/2+.35; m.rotation.x=Math.PI/2+(b<60?.035:0); } }
-// Mecánico: al reparar, un tripulante se baja y trabaja al costado del tanque (lo pueden herir)
+// Mecánico: al reparar, un tripulante se baja con la caja de herramientas, va al lugar del daño (oruga al costado, motor atrás,
+// cañón adelante) y trabaja ahí. Lo pueden matar (ametralladora, fusiles, esquirlas): se corta la reparación y queda el cuerpo.
+const toolMat=new THREE.MeshLambertMaterial({color:0x8a2a1e}), mechCorpses=[];
+function mechSpot(t){ const M=t.T.m, tr=t.trkHP||[100,100];
+  if(t.trackT>0||tr[0]<100||tr[1]<100) return {lx:(tr[1]<tr[0]?-1:1)*(M.W/2+.7),lz:M.L*.3,face:tr[1]<tr[0]?Math.PI/2:-Math.PI/2,kneel:1}; // oruga: al costado, cerca de la rueda motriz
+  if(t.mod.engine<100||t.fireT>0) return {lx:.3,lz:-M.L/2-.75,face:0,kneel:0};                                                       // motor: atrás, parado contra la cubierta
+  if((t.mod.barrel??100)<100||t.mod.breech<100) return {lx:-.6,lz:M.L/2+.8,face:Math.PI,kneel:0};                                   // cañón: adelante
+  return {lx:M.W/2+.7,lz:0,face:-Math.PI/2,kneel:1}; }
+function mechKill(t,by){ if(!t.mech) return; const m=t.crewM.find(x=>x.alive&&x.seat!=='driver'&&x.seat!=='gunner')||t.crewM.find(x=>x.alive); if(m){ m.alive=false; m.hp=0; }
+  t.repairT=0; tell(t,'¡Mataron al tripulante que reparaba afuera!','var(--enemy)'); if(by&&by.crew&&by.team!==t.team) addSP(by,8,10,'Tripulante abatido');
+  const g=t.mech.g; g.rotation.x=-Math.PI/2; g.position.y+=.22; const p=t.mech.parts; if(p&&p.hip){ p.hip.rotation.x=0; p.hip.position.y=.88; } mechCorpses.push(g); t.mech=null; t.hp=t.T.hp*t.crewM.reduce((a,x)=>a+Math.max(0,x.hp),0)/(t.crewM.length*100); }
 function mechSync(t){
   const want=t.repairT>0&&!t.dead;
-  if(want&&!t.mech){ const P=personMesh({kind:'crew',team:t.team,nat:t.crew&&t.crew.nation}); P.g.userData.mech=true; scene.add(P.g); t.mech=P; t.mechA=0; }
+  if(want&&!t.mech){ const P=personMesh({kind:'crew',team:t.team,nat:t.crew&&t.crew.nation}); P.g.userData.mech=true; scene.add(P.g); t.mech=P; t.mechA=0; t.mechWalk=0;
+    const tb=new THREE.Group(); box(tb,.42,.18,.2,0,.09,0,toolMat); box(tb,.3,.04,.04,0,.22,0,darkMat); P.g.add(tb); P.tool=tb; }
   if(!want&&t.mech){ scene.remove(t.mech.g); t.mech=null; }
-  if(t.mech){ const M=t.T.m, side=t.trackT>0||(t.trkHP&&t.trkHP[1]<t.trkHP[0])?-1:1, c=Math.cos(t.heading), sn=Math.sin(t.heading), lx=side*(M.W/2+.75), lz=M.L*.12;
-    const x=t.pos.x+lx*c+lz*sn, z=t.pos.z-lx*sn+lz*c; const g=t.mech.g; g.position.set(x,heightAt(x,z),z); g.rotation.y=t.heading-side*Math.PI/2;
-    t.mechA=(t.mechA||0)+.016*9; const p=t.mech.parts; p.hip.position.y=.5; p.hip.rotation.x=.55; p.legL.rotation.x=-1.3; p.legR.rotation.x=-.4; p.armR.rotation.x=-1.6+Math.sin(t.mechA)*.6; p.armL.rotation.x=-1.1; }
+  if(t.mech){ const S=mechSpot(t), c=Math.cos(t.heading), sn=Math.sin(t.heading), g=t.mech.g, p=t.mech.parts;
+    // baja por la escotilla y camina hasta el lugar (los primeros 1,5 s)
+    t.mechWalk=Math.min(1,(t.mechWalk||0)+.016/1.5); const u=t.mechWalk, lx=S.lx*u, lz=S.lz*u;
+    const x=t.pos.x+lx*c+lz*sn, z=t.pos.z-lx*sn+lz*c; g.position.set(x,heightAt(x,z),z); g.rotation.y=t.heading+S.face;
+    t.mechA=(t.mechA||0)+.016*9;
+    if(u<1){ const w=Math.sin(t.mechA*1.4); p.hip.position.y=.88; p.hip.rotation.x=.1; p.legL.rotation.x=w*.6; p.legR.rotation.x=-w*.6; p.armL.rotation.x=-.2; p.armR.rotation.x=-.5;
+      t.mech.tool.position.set(.28,.62,.05); }
+    else if(S.kneel){ p.hip.position.y=.5; p.hip.rotation.x=.55; p.legL.rotation.x=-1.3; p.legR.rotation.x=-.4; p.armR.rotation.x=-1.5+Math.sin(t.mechA)*.7; p.armL.rotation.x=-1.0+Math.sin(t.mechA*.5)*.15;
+      t.mech.tool.position.set(-.45,0,.25); }                        // de rodillas golpeando el eslabón
+    else { p.hip.position.y=.88; p.hip.rotation.x=.35; p.legL.rotation.x=-.15; p.legR.rotation.x=.1; p.armR.rotation.x=-1.9+Math.sin(t.mechA)*.45; p.armL.rotation.x=-1.7+Math.cos(t.mechA*.8)*.25;
+      t.mech.tool.position.set(-.5,0,.15); }                         // parado, con los brazos en el motor o el cañón
+  }
 }
 // Explosivo que no entra: onda sobre tanques cercanos con blindaje fino y orugas
 function heSplash(p,by,A,direct){
@@ -301,6 +322,7 @@ function killAwards(t,by){
   if(t.hitters) for(const [c,tt] of t.hitters){ if(c===kc||now-tt>30||c.team===t.team) continue; c.assists=(c.assists||0)+1; award(c,'Asistencia',40,50); }
 }
 function destroy(t,by,rack){
+  if(t.mech){ scene.remove(t.mech.g); t.mech=null; } t.repairT=0; // si estaba reparando, el mecánico no queda flotando ni el tanque trabado
   t.dead=true; t.hp=0; t.speed=0; t.rack=rack; t.mat.color.setHex(0x2e2a26); t.deadT=0; groundMark(t.pos,t.T.m.L*.7);
   if(t.trk) t.trk.mats.forEach(m=>m.color.setHex(0x555555)); if(t.ant) t.ant.visible=false; if(t.deco) t.deco.forEach(o=>o.visible=false); if(t.mud) t.mud.color.setHex(0x2e2a26);
   t.popV=rack?rand(6,9):0;
@@ -340,6 +362,7 @@ function fireMG(t){
   for(let s=3;s<dist;s+=3){const p=o.clone().addScaledVector(d,s); if(p.y<heightAt(p.x,p.z)){dist=s;hit=null;debris(p,2,dirtMat,2,.5);break;}}
   const end=o.clone().addScaledVector(d,dist);
   if(t.mgN++%3===0) tracer(o,end,t.team===0?0xffd080:0xff9a70);
+  if(hit&&hit.object.userData.wplane){ debris(hit.point,2,sparkMat,2,.5); wplaneHit(hit.object.userData.wplane,3,t); hit=null; }
   if(hit&&hit.object.userData.plane){ debris(hit.point,2,sparkMat,2,.5); planeHit(hit.object.userData.plane,2,t); hit=null; }
   if(hit){ const tr=treeOf(hit); if(tr){ tr.hp-=1; debris(hit.point,2,leafMat,2,.5); if(tr.hp<=0) knockTree(tr,d.x,d.z); }
     else if(hit.object.userData.tank){ if(!net.guest) hitTank(t,hit,d,mgPen(mgCal(t)),'mg'); } else { debris(hit.point,2,dirtMat,2,.5); const b=bldOf(hit); if(b){ if(Math.random()<.6) markBuilding(hit,b,rand(.14,.24)*(mgCal(t)>=12?1.6:1),'mg'); if(Math.random()<.15) damageBuilding(b,mgCal(t)>=12?8:2.5); } } }
@@ -386,7 +409,7 @@ function splash(p,by,r,power,bldDmg){
       // Esquirlas: atraviesan blindaje fino y hieren a la tripulación (más si el tanque es liviano o la explosión fue cerca)
       const sh=clamp(25/Math.max(side,8),.15,2.5)*k*power*.55; for(const m of t.crewM) if(m.alive&&Math.random()<sh){ m.hp-=rand(25,55)*k*power; if(m.hp<=0){m.alive=false; if(t.isPlayer) hitMsg('Esquirlas: tripulante herido','var(--enemy)');} }
       if(Math.random()<k*.35*power) { t.mod.breech-=40*k; if(t.mod.breech<=0){t.mod.breech=0;t.breechT=12;} } }
-    if(t.mech&&d<r+2&&t.immuneT<=0){ const m=t.crewM.find(x=>x.alive&&x.seat!=='driver'&&x.seat!=='gunner')||t.crewM.find(x=>x.alive); if(m){ m.alive=false; m.hp=0; } t.repairT=0; tell(t,'¡Hirieron al tripulante que reparaba afuera!','var(--enemy)'); }
+    if(t.mech&&t.mech.g.position.distanceTo(p)<r+2&&t.immuneT<=0) mechKill(t,by);
     if(Math.random()<k*.3) { t.mod.barrel=Math.max(0,(t.mod.barrel??100)-50*k*power); setBarrelLook(t); }
     damage(t,dmg,by,false);
     if(by.isPlayer&&t.immuneT<=0) hitMsg('Impacto de apoyo','var(--amber)');
@@ -433,12 +456,12 @@ function updateArty(dt){
   for(let i=arty.length-1;i>=0;i--){ const a=arty[i]; if(!a.fl&&now>=a.t-3.2){ a.fl=true; gunFlash(a.by.team,a.p); } // fogonazo de la batería, 3 s antes de caer
     if(!a.w&&now>=a.t-1.6){ a.w=true; incoming(a.p.clone().setY(heightAt(a.p.x,a.p.z)),a.t-now,.5,'shell'); } if(now<a.t) continue;
     a.p.y=heightAt(a.p.x,a.p.z); blast(a.p,1); addCrater(a.p,3.4,1.1); splash(a.p,a.by,13,1.25,120); arty.splice(i,1); }
-  for(let i=planes.length-1;i>=0;i--){ const P=planes[i]; P.g.position.addScaledVector(P.dir,P.v*dt); P.life-=dt; if(P.snd) P.snd.set(P.g.position);
+  for(let i=planes.length-1;i>=0;i--){ const P=planes[i]; if(P.down){ if(planeFall(P,dt)){ if(P.snd) P.snd.stop(); scene.remove(P.g); unhit(P); planes.splice(i,1); } continue; } P.g.position.addScaledVector(P.dir,P.v*dt); P.life-=dt; if(P.snd) P.snd.set(P.g.position);
     for(const d of P.drops){ if(d.done) continue; const rel=P.g.position.clone().sub(d.at); rel.y=0;
       if(rel.dot(P.dir)>=0){ d.done=true; const m=new THREE.Mesh(bombGeo,darkMat); m.position.copy(P.g.position).setY(P.g.position.y-1); m.lookAt(m.position.clone().add(P.dir));
         scene.add(m); bombs.push({m,v:P.dir.clone().multiplyScalar(P.v),by:P.by});
         { const gh=heightAt(d.hit.x,d.hit.z), tf=Math.sqrt(Math.max(1,2*(m.position.y-gh)/G)); incoming(d.hit.clone().setY(gh),tf,.6,'bomb'); } } }
-    if(P.life<=0){ if(P.snd) P.snd.stop(); scene.remove(P.g); planes.splice(i,1); } }
+    if(P.life<=0){ if(P.snd) P.snd.stop(); scene.remove(P.g); unhit(P); planes.splice(i,1); } }
   for(let i=bombs.length-1;i>=0;i--){ const B=bombs[i]; B.v.y-=G*dt; B.m.position.addScaledVector(B.v,dt); B.m.lookAt(B.m.position.clone().add(B.v));
     const p=B.m.position, gh=heightAt(p.x,p.z);
     if(p.y<=gh+.3){ const q=p.clone().setY(gh); scene.remove(B.m); bombs.splice(i,1); blast(q,1.6); addCrater(q,5.2,1.7); splash(q,B.by,19,2.4,300); } }

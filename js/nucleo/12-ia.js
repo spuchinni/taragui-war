@@ -201,8 +201,8 @@ function updateZones(dt){
     if(e&&!a) Z.cap=Math.max(-100,Z.cap-dt*9*Math.min(e,3));
     const award=team=>inside.forEach(t=>{if(t.team===team){addSP(t,60,60,'Punto capturado');t.crew.caps++;}});
     const mine=playerCrew?0:0;
-    if(Z.cap>=100&&Z.owner!==1){Z.owner=1;feed(`Punto ${Z.id} (${Z.label}) capturado por ${NATIONS[teamNation(0)].label}`,'var(--ally)');Z.mat.color.set(0x8fd16a);award(0);}
-    if(Z.cap<=-100&&Z.owner!==-1){Z.owner=-1;feed(`Punto ${Z.id} (${Z.label}) capturado por ${NATIONS[teamNation(1)].label}`,'var(--enemy)');Z.mat.color.set(0xff5a3c);award(1);}
+    if(Z.cap>=100&&Z.owner!==1){Z.owner=1;feed(`Punto ${Z.id} (${Z.label}) capturado por ${NATIONS[teamNation(0)].label}`,'var(--ally)');Z.mat.color.set(0x8fd16a);award(0);onZoneCaptured(Z,0);}
+    if(Z.cap<=-100&&Z.owner!==-1){Z.owner=-1;feed(`Punto ${Z.id} (${Z.label}) capturado por ${NATIONS[teamNation(1)].label}`,'var(--enemy)');Z.mat.color.set(0xff5a3c);award(1);onZoneCaptured(Z,1);}
     if((Z.owner===1&&Z.cap<=0)||(Z.owner===-1&&Z.cap>=0)){Z.owner=0;Z.mat.color.set(0xefe7d2);feed(`El punto ${Z.id} quedó neutral`,'var(--paper)');}
     const el=$('zb'+Z.id); if(el){const f=el.firstChild; f.style.height=Math.abs(Z.cap)+'%'; f.style.background=Z.cap>=0?'var(--ally)':'var(--enemy)';
       el.style.outlineColor=Z.owner===1?'var(--ally)':Z.owner===-1?'var(--enemy)':'var(--paper)';}

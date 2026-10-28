@@ -11,6 +11,7 @@ const IGEO=(()=>{ const pv=(w,h,d)=>{ const g=new THREE.BoxGeometry(w,h,d); g.tr
     leg:pv(.17,.86,.18),arm:pv(.12,.58,.12),gun:new THREE.BoxGeometry(.07,.07,.95),tube:new THREE.CylinderGeometry(.08,.08,1.1,6),hmg:new THREE.BoxGeometry(.11,.13,1.35),
     mort:new THREE.CylinderGeometry(.06,.07,1.0,6),pack:new THREE.BoxGeometry(.34,.4,.18),dogB:new THREE.BoxGeometry(.28,.3,.75),dogH:new THREE.BoxGeometry(.2,.2,.32),dogL:pv(.08,.36,.08),blood:bl}; })();
 const bloodMat=new THREE.MeshBasicMaterial({color:0x4a120d,transparent:true,opacity:.7,depthWrite:false});
+const gibGeo=new THREE.BoxGeometry(.13,.1,.12), gibMat=new THREE.MeshLambertMaterial({color:0x6a1a12});
 const INF_KIND={rifle:'Fusilero',at:'Soldado antitanque',hmg:'Ametralladora pesada',sniper:'Francotirador',eng:'Ingeniero',mortar:'Mortero',civ:'Civil',dog:'Perro'};
 const KIND_CODE={civ:0,rifle:1,at:2,hmg:3,sniper:4,eng:5,mortar:6,dog:7}, CODE_KIND=Object.fromEntries(Object.entries(KIND_CODE).map(([k,v])=>[v,k]));
 let infSeq=0;
@@ -131,12 +132,12 @@ function animInf(P,dt){
   if(P.kind==='dog'){ P.bob+=dt*(2+spd*3); const a=spd>.2?Math.sin(P.bob)*.7:0; p.legs.forEach((l,i)=>l.rotation.x=(i===0||i===3)?a:-a); P.g.rotation.y=P.heading; return; }
   P.bob+=dt*(1.5+spd*2.2); const sw=spd>.2?Math.sin(P.bob)*Math.min(.95,.3+spd*.14):0, k=Math.min(1,dt*8);
   let hy=.88, lean=spd>3.5?.25:0, legF=0;
-  if(P.pose===1){ hy=.58; legF=.8; lean=.3; } else if(P.pose===2){ hy=.2; lean=1.45; } else if(P.pose===3){ hy=.48; legF=1.1; lean=.7; }
+  if(P.pose===1){ hy=.58; legF=.8; lean=.3; } else if(P.pose===2){ hy=.2; lean=1.45; } else if(P.pose===3){ hy=.48; legF=1.1; lean=.7; } else if(P.pose===4){ hy=.72; legF=.4; lean=.5; } // 4 = corre agachado
   p.hip.position.y+=(hy-p.hip.position.y)*k; p.hip.rotation.x+=(lean-p.hip.rotation.x)*k;
   const lf=P.pose===2?-1.45:-legF*.6;
   p.legL.rotation.x=lf+(P.pose===2?0:sw); p.legR.rotation.x=lf-(P.pose===2?0:sw);
   if(P.pose===3){ p.armL.rotation.x=-2.6; p.armR.rotation.x=-2.6; }
-  else if(P.armed&&spd<3.5&&P.kind!=='mortar'){ p.armL.rotation.x=-1.15; p.armR.rotation.x=-1.0; }
+  else if(P.armed&&(spd<3.5||P.pose===4)&&P.kind!=='mortar'){ const kk=now-(P.kickT||0)<.12?.22:0; p.armL.rotation.x=-1.15-kk; p.armR.rotation.x=-1.0-kk; } // retroceso al tirar
   else { p.armL.rotation.x=-sw*.9; p.armR.rotation.x=sw*.9; }
   P.g.rotation.y=P.heading;
 }
@@ -148,6 +149,10 @@ function infDeathFx(P,how){
     for(const key of ['head','armL','armR','legL','legR','torso']){ const m=P.parts[key]; if(!m) continue; const wp=new THREE.Vector3(), wq=new THREE.Quaternion(); m.getWorldPosition(wp); m.getWorldQuaternion(wq);
       const c=new THREE.Mesh(m.geometry,m.material); c.position.copy(wp); c.quaternion.copy(wq); scene.add(c);
       P.gibs.push({m:c,v:new THREE.Vector3(rand(-4,4),rand(3,8),rand(-4,4)),av:new THREE.Vector3(rand(-9,9),rand(-9,9),rand(-9,9)),rest:false}); }
+    // pedazos chicos (carne, tela y equipo) que vuelan más lejos
+    for(let i=0;i<7;i++){ const c=new THREE.Mesh(gibGeo,i<4?gibMat:i<6&&P.parts.torso?P.parts.torso.material:darkMat); c.scale.set(rand(.5,1.3),rand(.4,1),rand(.5,1.3));
+      c.position.copy(P.pos).add(new THREE.Vector3(rand(-.3,.3),rand(.6,1.4),rand(-.3,.3))); scene.add(c);
+      P.gibs.push({m:c,v:new THREE.Vector3(rand(-7,7),rand(4,10),rand(-7,7)),av:new THREE.Vector3(rand(-12,12),rand(-12,12),rand(-12,12)),rest:false}); }
     P.g.visible=false;
     for(let i=0;i<4;i++) puff(P.pos.clone().add(new THREE.Vector3(rand(-.6,.6),rand(.5,1.5),rand(-.6,.6))),0x5a1810,rand(.8,1.4),.7,.6,.6);
     const bl=new THREE.Mesh(IGEO.blood,bloodMat); bl.scale.setScalar(rand(.9,1.6)); bl.position.set(P.pos.x,heightAt(P.pos.x,P.pos.z)+.06,P.pos.z); scene.add(bl); P.blood=bl; }
@@ -191,12 +196,18 @@ function killInf(P,by,how){
 }
 function infBlast(p,r,by){
   for(const P of infantry){ if(P.dead||(by&&!isCiv(P)&&P.team===by.team)) continue; const d=P.pos.distanceTo(p);
-    if(d<r&&Math.random()<(d<r*.6?1:.5)) killInf(P,by,r>2.5?'blast':'shot');
+    if(d<r&&Math.random()<(d<r*.6?1:.5)) killInf(P,by,r>2.5||d<r*.7?'blast':'shot'); // cerca de la explosión: destrozado
     else if(d<r*3){ P.supT=now+rand(3,6); if(isCiv(P)){ P.cower=now+rand(.8,1.8); P.flee=true; P.goal=null; } else if(Math.random()<.6) P.proneT=now+rand(1.5,3); } }
+  for(const t of tanks) if(t.mech&&(!by||by.team!==t.team)&&t.mech.g.position.distanceTo(p)<r) mechKill(t,by);
   carsBlast(p,r,by);
 }
-function infOnRay(o,d,len,by,chance){ for(const P of infantry){ if(P.dead||(by&&!isCiv(P)&&P.team===by.team)) continue;
-    const c=P.pos.clone().setY(P.pos.y+(P.pose===2?.3:1)), s=clamp(c.clone().sub(o).dot(d),0,len); if(c.distanceTo(o.clone().addScaledVector(d,s))<.6&&Math.random()<chance){killInf(P,by);return s;} } return -1; }
+// how='blast': un proyectil de cañón destroza al soldado
+function infOnRay(o,d,len,by,chance,how){ for(const P of infantry){ if(P.dead||(by&&!isCiv(P)&&P.team===by.team)) continue;
+    const c=P.pos.clone().setY(P.pos.y+(P.pose===2?.3:1)), s=clamp(c.clone().sub(o).dot(d),0,len); if(c.distanceTo(o.clone().addScaledVector(d,s))<.6&&Math.random()<chance){killInf(P,by,how);return s;} }
+  // el tripulante que repara afuera también recibe tiros
+  for(const t of tanks){ if(!t.mech||(by&&by.team===t.team)) continue; const c=t.mech.g.position.clone(); c.y+=.8; const s=clamp(c.clone().sub(o).dot(d),0,len);
+    if(c.distanceTo(o.clone().addScaledVector(d,s))<.55&&Math.random()<chance){ mechKill(t,by&&by.tank?by.tank:by); return s; } }
+  return -1; }
 function walk(P,tx,tz,spd,dt){
   const dx=tx-P.pos.x, dz=tz-P.pos.z, l=Math.hypot(dx,dz); if(l<.5){ P.spd=0; return true; }
   P.heading=Math.atan2(dx,dz); const ox=P.pos.x, oz=P.pos.z;
@@ -304,13 +315,13 @@ function soldierThink(P,dt){
     return; }
   if(T){
     P.heading=Math.atan2(T.pos.x-P.pos.x,T.pos.z-P.pos.z); P.fireT-=dt; const d=T.pos.distanceTo(P.pos);
-    if(P.pose!==2) P.pose=K==='hmg'||K==='mortar'||K==='sniper'?(K==='hmg'?2:1):(P.cover?1:0);
+    if(P.pose!==2) P.pose=K==='hmg'||K==='mortar'||K==='sniper'?(K==='hmg'?2:1):(P.supT>now&&K!=='at'&&!P.cover?2:1); // rodilla en tierra; cuerpo a tierra bajo fuego
     // el antitanque busca el costado: si el tanque lo mira de frente, se mueve antes de tirar
     if(K==='at'&&!T.inf&&!P.flanked){ const face=wrap(T.heading+(T.turretYaw||0)-Math.atan2(P.pos.x-T.pos.x,P.pos.z-T.pos.z));
       if(Math.abs(face)<.8&&d<190){ if(!P.flankP){ const a=Math.atan2(P.pos.x-T.pos.x,P.pos.z-T.pos.z)+(Math.random()<.5?1:-1)*1.1, R=Math.max(40,d*.8), x=T.pos.x+Math.sin(a)*R, z=T.pos.z+Math.cos(a)*R; P.flankP=freeInf(x,z)?{x,z}:null; P.flankT=now+12; }
         if(P.flankP&&now<P.flankT){ if(walk(P,P.flankP.x,P.flankP.z,3.6,dt)) P.flanked=true; P.pose=0; return; } }
       P.flanked=true; }
-    if(P.cover&&Math.hypot(P.cover.x-P.pos.x,P.cover.z-P.pos.z)>1.2&&K!=='hmg'){ walk(P,P.cover.x,P.cover.z,4,dt); P.pose=0; }
+    if(P.cover&&Math.hypot(P.cover.x-P.pos.x,P.cover.z-P.pos.z)>1.2&&K!=='hmg'){ walk(P,P.cover.x,P.cover.z,4,dt); P.pose=4; }
     if(P.fireT<=0){ const o=infEye(P), aim=T.inf?infEye(T).setY(T.pos.y+1):T.pos.clone().setY(T.pos.y+(T.aimH||1));
       if(K==='at'&&!T.inf){ P.fireT=rand(12,16);
         const miss=!infHit(P,T,d,.12), dx=aim.x-o.x, dz=aim.z-o.z, hd=Math.hypot(dx,dz), yaw=Math.atan2(dx,dz)+rand(-1,1)*.012+(miss?(Math.random()<.5?-1:1)*rand(4,8)/Math.max(hd,20):0), pit=ballisticPitch(hd,aim.y-o.y,ROCKET.v)+rand(-1,1)*.01+(miss?rand(-1,1)*2/Math.max(hd,20):0);
@@ -331,18 +342,19 @@ function soldierThink(P,dt){
         if(T.inf){ infShoot(P,o,aim,0xfff2c0); if(Math.random()<clamp(.75-d/900,.3,.7)) killInf(T,P); }
         else if(Math.abs(T.speed)<2.5&&T.crewM.some(m=>m.alive&&m.seat==='commander')&&Math.random()<.3&&infHit(P,T,d,.05)){ const m=T.crewM.find(x=>x.alive&&x.seat==='commander'); m.alive=false; m.hp=0; infShoot(P,o,aim,0xfff2c0);
           tell(T,'¡Francotirador! Perdimos al comandante','var(--enemy)'); if(T.isPlayer) radio('¡Perdimos al comandante!',2); T.hp=T.T.hp*T.crewM.reduce((a,x)=>a+Math.max(0,x.hp),0)/(T.crewM.length*100); if(crewAlive(T)<2) destroy(T,P,false); } }
-      else if(K==='rifle'){ P.fireT=rand(.7,1.5);
+      else if(!T.inf&&T.mech&&(K==='rifle'||K==='eng'||K==='at')&&d<220&&Math.random()<.5){ P.fireT=rand(.8,1.4); const mp=T.mech.g.position.clone(); mp.y+=.9; infShoot(P,o,mp); if(Math.random()<clamp(.45-d/500,.08,.4)) mechKill(T,P); } // le tiran al que repara afuera
+      else if(K==='rifle'){ P.fireT=rand(.7,1.5); P.kickT=now; P.mag=(P.mag??5)-1; if(P.mag<=0){ P.mag=5; P.fireT=rand(2.5,3.5); }
         infShoot(P,o,aim.clone().add(new THREE.Vector3(rand(-1,1),rand(-.5,.5),rand(-1,1)).multiplyScalar(d*.01)));
         if(T.inf){ if(Math.random()<clamp(.35-d/400,.06,.3)) killInf(T,P); } else debris(aim,1,sparkMat,2,.4); }
       else P.fireT=1; }
     return; }
   // sin blanco: avanza por tramos, se cubre si hay amenaza
-  if(P.cover&&(P.threat||P.supT>now)){ if(walk(P,P.cover.x,P.cover.z,4,dt)) P.pose=1; return; }
+  if(P.cover&&(P.threat||P.supT>now)){ P.pose=4; if(walk(P,P.cover.x,P.cover.z,4,dt)) P.pose=1; return; }
   P.advT=(P.advT||0)-dt; if(P.advT<=0){ P.hold=!P.hold&&!!P.threat; P.advT=P.hold?rand(2.5,4.5):rand(5,9); }
   if(P.hold){ P.pose=1; return; }
   if(P.goal&&W.bridge&&Math.sign(P.pos.x)!==Math.sign(P.goal.x)&&Math.abs(P.pos.x)>DECK_END-4&&Math.abs(P.pos.z)>3){ walk(P,Math.sign(P.pos.x)*(DECK_END+2),0,2.6,dt); }
   else if(P.goal&&W.bridge&&Math.sign(P.pos.x)!==Math.sign(P.goal.x)){ walk(P,-Math.sign(P.pos.x)*(DECK_END+3),0,2.6,dt); }
-  else if(P.goal){ if(walk(P,P.goal.x,P.goal.z,P.threat?3.8:2.6,dt)) P.goal=Math.random()<.3?null:{x:P.pos.x+rand(-5,5),z:P.pos.z+rand(-5,5)}; }
+  else if(P.goal){ if(P.threat&&!isCiv(P)) P.pose=4; if(walk(P,P.goal.x,P.goal.z,P.threat?3.8:2.6,dt)) P.goal=Math.random()<.3?null:{x:P.pos.x+rand(-5,5),z:P.pos.z+rand(-5,5)}; }
 }
 // Infantería contra el tanque de un jugador: misma vara que los bots (dificultad, distancia, si se mueve) y el primer tiro de cada soldado falla
 function infHit(P,T,d,base){ const human=T.isPlayer||(T.crew&&T.crew.peer)||T.net; if(!human) return true;

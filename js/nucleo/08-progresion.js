@@ -11,7 +11,7 @@ const BR_TABLE={stuart:2.0,m113:2.7,sherman:3.3,ee9:4.0,vctp:4.3,m41u:4.3,pt76:4
 for(const k in VEH) VEH[k].br=VEH[k].br||BR_TABLE[k]||5;
 const brTxt=b=>b.toFixed(1);
 // Árbol de una nación en una época (por defecto, la elegida en el menú). Los cañones de campaña no son jugables.
-function vehTreeE(n,e){ return Object.keys(VEH).filter(k=>VEH[k].nation===n&&eraOf(k)===e&&!VEH[k].static).sort((a,b)=>VEH[a].br-VEH[b].br||(VEH[a].year||0)-(VEH[b].year||0)); }
+function vehTreeE(n,e){ return Object.keys(VEH).filter(k=>VEH[k].nation===n&&eraOf(k)===e&&!VEH[k].static&&!VEH[k].support).sort((a,b)=>VEH[a].br-VEH[b].br||(VEH[a].year||0)-(VEH[b].year||0)); }
 function vehTree(n){ return vehTreeE(n,curEra); }
 const RANK_ROMAN=['','I','II','III','IV','V'], RANK_K={1:1,2:1.7,3:2.6,4:3.6,5:4.8}, RANK_NEED=3, YP_START=2000;
 const rankOf=k=>eraOf(k);
@@ -133,9 +133,8 @@ function zoneSpawn(Z,team){
   return {x:Z.x+dx/d*Z.r*.7,z:Z.z+dz/d*Z.r*.7};
 }
 function spawnPoints(team){
-  const list=W.sp[team].map(s=>({...s})), mine=team===0?1:-1;
-  for(const Z of zones) if(Z.owner===mine){const p=zoneSpawn(Z,team); list.push({label:`Punto ${Z.id}, ${Z.label} (capturado)`,x:p.x,z:p.z});}
-  return list;
+  // solo desde las bases propias (pedido de Sebastián): los puntos capturados ya no sirven para reaparecer
+  return W.sp[team].map(s=>({...s}));
 }
 function nearestZone(x,z,filter){let best=null,bd=1e9;for(const Z of zones){if(filter&&!filter(Z))continue;const d=Math.hypot(Z.x-x,Z.z-z);if(d<bd){bd=d;best=Z;}}return best;}
 const occupied=(x,z)=>tanks.some(t=>Math.hypot(t.pos.x-x,t.pos.z-z)<t.R*2+1);

@@ -354,7 +354,7 @@ function frame(dt){
     visT-=dt;
     if(visT<=0){visT=.25;const pe=player&&!player.dead?eyeOf(player):null;
       for(const t of tanks){if(t.team!==1||t.dead)continue;t.visP=!!pe&&t.pos.distanceTo(player.pos)<420*(player.thermal||(t.firedT||-9)>now-3?1:(WX.see||1))&&los(pe,eyeOf(t));if(t.visP)t.spottedT=Math.max(t.spottedT,2);}}
-    updateSmoke(dt); updateA10(dt); updateShells(dt); updateArty(dt); if(!tut&&!net.guest) botSupport(dt); updateNuke(dt); if(tut) updateTutorial(dt);
+    updateSmoke(dt); updateA10(dt); updateShells(dt); updateArty(dt); updRefuerzos(dt); if(!tut&&!net.guest) botSupport(dt); updateNuke(dt); if(tut) updateTutorial(dt);
     if(state!=='end'&&!net.guest) updateZones(dt);
     if(net.on) netTick(dt);
     updateProps(dt);

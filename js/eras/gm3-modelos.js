@@ -125,3 +125,43 @@ function buildW2(t,M,mat,root,lkL,lkR){
     ammo:V3(iw2*.25,deck*.5,M.tz),breech:tp(0,gy,M.tl*.15)};
 }
 const _wdMat=new THREE.MeshLambertMaterial({color:0x6b5236});
+
+// ---- Semioruga (Sd.Kfz. 251 / M3): ruedas adelante, oruga atrás, caja abierta con la infantería y ametralladora con escudo ----
+function buildHT(t,M,mat,root,lkL,lkR){
+  const H=M.ht, L=M.L, hw=M.W/2, zf=L/2, zr=-L/2, tl=L*.55, tz0=zr+tl/2, tw=.32, tx=hw-tw/2-.05;
+  const prof=[[tz0+tl/2-.2,.75],[tz0-tl/2+.2,.75],[tz0-tl/2,.5],[tz0-tl/2+.25,.1],[tz0-tl/2+.55,0],[tz0+tl/2-.55,0],[tz0+tl/2-.2,.1],[tz0+tl/2,.5]];
+  for(const s of [-1,1]){ const x=s*tx; trackLoop(root,prof,tw,x,s>0?lkR:lkL,sideTrkMat,.06);
+    for(let i=0;i<5;i++) wheel(root,x+s*(i%2?.06:-.04),.33,tz0-tl/2+.45+i*(tl-.9)/4,.3);
+    wheel(root,s*(hw-.15),.42,zf-.75,.42); }                                                              // ruedas delanteras
+  // casco: capó del motor adelante (más angosto) y la caja de los soldados atrás, con los costados inclinados
+  const hood=profGeo([[zf,.85],[zf-1.6,1.25],[zf-1.7,.6],[zf-.1,.55]],M.W*.72); slopeX(hood,.8,1.25,.15); const hm=new THREE.Mesh(hood,mat); hm.castShadow=hm.receiveShadow=true; root.add(hm);
+  const bx=profGeo([[zf-1.6,1.55],[zr+.1,1.55],[zr,1.4],[zr,.55],[zf-1.7,.55]],M.W-.1); slopeX(bx,.6,1.55,.12); const bm=new THREE.Mesh(bx,mat); bm.castShadow=bm.receiveShadow=true; root.add(bm);
+  box(root,M.W*.72,.06,L-2.0,0,1.53,(zf-1.6+zr)/2-.05,darkMat);                                          // interior abierto
+  for(let i=0;i<6;i++){ const s=i%2?1:-1, z=zf-2.2-Math.floor(i/2)*.9; const P=personMesh({kind:'rifle',team:t.team,nat:(t.crew&&t.crew.nation)||t.T.nation}); P.g.position.set(s*.42,.62,z); P.parts.hip.position.y=.5; P.parts.legL.rotation.x=P.parts.legR.rotation.x=-1.4; P.g.rotation.y=s>0?-Math.PI/2:Math.PI/2; root.add(P.g); (t.deco||(t.deco=[])).push(P.g); (t.seated||(t.seated=[])).push(P.g); } // soldados sentados
+  if(H.ins) for(const sx of [-1,1]) w2Insignia(root,H.ins,sx*(M.W/2-.04),1.1,zr+L*.35,sx>0?0:Math.PI,.8);
+  // ametralladora adelante de la caja, con su escudo
+  const tur=new THREE.Group(); tur.position.set(0,1.55,zf-1.75); root.add(tur);
+  box(tur,.75,.45,.04,0,.25,.12,mat); const G=gunMount(t,tur,0,.3,.1,M.gl,M.gr,mat,{shield:false});
+  t.turret=tur; t.gunPivot=G.gp; t.barrel=G.barrel; t.muzzle=G.muzzle; t.coax=G.coax; t.barrelMesh=G.bm;
+  collider(tur,.8,.5,.4,0,.25,.1,t,'turret'); collider(root,M.W,1.5,L,0,.8,0,t,'hull');
+  t.hTop=1.55; t.topH=2.1; t.aimH=1.0; t.glL=.5;
+  t.seatPos={driver:V3(-.35,1.0,zf-1.9),commander:V3(.35,1.1,zf-1.9),gunner:V3(0,1.5,zf-1.9),loader:V3(0,1.2,zf-2.6),mg1:V3(0,1.2,zf-2.6),engine:V3(0,.9,zf-.7),trans:V3(0,.6,zf-1.2),ammo:V3(0,.8,0),breech:V3(0,1.7,zf-1.75)};
+}
+// ---- Antiaéreo (Flak 38 de 20 mm, Bofors de 40 mm): plataforma en cruz, montaje que gira y tubo que sube hasta casi vertical ----
+function buildAA(t,M,mat,root){
+  for(const r of [0,Math.PI/2]){ const b=box(root,3.2,.12,.3,0,.12,0,mat); b.rotation.y=r; }
+  for(const [x,z] of [[1.6,0],[-1.6,0],[0,1.6],[0,-1.6]]) cyl(root,.12,.14,.1,x,.06,z,8,darkMat);
+  cyl(root,.35,.45,.5,0,.4,0,10,mat);
+  const tur=new THREE.Group(); tur.position.set(0,.65,0); root.add(tur);
+  box(tur,1.1,.12,1.0,0,.06,0,mat); box(tur,.08,.7,.7,.45,.45,0,mat); box(tur,.08,.7,.7,-.45,.45,0,mat);   // cuna
+  box(tur,1.2,.6,.04,0,.75,.42,mat);                                                                        // escudo chico
+  for(const sx of [-.7,.7]){ const st=box(tur,.3,.05,.3,sx,.5,-.4,darkMat); }                               // asientos de los apuntadores
+  const G=gunMount(t,tur,0,.8,0,M.gl,M.gr,mat,{shield:false}); if(M.aaTwin){ const b2=cyl(G.barrel,M.gr,M.gr,M.gl,.2,0,M.gl/2+.12,8,darkMat); b2.rotation.x=Math.PI/2; }
+  const fh=cyl(G.barrel,M.gr*1.8,M.gr*1.4,.4,0,0,M.gl-.1,8,darkMat); fh.rotation.x=Math.PI/2;                // apagallamas
+  box(G.gp,.18,.25,.5,0,.18,-.1,darkMat);                                                                    // cargador
+  t.turret=tur; t.gunPivot=G.gp; t.barrel=G.barrel; t.muzzle=G.muzzle; t.coax=G.coax; t.barrelMesh=G.bm;
+  collider(tur,1.2,1.0,1.0,0,.5,0,t,'turret'); collider(root,2,.8,2,0,.4,0,t,'hull');
+  t.deco=[]; for(const [x,z,ry] of [[-.9,-.9,0],[.9,-.8,.4],[-.3,-1.6,-.3]]){ const P=personMesh({kind:'rifle',team:t.team,nat:(t.crew&&t.crew.nation)||t.T.nation}); P.g.position.set(x,0,z); P.g.rotation.y=ry; if(P.parts.wep) P.parts.wep.visible=false; root.add(P.g); t.deco.push(P.g); }
+  t.hTop=1.0; t.topH=1.9; t.aimH=.9; t.glL=.3;
+  t.seatPos={gunner:V3(-.7,1.0,-.4),loader:V3(.7,1.0,-.4),commander:V3(-.9,1.0,-.9),driver:V3(.9,1.0,-.8),ammo:V3(0,.6,-.3),engine:V3(0,.3,0),trans:V3(0,.3,0),breech:V3(0,1.4,-.2),mg1:V3(0,1,0)};
+}

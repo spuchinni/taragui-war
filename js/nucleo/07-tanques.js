@@ -337,7 +337,7 @@ function aimAt(t,point,dt,eY=0,eP=0){
   const wy=Math.atan2(dx,dz)+eY, wp=(manual?Math.atan2(point.y-gp.y,d)+ballisticPitch(200,0,v):ballisticPitch(d,point.y-gp.y,v))+eP;
   const dir=new THREE.Vector3(Math.sin(wy)*Math.cos(wp),Math.sin(wp),Math.cos(wy)*Math.cos(wp));
   qInv.copy(t.root.quaternion).invert(); dir.applyQuaternion(qInv);
-  const ly0=Math.atan2(dir.x,dir.z); let ly=ly0; const lp=clamp(Math.asin(clamp(dir.y,-1,1)),-.14,.35);
+  const ly0=Math.atan2(dir.x,dir.z); let ly=ly0; const lp=clamp(Math.asin(clamp(dir.y,-1,1)),-.14,t.T.elev||.35); // los antiaéreos suben casi vertical (T.elev)
   if(t.T.arc!=null){ const c0=t.T.arcC||0; ly=c0+clamp(wrap(ly-c0),-t.T.arc,t.T.arc); }
   t.turretYaw=stepAng(t.turretYaw,ly,t.T.trav*dt);
   t.gunPitch+=clamp(lp-t.gunPitch,-.5*dt,.5*dt);

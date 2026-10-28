@@ -234,10 +234,21 @@ function drawOverlay(){
     oc.fillText(spec?`${t.name} (${t.T.label})`:t.team===1?`${t.T.label} ${d} m`:`${t.name} (${t.T.label})`,s.x,s.y-12);
   }
   oc.font='700 20px "Saira Condensed",sans-serif';
-  for(const Z of zones){const zs=project(new THREE.Vector3(Z.x,heightAt(Z.x,Z.z)+11,Z.z));
-    if(zs){oc.fillStyle=Z.owner===1?'#8fd16a':Z.owner===-1?'#ff5a3c':'#efe7d2';oc.fillText(Z.id,zs.x,zs.y);
-      // distancia debajo de la letra (se ve solo cuando el punto está en pantalla)
-      oc.font='600 14px "Saira Condensed",sans-serif'; oc.fillText(zoneDistTxt(Z),zs.x,zs.y+16); oc.font='700 20px "Saira Condensed",sans-serif';}}
+  // Puntos A, B, C: siempre visibles. Si el punto está en pantalla: letra y distancia encima. Si no: burbuja con la letra
+  // pegada al borde, del lado hacia donde está (pedido de Sebastián)
+  for(const Z of zones){ const c=Z.owner===1?'#8fd16a':Z.owner===-1?'#ff5a3c':'#efe7d2', P=new THREE.Vector3(Z.x,heightAt(Z.x,Z.z)+11,Z.z);
+    tmpV.copy(P).applyMatrix4(camera.matrixWorldInverse); const front=tmpV.z<-1; tmpV.copy(P).project(camera);
+    let sx=(tmpV.x+1)/2*innerWidth, sy=(1-tmpV.y)/2*innerHeight; const M=46;
+    if(front&&sx>M&&sx<innerWidth-M&&sy>M&&sy<innerHeight-M){
+      oc.fillStyle=c; oc.font='700 20px "Saira Condensed",sans-serif'; oc.fillText(Z.id,sx,sy);
+      oc.font='600 14px "Saira Condensed",sans-serif'; oc.fillText(zoneDistTxt(Z),sx,sy+16); continue; }
+    let dx=tmpV.x, dy=-tmpV.y; if(!front){ dx=-dx; dy=-dy; } if(Math.abs(dx)<1e-4&&Math.abs(dy)<1e-4) dy=1;
+    const cx=innerWidth/2, cy=innerHeight/2, k=Math.min((cx-M)/Math.abs(dx||1e-6),(cy-M)/Math.abs(dy||1e-6)); sx=cx+dx*k; sy=cy+dy*k;
+    const ang=Math.atan2(dy,dx);
+    oc.fillStyle='rgba(20,20,18,.72)'; oc.strokeStyle=c; oc.lineWidth=2; oc.beginPath(); oc.arc(sx,sy,15,0,7); oc.fill(); oc.stroke();
+    oc.fillStyle=c; oc.beginPath(); oc.moveTo(sx+Math.cos(ang)*24,sy+Math.sin(ang)*24); oc.lineTo(sx+Math.cos(ang+.45)*16,sy+Math.sin(ang+.45)*16); oc.lineTo(sx+Math.cos(ang-.45)*16,sy+Math.sin(ang-.45)*16); oc.fill();
+    oc.font='700 17px "Saira Condensed",sans-serif'; oc.textBaseline='middle'; oc.fillText(Z.id,sx,sy+1); oc.textBaseline='alphabetic'; }
+  oc.font='700 20px "Saira Condensed",sans-serif';
 
   for(const A of a10s){ if(A.t!==player&&!(A.t&&A.t.isPlayer)) continue; const s=project(A.g.position), dist=Math.round(A.g.position.distanceTo(camera.position));
     if(!s||s.x<20||s.y<20||s.x>innerWidth-20||s.y>innerHeight-20){ // fuera de la pantalla: flecha en el borde que apunta al avión
@@ -284,6 +295,11 @@ function drawMinimap(){
   if(mmBg) mc.drawImage(mmBg,0,0);
   const tx=x=>S/2-x*k, tz=z=>S/2-z*k;
   if(mmDirty){mmDirty=false;buildMinimapBg();mc.drawImage(mmBg,0,0);}
+  // cono de visión (como War Thunder): el campo de la cámara queda claro y el resto del mapa más oscuro; con la mira o el zoom se angosta
+  if(player&&!player.dead&&state==='play'&&!artyPick){ const px=tx(player.pos.x), py=tz(player.pos.z), a0=Math.atan2(-Math.cos(camYaw),-Math.sin(camYaw)),
+      hf=Math.atan(Math.tan(camera.fov*Math.PI/360)*camera.aspect), R=S*1.6;
+    mc.save(); mc.beginPath(); mc.rect(0,0,S,S); mc.moveTo(px,py); mc.arc(px,py,R,a0+hf,a0-hf,true); mc.closePath(); mc.fillStyle='rgba(0,0,0,.42)'; mc.fill('evenodd');
+    mc.strokeStyle='rgba(255,255,255,.35)'; mc.lineWidth=1.5; mc.beginPath(); mc.moveTo(px+Math.cos(a0-hf)*R,py+Math.sin(a0-hf)*R); mc.lineTo(px,py); mc.lineTo(px+Math.cos(a0+hf)*R,py+Math.sin(a0+hf)*R); mc.stroke(); mc.restore(); }
   mc.font='700 22px "Saira Condensed",sans-serif'; mc.textAlign='center'; mc.textBaseline='middle';
   for(const Z of zones){const c=Z.owner===1?'#8fd16a':Z.owner===-1?'#ff5a3c':'#ffffff'; mc.strokeStyle=c; mc.lineWidth=3;
     mc.beginPath(); mc.arc(tx(Z.x),tz(Z.z),Z.r*k,0,7); mc.stroke(); mc.fillStyle=c; mc.fillText(Z.id,tx(Z.x),tz(Z.z));}
@@ -302,11 +318,5 @@ function drawMinimap(){
       mc.strokeStyle=P===artyHover?'#ff6a3c':'rgba(255,255,255,.6)'; mc.lineWidth=5; mc.beginPath(); mc.moveTo(tx(P.x-ux*20),tz(P.z-uz*20)); mc.lineTo(tx(P.x+ux*20),tz(P.z+uz*20)); mc.stroke(); }
   if(artyPick){ for(const [P,c] of [[lastAim,'rgba(255,255,255,.7)'],[artyHover,'#ffb43c']]){ if(!P) continue; const X=tx(P.x), Y=tz(P.z), r=Math.max(6,(artyPick==='air'?20:W.era<=2?14:10)*k);
       mc.strokeStyle=c; mc.lineWidth=2.5; mc.beginPath(); mc.arc(X,Y,r,0,7); mc.moveTo(X-r-8,Y); mc.lineTo(X+r+8,Y); mc.moveTo(X,Y-r-8); mc.lineTo(X,Y+r+8); mc.stroke(); } }
-  // dónde apunta tu mira: una cruz en el punto (y la línea desde tu tanque)
-  if(player&&!player.dead&&state==='play'&&lastAim&&!artyPick){ const X=tx(lastAim.x), Y=tz(lastAim.z);
-    mc.strokeStyle='rgba(255,215,90,.75)'; mc.lineWidth=1.5; mc.setLineDash([5,5]); mc.beginPath(); mc.moveTo(tx(player.pos.x),tz(player.pos.z)); mc.lineTo(X,Y); mc.stroke(); mc.setLineDash([]);
-    mc.strokeStyle='#ffd75a'; mc.lineWidth=2.5; mc.beginPath(); mc.arc(X,Y,6,0,7); mc.moveTo(X-11,Y); mc.lineTo(X-3,Y); mc.moveTo(X+3,Y); mc.lineTo(X+11,Y); mc.moveTo(X,Y-11); mc.lineTo(X,Y-3); mc.moveTo(X,Y+3); mc.lineTo(X,Y+11); mc.stroke(); }
-  if(player&&!player.dead&&state==='play'){mc.strokeStyle='rgba(255,255,255,.6)';mc.lineWidth=2;mc.beginPath();
-    mc.moveTo(tx(player.pos.x),tz(player.pos.z));mc.lineTo(tx(player.pos.x+Math.sin(camYaw)*60),tz(player.pos.z+Math.cos(camYaw)*60));mc.stroke();}
 }
 

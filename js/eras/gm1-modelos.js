@@ -98,7 +98,7 @@ const V3=(x,y,z)=>new THREE.Vector3(x,y,z);
 
 // ---- Constructor principal ----
 function buildWW1(t,M,mat){
-  const root=t.root, [lkL,lkR]=M.ww1==='gun'?[null,null]:ww1Tracks(t), type=M.ww1;
+  const root=t.root, [lkL,lkR]=M.ww1==='gun'||M.ww1==='aa'?[null,null]:ww1Tracks(t), type=M.ww1;
   t.ant=null; t.ww1=type;
   if(type==='rhombo') return buildRhombo(t,M,mat,root,lkL,lkR);
   if(type==='ft') return buildFT(t,M,mat,root,lkL,lkR);
@@ -109,6 +109,8 @@ function buildWW1(t,M,mat){
   if(type==='gun') return buildFieldGun(t,M,mat,root);
   if(type==='iw') return buildIW(t,M,mat,root,lkL,lkR); // Entreguerras (gm2-modelos.js)
   if(type==='w2') return buildW2(t,M,mat,root,lkL,lkR); // Segunda Guerra (gm3-modelos.js)
+  if(type==='ht') return buildHT(t,M,mat,root,lkL,lkR); // semioruga
+  if(type==='aa') return buildAA(t,M,mat,root);            // antiaéreo
 }
 
 // Mark I, Mark IV (macho y hembra), Mark V y el Beutepanzer
