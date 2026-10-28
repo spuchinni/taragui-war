@@ -219,9 +219,38 @@ const SPECIES={
   junco:    {tr:.04,th:.3,crown:()=>new THREE.ConeGeometry(.8,2.8,6),cs:[1,1,1],cy:1.6,col:[0x7f8f45,0x6d7d3a,0x9a9a55]},
   tussac:   {tr:.35,th:.7,crown:()=>new THREE.ConeGeometry(1.2,2.2,8),cs:[1,1,1],cy:1.7,col:[0x8f8c55,0x7f7d4a]}
 };
-const tm4=new THREE.Matrix4(), tq=new THREE.Quaternion();
+const tm4=new THREE.Matrix4(), tq=new THREE.Quaternion(), tqY=new THREE.Quaternion(), _up=new THREE.Vector3(0,1,0);
+// Copa más natural, hecha una vez por especie: las de hoja ancha pasan a ser 4-5 grupos de follaje deformados (no una bola),
+// los pinos, conos escalonados; todas con normales suaves y más oscuras abajo (vertexColors × color de cada árbol).
+const _crownC={};
+// Textura de hojas (gris, multiplica el color de cada árbol): manchas claras y oscuras chicas, como follaje visto de lejos
+const leafTex=(()=>{ const c=document.createElement('canvas'); c.width=c.height=128; const x=c.getContext('2d'); x.fillStyle='#d8d8d8'; x.fillRect(0,0,128,128);
+  for(let i=0;i<900;i++){ const v=Math.random()<.5?rand(150,200):rand(225,255); x.fillStyle=`rgb(${v|0},${v|0},${v|0})`; x.beginPath(); x.ellipse(Math.random()*128,Math.random()*128,rand(1.5,4),rand(1,2.5),rand(0,3),0,7); x.fill(); }
+  const t=new THREE.CanvasTexture(c); t.wrapS=t.wrapT=THREE.RepeatWrapping; t.repeat.set(3,3); return t; })();
+function treeCrown(sp,S){ if(_crownC[sp]) return _crownC[sp].clone();
+  const base=S.crown(), type=base.type; let g;
+  const R=mulberry0(sp.length*7919+sp.charCodeAt(0)), rn=(a,b)=>a+R()*(b-a);
+  if(/Cone/.test(type)&&S.layers){ const parts=[]; base.computeBoundingBox(); const bb=base.boundingBox, r=(bb.max.x-bb.min.x)/2, h=bb.max.y-bb.min.y;
+    for(let i=0;i<3;i++){ const c=new THREE.ConeGeometry(r*(1-i*.22),h*.48,9); c.translate(0,-h*.32+i*h*.27,0); parts.push(c.toNonIndexed()); } g=THREE.BufferGeometryUtils.mergeBufferGeometries(parts); }
+  else if(/Sphere|Icosahedron|Dodecahedron/.test(type)){ base.computeBoundingSphere(); const r=base.boundingSphere.radius, parts=[], n=S.lobes||5;
+    for(let i=0;i<n;i++){ const c=new THREE.IcosahedronGeometry(r*(i?rn(.5,.68):.78),i?0:1), a=i/(n-1)*Math.PI*2+rn(-.4,.4);
+      if(i) c.translate(Math.cos(a)*r*rn(.38,.55),rn(-.2,.32)*r,Math.sin(a)*r*rn(.38,.55)); parts.push(c.toNonIndexed()); }
+    g=THREE.BufferGeometryUtils.mergeBufferGeometries(parts); }
+  else g=base.index?base.toNonIndexed():base;
+  // irregular: cada vértice se corre un poco (igual en las copias del mismo punto, así no se abren grietas)
+  const P=g.attributes.position, key=(x,y,z)=>`${Math.round(x*50)},${Math.round(y*50)},${Math.round(z*50)}`, off={}, nrm={};
+  g.computeBoundingBox(); const bb=g.boundingBox, rr0=Math.max(bb.max.x-bb.min.x,bb.max.y-bb.min.y)*.5;
+  for(let i=0;i<P.count;i++){ const k=key(P.getX(i),P.getY(i),P.getZ(i)); if(!off[k]) off[k]=[rn(-1,1)*rr0*.07,rn(-1,1)*rr0*.07,rn(-1,1)*rr0*.07]; const o=off[k]; P.setXYZ(i,P.getX(i)+o[0],P.getY(i)+o[1],P.getZ(i)+o[2]); }
+  g.computeVertexNormals(); const N=g.attributes.normal;
+  for(let i=0;i<P.count;i++){ const k=key(P.getX(i),P.getY(i),P.getZ(i)), v=nrm[k]||(nrm[k]=[0,0,0]); v[0]+=N.getX(i); v[1]+=N.getY(i); v[2]+=N.getZ(i); }
+  for(let i=0;i<P.count;i++){ const v=nrm[key(P.getX(i),P.getY(i),P.getZ(i))], l=Math.hypot(...v)||1; N.setXYZ(i,v[0]/l,v[1]/l,v[2]/l); }
+  g.computeBoundingBox(); const y0=g.boundingBox.min.y, y1=g.boundingBox.max.y, col=new Float32Array(P.count*3);
+  for(let i=0;i<P.count;i++){ const f=(P.getY(i)-y0)/Math.max(.01,y1-y0), k=.62+.52*f+rn(-.05,.05); col[i*3]=col[i*3+1]=col[i*3+2]=k; }
+  g.setAttribute('color',new THREE.BufferAttribute(col,3));
+  _crownC[sp]=g; return g.clone(); }
+const mulberry0=s=>()=>{ s=(s+0x6D2B79F5)>>>0; let t=Math.imul(s^(s>>>15),1|s); t=(t+Math.imul(t^(t>>>7),61|t))^t; return ((t^(t>>>14))>>>0)/4294967296; };
 function setTreeMatrix(tr){
-  if(tr.fallen) tq.setFromAxisAngle(tr.axis,tr.t*tr.t*Math.PI/2*.92); else tq.identity();
+  tqY.setFromAxisAngle(_up,tr.ry||0); if(tr.fallen) tq.setFromAxisAngle(tr.axis,tr.t*tr.t*Math.PI/2*.92).multiply(tqY); else tq.copy(tqY);
   const k=tr.sink?Math.max(0,1-tr.sink):1, sc=tr.gone?0:tr.s*(.4+.6*k);
   tm4.compose(new THREE.Vector3(tr.x,tr.y-(tr.sink||0)*2.5,tr.z),tq,new THREE.Vector3(sc,sc*tr.hs,sc));
   const set=treeSets[tr.key||tr.sp]; set[0].setMatrixAt(tr.i,tm4); set[1].setMatrixAt(tr.i,tm4);
@@ -234,13 +263,13 @@ function buildTrees(list){
   for(const key in by){
     const sp=key.split('@')[0], S=SPECIES[sp], items=by[key];
     const tg=new THREE.CylinderGeometry(S.tr*.75,S.tr,S.th,6); tg.translate(0,S.th/2,0);
-    const cg=S.crown(); cg.scale(...S.cs); cg.translate(0,S.cy,0);
+    const cg=treeCrown(sp,S); cg.scale(...S.cs); cg.translate(0,S.cy,0);
     const trunk=new THREE.InstancedMesh(tg,new THREE.MeshLambertMaterial({color:sp==='pindo'?0x7a6e5c:0x4a3826}),items.length);
-    const crown=new THREE.InstancedMesh(cg,new THREE.MeshLambertMaterial({color:0xffffff}),items.length);
+    const crown=new THREE.InstancedMesh(cg,new THREE.MeshLambertMaterial({color:0xffffff,vertexColors:true,map:/Cone/.test(S.crown.toString())&&!S.layers?null:leafTex}),items.length);
     treeSets[key]=[trunk,crown]; const recs=[]; trunk.userData.treeList=recs; crown.userData.treeList=recs;
     if(CELL<1e6){ let cx=0,cz=0; items.forEach(t=>{cx+=t.x;cz+=t.z;}); cx/=items.length; cz/=items.length; const r=Math.max(...items.map(t=>Math.hypot(t.x-cx,t.z-cz)))+12;
       cullAdd(trunk,cx,heightAt(cx,cz)+5,cz,r,300); cullAdd(crown,cx,heightAt(cx,cz)+5,cz,r); }
-    items.forEach((t,i)=>{const tr={sp,key,i,x:t.x,z:t.z,y:heightAt(t.x,t.z)-.1,s:t.s||rand(.8,1.15),hs:t.hs||1,fallen:false,t:0,axis:null,r:S.tr*2};
+    items.forEach((t,i)=>{const tr={sp,key,i,ry:Math.random()*6.283,x:t.x,z:t.z,y:heightAt(t.x,t.z)-.1,s:t.s||rand(.8,1.15),hs:t.hs||1,fallen:false,t:0,axis:null,r:S.tr*2};
       tr.hp=sp==='timbo'?14:sp==='tojo'||sp==='tussac'||sp==='espinillo'?3:8; recs.push(tr); trees.push(tr); setTreeMatrix(tr); crown.setColorAt(i,col.set(S.col[(Math.random()*S.col.length)|0]));});
     [trunk,crown].forEach(im=>{im.castShadow=true;im.frustumCulled=false;if(im.instanceColor)im.instanceColor.needsUpdate=true;worldGroup.add(im);});
   }

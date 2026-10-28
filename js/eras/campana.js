@@ -41,7 +41,8 @@ const allMissions=()=>CAMPAIGN.flatMap(ch=>ch.missions.map(m=>({...m,era:ch.era}
 const missionById=id=>allMissions().find(m=>m.id===id);
 const missionDone=id=>!!(PROG&&PROG.camp&&PROG.camp[id]);
 // Una misión se juega si tenés comprado alguno de sus tanques (y cumpliste la anterior del capítulo)
-const missionTank=M=>M.plu.some(owned);
+// la primera misión de cada capítulo se juega con el tanque que presta la campaña (así se puede empezar enseguida)
+const missionTank=M=>M.plu.some(owned)||CAMPAIGN.some(ch=>ch.missions[0]&&ch.missions[0].id===M.id);
 const missionNeed=M=>`comprar el ${M.plu.map(k=>VEH[k].label).join(' o el ')}`;
 function missionPrevDone(id){ const L=allMissions(), i=L.findIndex(m=>m.id===id); if(i<=0) return true; const m=L[i];
   if(!PROG.eraOpen[m.era]) return false; const prev=L.slice(0,i).reverse().find(x=>x.era===m.era); return !prev||missionDone(prev.id); }

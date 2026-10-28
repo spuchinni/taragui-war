@@ -3,10 +3,10 @@
    de tierra (hedges), estepa de Kursk con zanjas antitanque (ditches anchas y hondas), el desierto de El Alamein con sus lomas y las
    Ardenas nevadas con bosques de pinos y su propio clima (wxs). Equipo 0 al sur, equipo 1 al norte. */
 Object.assign(SPECIES,{
-  seto:{tr:.1,th:.5,crown:()=>new THREE.DodecahedronGeometry(1.45,0),cs:[1.2,1.3,1.2],cy:1.8,col:[0x587a38,0x627f3c,0x4f6e32,0x6a8440]},
+  seto:{lobes:3,tr:.1,th:.5,crown:()=>new THREE.DodecahedronGeometry(1.45,0),cs:[1.5,1.3,1.5],cy:1.45,col:[0x587a38,0x627f3c,0x4f6e32,0x6a8440]},
   manzano:{tr:.16,th:1.4,crown:()=>new THREE.IcosahedronGeometry(2.0,1),cs:[1,.75,1],cy:2.7,col:[0x557038,0x5f7a3e,0x4d6634]},
-  pino:{tr:.2,th:2.2,crown:()=>{ const g=new THREE.ConeGeometry(2.4,9,8); return g; },cs:[1,1,1],cy:7.2,col:[0x2c3f2c,0x334833,0x283a28]},
-  pinoN:{tr:.2,th:2.2,crown:()=>{ const g=new THREE.ConeGeometry(2.4,9,8); return g; },cs:[1,1,1],cy:7.2,col:[0x8a9a92,0x6f8278,0xb8c4c0]}, // pino con nieve
+  pino:{layers:1,tr:.2,th:2.2,crown:()=>{ const g=new THREE.ConeGeometry(2.4,9,8); return g; },cs:[1,1,1],cy:7.2,col:[0x2c3f2c,0x334833,0x283a28]},
+  pinoN:{layers:1,tr:.2,th:2.2,crown:()=>{ const g=new THREE.ConeGeometry(2.4,9,8); return g; },cs:[1,1,1],cy:7.2,col:[0x8a9a92,0x6f8278,0xb8c4c0]}, // pino con nieve
   abedul:{tr:.14,th:3.5,crown:()=>new THREE.IcosahedronGeometry(2.2,1),cs:[1,1.4,1],cy:6.0,col:[0x7a8a4a,0x6f8042,0x87964f]}
 });
 const W2_NOR={walls:[0xb8ae9a,0xa89e88,0xc4b9a2,0x9a9282],roofs:[0x4a4e54,0x55595e,0x6a4a3a,0x3e4246]},

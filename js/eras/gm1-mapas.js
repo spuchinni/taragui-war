@@ -7,7 +7,7 @@ Object.assign(SPECIES,{
   muerto:{tr:.2,th:5.0,crown:()=>{ const g=new THREE.ConeGeometry(.45,1.8,5); g.rotateZ(.5); return g; },cs:[1,1,1],cy:5.2,col:[0x3a3128,0x463b30]},
   tocon:{tr:.3,th:1.5,crown:()=>new THREE.ConeGeometry(.3,.7,5),cs:[1,1,1],cy:1.7,col:[0x3a3128,0x4a3f33]},
   roble:{tr:.42,th:3.2,crown:()=>new THREE.IcosahedronGeometry(3.6,1),cs:[1,.78,1],cy:5.8,col:[0x4b5e2e,0x55673a,0x46582c]},
-  alamo:{tr:.24,th:3.0,crown:()=>new THREE.SphereGeometry(1,8,8),cs:[1.6,5.2,1.6],cy:7.4,col:[0x5a6e34,0x667a3c,0x55682f]}
+  alamo:{lobes:3,tr:.24,th:3.0,crown:()=>new THREE.SphereGeometry(1,8,8),cs:[1.6,5.2,1.6],cy:7.4,col:[0x5a6e34,0x667a3c,0x55682f]}
 });
 const mulberry=s=>()=>{ s=(s+0x6D2B79F5)>>>0; let t=Math.imul(s^(s>>>15),1|s); t=(t+Math.imul(t^(t>>>7),61|t))^t; return ((t^(t>>>14))>>>0)/4294967296; };
 
