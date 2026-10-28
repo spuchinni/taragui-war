@@ -81,7 +81,19 @@ function buildWW1Map(key){
     // alambradas delante de la primera línea (hacia la tierra de nadie), con huecos
     for(let b=0;b<C.wire[side];b++){ const z0=s*(F-9-b*9), dz=s*-5; const gaps=[]; for(let gx=-bx;gx<bx;gx+=C.big?150:120) gaps.push(gx+rr(10,60)); belts.push({z0:Math.min(z0,z0+dz),z1:Math.max(z0,z0+dz),gaps}); } }
   // acequias de riego (Entreguerras): zanjas rectas sin sacos ni tablones
-  for(const D of C.ditches||[]) addLine(D,1.6,1.1,'ditch');
+  for(const D of C.ditches||[]){ if(!C.ditchGap){ addLine(D,C.ditchW||1.6,C.ditchD||1.1,'ditch'); continue; }
+    // zanjas antitanque con pasos: cada C.ditchGap metros queda un cruce de 22 m sin zanja
+    for(let i=0;i<D.length-1;i++){ const [ax,az]=D[i], [bx2,bz2]=D[i+1], L=Math.hypot(bx2-ax,bz2-az);
+      for(let t=rr(10,C.ditchGap*.5);t<L;t+=C.ditchGap){ const t1=Math.min(L,t+C.ditchGap-22); if(t1-t<8) continue;
+        addLine([[ax+(bx2-ax)*t/L,az+(bz2-az)*t/L],[ax+(bx2-ax)*t1/L,az+(bz2-az)*t1/L]],C.ditchW||1.6,C.ditchD||1.1,'ditch'); } } }
+  // ---- setos del bocage (Normandía): cuadrícula de potreros con bordos de tierra y tranqueras ----
+  const hedges=[]; if(C.hedges){ const H=C.hedges, cuts=(L0,L1)=>{ const v=[L0]; while(v[v.length-1]<L1) v.push(v[v.length-1]+rr(H.cell[0],H.cell[1])); return v; };
+    const xs0=cuts(-bx-40,bx+40), zs0=cuts(-bz-40,bz+40);
+    const seg=(ax,az,bx2,bz2)=>{ if(R()>H.keep) return; const L=Math.hypot(bx2-ax,bz2-az), g=rr(.2,.8)*L; // tranquera (hueco de 9 m) en algún lugar del tramo
+      const mx=(ax+bx2)/2, mz=(az+bz2)/2; if(Math.hypot(mx-vX,mz-vZ)<vR+15) return;
+      const k0=(g-4.5)/L, k1=(g+4.5)/L; hedges.push({ax,az,bx:ax+(bx2-ax)*k0,bz:az+(bz2-az)*k0},{ax:ax+(bx2-ax)*k1,az:az+(bz2-az)*k1,bx:bx2,bz:bz2}); };
+    for(const x of xs0) for(let j=0;j<zs0.length-1;j++) seg(x+rr(-6,6),zs0[j],x+rr(-6,6),zs0[j+1]);
+    for(const z of zs0) for(let i=0;i<xs0.length-1;i++) seg(xs0[i],z+rr(-6,6),xs0[i+1],z+rr(-6,6)); }
   // ---- caminos hundidos (cruzan el pueblo) ----
   const roads=[]; { const pts=[]; for(let z=-bz-60;z<=bz+60;z+=10) pts.push([vX+9*Math.sin(z*.02+C.seed),z]); roads.push(pts);
     const p2=[]; for(let x=-bx-60;x<=bx+60;x+=10) p2.push([x,vZ+7*Math.sin(x*.025+1)]); roads.push(p2); }
@@ -97,6 +109,8 @@ function buildWW1Map(key){
   for(const S of roadSegs){ const L=Math.hypot(S.bx-S.ax,S.bz-S.az); for(let t=0;t<=L;t+=2){ const x=S.ax+(S.bx-S.ax)*t/L, z=S.az+(S.bz-S.az)*t/L;
     stamp(x,z,4,(k,X,Z)=>{ const q=Math.hypot(X-x,Z-z); if(q<4) A[k]=Math.min(A[k],base(X,Z)-.45*(1-Math.max(0,(q-2.5)/1.5))); }); } }
   for(const c of crs){ stamp(c.x,c.z,c.r*1.45,(k,X,Z)=>{ const q=Math.hypot(X-c.x,Z-c.z)/c.r; A[k]+=q<1?-c.d*(1-q*q):q<1.45?c.d*.25*Math.sin((q-1)/.45*Math.PI):0; }); }
+  for(const S of hedges){ const L=Math.hypot(S.bx-S.ax,S.bz-S.az); for(let t=0;t<=L;t+=1.5){ const x=S.ax+(S.bx-S.ax)*t/L, z=S.az+(S.bz-S.az)*t/L;
+    stamp(x,z,2.6,(k,X,Z)=>{ const q=Math.hypot(X-x,Z-z); if(q<2.6) A[k]=Math.max(A[k],base(X,Z)+.7*Math.cos(q/2.6*Math.PI/2)); }); } }
   // trincheras: profundidad aparte (para que los tanques largos pasen por encima) y parapeto de tierra del lado enemigo
   const segDistW=(x,z,S)=>{ const dx=S.bx-S.ax, dz=S.bz-S.az, l=dx*dx+dz*dz; let t=l?((x-S.ax)*dx+(z-S.az)*dz)/l:0; t=clamp(t,0,1); return Math.hypot(x-S.ax-dx*t,z-S.az-dz*t); };
   for(const S of segs){ const m=S.w/2+1.8; const cx=(S.ax+S.bx)/2, cz=(S.az+S.bz)/2, rad=Math.hypot(S.bx-S.ax,S.bz-S.az)/2+m;
@@ -182,6 +196,8 @@ function buildWW1Map(key){
   for(let i=0;i<(C.deadTrees??40);i++){ const x=rr(-bx,bx), z=rr(-C.front+12,C.front-12); if(!gridQuery(x,z,4).some(b=>obPush(x,z,3,b))) list.push({x,z,sp:R()<.6?'tocon':'muerto',s:rr(.7,1.1)}); }
   if(C.poplars) for(const S of roadSegs) { const L=Math.hypot(S.bx-S.ax,S.bz-S.az); for(let t=3;t<L;t+=9){ if(R()<.35) continue; const k=t/L, x=S.ax+(S.bx-S.ax)*k, z=S.az+(S.bz-S.az)*k, nx2=-(S.bz-S.az)/L, nz2=(S.bx-S.ax)/L;
     for(const sd of [-1,1]){ const X=x+nx2*sd*4.8, Z=z+nz2*sd*4.8; if(Math.abs(X)<bx+20&&Math.abs(Z)<bz+20&&!segs.some(Sg=>segDistW(X,Z,Sg)<Sg.w/2+1)&&!gridQuery(X,Z,3).some(b=>obPush(X,Z,2,b))) list.push({x:X,z:Z,sp:'alamo',s:rr(.9,1.15)}); } } }
+  for(const S of hedges){ const L=Math.hypot(S.bx-S.ax,S.bz-S.az); for(let t=1;t<L;t+=rr(3.6,5.4)){ const x=S.ax+(S.bx-S.ax)*t/L+rr(-.4,.4), z=S.az+(S.bz-S.az)*t/L+rr(-.4,.4);
+    if(Math.abs(x)>bx+30||Math.abs(z)>bz+30) continue; list.push({x,z,sp:R()<.12?'roble':'seto',s:rr(.8,1.25)}); } }
   buildTrees(list);
   // ---- charcos de agua barrosa en los embudos grandes ----
   { const big=crs.filter(c=>c.r>2.6&&R()<.45&&Math.abs(c.x)<bx+25&&Math.abs(c.z)<bz+25); const pg=new THREE.CircleGeometry(1,14); pg.rotateX(-Math.PI/2);

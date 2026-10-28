@@ -3,9 +3,9 @@ function addSP(tank,n,score=0,label){ if(!tank||!tank.crew) return; tank.crew.sp
 // Lo que vale una acción al final de la batalla (la misma cuenta que battleReward, sin el premio por ganar): PI y Yaguaretés según el rango de tu tanque
 function actionReward(score){ const k=(player&&player.key)||selKey, K=RANK_K[k&&VEH[k]?rankOf(k):1]||1; return {rp:Math.round(score*2.5*K),yp:Math.round(score*.5*K)}; }
 // ---------- Progresión estilo War Thunder ----------
-// Cada época es un rango (I = 1ª Guerra … V = Guerra Fría). Cada nación tiene líneas por clase en orden de año: un tanque pide el
-// anterior de su línea (y el primero de una clase pide el último de esa clase del rango anterior). Para pasar de rango hay que tener
-// investigados RANK_NEED tanques del rango anterior. Con PI (puntos de investigación) se investiga y con Yaguaretés de plata se compra.
+// Cada época es un rango (I = 1ª Guerra … V = Guerra Fría) con su árbol propio: como la 2ª Guerra es la permanente y las demás son
+// eventos con fecha, cada época se abre sola (su primer tanque viene regalado) y no depende de la anterior. Cada nación tiene líneas por clase en orden de año: un tanque pide el
+// anterior de su línea dentro de la misma época. Con PI (puntos de investigación) se investiga y con Yaguaretés de plata se compra.
 const BR_TABLE={stuart:2.0,m113:2.7,sherman:3.3,ee9:4.0,vctp:4.3,m41u:4.3,pt76:4.7,scorpion:5.0,marder:5.3,sk105:5.7,ru251:6.0,sheridan:6.3,tiran:6.3,centurion:6.7,
   t55:7.0,tam:7.0,leopard1:7.3,patagon:7.7,leo1v:7.7,m60:7.7,t62m:7.7,chieftain:8.3,leo1a5:8.7,m60a3:8.7,tam2c:9.0,leo2a4:10.0,abrams:10.3};
 for(const k in VEH) VEH[k].br=VEH[k].br||BR_TABLE[k]||5;
@@ -20,19 +20,16 @@ const YP='Yaguaretés de plata', ypTxt=n=>`🐆 ${Math.round(n).toLocaleString('
 const rpCost=k=>{ const r=rankOf(k), i=Math.max(0,vehTreeE(VEH[k].nation,r).indexOf(k)); return Math.round((1800+700*i)*RANK_K[r]/50)*50; };
 const ypCost=k=>Math.round(rpCost(k)*2.2/100)*100;
 // Tanque que hay que tener investigado antes (null = solo pide el rango)
-function reqOf(k){ const V=VEH[k]; if(V.req!==undefined) return V.req; const r=rankOf(k), T=vehTreeE(V.nation,r), same=T.filter(x=>VEH[x].cls===V.cls), i=same.indexOf(k);
+// (un pedido de otra época no cuenta: cada época es independiente)
+function reqOf(k){ const V=VEH[k]; if(V.req!==undefined&&(!V.req||eraOf(V.req)===eraOf(k))) return V.req; const r=rankOf(k), T=vehTreeE(V.nation,r), same=T.filter(x=>VEH[x].cls===V.cls), i=same.indexOf(k);
   if(i>0) return same[i-1];
-  for(let e=r-1;e>=1;e--){ const P=vehTreeE(V.nation,e); if(!P.length) continue; return P.filter(x=>VEH[x].cls===V.cls).pop()||null; }
   return T[0]!==k?T[0]:null; }
 const researched=k=>!!(PROG&&PROG.unlocked[k]);
 const owned=k=>!!(PROG&&PROG.owned&&PROG.owned[k]);
-// Un rango se abre con RANK_NEED tanques investigados del rango anterior de esa nación (si el anterior no existe todavía, queda cerrado)
-function rankOpen(n,r){ if(r<=1) return true; const P=vehTreeE(n,r-1);
-  if(!P.length) return eraList().every(e=>e>=r||!vehTreeE(n,e).length)&&eraNations(r).some(m=>m!==n&&vehTreeE(m,r-1).length&&rankOpen(m,r)); // nación nueva en esta época: abre con las demás
-  return P.filter(researched).length>=Math.min(RANK_NEED,P.length); }
+// Cada época se abre sola (ya no hace falta investigar la anterior); queda la función por si vuelve a hacer falta
+function rankOpen(n,r){ return true; }
 const canResearch=k=>!researched(k)&&rankOpen(VEH[k].nation,rankOf(k))&&(!reqOf(k)||researched(reqOf(k)));
 function lockReason(k){ const n=VEH[k].nation, r=rankOf(k);
-  if(!rankOpen(n,r)) return vehTreeE(n,r-1).length?`Rango ${RANK_ROMAN[r]}: investigá ${RANK_NEED} tanques de rango ${RANK_ROMAN[r-1]}`:`Rango ${RANK_ROMAN[r]}: primero tienen que existir los rangos anteriores`;
   const q=reqOf(k); return q&&!researched(q)?`Requiere investigar el ${VEH[q].label}`:''; }
 // Garaje: uno por nación y por época
 const garRef=(n,e=curEra)=>PROG.garage[n+'@'+e]||(PROG.garage[n+'@'+e]=[]);
@@ -43,20 +40,16 @@ let PROG_KEY='tw2_progress';
 function loadProg(){ try{ PROG=JSON.parse(localStorage.getItem(PROG_KEY)||'null'); }catch(e){ PROG=null; }
   if(!PROG||PROG.v!==3) PROG={v:3,unlocked:{},owned:{},rp:{},target:{},yp:YP_START,garage:{},stats:{battles:0,wins:0},eraOpen:{1:1},camp:{}};
   PROG.camp=PROG.camp||{}; PROG.owned=PROG.owned||{}; PROG.target=PROG.target||{};
-  // cada nación arranca con su primer tanque de rango I, investigado y comprado
-  for(const n in NATIONS){ if(NATIONS[n].special) continue; const T=vehTreeE(n,1); if(!T.length) continue; PROG.unlocked[T[0]]=1; PROG.owned[T[0]]=1;
-    const G=garRef(n,1); if(!G.length) G.push(T[0]); }
-  syncEraOpen(); if(PROG.era&&PROG.eraOpen[PROG.era]) curEra=PROG.era; }
+  // cada nación arranca, en cada época, con su primer tanque investigado y comprado
+  for(const n in NATIONS){ if(NATIONS[n].special) continue; for(const e of eraList()){ if(!eraReady(e)) continue; const T=vehTreeE(n,e); if(!T.length) continue; PROG.unlocked[T[0]]=1; PROG.owned[T[0]]=1;
+    const G=garRef(n,e); if(!G.length) G.push(T[0]); } }
+  syncEraOpen(); curEra=PROG.era&&PROG.eraOpen[PROG.era]?PROG.era:3; }
 // Una época se puede elegir si alguna nación tiene abierto ese rango
-function syncEraOpen(){ const out=[]; for(const e of eraList()){ const o=e===1||(eraReady(e)&&eraNations(e).some(n=>rankOpen(n,e)));
-    if(o&&!PROG.eraOpen[e]&&e!==1) out.push(e); PROG.eraOpen[e]=o?1:0; }
-  // la primera época de cada nación le regala su primer tanque (la URSS empieza en Entreguerras)
-  for(const n in NATIONS){ if(NATIONS[n].special) continue; const fe=eraList().find(e=>eraReady(e)&&vehTreeE(n,e).length); if(!fe||fe===1||!rankOpen(n,fe)) continue;
-    const T=vehTreeE(n,fe); if(!PROG.unlocked[T[0]]){ PROG.unlocked[T[0]]=1; PROG.owned[T[0]]=1; const G=garRef(n,fe); if(!G.length) G.push(T[0]); } }
+function syncEraOpen(){ const out=[]; for(const e of eraList()) PROG.eraOpen[e]=eraPlayable(e)?1:0;
   return out; }
 function saveProg(){ if(!PROG) return; PROG.era=curEra; PROG.t=Date.now(); try{ localStorage.setItem(PROG_KEY,JSON.stringify(PROG)); }catch(e){}
   if(typeof nubeGuardar==='function') nubeGuardar(); }
-// Épocas que se abrieron recién (al investigar suficientes tanques del rango anterior)
+// Épocas que se abrieron recién (ya no pasa: se abren por fecha)
 function checkEraUnlock(){ const out=syncEraOpen(); if(out.length) saveProg(); return out; }
 // Lo que se está investigando en una nación: el elegido (si todavía se puede) o el primero investigable en orden de rango
 function nextResearch(n){ const t=PROG.target[n]; if(t&&VEH[t]&&canResearch(t)) return t;
@@ -107,9 +100,11 @@ const WXS={dia:{n:'Día despejado'},
   noche:{n:'Noche',sky:0x0c1422,fog:[40,190],hemi:.24,sun:.2,sunCol:0x8ea4d8,night:true,see:.5},
   niebla:{n:'Niebla',sky:0xc4c9c6,fog:[25,140],hemi:.68,sun:.4,see:.45},
   lluvia:{n:'Lluvia',sky:0x7f878c,fog:[70,280],hemi:.5,sun:.35,rain:1,mud:true,see:.75},
+  nieve:{n:'Nevada',sky:0xc9ced2,fog:[60,260],hemi:.72,sun:.35,sunCol:0xdfe6f0,rain:.9,snow:true,see:.65},
   tormenta:{n:'Tormenta nocturna',sky:0x11161b,fog:[40,200],hemi:.2,sun:.14,sunCol:0x8ea4d8,rain:1.6,mud:true,night:true,storm:true,see:.45}};
 let WX=WXS.dia, wxKey='dia';
-function pickWeather(){ const r=Math.random(); return r<.4?'dia':r<.55?'tarde':r<.7?'noche':r<.8?'niebla':r<.93?'lluvia':'tormenta'; }
+function pickWeather(){ const L=typeof builtKey!=='undefined'&&WORLDS[builtKey]&&WORLDS[builtKey].wxs; if(L) return L[(Math.random()*L.length)|0]; // mapas con su propio clima (invierno en las Ardenas)
+  const r=Math.random(); return r<.4?'dia':r<.55?'tarde':r<.7?'noche':r<.8?'niebla':r<.93?'lluvia':'tormenta'; }
 // Calibre de la ametralladora más pesada de cada tanque (mm): 12,7 y 14,5 penetran más y pueden cortar orugas
 const MG_CAL={m113:12.7,sherman:12.7,m41u:12.7,sheridan:12.7,tiran:12.7,centurion:12.7,t55:12.7,m60:12.7,t62m:12.7,chieftain:12.7,m60a3:12.7,abrams:12.7,pt76:7.62};
 const mgCal=t=>t.mgCal||(t.T&&(t.T.mgc||MG_CAL[t.key]))||7.62, mgPen=c=>c>=14?32:c>=12?25:(RULE().mgPen||16);

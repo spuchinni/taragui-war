@@ -100,7 +100,7 @@ function personMesh(o){
   let wep=null;
   if(kind==='rifle'||kind==='eng'){ wep=rifleMesh(1); wep.position.set(.1,.36,.3); }
   else if(kind==='sniper'){ wep=rifleMesh(1.4); wep.position.set(.1,.38,.34); const sc=new THREE.Mesh(PG.hand,darkMat); sc.scale.set(.6,.6,2.2); sc.position.set(0,.08,.05); wep.add(sc); }
-  else if(kind==='at'&&RULE().at){ wep=rifleMesh(1.7); wep.position.set(.1,.36,.36); } // fusil antitanque (Primera Guerra)
+  else if(kind==='at'&&RULE().at&&!RULE().at.tube){ wep=rifleMesh(1.7); wep.position.set(.1,.36,.36); } // fusil antitanque (Primera Guerra y Entreguerras); en la 2ª, lanzacohetes (tubo)
   else if(kind==='at'){ wep=new THREE.Mesh(PG.tube,pMat(0x4a5a3a)); wep.rotation.x=Math.PI/2; wep.position.set(.22,.62,.1); }
   else if(kind==='hmg'){ wep=new THREE.Mesh(PG.hmg,darkMat); wep.position.set(0,.3,.5); }
   else if(kind==='mortar'){ wep=new THREE.Mesh(PG.mort,darkMat); wep.rotation.x=.4; wep.position.set(0,.45,-.22); }

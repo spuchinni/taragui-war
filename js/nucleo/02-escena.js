@@ -70,5 +70,6 @@ function tankDetail(mat,root,dust){
    if(vLn.y<-.3) diffuseColor.rgb*=.65; }                                            // panza más oscura
 `); };
   return mat; }
+sueloTex(); metalTex(); // se bajan ya, así no hay un cuadro negro hasta que llegan
 const wallTex=canvasTex(128,(x,s)=>{x.fillStyle='#ffffff';x.fillRect(0,0,s,s);speckle(x,s,s,1500,['#d8d8d8','#eeeeee','#c8c8c8'],1,3);});
 

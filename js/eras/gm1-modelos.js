@@ -108,6 +108,7 @@ function buildWW1(t,M,mat){
   if(type==='whippet'||type==='lk2') return buildWhippet(t,M,mat,root,lkL,lkR,type==='lk2');
   if(type==='gun') return buildFieldGun(t,M,mat,root);
   if(type==='iw') return buildIW(t,M,mat,root,lkL,lkR); // Entreguerras (gm2-modelos.js)
+  if(type==='w2') return buildW2(t,M,mat,root,lkL,lkR); // Segunda Guerra (gm3-modelos.js)
 }
 
 // Mark I, Mark IV (macho y hembra), Mark V y el Beutepanzer
@@ -312,6 +313,8 @@ function eraHelmet(head,style,female,hairC){
     else if(style==='adrian'){ const d=new THREE.SphereGeometry(.14,10,6,0,Math.PI*2,0,1.35); d.translate(0,.04,0); L.push(d);
       const c=new THREE.BoxGeometry(.03,.05,.22); c.translate(0,.18,0); L.push(c);
       const b=new THREE.CylinderGeometry(.17,.17,.01,14); b.scale(.9,1,1.25); b.translate(0,.035,0); L.push(b); }
+    else if(style==='m1'){ const d=new THREE.SphereGeometry(.15,10,7,0,Math.PI*2,0,1.5); d.scale(1,.9,1.08); d.translate(0,.03,0); L.push(d);   // M1 estadounidense: redondo, sin ala
+      const r=new THREE.TorusGeometry(.148,.012,4,16); r.rotateX(Math.PI/2); r.scale(1,1,1.08); r.translate(0,.04,0); L.push(r); }
     else { const d=new THREE.SphereGeometry(.15,10,7,0,Math.PI*2,0,1.62); d.translate(0,.035,-.005); L.push(d);
       const s=new THREE.CylinderGeometry(.152,.18,.06,14,1,true); s.translate(0,-.01,-.012); L.push(s); }
     return L; })());

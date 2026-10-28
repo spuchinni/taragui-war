@@ -135,7 +135,7 @@ function renderTree(){
     ${radios('tn',Object.fromEntries(Object.entries(NN).map(([k,N])=>[k,{label:N.label,desc:''}])),n,'two')}
     <p class="s">Garaje (hasta 3): ${g.map(k=>VEH[k].label).join(', ')||'vacío'} · <b>BR de batalla ${brTxt(garageBR(n))}</b> (el de tu vehículo más alto). Enemigos y aliados salen con BR de ±1.0.
     Cada batalla da puntos de investigación (PI) para el tanque que estás investigando y ${YP} para comprarlo. Tenés <b>${ypTxt(PROG.yp||0)}</b>.
-    Para pasar al rango siguiente hay que investigar ${RANK_NEED} tanques del rango actual.</p>
+    Cada época tiene su propio árbol. La 2ª Guerra se juega siempre; las demás son eventos con fecha.</p>
     <div class="tree">${T.map(row).join('')}</div><p class="s">Pasá el mouse por un vehículo para ver su ficha técnica. Tocalo para verlo en el hangar.</p>
     <button class="go alt" id="back">Volver</button></div>`;
   document.querySelectorAll('.tk').forEach(b=>b.onclick=()=>{ if(b.dataset.g==='tn'){ treeNation=b.dataset.k; renderTree(); } });

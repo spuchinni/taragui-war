@@ -16,10 +16,23 @@ const ERAS={
      desc:'Los tanques de la versión anterior del juego: TAM, Leopard, M60, T-62, Abrams y compañía, en los mapas de Corrientes y alrededores.',
      sup:{arty:1,air:1,nuke:1},civ:1,traffic:1,mgPen:16,female:1,sides:null}
 };
-let curEra=1;                                   // época elegida en el menú
+let curEra=3;                                   // época elegida en el menú (la 2ª Guerra es la permanente)
+// Épocas que se juegan solo unos días al año, como evento (pedido de Sebastián): la 1ª Guerra y Entreguerras desde el aniversario
+// del comienzo de la Primera Guerra Mundial (28 de julio de 1914), la Guerra Fría desde la doctrina Truman (12 de marzo de 1947).
+// La 2ª Guerra se juega siempre. Con ?evento=1 en la dirección se abren todas (para probar).
+const ERA_EVENT={1:{m:7,d:28,days:30,n:'aniversario del comienzo de la Primera Guerra Mundial (28 de julio de 1914)'},
+  2:{m:7,d:28,days:30,n:'aniversario del comienzo de la Primera Guerra Mundial (28 de julio de 1914)'},
+  5:{m:3,d:12,days:30,n:'aniversario del comienzo de la Guerra Fría (doctrina Truman, 12 de marzo de 1947)'}};
+// Ventana del evento que está abierto ahora o del próximo: [desde, hasta)
+function eventWin(e,t=new Date()){ const E=ERA_EVENT[e]; if(!E) return null;
+  for(const y of [t.getFullYear()-1,t.getFullYear(),t.getFullYear()+1]){ const a=new Date(y,E.m-1,E.d), b=new Date(a.getTime()+E.days*864e5); if(t<b) return [a,b]; } return null; }
+function eventOn(e){ if(!ERA_EVENT[e]) return true; if(typeof location!=='undefined'&&/[?&]evento=1/.test(location.search)) return true; const w=eventWin(e), t=new Date(); return !!w&&t>=w[0]&&t<w[1]; }
+const fmtDia=d=>`${d.getDate()}/${d.getMonth()+1}`;
+function eventTxt(e){ const w=eventWin(e); if(!w) return ''; const last=new Date(w[1].getTime()-864e5); return eventOn(e)?`Evento: hasta el ${fmtDia(last)}`:`Evento: del ${fmtDia(w[0])} al ${fmtDia(last)}`; }
 const RULE=()=>ERAS[(typeof W!=='undefined'&&W&&W.era)||5]; // reglas de la partida en curso (según el mapa)
 const eraOf=k=>(VEH[k]&&VEH[k].era)||5;
 const eraReady=e=>!!(ERAS[e]&&ERAS[e].ready);
+const eraPlayable=e=>eraReady(e)&&eventOn(e);   // lista y, si es un evento, dentro de su fecha
 const eraList=()=>Object.keys(ERAS).map(Number);
 
 /* Cada nación cambia de nombre, tripulantes, uniforme y casco según la época */

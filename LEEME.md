@@ -4,7 +4,7 @@ Juego de tanques en el navegador. Se juega en https://spuchinni.github.io/taragu
 
 ## Versión 2: por épocas, desde la Primera Guerra Mundial
 
-- **index.html**: el juego nuevo (arranca en 1916).
+- **index.html**: el juego nuevo (arranca en la 2ª Guerra Mundial; las otras épocas son eventos con fecha).
 - **v1/**: la versión anterior completa, tal cual (Guerra Fría y mapas de Corrientes). Se juega en `/v1/` y guarda su progreso aparte.
 - **css/juego.css**: estilos.
 - **js/nucleo/**: el motor de la versión 1, separado por partes (escena, mapas, tanques, combate, infantería, IA, jugador, partida, menús, online). Se reutiliza tal cual con algunos ajustes para las épocas.
@@ -14,6 +14,7 @@ Juego de tanques en el navegador. Se juega en https://spuchinni.github.io/taragu
   - `gm1-modelos.js`: los modelos hechos por código (Mark I/IV/V, Whippet, Renault FT, Schneider, Saint-Chamond, A7V, LK II, cañones) y los cascos de época.
   - `gm1-mapas.js`: el generador de frentes de trincheras (Somme, Cambrai, Villers-Bretonneux, Saint-Mihiel).
   - `gm2-*.js`: lo mismo para Entreguerras (datos, modelos, mapas y campaña).
+  - `gm3-*.js`: la Segunda Guerra Mundial (datos, modelos, mapas y campaña).
   - `campana.js`: la campaña histórica, el mapa de Berry-au-Bac y el selector de épocas.
 - **js/salas.js**, **js/relevo.js**: batallas siempre online (ver abajo).
 - **js/miniaturas.js**: miniaturas de los tanques y ficha técnica en la pantalla de Vehículos.
@@ -24,13 +25,13 @@ Juego de tanques en el navegador. Se juega en https://spuchinni.github.io/taragu
 
 | Época | Estado |
 |---|---|
-| 1916–1918 · Primera Guerra Mundial | Lista (árbol + campaña de 6 misiones) |
-| 1919–1938 · Entreguerras | Lista (15 tanques de 5 naciones, 4 mapas y campaña de la Guerra Civil Española) |
-| 1939–1945 · Segunda Guerra Mundial | Próximamente |
+| 1916–1918 · Primera Guerra Mundial | Evento: del 28 de julio por 30 días (árbol + campaña de 6 misiones) |
+| 1919–1938 · Entreguerras | Evento: del 28 de julio por 30 días (15 tanques, 4 mapas y campaña de la Guerra Civil Española) |
+| 1939–1945 · Segunda Guerra Mundial | **Siempre**: 22 tanques de 5 naciones (con el Nahuel argentino), 4 mapas y campaña de 4 misiones |
 | 1946–1959 · Posguerra y Corea | Próximamente |
-| 1960–hoy · Guerra Fría y actualidad | Los tanques y mapas de la versión 1 |
+| 1960–hoy · Guerra Fría y actualidad | Evento: del 12 de marzo por 30 días (los tanques y mapas de la versión 1) |
 
-Una época se abre al terminar su capítulo de campaña o al investigar todos los tanques de una nación de la época anterior.
+Cada época tiene su propio árbol y el progreso se guarda entre eventos. Para probar los eventos fuera de fecha: agregar `?evento=1` a la dirección.
 
 ## Batallas online
 

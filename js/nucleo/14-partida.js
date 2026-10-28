@@ -5,14 +5,14 @@ function applyWeather(k){ wxKey=WXS[k]?k:'dia'; WX=WXS[wxKey]; sun.color.set(WX.
 function setRain(r){
   if(rainMesh){ scene.remove(rainMesh); rainMesh.geometry.dispose(); rainMesh=null; }
   if(rainSnd){ try{ rainSnd.g.gain.setTargetAtTime(0,AC.currentTime,.4); rainSnd.s.stop(AC.currentTime+1.5); }catch(e){} rainSnd=null; }
-  if(!r) return; const N=Math.round(1400*r*(Q().grass?1:.5)), pos=new Float32Array(N*6);
-  for(let i=0;i<N;i++){ const x=rand(-40,40), y=rand(0,30), z=rand(-40,40); pos.set([x,y,z,x+.05,y-.7,z],i*6); }
+  if(!r) return; const sn=!!WX.snow, N=Math.round(1400*r*(Q().grass?1:.5)), pos=new Float32Array(N*6);
+  for(let i=0;i<N;i++){ const x=rand(-40,40), y=rand(0,30), z=rand(-40,40); pos.set(sn?[x,y,z,x+.07,y-.09,z+.05]:[x,y,z,x+.05,y-.7,z],i*6); } // nieve: copos cortos que bajan despacio
   const g=new THREE.BufferGeometry(); g.setAttribute('position',new THREE.BufferAttribute(pos,3));
-  rainMesh=new THREE.LineSegments(g,new THREE.LineBasicMaterial({color:0xa8b8c8,transparent:true,opacity:.45})); rainMesh.frustumCulled=false; scene.add(rainMesh);
-  if(AC&&noiseBuf){ const s=AC.createBufferSource(); s.buffer=noiseBuf; s.loop=true; const f=AC.createBiquadFilter(); f.type='bandpass'; f.frequency.value=1800; f.Q.value=.4; const g2=AC.createGain(); g2.gain.value=0; g2.gain.setTargetAtTime(.09*r,AC.currentTime,1); s.connect(f).connect(g2).connect(master); s.start(); rainSnd={s,g:g2}; }
+  rainMesh=new THREE.LineSegments(g,new THREE.LineBasicMaterial({color:sn?0xffffff:0xa8b8c8,transparent:true,opacity:sn?.85:.45})); rainMesh.frustumCulled=false; scene.add(rainMesh);
+  if(AC&&noiseBuf&&!sn){ const s=AC.createBufferSource(); s.buffer=noiseBuf; s.loop=true; const f=AC.createBiquadFilter(); f.type='bandpass'; f.frequency.value=1800; f.Q.value=.4; const g2=AC.createGain(); g2.gain.value=0; g2.gain.setTargetAtTime(.09*r,AC.currentTime,1); s.connect(f).connect(g2).connect(master); s.start(); rainSnd={s,g:g2}; }
 }
 function updateWeather(dt){
-  if(rainMesh){ const a=rainMesh.geometry.attributes.position.array; for(let i=0;i<a.length;i+=6){ a[i+1]-=26*dt; a[i+4]-=26*dt; if(a[i+4]<0){ a[i+1]+=30; a[i+4]+=30; } } rainMesh.geometry.attributes.position.needsUpdate=true;
+  if(rainMesh){ const a=rainMesh.geometry.attributes.position.array; const v=WX.snow?2.4:26, dr=WX.snow?Math.sin(now*.7)*.8*dt:0; for(let i=0;i<a.length;i+=6){ a[i+1]-=v*dt; a[i+4]-=v*dt; a[i]+=dr; a[i+3]+=dr; if(a[i+4]<0){ a[i+1]+=30; a[i+4]+=30; } } rainMesh.geometry.attributes.position.needsUpdate=true;
     rainMesh.position.set(camera.position.x,camera.position.y-14,camera.position.z); }
   if(WX.storm&&now>boltT){ boltT=now+rand(7,16); hemi.intensity=1.6; scene.background.set(0x8a96a8); setTimeout(()=>{ lastTh=null; },110); setTimeout(()=>boom(.7,3.5,110),rand(600,2600)); }
 }
@@ -350,7 +350,7 @@ function mainMenu(){
   if(document.pointerLockElement) document.exitPointerLock();
   state='menu'; tut=null; bindCapture=null; document.body.classList.add('menu'); document.body.classList.remove('deploy','spec','tut','home'); if(!PROG) loadProg();
   $('banner').style.opacity=0; bannerT=0; $('overlay').style.display='flex'; syncIntro();
-  if(!PROG.eraOpen[curEra]||!eraReady(curEra)) curEra=1; applyEraNations(curEra);
+  if(!PROG.eraOpen[curEra]||!eraReady(curEra)) curEra=3; applyEraNations(curEra);
   { const EN=eraNations(curEra); if(!EN.includes(chosenNation)) chosenNation=EN[0]; }
   const go=f=>()=>{initAudio(); if(AC.state==='suspended')AC.resume(); f();};
   const gear=`<button class="setB" id="setB" title="Ajustes" aria-label="Ajustes">⚙</button>`;
