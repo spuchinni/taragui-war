@@ -56,3 +56,9 @@ function vficha(k,row){
   F.style.left=x+'px'; F.style.top=Math.max(12,Math.min(R.top,innerHeight-F.offsetHeight-12))+'px';
 }
 function vfichaOff(){ const F=$('vficha'); if(F) F.hidden=true; }
+
+// Datos clave de un vehículo en una línea de "chips" (tarjetas de Vehículos y del Despliegue): blindaje del casco frente/costado,
+// mejor penetración, recarga, velocidad, tripulación, pendiente y equipo. La ficha grande (vficha) sigue al pasar el mouse.
+function vehStatsHTML(k){ const V=VEH[k], A=V.armor, pen=Math.max(...(V.ammo||[{pen:V.pen}]).map(a=>a.pen)), eq=[V.stab?'estabilizador':'',V.fcs?'telémetro':'',V.thermal?'térmica':'',V.arc!=null?'sin torre':''].filter(Boolean);
+  const c=(t,v)=>`<span class="vst"><i>${t}</i>${v}</span>`;
+  return `<span class="vsts">${c('Blindaje',`${A.hull.front}/${A.hull.side} mm`)}${c('Penetra',`${pen} mm`)}${c('Recarga',`${String(V.reload).replace('.',',')} s`)}${c('Velocidad',`${Math.round(V.maxF*3.6)} km/h`)}${c('Tripulación',V.crewReal||V.seats.length)}${c('Trepa',`${Math.round(climbOf(V)*180/Math.PI)}°`)}${c('Mira',`${(V.optic||[]).join('/')}×`)}${eq.length?c('Equipo',eq.join(', ')):''}</span>`; }

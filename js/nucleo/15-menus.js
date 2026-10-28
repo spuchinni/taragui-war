@@ -34,7 +34,7 @@ function hgRender(dt){
   H.cam.setViewOffset(w,h,w>900?w*.1:0,h*.06,w,h); H.cam.updateProjectionMatrix();
   renderer.render(H.sc,H.cam); return true;
 }
-const CLS_ES={ligero:'Ligero',medio:'Medio',pesado:'Pesado',principal:'Principal'};
+const CLS_ES={ligero:'Ligero',medio:'Medio',pesado:'Pesado',principal:'Principal',cazatanques:'Cazatanques','de élite':'De élite','cañón':'Cañón'};
 // Estado de un tanque: comprado (own), investigado sin comprar (bought=false), investigándose (res), investigable (can) o bloqueado (why)
 function hgStatus(k){ const own=owned(k), done=researched(k), inG=garageOf(chosenNation).includes(k), res=!done&&k===nextResearch(VEH[k].nation);
   return {own,done,inG,res,can:canResearch(k),have:PROG.rp[k]||0,cost:rpCost(k),yc:ypCost(k),why:lockReason(k)}; }
@@ -129,7 +129,7 @@ function renderTree(){
     const st=S.own?'':S.done?`<small><br>Investigado · cuesta ${ypTxt(S.yc)}</small>`:S.res?`<div class="pbar"><i style="width:${Math.round(S.have/S.cost*100)}%"></i></div><small>Investigando: ${S.have.toLocaleString('es-AR')} / ${S.cost.toLocaleString('es-AR')} PI</small>`
       :S.can?`<small><br>Se puede investigar · ${S.cost.toLocaleString('es-AR')} PI</small>`:`<small><br>🔒 ${S.why} · ${S.cost.toLocaleString('es-AR')} PI</small>`;
     const bt=S.own?`<button data-k="${k}" data-a="gar" class="tg">${inG?'Quitar':'Al garaje'}</button>`:S.done?`<button data-k="${k}" data-a="buy" class="tg" ${(PROG.yp||0)<S.yc?'disabled':''}>Comprar</button>`:S.can&&!S.res?`<button data-k="${k}" data-a="res" class="tg">Investigar</button>`:'';
-    return `<div class="vrow ${S.own?'own':S.res||S.done?'res':'lock'} ${inG?'in':''}" data-k="${k}">${miniHTML(k)}<div class="br">${RANK_ROMAN[rankOf(k)]}<small style="display:block;font-size:12px">${brTxt(V.br)}</small></div><div><b>${V.label}</b><small>${CLS_ES[V.cls]||V.cls}${V.year?' · '+V.year:''}${q?' · viene del '+VEH[q].label:''} · blindaje ${V.armor.hull.front} mm · penetración ${V.pen} mm</small>${st}</div>
+    return `<div class="vrow ${S.own?'own':S.res||S.done?'res':'lock'} ${inG?'in':''}" data-k="${k}">${miniHTML(k)}<div class="br">${RANK_ROMAN[rankOf(k)]}<small style="display:block;font-size:12px">${brTxt(V.br)}</small></div><div><b>${V.label}</b><small>${CLS_ES[V.cls]||V.cls}${V.year?' · '+V.year:''}${q?' · viene del '+VEH[q].label:''}</small>${vehStatsHTML(k)}${st}</div>
       <div>${bt}</div></div>`; };
   $('panel').innerHTML=`<div class="side" style="width:min(800px,96vw)"><button class="setB" id="setB" title="Ajustes" aria-label="Ajustes">⚙</button><h1 class="logo" style="font-size:54px!important">Vehículos</h1><div class="hgTop treeEra">${eraStripHTML()}</div><p class="s">${ERAS[curEra].n} (${ERAS[curEra].y}). ${ERAS[curEra].desc}</p>
     ${radios('tn',Object.fromEntries(Object.entries(NN).map(([k,N])=>[k,{label:N.label,desc:''}])),n,'two')}
@@ -148,7 +148,15 @@ function renderTree(){
     r.onmouseenter=()=>vficha(r.dataset.k,r); r.onmouseleave=vfichaOff; });
   vfichaOff(); miniPedir(T);
 }
-function applyGfx(){ renderer.setPixelRatio(Math.min(devicePixelRatio,Q().pr)); renderer.setSize(innerWidth,innerHeight,false); sun.castShadow=!!Q().sh; if(Q().sh&&sun.shadow.map&&sun.shadow.mapSize.x!==Q().sh){ sun.shadow.map.dispose(); sun.shadow.map=null; sun.shadow.mapSize.set(Q().sh,Q().sh); } }
+// Modo retro (estilo juego de PlayStation, pedido de Sebastián): imagen a resolución baja agrandada sin suavizar, texturas con
+// píxeles a la vista (filtro "nearest") y sin sombras. Las texturas nuevas (tanques que aparecen) se ajustan cada 1,5 s.
+let retroT=0;
+function retroTextures(on){ const seen=new Set(), fix=t=>{ if(!t||!t.isTexture||seen.has(t)) return; seen.add(t);
+    const mag=on?THREE.NearestFilter:THREE.LinearFilter, min=on?THREE.NearestMipmapLinearFilter:THREE.LinearMipmapLinearFilter;
+    if(t.magFilter!==mag||t.minFilter!==min){ if(t._aniso==null) t._aniso=t.anisotropy; t.magFilter=mag; t.minFilter=min; t.anisotropy=on?1:t._aniso; t.needsUpdate=true; } };
+  [sueloTex(),metalTex(),typeof leafTex!=='undefined'?leafTex:null].forEach(fix);
+  scene.traverse(o=>{ const M=o.material; if(!M) return; (Array.isArray(M)?M:[M]).forEach(m=>fix(m.map)); }); }
+function applyGfx(){ document.body.classList.toggle('retro',!!Q().retro); retroTextures(!!Q().retro); renderer.setPixelRatio(Math.min(devicePixelRatio,Q().pr)); renderer.setSize(innerWidth,innerHeight,false); sun.castShadow=!!Q().sh; if(Q().sh&&sun.shadow.map&&sun.shadow.mapSize.x!==Q().sh){ sun.shadow.map.dispose(); sun.shadow.map=null; sun.shadow.mapSize.set(Q().sh,Q().sh); } }
 function renderSettings(){
   const rows=ACTIONS.map(([k,label])=>`<span>${label}</span><button class="kb${bindCapture===k?' cap':''}" data-k="${k}">${bindCapture===k?'Presioná una tecla…':keyName(binds[k])}</button>`).join('');
   $('panel').innerHTML=`<div class="side settings"><h1 class="logo">Ajustes</h1>
@@ -158,8 +166,8 @@ function renderSettings(){
     <label class="chk"><input type="checkbox" id="radioC" ${radioOn?'checked':''}> Radio de la tripulación (voces en el idioma de cada nación)</label>
     <h2>Dificultad de los enemigos</h2><div class="hgOpt" id="difR">${Object.entries(DIF).map(([k,D])=>`<button class="${difficulty===k?'sel':''}" data-d="${k}">${D.n}</button>`).join('')}</div>
     <p class="s">Fácil y Normal: apuntan peor y piden artillería y aviones con menos frecuencia. "Se adapta a vos" sube o baja según cómo jugás. Se aplica en la próxima partida.</p>
-    <h2>Calidad gráfica</h2><div class="hgOpt" id="gfxR">${['baja','media','alta'].map(k=>`<button class="${gfx===k?'sel':''}" data-q="${k}">${k[0].toUpperCase()+k.slice(1)}</button>`).join('')}</div>
-    <p class="s">Baja: sin sombras ni pasto, para PCs viejas. Alta: todo al máximo. Se aplica en la próxima partida.</p>
+    <h2>Calidad gráfica</h2><div class="hgOpt" id="gfxR">${['retro','baja','media','alta'].map(k=>`<button class="${gfx===k?'sel':''}" data-q="${k}">${k==='retro'?'Retro (PS1)':k[0].toUpperCase()+k.slice(1)}</button>`).join('')}</div>
+    <p class="s">Retro: imagen pixelada estilo PlayStation, sin sombras. Baja: sin sombras ni pasto, para PCs viejas. Alta: todo al máximo. Las sombras y el pasto se aplican en la próxima partida.</p>
     <h2>Pantalla</h2><label class="chk"><input type="checkbox" id="fsC" ${fsAuto?'checked':''}> Pantalla completa al salir a la partida</label>
     <button class="go alt" id="introB" style="margin:4px 0 0">Ver la intro</button>
     <h2>Teclas</h2><p class="s">Hacé clic en una acción y presioná la tecla nueva. Esc cancela. Si la tecla ya estaba usada, se intercambian.</p>
@@ -297,6 +305,7 @@ function loop(ts){
 }
 // Un cuadro del juego: simulación + dibujo (separado del bucle para poder probarlo paso a paso)
 function frame(dt){
+  if(Q().retro){ retroT-=dt; if(retroT<=0){ retroT=1.5; retroTextures(true); } }
   if(state==='intro'&&typeof introFrame==='function'){ introFrame(dt); return; }
   const sim=['play','deploy','spectate','end'].includes(state)||(net.on&&(state==='paused'||state==='brief'));
   camera.up.set(0,1,0); boardMode=false; infAmbTick(dt);

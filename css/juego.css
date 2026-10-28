@@ -304,3 +304,12 @@ body.menu #objT{display:none!important}
 @keyframes cvSlam{0%{opacity:0;transform:scale(2.4)}60%{opacity:1}100%{opacity:1;transform:scale(1)}}
 @keyframes cvFlash{0%{opacity:.55}100%{opacity:0}}
 @keyframes cvShake{0%,100%{margin:0}20%{margin:-6px 0 0 5px}40%{margin:5px 0 0 -6px}60%{margin:-3px 0 0 3px}80%{margin:2px 0 0 -2px}}
+
+/* Chips de datos en las tarjetas de vehículos (vehStatsHTML en miniaturas.js) */
+.vsts{display:flex;flex-wrap:wrap;gap:4px 5px;margin:5px 0 3px}
+.vst{display:inline-flex;align-items:baseline;gap:3px;font:600 12px/1.2 system-ui,sans-serif;color:var(--paper);background:rgba(0,0,0,.35);border:1px solid rgba(239,231,210,.18);padding:1px 5px;white-space:nowrap}
+.vst i{font-style:normal;font-weight:500;font-size:10px;color:var(--khaki);text-transform:uppercase;letter-spacing:.04em}
+.tree .vrow .vst{opacity:1} .tk .tkD{display:block;opacity:.85;font-size:14px}
+
+/* Modo retro: el canvas del juego se agranda sin suavizar (applyGfx) */
+body.retro #game>canvas{image-rendering:pixelated}

@@ -6,8 +6,9 @@ let chosenNation='ar', enemyNation='uk', chosenMap='rand';
 const renderer=new THREE.WebGLRenderer({antialias:true});
 // Calidad gráfica (Ajustes): baja / media / alta
 let gfx='media'; try{ const S0=JSON.parse(localStorage.getItem('tw_settings')||'null'); if(S0&&S0.gfx) gfx=S0.gfx; }catch(e){}
-const GFX={baja:{pr:.75,sh:0,grass:0,mir:'terreno'},media:{pr:1,sh:1024,grass:.5,mir:'medio'},alta:{pr:2,sh:2048,grass:1,mir:'todo'}};
+const GFX={retro:{pr:.42,sh:0,grass:.5,mir:'medio',retro:1},baja:{pr:.75,sh:0,grass:0,mir:'terreno'},media:{pr:1,sh:1024,grass:.5,mir:'medio'},alta:{pr:2,sh:2048,grass:1,mir:'todo'}};
 const Q=()=>GFX[gfx]||GFX.media;
+document.body.classList.toggle('retro',!!Q().retro); // modo retro: canvas pixelado (ver applyGfx)
 renderer.setPixelRatio(Math.min(devicePixelRatio,Q().pr));
 renderer.setSize(innerWidth,innerHeight);
 renderer.shadowMap.enabled=true; renderer.shadowMap.type=THREE.PCFSoftShadowMap;

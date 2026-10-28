@@ -129,7 +129,7 @@ function renderDeploy(){
   }
   const veh=c.lineup.map(k=>{const V=VEH[k],cost=costOf(c,k),u=usesOf(c,k);
     const eq=[`mira ${V.optic.join('/')}×`,V.fcs?'telémetro':'',V.stab?'estabilizador':'',V.thermal?'térmica':''].filter(Boolean);
-    return {k,img:1,label:V.label,desc:`Tanque ${V.cls}. ${V.desc} Munición: ${V.ammo.map(A=>A.n).join(', ')}.${eq.length?' Equipo: '+eq.join(', ')+'.':''}`,off:!available(c,k),
+    return {k,img:1,label:V.label,desc:`${vehStatsHTML(k)}<span class="tkD">${CLS_ES[V.cls]||V.cls}${V.year?' · '+V.year:''}. ${V.desc} Munición: ${V.ammo.map(A=>A.n+' ('+A.pen+' mm)').join(', ')}.</span>`,off:!available(c,k),
       tag:(u>=usesMax(k)?'Sin usos':cost===0?'Gratis':`${cost} puntos${cost>c.sp?', te faltan '+(cost-c.sp):''}`)+(isFinite(usesMax(k))?`. Usos ${u} de ${usesMax(k)}`:`. Salidas: ${u}`)};});
   if(!selKey||!c.lineup.includes(selKey)||!available(c,selKey)) selKey=(veh.find(v=>!v.off)||{}).k;
   const pts=spawnPoints(0); if(selSp>=pts.length) selSp=0;
