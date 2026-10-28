@@ -7,12 +7,24 @@
    Deja en el tanque lo mismo que los demás constructores (turret, gunPivot, barrel, muzzle, coax, colliders, hTop, topH, aimH, seatPos). */
 _helmM.m1=new THREE.MeshLambertMaterial({color:0x4f5238});   // casco M1 estadounidense
 _helmM.arg=new THREE.MeshLambertMaterial({color:0x58603f});  // casco argentino modelo 1938 (forma alemana)
+_helmM.ita=new THREE.MeshLambertMaterial({color:0x5e5a44}); _helmM.jpn=new THREE.MeshLambertMaterial({color:0x5f5a3a}); _helmM.chn=new THREE.MeshLambertMaterial({color:0x4f5640}); // Italia (M33), Japón (Tipo 90), China (M35 alemán)
 const _celMat=new THREE.MeshLambertMaterial({color:0x74acdf});
 // Escarapela argentina (celeste, blanco, celeste)
 function arRoundel(parent,x,y,z,ry,s=1){ const g=new THREE.Group(); g.position.set(x,y,z); g.rotation.y=ry; parent.add(g);
   const c=(r,m,o)=>{ const d=new THREE.Mesh(new THREE.CircleGeometry(r*s,18),m); d.rotation.y=Math.PI/2; d.position.x=o; g.add(d); };
   c(.26,_celMat,0); c(.17,_wMat,.004); c(.08,_celMat,.008); return g; }
+const _verdeMat=new THREE.MeshLambertMaterial({color:0x2e7d3a}), _amaMat=new THREE.MeshLambertMaterial({color:0xd6b23a}), _azulCn=new THREE.MeshLambertMaterial({color:0x1f3f8f});
+// Insignias de las naciones nuevas: Italia (franjas verde, blanca y roja), Japón (estrella amarilla del Ejército),
+// China nacionalista (cielo azul y sol blanco)
+function w2Insignia2(parent,kind,x,y,z,ry,s=1){ const g=new THREE.Group(); g.position.set(x,y,z); g.rotation.y=ry; parent.add(g);
+  if(kind==='it'){ [_verdeMat,_wMat,_rMat].forEach((m,i)=>box(g,.02,.32*s,.14*s,0,0,(i-1)*.14*s,m)); }
+  else if(kind==='jp'){ const sh=new THREE.Shape(); for(let i=0;i<10;i++){ const a=i/10*Math.PI*2-Math.PI/2, r=(i%2?.09:.22)*s; i?sh.lineTo(Math.cos(a)*r,-Math.sin(a)*r):sh.moveTo(Math.cos(a)*r,-Math.sin(a)*r); }
+    const m=new THREE.Mesh(new THREE.ShapeGeometry(sh),_amaMat); m.rotation.y=Math.PI/2; g.add(m); }
+  else if(kind==='cn'){ const c=(r,m,o)=>{ const d=new THREE.Mesh(new THREE.CircleGeometry(r*s,18),m); d.rotation.y=Math.PI/2; d.position.x=o; g.add(d); };
+    c(.25,_azulCn,0); c(.13,_wMat,.004); for(let i=0;i<12;i++){ const r=box(g,.012,.05*s,.05*s,.006,Math.sin(i/12*6.283)*.17*s,Math.cos(i/12*6.283)*.17*s,_wMat); r.rotation.x=i/12*6.283; } }
+  return g; }
 function w2Insignia(parent,kind,x,y,z,ry,s=1){
+  if(kind==='it'||kind==='jp'||kind==='cn') return w2Insignia2(parent,kind,x,y,z,ry,s);
   if(kind==='de') return ironCross(parent,x,y,z,ry,s*.85);
   if(kind==='ar') return arRoundel(parent,x,y,z,ry,s);
   if(kind==='uk'){ const g=new THREE.Group(); g.position.set(x,y,z); g.rotation.y=ry; parent.add(g); box(g,.02,.3*s,.55*s,0,0,0,_wMat); box(g,.025,.3*s,.18*s,0,0,0,_rMat); return g; } // franjas de reconocimiento
@@ -92,7 +104,7 @@ function buildW2(t,M,mat,root,lkL,lkR){
   const gy=I.case?0:w2Turret(tur,M,I,mat);
   if(I.cup) { cyl(tur,.28,.3,.25,I.cupX??-M.tw*.2,M.th+.12,-M.tl*.22,12,mat); slits(tur,3,I.cupX??-M.tw*.2,M.th+.16,-M.tl*.22+.29,0,.08); }
   else if(!I.case&&I.tur!=='open') rbox(tur,.5,.06,.5,-M.tw*.18,M.th+.03,-M.tl*.15,mat,.02);
-  if(I.ins&&I.tur!=='none'&&!I.case&&(I.ins==='ru'||I.ins==='us'||I.ins==='ar'||I.ins==='de')) for(const sx of [-1,1]) w2Insignia(tur,I.ins,sx*(M.tw/2*.92+.01),gy+.05,-M.tl*.1,sx>0?0:Math.PI,.65);
+  if(I.ins&&I.tur!=='none'&&!I.case&&['ru','us','ar','de','jp','cn','fr'].includes(I.ins)) for(const sx of [-1,1]) w2Insignia(tur,I.ins,sx*(M.tw/2*.92+.01),gy+.05,-M.tl*.1,sx>0?0:Math.PI,.65);
   const G=gunMount(t,tur,0,gy,I.case?.0:M.tl/2-.08,M.gl,M.gr,mat,{shR:Math.max(.16,M.gr*3.4)});
   // mantelete
   if(I.mant==='round'){ const m=cyl(G.gp,M.gr*4.2,M.gr*4.2,.35,0,0,.12,12,mat); m.rotation.x=Math.PI/2; }

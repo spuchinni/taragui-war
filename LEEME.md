@@ -27,7 +27,7 @@ Juego de tanques en el navegador. Se juega en https://spuchinni.github.io/taragu
 |---|---|
 | 1916–1918 · Primera Guerra Mundial | Evento: del 28 de julio por 30 días (árbol + campaña de 6 misiones) |
 | 1919–1938 · Entreguerras | Evento: del 28 de julio por 30 días (15 tanques, 4 mapas y campaña de la Guerra Civil Española) |
-| 1939–1945 · Segunda Guerra Mundial | **Siempre**: 22 tanques de 5 naciones (con el Nahuel argentino), 4 mapas y campaña de 4 misiones |
+| 1939–1945 · Segunda Guerra Mundial | **Siempre**: 50 tanques de 9 naciones (con el Nahuel argentino, Italia, Japón, Francia y China), 4 mapas y campaña de 8 misiones |
 | 1946–1959 · Posguerra y Corea | Próximamente |
 | 1960–hoy · Guerra Fría y actualidad | Evento: del 12 de marzo por 30 días (los tanques y mapas de la versión 1) |
 

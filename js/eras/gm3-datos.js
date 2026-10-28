@@ -274,3 +274,152 @@ Object.assign(AMMO_DEF,{
 const W2_KEYS2=['pz38t','jagdpanther','tiger2','bt7','kv2','su100','m18','m24','m36','valentine','comet','achilles'];
 W2_KEYS.push(...W2_KEYS2);
 for(const k of W2_KEYS2){ FC[k]={crew:VEH[k].seats.length}; OPTIC[k]=['tiger2','jagdpanther'].includes(k)?[3,6]:['su100','m36','comet','achilles','m18'].includes(k)?[3,6]:[2.5,4]; }
+
+/* ---- Tercer lote: naciones nuevas de la 2ª Guerra ----
+   Italia y Japón con Alemania (el Eje); Francia (1940 y la 2.ª División Blindada de 1944) y China nacionalista con los Aliados.
+   Las voces de radio de estas naciones usan las de español hasta que haya grabaciones propias (LANG_OF en 05-audio.js). */
+Object.assign(NATIONS,{
+  it:{label:'Italia',desc:'L6/40, M13/40, Semovente 75/18 y P26/40.',lineup:['l640','m1340','sem7518','p40'],
+      names:['Serg. Rossi','Cap. Bianchi','Ten. Colombo','Sold. Ricci','Serg. Marino'],camo:['#b5a47a','#9a8a62','#6e6448']},
+  jp:{label:'Japón',desc:'Ha-Go, Chi-Ha, Chi-He y Chi-Nu.',lineup:['hago','chiha','chihe','chinu'],
+      names:['Gunsō Tanaka','Gochō Suzuki','Shōi Nishi','Ittōhei Sato','Gunsō Ito'],camo:['#7a6e48','#5c6640','#8a7450']},
+  cn:{label:'China',desc:'Vickers 6 toneladas, T-26, M3A3 Stuart y M4A4 Sherman.',lineup:['v6cn','t26cn','m3a3cn','m4a4cn'],
+      names:['Sgto. Wang','Cabo Li','Tte. Zhang','Sold. Liu','Sgto. Chen'],camo:['#5d6444','#4a5236','#33392a']}
+});
+Object.assign(NAT_ERA[3],{
+  it:{label:'Italia',names:['Serg. Rossi','Cap. Bianchi','Ten. Colombo','Sold. Ricci','Serg. Marino'],uni:['#8a7f5a','#746a4a','#4d4632'],helm:'ita'},
+  jp:{label:'Japón',names:['Gunsō Tanaka','Gochō Suzuki','Shōi Nishi','Ittōhei Sato','Gunsō Ito'],uni:['#7d7650','#686240','#45412b'],helm:'jpn'},
+  fr:{label:'Francia',names:['Sgt. Leclerc','Cpl. Dupont','Lt. de Gaulle','Sdt. Martin','Sgt. Bernard'],uni:['#76704c','#625c3e','#423e2b'],helm:'adrian'},
+  cn:{label:'China',names:['Sgto. Wang','Cabo Li','Tte. Zhang','Sold. Liu','Sgto. Chen'],uni:['#6e7056','#5a5c46','#3c3d2e'],helm:'chn'}});
+ERAS[3].sides=[['uk','ru','us','ar','fr','cn'],['de','it','jp']];
+const W2IT=['#b5a47a','#9a8a62','#6e6448'], W2JP=['#7a6e48','#5c6640','#8a7450'], W2CN=['#5d6444','#4a5236','#33392a'], W2FR=['#7a7a52','#5d6a3c','#3d3326','#9a8a5e'];
+Object.assign(VEH,{
+  // ---- Italia ----
+  l640:{nation:'it',era:3,year:1941,br:3.0,cls:'ligero',label:'L6/40',desc:'Tanque ligero italiano de reconocimiento con un cañón automático Breda de 20 mm. Chico, rápido y con blindaje fino: pelea de lejos y se va.',
+    auto:{mag:8,rof:.24},maxF:kmh2(42),maxR:3,turn:.9,trav:1.0,reload:3.6,pen:30,hp:65,crewReal:2,seats:['driver','gunner'],
+    armor:{hull:{front:30,side:15,rear:15,top:6},turret:{front:30,side:15,rear:15,top:6}},camo:W2IT,camoMode:'flat',mgc:8,
+    m:{ww1:'w2',L:3.82,W:1.92,H:2.03,tz:.0,tw:1.25,th:.65,tl:1.4,gl:1.3,gr:.03,
+      w2:{trW:.27,trH:.8,trF:.75,trR:.75,deck:1.3,glacis:.45,lowF:.45,nW:4,wR:.22,bog:1,ret:3,tur:'bevel',tx:.12,ins:'it'}}},
+  m1340:{nation:'it',era:3,year:1940,br:3.3,cls:'medio',label:'M13/40',desc:'El tanque medio italiano del desierto: remachado, con el 47/32 que perfora a los Crusader y a los Stuart. En Libia peleó contra la Matilda, que casi no podía perforar.',
+    maxF:kmh2(30),maxR:2.2,turn:.7,trav:.8,reload:3.8,pen:45,hp:90,crewReal:4,seats:['driver','commander','gunner','mg1'],
+    armor:{hull:{front:30,side:25,rear:25,top:15},turret:{front:42,side:25,rear:25,top:15}},camo:W2IT,camoMode:'flat',mgc:8,
+    m:{ww1:'w2',L:4.92,W:2.2,H:2.37,tz:.1,tw:1.5,th:.75,tl:1.7,gl:1.6,gr:.04,
+      w2:{trW:.3,trH:.85,trF:.8,trR:.85,deck:1.6,glacis:.6,lowF:.4,nW:8,wR:.2,bog:1,ret:3,tur:'bevel',ins:'it',bmg:.3}}},
+  sem7518:{nation:'it',era:3,year:1941,br:3.7,cls:'cazatanques',label:'Semovente 75/18',desc:'Cañón de asalto sobre el chasis del M13: un obús corto de 75 mm con munición de carga hueca que perforaba a los Sherman y a los Grant de El Alamein. Bajo y difícil de ver.',
+    arc:.2,maxF:kmh2(32),maxR:2.2,turn:.7,trav:.5,reload:4.8,pen:70,hp:95,crewReal:3,seats:['driver','commander','gunner'],
+    armor:{hull:{front:50,side:25,rear:25,top:15},turret:{front:50,side:25,rear:25,top:15}},camo:W2IT,camoMode:'flat',mgc:8,
+    m:{ww1:'w2',L:4.92,W:2.2,H:1.85,tz:1.0,tw:1.0,th:.6,tl:1.0,gl:1.5,gr:.05,
+      w2:{trW:.3,trH:.85,trF:.8,trR:.85,deck:1.25,glacis:.5,lowF:.4,nW:8,wR:.2,bog:1,ret:3,tur:'none',case:{w:1.9,l:2.3,h:.6,z:.2,taper:.18},mant:'box',ins:'it'}}},
+  p40:{nation:'it',era:3,year:1943,br:4.3,cls:'pesado',label:'P26/40',desc:'El "pesado" italiano: 75/34 y blindaje inclinado como el T-34. Llegó tarde: casi todos los que se hicieron los usaron los alemanes después del armisticio de 1943.',
+    maxF:kmh2(40),maxR:2.6,turn:.7,trav:.7,reload:4.2,pen:90,hp:125,crewReal:4,seats:['driver','commander','gunner','loader'],
+    armor:{hull:{front:75,side:45,rear:45,top:15},turret:{front:60,side:45,rear:45,top:15}},camo:W2IT,camoMode:'flat',mgc:8,
+    m:{ww1:'w2',L:5.8,W:2.8,H:2.5,tz:.15,tw:1.9,th:.85,tl:2.2,gl:2.7,gr:.05,
+      w2:{trW:.4,trH:.9,trF:.9,trR:.9,deck:1.7,glacis:1.0,lowF:.35,slope:.18,nW:8,wR:.22,bog:1,ret:3,tur:'pan',ins:'it',coax:1}}},
+  // ---- Japón ----
+  hago:{nation:'jp',era:3,year:1935,br:3.0,cls:'ligero',label:'Tipo 95 Ha-Go',desc:'El tanque ligero japonés más fabricado: 37 mm, 12 mm de blindaje y el comandante solo en la torre. Muy bueno en China y en la selva de Malasia; frente a los Stuart y Sherman, poco.',
+    maxF:kmh2(45),maxR:3,turn:.9,trav:.9,reload:3.6,pen:35,hp:65,crewReal:3,seats:['driver','gunner','mg1'],
+    armor:{hull:{front:12,side:12,rear:10,top:9},turret:{front:12,side:12,rear:12,top:9}},camo:W2JP,camoMode:'de',mgc:7.7,
+    m:{ww1:'w2',L:4.38,W:2.07,H:2.28,tz:-.05,tw:1.3,th:.8,tl:1.5,gl:1.4,gr:.035,
+      w2:{trW:.3,trH:.85,trF:.75,trR:.85,deck:1.5,glacis:.6,lowF:.45,nW:4,wR:.3,bog:1,ret:2,tur:'cyl',tx:-.12,ins:'jp',bmg:-.3}}},
+  chiha:{nation:'jp',era:3,year:1942,br:3.3,cls:'medio',label:'Tipo 97 Chi-Ha Shinhoto',desc:'El Chi-Ha con la "torre nueva" (shinhoto) y el 47 mm Tipo 1, un cañón de alta velocidad que por fin perforaba al Stuart y al M3 Lee de costado.',
+    maxF:kmh2(38),maxR:2.6,turn:.75,trav:.8,reload:3.6,pen:60,hp:90,crewReal:4,seats:['driver','commander','gunner','mg1'],
+    armor:{hull:{front:25,side:20,rear:20,top:10},turret:{front:25,side:25,rear:25,top:10}},camo:W2JP,camoMode:'de',mgc:7.7,
+    m:{ww1:'w2',L:5.52,W:2.33,H:2.38,tz:.05,tw:1.55,th:.8,tl:2.0,gl:2.2,gr:.04,
+      w2:{trW:.33,trH:.9,trF:.85,trR:.9,deck:1.6,glacis:.6,lowF:.45,nW:6,wR:.28,bog:1,ret:4,tur:'bevel',bus:1,ins:'jp',bmg:-.3}}},
+  chihe:{nation:'jp',era:3,year:1942,br:3.7,cls:'medio',label:'Tipo 1 Chi-He',desc:'El Chi-Ha mejorado: soldado en vez de remachado, 50 mm de frente, motor más potente y radio. El 47 mm Tipo 1 perfora al Sherman solo de cerca y de costado.',
+    maxF:kmh2(44),maxR:2.8,turn:.75,trav:.8,reload:3.6,pen:60,hp:100,crewReal:5,seats:['driver','commander','gunner','loader','mg1'],
+    armor:{hull:{front:50,side:25,rear:20,top:10},turret:{front:50,side:25,rear:25,top:10}},camo:W2JP,camoMode:'de',mgc:7.7,
+    m:{ww1:'w2',L:5.73,W:2.33,H:2.38,tz:.05,tw:1.6,th:.85,tl:2.0,gl:2.3,gr:.04,
+      w2:{trW:.33,trH:.9,trF:.85,trR:.9,deck:1.6,glacis:.7,lowF:.4,nW:6,wR:.28,bog:1,ret:3,tur:'box',cup:1,ins:'jp',bmg:-.3}}},
+  chinu:{nation:'jp',era:3,year:1944,br:4.3,cls:'medio',label:'Tipo 3 Chi-Nu',desc:'El tanque que Japón guardó para defender las islas: el cañón de campaña Tipo 90 de 75 mm en una torre grande, capaz de perforar al Sherman. Nunca llegó a combatir.',
+    maxF:kmh2(39),maxR:2.6,turn:.7,trav:.6,reload:4.4,pen:90,hp:110,crewReal:5,seats:['driver','commander','gunner','loader','mg1'],
+    armor:{hull:{front:50,side:25,rear:20,top:12},turret:{front:50,side:25,rear:25,top:12}},camo:W2JP,camoMode:'de',mgc:7.7,
+    m:{ww1:'w2',L:5.73,W:2.33,H:2.61,tz:.0,tw:1.95,th:1.0,tl:2.4,gl:2.8,gr:.05,
+      w2:{trW:.33,trH:.9,trF:.85,trR:.9,deck:1.6,glacis:.7,lowF:.4,nW:6,wR:.28,bog:1,ret:3,tur:'box',cup:1,mant:'box',ins:'jp',bmg:-.3}}},
+  // ---- Francia ----
+  h39:{nation:'fr',era:3,year:1939,br:3.0,cls:'ligero',label:'Hotchkiss H39',desc:'Tanque ligero de caballería con casco fundido de 40 mm y el 37 mm SA38 de cañón largo. Bien blindado para 1940, pero el comandante hace todo solo en la torre.',
+    maxF:kmh2(36),maxR:2.4,turn:.75,trav:.6,reload:4.2,pen:40,hp:85,crewReal:2,seats:['driver','gunner'],
+    armor:{hull:{front:40,side:40,rear:40,top:20},turret:{front:40,side:40,rear:40,top:20}},camo:W2FR,camoMode:'fr',mgc:7.5,
+    m:{ww1:'w2',L:4.22,W:1.95,H:2.15,tz:.1,tw:1.25,th:.85,tl:1.35,gl:1.4,gr:.035,
+      w2:{trW:.3,trH:.85,trF:.85,trR:.7,deck:1.3,glacis:.6,lowF:.4,nW:6,wR:.22,bog:1,ret:3,tur:'cast',cup:1,ins:'fr'}}},
+  s35f:{nation:'fr',era:3,year:1940,br:3.3,cls:'medio',label:'Somua S35 (1940)',desc:'El mejor tanque de mayo de 1940: casco fundido de 47 mm y el 47 mm SA35 que perforaba a cualquier Panzer. En Hannut y Gembloux frenó a la Wehrmacht por unos días.',
+    maxF:kmh2(40),maxR:2.5,turn:.65,trav:.6,reload:4.5,pen:50,hp:110,crewReal:3,seats:['driver','commander','gunner'],
+    armor:{hull:{front:47,side:40,rear:25,top:15},turret:{front:56,side:46,rear:46,top:20}},camo:W2FR,camoMode:'fr',mgc:7.5,
+    m:{ww1:'w2',L:5.38,W:2.12,H:2.62,tz:-.1,tw:1.45,th:.95,tl:1.6,gl:1.6,gr:.045,
+      w2:{trW:.33,trH:1.0,trF:.95,trR:.8,deck:1.55,glacis:.8,lowF:.45,nW:9,wR:.2,bog:1,ret:2,skirt:.7,tur:'cast',cup:1,ins:'fr'}}},
+  b1f:{nation:'fr',era:3,year:1940,br:3.7,cls:'pesado',label:'Char B1 bis (1940)',desc:'La fortaleza francesa: 60 mm de blindaje, 47 mm en la torre y un obús de 75 mm en el casco. En Stonne, el "Eure" del capitán Billotte destruyó 13 Panzer sin que lo perforaran.',
+    maxF:kmh2(28),maxR:1.8,turn:.45,trav:.5,reload:4.8,pen:50,hp:150,crewReal:4,seats:['driver','commander','gunner','loader'],climb:.45,
+    armor:{hull:{front:60,side:55,rear:55,top:25},turret:{front:56,side:46,rear:46,top:25}},camo:W2FR,camoMode:'fr',mgc:7.5,
+    m:{ww1:'w2',L:6.37,W:2.5,H:2.79,tz:-.4,tw:1.4,th:.95,tl:1.55,gl:1.6,gr:.045,
+      w2:{trW:.5,trH:1.55,trF:1.55,trR:1.4,chur:1,cover:1,deck:1.85,glacis:.35,lowF:.8,nW:8,wR:.22,bog:1,ret:0,tur:'cast',cup:1,ins:'fr'}}},
+  m4a2fr:{nation:'fr',era:3,year:1944,br:3.7,cls:'medio',label:'M4A2 Sherman (2.ª DB)',desc:'Los Sherman de la 2.ª División Blindada del general Leclerc, que entraron primero a París el 24 de agosto de 1944. Cada tanque llevaba un nombre: "Romilly", "Montmirail", "Champaubert".',
+    maxF:kmh2(42),maxR:2.8,turn:.7,trav:.9,reload:3.8,pen:88,hp:125,crewReal:5,seats:['driver','commander','gunner','loader','mg1'],
+    armor:{hull:{front:90,side:38,rear:38,top:19},turret:{front:76,side:51,rear:51,top:25}},camo:W2US,camoMode:'flat',mgc:7.62,
+    m:{ww1:'w2',L:5.94,W:2.62,H:2.74,tz:.0,tw:1.85,th:.85,tl:2.2,gl:2.8,gr:.05,
+      w2:{trW:.42,trH:.95,trF:.85,trR:.95,deck:1.85,glacis:1.2,lowF:.35,slope:.06,nW:6,wR:.26,bog:1,ret:3,nose:'sher',tur:'cast',bus:1,ins:'fr',aa:1,bmg:.35}}},
+  // ---- China nacionalista ----
+  v6cn:{nation:'cn',era:3,year:1936,br:3.0,cls:'ligero',label:'Vickers 6 toneladas (China)',desc:'El Ejército Nacional Revolucionario compró 20 Vickers con el 47 mm corto. Pelearon en Shanghái en 1937 contra los japoneses y casi todos se perdieron.',
+    maxF:kmh2(35),maxR:2.4,turn:.75,trav:.8,reload:4.0,pen:32,hp:70,crewReal:3,seats:['driver','commander','gunner'],
+    armor:{hull:{front:13,side:13,rear:10,top:6},turret:{front:13,side:13,rear:13,top:6}},camo:W2CN,camoMode:'flat',mgc:7.92,
+    m:{ww1:'w2',L:4.88,W:2.41,H:2.16,tz:.0,tw:1.55,th:.75,tl:1.8,gl:1.2,gr:.045,
+      w2:{trW:.3,trH:.8,trF:.75,trR:.75,deck:1.4,glacis:.6,lowF:.45,nW:8,wR:.18,bog:1,ret:4,tur:'bevel',bus:1,ins:'cn'}}},
+  t26cn:{nation:'cn',era:3,year:1938,br:3.0,cls:'ligero',label:'T-26 (China)',desc:'Los 82 T-26 que la URSS mandó a China en 1938: el 45 mm perforaba a cualquier tanque japonés. Formaron la 200.ª División, la primera blindada china.',
+    maxF:kmh2(31),maxR:2.2,turn:.7,trav:.8,reload:3.6,pen:50,hp:75,crewReal:3,seats:['driver','commander','gunner'],
+    armor:{hull:{front:15,side:15,rear:15,top:6},turret:{front:15,side:15,rear:15,top:6}},camo:W2CN,camoMode:'flat',mgc:7.62,
+    m:{ww1:'w2',L:4.65,W:2.44,H:2.24,tz:-.05,tw:1.65,th:.75,tl:1.9,gl:1.8,gr:.04,
+      w2:{trW:.3,trH:.8,trF:.8,trR:.75,deck:1.45,glacis:.6,lowF:.45,nW:8,wR:.18,bog:1,ret:4,tur:'cyl',bus:1,ins:'cn',coax:1}}},
+  m3a3cn:{nation:'cn',era:3,year:1943,br:3.3,cls:'ligero',label:'M3A3 Stuart (China)',desc:'Stuart con casco inclinado del 1.er Grupo Provisional de Tanques chino-estadounidense, que peleó en la selva de Birmania en 1944 para reabrir el camino a China.',
+    maxF:kmh2(58),maxR:3.2,turn:.9,trav:1.0,reload:3.0,pen:53,hp:85,crewReal:4,seats:['driver','commander','gunner','mg1'],
+    armor:{hull:{front:51,side:25,rear:25,top:13},turret:{front:38,side:32,rear:32,top:13}},camo:W2CN,camoMode:'flat',mgc:7.62,
+    m:{ww1:'w2',L:4.98,W:2.52,H:2.57,tz:-.1,tw:1.6,th:.85,tl:1.9,gl:1.7,gr:.035,
+      w2:{trW:.3,trH:.85,trF:.75,trR:.9,deck:1.6,glacis:.9,lowF:.4,slope:.15,nW:4,wR:.3,bog:1,ret:2,tur:'bevel',bus:1,ins:'cn',aa:1,bmg:.3}}},
+  m4a4cn:{nation:'cn',era:3,year:1944,br:3.7,cls:'medio',label:'M4A4 Sherman (China)',desc:'Los Sherman chinos de Birmania (1945): con ellos el Ejército chino de la India abrió la ruta de Ledo hasta Yunnan. El 75 mm destruía cualquier tanque japonés.',
+    maxF:kmh2(40),maxR:2.8,turn:.7,trav:.9,reload:3.8,pen:88,hp:125,crewReal:5,seats:['driver','commander','gunner','loader','mg1'],
+    armor:{hull:{front:90,side:38,rear:38,top:19},turret:{front:76,side:51,rear:51,top:25}},camo:W2CN,camoMode:'flat',mgc:7.62,
+    m:{ww1:'w2',L:6.06,W:2.62,H:2.74,tz:.0,tw:1.85,th:.85,tl:2.2,gl:2.8,gr:.05,
+      w2:{trW:.42,trH:.95,trF:.85,trR:.95,deck:1.85,glacis:1.15,lowF:.35,slope:.1,nW:6,wR:.26,bog:1,ret:3,nose:'sher',tur:'cast',bus:1,ins:'cn',aa:1,bmg:.35}}},
+  // ---- Antitanques ----
+  at4732:{nation:'it',era:3,static:1,uses:1,br:3,cls:'cañón',label:'Cannone da 47/32',desc:'El antitanque y cañón de acompañamiento italiano.',
+    maxF:0,maxR:0,turn:.25,trav:.4,reload:3.4,pen:50,hp:45,arc:.5,crewReal:4,seats:['gunner','loader','commander','driver'],
+    armor:{hull:{front:5,side:2,rear:2,top:2},turret:{front:5,side:2,rear:2,top:2}},camo:W2IT,camoMode:'flat',mgc:8,
+    m:{ww1:'gun',L:3.3,W:1.6,H:.9,wr:.4,wheels:0,tz:.4,tw:1.0,th:.6,tl:.4,gl:1.7,gr:.03}},
+  at47jp:{nation:'jp',era:3,static:1,uses:1,br:3,cls:'cañón',label:'47 mm Tipo 1',desc:'El antitanque japonés de alta velocidad.',
+    maxF:0,maxR:0,turn:.25,trav:.4,reload:3.4,pen:60,hp:45,arc:.5,crewReal:4,seats:['gunner','loader','commander','driver'],
+    armor:{hull:{front:5,side:2,rear:2,top:2},turret:{front:5,side:2,rear:2,top:2}},camo:W2JP,camoMode:'flat',mgc:7.7,
+    m:{ww1:'gun',L:3.4,W:1.7,H:.95,wr:.4,wheels:0,tz:.4,tw:1.0,th:.6,tl:.4,gl:2.4,gr:.035}},
+  at47fr:{nation:'fr',era:3,static:1,uses:1,br:3,cls:'cañón',label:'47 mm SA 37',desc:'El antitanque francés de 1940, de los mejores de su tiempo.',
+    maxF:0,maxR:0,turn:.25,trav:.4,reload:3.4,pen:60,hp:45,arc:.5,crewReal:4,seats:['gunner','loader','commander','driver'],
+    armor:{hull:{front:5,side:2,rear:2,top:2},turret:{front:5,side:2,rear:2,top:2}},camo:W2FR,camoMode:'flat',mgc:7.5,
+    m:{ww1:'gun',L:3.5,W:1.7,H:1.0,wr:.42,wheels:0,tz:.4,tw:1.0,th:.6,tl:.4,gl:2.4,gr:.035}},
+  pak36cn:{nation:'cn',era:3,static:1,uses:1,br:3,cls:'cañón',label:'3,7 cm Pak 36 (China)',desc:'Los antitanques alemanes que compró China antes de la guerra.',
+    maxF:0,maxR:0,turn:.25,trav:.4,reload:3,pen:40,hp:45,arc:.5,crewReal:4,seats:['gunner','loader','commander','driver'],
+    armor:{hull:{front:5,side:2,rear:2,top:2},turret:{front:5,side:2,rear:2,top:2}},camo:W2CN,camoMode:'flat',mgc:7.92,
+    m:{ww1:'gun',L:3.4,W:1.65,H:.85,wr:.4,wheels:0,tz:.4,tw:1.0,th:.6,tl:.4,gl:1.6,gr:.025}}
+});
+Object.assign(AMMO_DEF,{
+  l640:[['Perforante 20 mm Breda','ke',30,830]],
+  m1340:[['Perforante 47/32','ke',45,630],['Explosivo 47/32','he',6,250]],
+  sem7518:[['Carga hueca 75/18 EP','heat',70,400],['Explosivo 75/18','he',18,450]],
+  p40:[['Perforante 75/34','ke',90,700],['Explosivo 75/34','he',18,600]],
+  hago:[['Perforante 37 mm Tipo 94','ke',35,575],['Explosivo 37 mm','he',4,575]],
+  chiha:[['Perforante 47 mm Tipo 1','ke',60,810],['Explosivo 47 mm','he',6,810]],
+  chihe:[['Perforante 47 mm Tipo 1','ke',60,810],['Explosivo 47 mm','he',6,810]],
+  chinu:[['Perforante 75 mm Tipo 1','ke',90,680],['Explosivo 75 mm Tipo 90','he',18,680]],
+  h39:[['Perforante 37 mm SA38','ke',40,700],['Explosivo 37 mm','he',3,600]],
+  s35f:[['Perforante 47 mm SA35','ke',50,660],['Explosivo 47 mm','he',5,590]],
+  b1f:[['Perforante 47 mm SA35','ke',50,660],['Obús de casco 75 mm','he',17,470]],
+  m4a2fr:[['Perforante 75 mm M61','ke',88,618],['Explosivo 75 mm M48','he',20,463]],
+  v6cn:[['Perforante 47 mm (3 libras)','ke',32,440],['Explosivo 47 mm','he',6,440]],
+  t26cn:[['Perforante 45 mm BR-240','ke',50,760],['Explosivo 45 mm','he',5,335]],
+  m3a3cn:[['Perforante 37 mm M51','ke',53,884],['Explosivo 37 mm','he',4,790]],
+  m4a4cn:[['Perforante 75 mm M61','ke',88,618],['Explosivo 75 mm M48','he',20,463]],
+  at4732:[['Perforante 47/32','ke',50,630]],
+  at47jp:[['Perforante 47 mm','ke',60,810]],
+  at47fr:[['Perforante 47 mm','ke',60,855]],
+  pak36cn:[['Perforante 37 mm','ke',40,745]]
+});
+const W2_KEYS3=['l640','m1340','sem7518','p40','hago','chiha','chihe','chinu','h39','s35f','b1f','m4a2fr','v6cn','t26cn','m3a3cn','m4a4cn','at4732','at47jp','at47fr','pak36cn'];
+W2_KEYS.push(...W2_KEYS3);
+for(const k of W2_KEYS3){ FC[k]={crew:VEH[k].seats.length}; OPTIC[k]=VEH[k].static?[3]:['p40','chinu','m4a2fr','m4a4cn'].includes(k)?[2.5,5]:[2.5,4]; }
+FC.l640.autoL=1; Object.assign(FC.m4a2fr,{stab:1}); Object.assign(FC.m4a4cn,{stab:1});
+Object.assign(GUN_ERA[3],{it:'at4732',jp:'at47jp',fr:'at47fr',cn:'pak36cn'});
