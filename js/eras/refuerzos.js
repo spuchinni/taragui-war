@@ -93,11 +93,18 @@ function spawnRefugees(){
   if(net.guest||!buildings.length||RULE().civ) return; const nP=10+((Math.random()*6)|0), nV=4;
   const edge=x=>{ const s=x<0?-1:1; return s*(W.bx-4); };
   for(let i=0;i<nP;i++){ const B=buildings[(Math.random()*buildings.length)|0]; const x=B.x+rand(-1,1)*(B.w/2+3), z=B.z+rand(-1,1)*(B.d/2+3); if(!freeInf(x,z)) continue;
-    const P=makePerson(Math.random()<.12?'dog':'civ',-1,x,z); P.flee=true; P.refugee=true; P.goal={x:edge(x),z:z+rand(-60,60),door:true}; }
+    const P=makePerson(Math.random()<.12?'dog':'civ',-1,x,z); P.flee=true; P.refugee=true; P.goal={x:edge(x),z:z+rand(-60,60),door:true};
+    if(P.kind!=='civ') continue; refCarry(P);
+    if(Math.random()<.35&&freeInf(x+.8,z)){ const C=makePerson('civ',-1,x+.8,z); C.g.scale.setScalar(rand(.55,.68)); C.child=true; C.flee=true; C.refugee=true; C.goal={...P.goal,x:P.goal.x+.8}; } }
   for(let i=0;i<nV;i++){ const B=buildings[(Math.random()*buildings.length)|0], ti=REF_VEH[i%REF_VEH.length]; if(ti<0) continue;
     const ci=(ti<<4)|((Math.random()*16)|0), g=carMesh(ci), V=VTYPES[ti]; scene.add(g); const x=B.x+B.w/2+4, z=B.z;
     traffic.push({id:++carSeq,g,S:null,dir:1,k:0,v:0,vmax:rand(V.v[0],V.v[1])*.8,state:5,ci,x,z,h:0,len:g.userData.len,V,ref:{x:edge(x)*1.02,z:z+rand(-40,40)}}); }
 }
+// Lo que se llevan: una valija, un atado de ropa o una bolsa al hombro
+const refCarryM=[0x4a3626,0x6a4e30,0x2a2a2a,0x8a7a5a,0xb8a888,0x5a3a3a].map(c=>new THREE.MeshLambertMaterial({color:c}));
+function refCarry(P){ const A=P.parts&&P.parts.armR; if(!A) return; const r=Math.random();
+  if(r<.5){ const m=new THREE.Mesh(PG.suitcase,refCarryM[(Math.random()*3)|0]); m.position.set(0,-.62,0); A.add(m); }
+  else if(r<.85){ const m=new THREE.Mesh(PG.bundle,refCarryM[3+((Math.random()*3)|0)]); m.position.set(0,-.72,0); m.scale.set(1,.8,1.1); A.add(m); } }
 function updateRefugeeCars(dt){
   for(let i=traffic.length-1;i>=0;i--){ const C=traffic[i]; if(!C.ref||C.state!==5) continue;
     if(noises.some(n=>now-n.t<2&&Math.hypot(n.x-C.x,n.z-C.z)<Math.min(n.r,40))||tanks.some(t=>!t.dead&&Math.hypot(t.pos.x-C.x,t.pos.z-C.z)<18)){ C.state=0; abandonCar(C); continue; }
@@ -110,7 +117,7 @@ function initRefuerzos(){ if(net.guest) return;
   if(W.era<=3) spawnRefugees(); }
 function updRefuerzos(dt){
   for(let i=refPending.length-1;i>=0;i--){ const R=refPending[i]; if(now<R.t) continue; refPending.splice(i,1); if(!net.guest&&R.Z.owner===(R.team===0?1:-1)) sendReinforcements(R.Z,R.team); }
-  for(const t of tanks){ if(t.dead) continue; if(t.T.aa&&!net.guest) updateAA(t,dt);
+  for(const t of tanks){ if(t.dead) continue; if(t.T.aa&&!net.guest&&!t.isPlayer&&!(t.crew&&t.crew.peer)) updateAA(t,dt);
     if(t.convoyZ&&!t.dismounted){ const Z=t.convoyZ; if(Math.hypot(t.pos.x-Z.x,t.pos.z-Z.z)<Z.r+10||now-t.convoyT>120){ t.dismounted=true; t.speed=0; dismount(t); } } }
   for(let i=transports.length-1;i>=0;i--){ const T=transports[i];
     if(T.down){ if(planeFall(T,dt)){ if(T.snd) T.snd.stop(); scene.remove(T.g); unhit(T); transports.splice(i,1); } continue; }
@@ -127,3 +134,13 @@ function clearRefuerzos(){ transports.forEach(T=>{ scene.remove(T.g); if(T.snd) 
   fortProps.forEach(g=>scene.remove(g)); fortProps.length=0; refPending.length=0; for(const Z of zones||[]){ Z.fort=null; Z.refT=0; } }
 // Al bajar la infantería, el semioruga queda vacío
 { const _dm=dismount; dismount=function(t){ const r=_dm(t); if(r!==false&&t.seated) t.seated.forEach(g=>g.visible=false); return r; }; }
+// Con un antiaéreo la cámara sube casi vertical (para seguir a los aviones)
+const camMaxP=()=>player&&!player.dead&&player.T.aa?1.25:.6;
+// Mira de adelanto para el jugador con antiaéreo: un círculo donde va a estar cada avión enemigo cuando llegue el tiro
+{ const _ov=drawOverlay; drawOverlay=function(){ _ov(); if(state!=='play'||!player||player.dead||!player.T.aa) return;
+    const v=ammoOf(player).v||850; oc.strokeStyle='#ffd27a'; oc.lineWidth=1.5;
+    for(const o of aaTargets(player.team)){ const d=o.pos.distanceTo(player.pos); if(d>1100) continue;
+      const s=project(o.pos.clone().addScaledVector(o.vel,d/v)), s0=project(o.pos.clone()); if(!s) continue;
+      oc.beginPath(); oc.arc(s.x,s.y,9,0,Math.PI*2); oc.stroke(); oc.beginPath(); oc.moveTo(s.x-4,s.y); oc.lineTo(s.x+4,s.y); oc.moveTo(s.x,s.y-4); oc.lineTo(s.x,s.y+4); oc.stroke();
+      if(s0){ oc.setLineDash([3,4]); oc.beginPath(); oc.moveTo(s0.x,s0.y); oc.lineTo(s.x,s.y); oc.stroke(); oc.setLineDash([]); }
+      oc.fillStyle='#ffd27a'; oc.fillText(`${Math.round(d)} m`,s.x,s.y-14); } }; }

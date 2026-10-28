@@ -340,7 +340,7 @@ function aimAt(t,point,dt,eY=0,eP=0){
   const ly0=Math.atan2(dir.x,dir.z); let ly=ly0; const lp=clamp(Math.asin(clamp(dir.y,-1,1)),-.14,t.T.elev||.35); // los antiaéreos suben casi vertical (T.elev)
   if(t.T.arc!=null){ const c0=t.T.arcC||0; ly=c0+clamp(wrap(ly-c0),-t.T.arc,t.T.arc); }
   t.turretYaw=stepAng(t.turretYaw,ly,t.T.trav*dt);
-  t.gunPitch+=clamp(lp-t.gunPitch,-.5*dt,.5*dt);
+  const ps=t.T.aa?1.1:.5; t.gunPitch+=clamp(lp-t.gunPitch,-ps*dt,ps*dt);
   if(t.sponsons) sponsonAim(t); else { t.turret.rotation.y=t.turretYaw-(t.turretBase||0); t.gunPivot.rotation.x=-t.gunPitch; }
   return Math.abs(wrap(ly0-t.turretYaw))+Math.abs(lp-t.gunPitch);
 }

@@ -42,7 +42,7 @@ function gunCal(V){ const n=(V.ammo&&V.ammo[0]&&V.ammo[0].n)||''; let m;
   if((m=n.match(/(\d+)\s*in\b/))) return (+m[1]*25.4).toFixed(1).replace('.',',')+' mm';
   if((m=n.match(/\b(\d{2})\/\d{2}\b/))) return m[1]+' mm';
   return ''; }
-const CLS_ES={ligero:'Ligero',medio:'Medio',pesado:'Pesado',principal:'Principal',cazatanques:'Cazatanques','de élite':'De élite','cañón':'Cañón'};
+const CLS_ES={ligero:'Ligero',medio:'Medio',pesado:'Pesado',principal:'Principal',cazatanques:'Cazatanques','antiaéreo':'Antiaéreo','de élite':'De élite','cañón':'Cañón'};
 // Estado de un tanque: comprado (own), investigado sin comprar (bought=false), investigándose (res), investigable (can) o bloqueado (why)
 function hgStatus(k){ const own=owned(k), done=researched(k), inG=garageOf(chosenNation).includes(k), res=!done&&k===nextResearch(VEH[k].nation);
   return {own,done,inG,res,can:canResearch(k),have:PROG.rp[k]||0,cost:rpCost(k),yc:ypCost(k),why:lockReason(k)}; }
@@ -229,7 +229,7 @@ document.addEventListener('mousemove',e=>{
   mx=e.clientX; my=e.clientY;
   if(state!=='play'||artyPick||!(document.pointerLockElement||freeAim)) return;
   const s=.0022*sens*(scoped?Math.max(.08,camera.fov/65):1);
-  camYaw=wrap(camYaw-e.movementX*s); camPitch=clamp(camPitch-e.movementY*s,-.45,.6);
+  camYaw=wrap(camYaw-e.movementX*s); camPitch=clamp(camPitch-e.movementY*s,-.45,camMaxP());
 });
 document.addEventListener('mousedown',e=>{
   if(state==='spectate'&&e.target===renderer.domElement){
@@ -245,7 +245,7 @@ function edgeTurn(dt){
   if(!freeAim||state!=='play'||mx<0) return;
   const z=.07, ex=mx/innerWidth, ey=my/innerHeight, k=sens*1.8*(scoped?Math.max(.08,camera.fov/65):1);
   if(ex<z) camYaw=wrap(camYaw+(z-ex)/z*k*dt); else if(ex>1-z) camYaw=wrap(camYaw-(ex-1+z)/z*k*dt);
-  if(ey<z) camPitch=clamp(camPitch+(z-ey)/z*k*.5*dt,-.45,.6); else if(ey>1-z) camPitch=clamp(camPitch-(ey-1+z)/z*k*.5*dt,-.45,.6);
+  if(ey<z) camPitch=clamp(camPitch+(z-ey)/z*k*.5*dt,-.45,camMaxP()); else if(ey>1-z) camPitch=clamp(camPitch-(ey-1+z)/z*k*.5*dt,-.45,camMaxP());
 }
 // ---------- Tabla de jugadores (mantener Tab) ----------
 let tabOn=false, tabT=0;

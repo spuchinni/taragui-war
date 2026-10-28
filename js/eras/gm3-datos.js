@@ -446,3 +446,48 @@ Object.assign(VEH,{
 });
 Object.assign(AMMO_DEF,{ht_de:[['MG 34 perforante','ke',12,800]],ht_al:[['Browning 12,7 mm','ke',20,850]],aa_de:[['Explosivo 20 mm','he',6,900],['Perforante 20 mm','ke',22,830]],aa_al:[['Explosivo 40 mm','he',10,850],['Perforante 40 mm','ke',45,870]]});
 for(const k of ['ht_de','ht_al','aa_de','aa_al']){ FC[k]={crew:VEH[k].seats.length,autoL:1}; OPTIC[k]=[2]; }
+
+/* ---- Antiaéreos autopropulsados (clase 'antiaéreo'): se investigan y compran como los tanques, en las naciones que los tuvieron.
+   Tiran a los aviones (bombarderos y transportes con paracaidistas) y destrozan infantería y vehículos livianos. Los tubos suben casi vertical (elev). */
+Object.assign(VEH,{
+  wirbelwind:{nation:'de',era:3,year:1944,br:3.7,req:'pz4f2',cls:'antiaéreo',label:'Flakpanzer IV Wirbelwind',desc:'Chasis de Panzer IV con una torre abierta de nueve lados y el Flakvierling: cuatro cañones de 20 mm. Unos 100 fabricados para cubrir a las divisiones Panzer de los cazabombarderos aliados.',
+    aa:1,elev:1.4,auto:{mag:80,rof:.05},maxF:kmh2(38),maxR:2.5,turn:.7,trav:1.6,reload:6,pen:40,hp:110,crewReal:5,seats:['driver','commander','gunner','loader','mg1'],
+    armor:{hull:{front:80,side:30,rear:20,top:10},turret:{front:16,side:16,rear:16,top:0}},camo:W2DE,camoMode:'de',mgc:7.92,
+    m:{ww1:'w2',L:5.92,W:2.88,H:2.76,tz:0,tw:1.9,th:.95,tl:1.9,gl:1.6,gr:.03,
+      w2:{trW:.4,trH:.9,trF:.95,trR:.85,deck:1.7,glacis:.55,nW:8,wR:.24,bog:1,ret:4,tur:'open',mant:'none',ins:'de',bmg:.4,coax:0,aaN:4,aaSp:.2}}},
+  ostwind:{nation:'de',era:3,year:1944,br:4.0,cls:'antiaéreo',label:'Flakpanzer IV Ostwind',desc:'El sucesor del Wirbelwind: un 3,7 cm Flak 43 en torre abierta sobre el Panzer IV. Más alcance y un tiro que también perfora blindados livianos.',
+    aa:1,elev:1.4,auto:{mag:8,rof:.24},maxF:kmh2(38),maxR:2.5,turn:.7,trav:1.3,reload:4,pen:60,hp:110,crewReal:6,seats:['driver','commander','gunner','loader','mg1'],
+    armor:{hull:{front:80,side:30,rear:20,top:10},turret:{front:25,side:25,rear:25,top:0}},camo:W2DE,camoMode:'de',mgc:7.92,
+    m:{ww1:'w2',L:5.92,W:2.88,H:2.9,tz:0,tw:2.0,th:1.0,tl:2.0,gl:2.6,gr:.04,
+      w2:{trW:.4,trH:.9,trF:.95,trR:.85,deck:1.7,glacis:.55,nW:8,wR:.24,bog:1,ret:4,tur:'open',mant:'box',ins:'de',bmg:.4,coax:0,mb:1}}},
+  zsu37:{nation:'ru',era:3,year:1945,br:3.3,req:'t70',cls:'antiaéreo',label:'ZSU-37',desc:'El primer antiaéreo autopropulsado soviético: el automático de 37 mm 61-K en una casamata abierta sobre el chasis del SU-76M. Llegó en los últimos meses de la guerra.',
+    aa:1,elev:1.45,auto:{mag:5,rof:.36},maxF:kmh2(45),maxR:3,turn:.85,trav:1.2,reload:3.5,pen:46,hp:75,crewReal:6,seats:['driver','commander','gunner','loader'],
+    armor:{hull:{front:25,side:15,rear:15,top:7},turret:{front:15,side:10,rear:10,top:0}},camo:W2RU,camoMode:'flat',mgc:7.62,
+    m:{ww1:'w2',L:4.97,W:2.75,H:2.18,tz:-.6,tw:2.1,th:.85,tl:2.1,gl:2.4,gr:.04,
+      w2:{trW:.3,trH:.75,trF:.75,trR:.7,deck:1.3,glacis:.9,lowF:.25,nW:6,wR:.28,ret:3,tur:'open',mant:'none',ins:'ru',coax:0,mb:1}}},
+  m16mgmc:{nation:'us',era:3,year:1943,br:3.0,req:'m3stuart',cls:'antiaéreo',label:'M16 MGMC',desc:'El semioruga M3 con el montaje Maxson M45: cuatro ametralladoras de 12,7 mm. Contra la infantería lo llamaban "la picadora de carne".',
+    aa:1,elev:1.4,auto:{mag:200,rof:.035},maxF:kmh2(64),maxR:3,turn:.85,trav:1.8,reload:7,pen:22,hp:55,crewReal:5,seats:['driver','commander','gunner','loader'],
+    armor:{hull:{front:12,side:6,rear:6,top:0},turret:{front:6,side:6,rear:6,top:0}},camo:W2US,camoMode:'flat',mgc:12.7,
+    m:{ww1:'ht',L:6.5,W:2.2,H:2.4,tz:0,tw:.8,th:.5,tl:.4,gl:1.3,gr:.02,ht:{ins:'us',aa:1}}},
+  crusaderaa:{nation:'uk',era:3,year:1943,br:3.3,req:'crusader3',cls:'antiaéreo',label:'Crusader AA Mk II',desc:'Crusader con una torre abierta y dos Oerlikon de 20 mm. Preparados para el Día D; como los aliados dominaban el aire, muchos terminaron tirándole a la infantería.',
+    aa:1,elev:1.4,auto:{mag:120,rof:.07},maxF:kmh2(42),maxR:3,turn:.8,trav:1.5,reload:6,pen:32,hp:95,crewReal:3,seats:['driver','commander','gunner'],
+    armor:{hull:{front:51,side:28,rear:28,top:10},turret:{front:14,side:14,rear:14,top:0}},camo:W2UK,camoMode:'flat',mgc:7.7,
+    m:{ww1:'w2',L:5.97,W:2.77,H:2.3,tz:.15,tw:1.8,th:.8,tl:1.8,gl:1.8,gr:.03,
+      w2:{trW:.38,trH:1.0,trF:.95,trR:.95,deck:1.45,glacis:.6,nW:5,wR:.4,chr:1,ret:0,tur:'open',mant:'none',ins:'uk',coax:0,aaN:2,aaSp:.18}}},
+  tase:{nation:'jp',era:3,year:1941,br:3.0,req:'hago',cls:'antiaéreo',label:'Tipo 98 Ta-Se',desc:'Prototipo japonés: el cañón automático de 20 mm Tipo 98 en un chasis liviano de Ke-Ni, con escudo y sin techo. Liviano, rápido y casi sin blindaje.',
+    aa:1,elev:1.45,auto:{mag:20,rof:.14},maxF:kmh2(50),maxR:3,turn:.95,trav:1.4,reload:4,pen:30,hp:55,crewReal:4,seats:['driver','commander','gunner','loader'],
+    armor:{hull:{front:16,side:12,rear:10,top:6},turret:{front:12,side:6,rear:6,top:0}},camo:W2JP,camoMode:'de',mgc:7.7,
+    m:{ww1:'w2',L:4.1,W:2.12,H:2.1,tz:-.4,tw:1.6,th:.6,tl:1.5,gl:1.8,gr:.03,
+      w2:{trW:.3,trH:.8,trF:.75,trR:.8,deck:1.4,glacis:.6,lowF:.45,nW:4,wR:.3,bog:1,ret:2,tur:'open',mant:'none',ins:'jp',coax:0}}}
+});
+Object.assign(AMMO_DEF,{
+  wirbelwind:[['Explosivo 2 cm Sprgr','he',6,900],['Perforante 2 cm Pzgr 40','ke',40,1050]],
+  ostwind:[['Explosivo 3,7 cm Sprgr','he',8,820],['Perforante 3,7 cm Pzgr 18','ke',60,770]],
+  zsu37:[['Explosivo 37 mm OR-167','he',8,880],['Perforante 37 mm BR-167','ke',46,865]],
+  m16mgmc:[['Browning 12,7 mm M2 perforante','ke',22,890]],
+  crusaderaa:[['Explosivo 20 mm Oerlikon','he',5,830],['Perforante 20 mm Oerlikon','ke',32,830]],
+  tase:[['Explosivo 20 mm Tipo 98','he',5,830],['Perforante 20 mm Tipo 98','ke',30,830]]});
+const W2_AA=['wirbelwind','ostwind','zsu37','m16mgmc','crusaderaa','tase'];
+W2_KEYS.push(...W2_AA);
+for(const k of W2_AA){ FC[k]={crew:VEH[k].seats.length,autoL:1}; OPTIC[k]=[2,4]; }
+COST['antiaéreo']=140;

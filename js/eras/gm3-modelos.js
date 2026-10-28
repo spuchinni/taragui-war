@@ -113,6 +113,11 @@ function buildW2(t,M,mat,root,lkL,lkR){
   if(I.mb){ const b=cyl(G.barrel,M.gr*2.1,M.gr*2.1,.32,0,0,M.gl-.04,10,darkMat); b.rotation.x=Math.PI/2; if(I.mb===2){ const b2=cyl(G.barrel,M.gr*2.1,M.gr*2.1,.14,0,0,M.gl-.36,10,darkMat); b2.rotation.x=Math.PI/2; } }
   if(I.sleeve){ const s=cyl(G.barrel,M.gr*1.6,M.gr*1.6,M.gl*.32,0,0,M.gl*.16+.12,10,mat); s.rotation.x=Math.PI/2; }        // manguito del tubo (Pz IV, Sherman 76)
   if(I.coax!==0){ const c=cyl(G.gp,.025,.025,.45,.24,-.04,.32,6,darkMat); c.rotation.x=Math.PI/2; }
+  if(I.aaN){ const n=I.aaN, sp=I.aaSp||.22;                                                                 // antiaéreo: tubos extra (dobles o cuádruples) que suben con el cañón
+    for(let i=0;i<n;i++){ const col=n===4?(i%2?1:-1):(n===2?(i?1:-1):0), row=n===4?(i<2?1:-1):0; const x=col*sp, y=row*sp*.7, z=(row>0?.12:0);
+      if(i===0&&n!==2&&n!==4) continue; const b=cyl(G.barrel,M.gr,M.gr,M.gl,x,y,M.gl/2+z,8,darkMat); b.rotation.x=Math.PI/2;
+      const fh=cyl(G.barrel,M.gr*1.7,M.gr*1.3,.3,x,y,M.gl+z-.1,8,darkMat); fh.rotation.x=Math.PI/2; }
+    if(n===2||n===4) G.bm.visible=false; box(G.gp,sp*2.4,sp*(n===4?2.2:1.2),.5,0,0,-.05,mat); }
   if(I.aa) { cyl(tur,.03,.03,.3,M.tw*.25,M.th+.12,-M.tl*.2,6,darkMat); const a=cyl(tur,.022,.022,.85,M.tw*.25,M.th+.3,-M.tl*.2+.3,6,darkMat); a.rotation.x=Math.PI/2.15; } // ametralladora antiaérea sobre su soporte
   t.turret=tur; t.gunPivot=G.gp; t.barrel=G.barrel; t.muzzle=G.muzzle; t.coax=G.coax; t.barrelMesh=G.bm;
   if(I.case) collider(root,I.case.w,I.case.h,I.case.l,0,deck+I.case.h/2,I.case.z,t,'turret'); else collider(tur,M.tw,M.th,M.tl,0,M.th/2,0,t,'turret');
@@ -137,11 +142,14 @@ function buildHT(t,M,mat,root,lkL,lkR){
   const hood=profGeo([[zf,.85],[zf-1.6,1.25],[zf-1.7,.6],[zf-.1,.55]],M.W*.72); slopeX(hood,.8,1.25,.15); const hm=new THREE.Mesh(hood,mat); hm.castShadow=hm.receiveShadow=true; root.add(hm);
   const bx=profGeo([[zf-1.6,1.55],[zr+.1,1.55],[zr,1.4],[zr,.55],[zf-1.7,.55]],M.W-.1); slopeX(bx,.6,1.55,.12); const bm=new THREE.Mesh(bx,mat); bm.castShadow=bm.receiveShadow=true; root.add(bm);
   box(root,M.W*.72,.06,L-2.0,0,1.53,(zf-1.6+zr)/2-.05,darkMat);                                          // interior abierto
-  for(let i=0;i<6;i++){ const s=i%2?1:-1, z=zf-2.2-Math.floor(i/2)*.9; const P=personMesh({kind:'rifle',team:t.team,nat:(t.crew&&t.crew.nation)||t.T.nation}); P.g.position.set(s*.42,.62,z); P.parts.hip.position.y=.5; P.parts.legL.rotation.x=P.parts.legR.rotation.x=-1.4; P.g.rotation.y=s>0?-Math.PI/2:Math.PI/2; root.add(P.g); (t.deco||(t.deco=[])).push(P.g); (t.seated||(t.seated=[])).push(P.g); } // soldados sentados
+  if(!H.aa) for(let i=0;i<6;i++){ const s=i%2?1:-1, z=zf-2.2-Math.floor(i/2)*.9; const P=personMesh({kind:'rifle',team:t.team,nat:(t.crew&&t.crew.nation)||t.T.nation}); P.g.position.set(s*.42,.62,z); P.parts.hip.position.y=.5; P.parts.legL.rotation.x=P.parts.legR.rotation.x=-1.4; P.g.rotation.y=s>0?-Math.PI/2:Math.PI/2; root.add(P.g); (t.deco||(t.deco=[])).push(P.g); (t.seated||(t.seated=[])).push(P.g); } // soldados sentados
   if(H.ins) for(const sx of [-1,1]) w2Insignia(root,H.ins,sx*(M.W/2-.04),1.1,zr+L*.35,sx>0?0:Math.PI,.8);
   // ametralladora adelante de la caja, con su escudo
-  const tur=new THREE.Group(); tur.position.set(0,1.55,zf-1.75); root.add(tur);
-  box(tur,.75,.45,.04,0,.25,.12,mat); const G=gunMount(t,tur,0,.3,.1,M.gl,M.gr,mat,{shield:false});
+  const tur=new THREE.Group(); tur.position.set(0,H.aa?1.1:1.55,H.aa?zr+1.6:zf-1.75); root.add(tur);
+  if(H.aa){ cyl(tur,.35,.4,.45,0,.22,0,10,mat); box(tur,1.3,.7,.05,0,.75,.35,mat); for(const sx of [-.62,.62]) box(tur,.05,.6,.5,sx,.7,.1,mat); } else
+  box(tur,.75,.45,.04,0,.25,.12,mat); const G=gunMount(t,tur,0,H.aa?.85:.3,.1,M.gl,M.gr,mat,{shield:false});
+  if(H.aa) for(const [x,y] of [[-.38,.12],[.38,.12],[-.38,-.12],[.38,-.12]]){ const b=cyl(G.barrel,M.gr,M.gr,M.gl,x,y,M.gl/2+.1,8,darkMat); b.rotation.x=Math.PI/2; box(G.gp,.14,.2,.35,x,y,-.05,darkMat); }
+  if(H.aa){ G.bm.visible=false; box(G.gp,.4,.3,.4,0,0,-.1,mat); }
   t.turret=tur; t.gunPivot=G.gp; t.barrel=G.barrel; t.muzzle=G.muzzle; t.coax=G.coax; t.barrelMesh=G.bm;
   collider(tur,.8,.5,.4,0,.25,.1,t,'turret'); collider(root,M.W,1.5,L,0,.8,0,t,'hull');
   t.hTop=1.55; t.topH=2.1; t.aimH=1.0; t.glL=.5;
