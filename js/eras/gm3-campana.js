@@ -1,11 +1,22 @@
 /* ---------- Campaña de la Segunda Guerra Mundial (1942–1944) ----------
-   El Alamein, Prokhorovka, Villers-Bocage y Bastogne. Cada misión trae su objetivo (obj) como se peleó de verdad (ver objetivos.js). */
-CAMPAIGN.push({era:3,title:'Segunda Guerra Mundial',missions:[
+   El Alamein, Kursk, Normandía y las Ardenas, de los dos lados. Es la campaña permanente: va primera en la lista (unshift);
+   las de la 1ª Guerra y Entreguerras se juegan solo en la fecha de su evento. Cada misión trae su objetivo (obj) como se peleó de verdad. */
+CAMPAIGN.unshift({era:3,title:'Segunda Guerra Mundial',missions:[
+  {id:'alamhalfa',date:'31 de agosto de 1942',title:'Alam Halfa: el último ataque de Rommel',map:'alamein',ally:'de',foe:'uk',plu:['pz3j','pz4f2'],lu:{0:['pz3j','pz3j','pz4f2'],1:['crusader3','matilda2','crusader3']},nAlly:4,nFoe:4,guns:[2,2],squads:[3,3],tickets:[450,450],wx:'tarde',
+    obj:{type:'take',zones:['A'],hold:90,time:1080},
+    ctx:'El Afrika Korps está a 100 km de Alejandría, con poca nafta y sin refuerzos. Rommel intenta rodear la línea británica por el sur y subir a la cresta de Alam Halfa. Montgomery lo espera con los tanques enterrados y los cañones de 6 libras.',
+    goal:'Tomá la loma del oeste (A) y sostenela un minuto y medio. Los británicos tiran desde posiciones enterradas: buscalos con los binoculares antes de asomarte.',
+    tip:'El Panzer III J tiene munición subcalibre (tecla 2): perfora mucho más de cerca. Guardala para la Matilda, que de frente aguanta casi todo.'},
   {id:'alamein',date:'2 de noviembre de 1942',title:'El Alamein: operación Supercharge',map:'alamein',ally:'uk',foe:'de',plu:['crusader3','matilda2'],lu:{0:['crusader3','crusader3','matilda2'],1:['pz3j','pz4f2','pz3j']},nAlly:4,nFoe:4,guns:[1,3],squads:[3,3],tickets:[450,400],wx:'dia',
     obj:{type:'take',zones:['C'],hold:90,time:1080},
     ctx:'Después de diez días de combate, Montgomery lanza la última embestida: la 9.ª Brigada Blindada carga de madrugada contra la pantalla de antitanques de Tel el Aqqaqir. Si la rompen, el Afrika Korps se retira de Egipto.',
     goal:'Tomá Tel el Aqqaqir (C) y sostenelo un minuto y medio. Los Pak y los Panzer IV "Special" te esperan detrás de la loma.',
     tip:'En el desierto se ve todo a mucha distancia: aprovechá las lomas para tapar el casco y asomá solo la torre. El 6 libras del Crusader perfora al Panzer III de frente.'},
+  {id:'ciudadela',date:'5 de julio de 1943',title:'Kursk: operación Ciudadela',map:'prokhorovka',ally:'de',foe:'ru',plu:['pz4h','tiger1','stug3g'],lu:{0:['tiger1','pz4h','pz4h','stug3g'],1:['t34','t34','kv1','t70']},nAlly:4,nFoe:5,guns:[1,3],squads:[3,4],tickets:[450,500],wx:'dia',
+    obj:{type:'take',zones:['B'],hold:120,time:1200},
+    ctx:'La ofensiva alemana más grande del verano: romper el saliente de Kursk desde el sur con los Tiger y los primeros Panther. Los soviéticos sabían todo: cavaron zanjas antitanque, minas y líneas de cañones durante tres meses.',
+    goal:'Tomá el sovjós Oktiabrski (B) en la loma y sostenelo dos minutos. Las zanjas antitanque tienen pasos: encontralos antes de que los cañones te encuentren a vos.',
+    tip:'El Tiger perfora al T-34 a más de un kilómetro: no te acerques, dejá que vengan. Si caés en una zanja, puede que no salgas.'},
   {id:'prokhorovka',date:'12 de julio de 1943',title:'Prokhorovka',map:'prokhorovka',ally:'ru',foe:'de',plu:['t34','t70'],lu:{0:['t34','t34','t70','kv1'],1:['tiger1','pz4h','pz3j']},nAlly:5,nFoe:4,guns:[1,2],squads:[4,3],tickets:[500,400],wx:'dia',
     obj:{type:'destroy',keys:['tiger1'],time:1080},
     ctx:'Kursk. El 5.º Ejército de Tanques de la Guardia contraataca al II Cuerpo Panzer SS. Los tanquistas soviéticos saben que el Tiger los destruye a un kilómetro: la orden es cargar a toda velocidad y pelear de cerca.',
@@ -16,6 +27,16 @@ CAMPAIGN.push({era:3,title:'Segunda Guerra Mundial',missions:[
     ctx:'Una semana después del Día D, la 7.ª División Blindada (las "Ratas del Desierto") encuentra un hueco en el frente y entra a Villers-Bocage. En la Cota 213, un puñado de Tiger del batallón 101 SS los está mirando.',
     goal:'Tomá Villers-Bocage (B) y sostenelo un minuto y medio. En el bocage no se ve nada: avanzá de seto en seto y dejá que el Firefly se encargue de los Tiger.',
     tip:'Los setos tapan la vista y los bordos de tierra frenan: buscá las tranqueras. El Cromwell es el más rápido: flanqueá en vez de pelear de frente.'},
+  {id:'wittmann',date:'13 de junio de 1944',title:'Villers-Bocage: el Tiger de Wittmann',map:'normandia',ally:'de',foe:'uk',plu:['tiger1'],lu:{0:['tiger1','pz4h'],1:['cromwell','cromwell','firefly','cromwell']},nAlly:1,nFoe:5,guns:[0,1],squads:[2,3],tickets:[350,450],wx:'dia',
+    obj:{type:'raid',zone:'B',kills:4,time:900},
+    ctx:'La misma mañana, del otro lado. Michael Wittmann ve desde la Cota 213 la columna británica parada en el camino. Sin esperar refuerzos, baja solo con su Tiger, recorre la columna y entra al pueblo destruyendo todo a su paso.',
+    goal:'Hacé lo que hizo Wittmann: entrá a Villers-Bocage (B), destruí 4 enemigos y volvé a tu base con el tanque entero.',
+    tip:'De frente casi nada te perfora, pero el Firefly sí. Los Cromwell son rápidos: no les muestres el costado ni la parte de atrás. En el pueblo, cuidado con los antitanques.'},
+  {id:'wachtamrhein',date:'19 de diciembre de 1944',title:'Ardenas: Wacht am Rhein',map:'ardenas',ally:'de',foe:'us',plu:['panther','pz4h','stug3g'],lu:{0:['panther','panther','pz4h','stug3g'],1:['m4a1','m4a1','m10','m3stuart']},nAlly:4,nFoe:4,guns:[1,2],squads:[4,4],tickets:[450,450],wx:'niebla',
+    obj:{type:'take',zones:['B'],hold:120,time:1200},
+    ctx:'La última gran ofensiva alemana en el oeste. Con la niebla y la nieve que dejan en tierra a los aviones aliados, las divisiones Panzer cruzan las Ardenas para llegar a Amberes. Bastogne, nudo de siete caminos, está en el medio.',
+    goal:'Tomá Bastogne (B) y sostenelo dos minutos. Los estadounidenses están rodeados pero no se rinden: cada bosque puede tener un M10 esperando.',
+    tip:'El Panther es casi imposible de perforar de frente: mostrá siempre el glacis. Con niebla, los tiros llegan de cerca: no te quedes quieto en los caminos.'},
   {id:'bastogne',date:'26 de diciembre de 1944',title:'Bastogne',map:'ardenas',ally:'us',foe:'de',plu:['m4a1','m4a3e8','m3stuart'],lu:{0:['m4a1','m4a3e8','m10'],1:['panther','pz4h','stug3g']},nAlly:4,nFoe:4,guns:[1,2],squads:[4,4],tickets:[450,450],wx:'nieve',
     obj:{type:'hold',zones:['B'],time:540},
     ctx:'La 101.ª Aerotransportada lleva una semana rodeada en Bastogne. "Nuts!", le contestó el general McAuliffe al pedido de rendición. Los Panther atacan por los caminos nevados mientras los Sherman de Patton se abren paso desde el sur.',

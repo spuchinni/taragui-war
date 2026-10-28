@@ -35,6 +35,7 @@ function castTurret(parent,w,l,h,mat,shape){ const r=w/2, P=(shape||[[.0,0],[1,0
 function w2Turret(tur,M,I,mat){ const w=M.tw, l=M.tl, h=M.th, hw=w/2, hl=l/2;
   switch(I.tur){
     case 'cast': castTurret(tur,w,l,h,mat); if(I.bus) castTurret(tur,w*.75,l*.45,h*.8,mat).position.z=-hl*.7; break;          // Sherman, T-34-85, IS-2, Churchill VII
+    case 'cyl': { const c=cyl(tur,hw*.96,hw,h,0,h/2,0,14,mat); c.scale.z=l/w*.85; break; }                                          // BT-7: cilíndrica
     case 'hex': prism(tur,[[-hw*.55,hl],[hw*.55,hl],[hw,hl*.15],[hw*.8,-hl],[-hw*.8,-hl],[-hw,hl*.15]],h,.22,0,0,0,mat); break;     // T-34/76
     case 'box': prism(tur,[[-hw*.85,hl],[hw*.85,hl],[hw,hl*.6],[hw,-hl*.55],[hw*.75,-hl],[-hw*.75,-hl],[-hw,-hl*.55],[-hw,hl*.6]],h,.04,0,0,0,mat); break; // Tiger, Churchill, Cromwell
     case 'pan': prism(tur,[[-hw*.45,hl],[hw*.45,hl],[hw,hl*.2],[hw,-hl],[-hw,-hl],[-hw,hl*.2]],h,.28,0,0,0,mat); break;            // Panther, Nahuel
