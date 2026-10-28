@@ -539,7 +539,7 @@ function buildWorld(key){
   if(!W.zones0) W.zones0=W.zones; { const ob=typeof curSpecial!=='undefined'&&curSpecial&&curSpecial.obj, keep=ob&&(ob.zones||(ob.zone&&[ob.zone]));
     W.zones=keep?W.zones0.filter(Z=>keep.includes(Z.id)):W.zones0; }
   worldGroup.children.slice().forEach(o=>{worldGroup.remove(o);if(o.geometry)o.geometry.dispose();if(o.material){if(o.material.map&&o.material.map!==grassTex&&o.material.map!==wallTex)o.material.map.dispose();if(o.material!==rockMat)o.material.dispose();}});
-  W.mmCanvas=null; W.HG=null; W.deckAt=null; W.propK=1; W.trench=null; W.wire=null; W.trenchCover=null; W.setup=null;
+  W.mmCanvas=null; W.HG=null; W.deckAt=null; W.propK=1; W.trench=null; W.wire=null; W.wireCrush=null; W.trenchCover=null; W.setup=null;
   houseMeshes=[];houseBoxes=[];trees=[];grid=new Map();pierObs=[];bList=[];rList=[];streetSegs=[];buildings=[];waterMesh=null;
   scene.background.set(W.sky||0xbcc6c4); scene.fog.near=(W.fog||[150,460])[0]; scene.fog.far=(W.fog||[150,460])[1]; scene.fog.color.set(W.sky||0xbcc6c4);
   if(WORLDS[key].osm) buildOSM(key); else if(key==='sor') buildSor(); else if(key==='malvinas') buildMalvinas(); else if(key==='aeropuerto') buildAeropuerto(); else if(key==='costanera') buildCostanera(); else if(key==='puente') buildPuente(); else if(key==='cordillera') buildCordillera(); else if(key==='salto'||key==='posadas') buildCross(key); else if(WORLDS[key].ww1) buildWW1Map(key); else if(WORLDS[key].city) buildCity(key); else if(WORLDS[key].town) buildTown(key); else buildCampo();

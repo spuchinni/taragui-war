@@ -168,6 +168,7 @@ body.deploy #ammobar,body.spec #ammobar,body.menu #ammobar{display:none}
 #banner small{display:block;font-size:20px;font-weight:500;opacity:.85}
 #scope{inset:0;opacity:0;background:radial-gradient(circle at center,transparent 38vmin,rgba(0,0,0,.92) 39vmin)}
 body.menu .hud,body.menu #mm{display:none}
+body.artyPick #mm{width:min(80vh,80vw);height:min(80vh,80vw);right:50%;bottom:50%;transform:translate(50%,50%);pointer-events:auto;cursor:crosshair;z-index:40;outline:2px solid #ffb43c}
 body.deploy #status,body.deploy #scope{display:none}
 #overlay{position:fixed;inset:0;display:flex;padding:24px;box-sizing:border-box;overflow:auto;
   background:linear-gradient(180deg,rgba(28,25,20,.5),rgba(28,25,20,.9))}

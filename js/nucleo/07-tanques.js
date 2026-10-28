@@ -211,6 +211,7 @@ function removeTank(t){
   colliders=colliders.filter(c=>c.userData.tank!==t);
 }
 function placeOnGround(t,dt){
+  if(W.wireCrush&&!t.dead&&Math.abs(t.speed)>.3) W.wireCrush(t.pos.x,t.pos.z,t.T.m.W*.55);
   curSpan=t.T.trench||(t.T.m.L*.4); try{ return placeOnGround0(t,dt); } finally { curSpan=0; } }
 function placeOnGround0(t,dt){
   const p=t.pos, s=Math.sin(t.heading), c=Math.cos(t.heading), L=t.T.m.L*.42, Wd=t.T.m.W*.45;

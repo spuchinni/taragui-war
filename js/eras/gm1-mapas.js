@@ -59,7 +59,7 @@ function ww1Depth(G,x,z){ const fx=(x+G.ex)/G.r, fz=(z+G.ez)/G.r, i=Math.max(0,M
   return A[j*n+i]*(1-u)*(1-v)+A[j*n+i+1]*u*(1-v)+A[(j+1)*n+i]*(1-u)*v+A[(j+1)*n+i+1]*u*v; }
 
 function buildWW1Map(key){
-  const C=WW1_CFG[key], R=mulberry(C.seed), rr=(a,b)=>a+R()*(b-a), pickR=a=>a[(R()*a.length)|0];
+  const C=WW1_CFG[key], R=mulberry(C.seed), R2=mulberry(C.seed+99), rr=(a,b)=>a+R()*(b-a), pickR=a=>a[(R()*a.length)|0];
   const bx=C.bx, bz=C.bz, EX=bx+70, EZ=bz+70, res=C.res||.8, nx=Math.round(EX*2/res)+1, nz=Math.round(EZ*2/res)+1;
   const G={ex:EX,ez:EZ,r:res,nx,nz,a:new Float32Array(nx*nz),td:new Float32Array(nx*nz)}; W.HG=G;
   const ridge=C.ridge||2.5;
@@ -110,7 +110,7 @@ function buildWW1Map(key){
     for(let x=Math.floor(x0/10);x<=Math.floor(x1/10);x++) for(let z=Math.floor(z0/10);z<=Math.floor(z1/10);z++){ const k=x*10007+z; if(!SB.has(k)) SB.set(k,[]); SB.get(k).push(S); } }
   W.trench=(x,z)=>{ const L=SB.get(sb(x,z)); if(!L) return null; let best=null; for(const S of L){ const q=segDistW(x,z,S); if(q<S.w/2&&(!best||S.w>best.w)) best=S; }
     if(!best) return null; const d=ww1Depth(G,x,z); return d>.05?{d,w:best.w}:null; };
-  W.wire=(x,z)=>{ for(const B of belts) if(z>B.z0&&z<B.z1&&!B.gaps.some(g=>Math.abs(x-g)<6)) return true; return false; };
+  W.wire=(x,z)=>{ for(const B of belts) if(z>B.z0&&z<B.z1&&!B.gaps.some(g=>Math.abs(x-g)<6)&&!B.cut.some(c=>Math.abs(x-c)<2.5)) return true; return false; };
   // la infantería se cubre en la trinchera más cercana
   W.trenchCover=(x,z)=>{ let best=null,bd=32; for(const S of segs){ const dx=S.bx-S.ax, dz=S.bz-S.az, l=dx*dx+dz*dz; let t=l?((x-S.ax)*dx+(z-S.az)*dz)/l:0; t=clamp(t,0,1);
       const px=S.ax+dx*t, pz=S.az+dz*t, d=Math.hypot(x-px,z-pz); if(d<bd){bd=d;best={x:px,z:pz};} } return best; };
@@ -149,12 +149,19 @@ function buildWW1Map(key){
   // ---- trincheras: sacos terreros, tablones de revestimiento y pasarelas ----
   dressTrenches(segs,G,R);
   // ---- alambradas: postes y alambre en zigzag ----
-  { const P=[], lines=[]; for(const B of belts){ for(let row=0;row<2;row++){ const zz=B.z0+(B.z1-B.z0)*(row?.75:.25); let prev=null;
+  { const P=[], lines=[]; for(const B of belts){ B.cut=[]; for(let row=0;row<2;row++){ const zz=B.z0+(B.z1-B.z0)*(row?.75:.25); let prev=null;
       for(let x=-bx-30;x<=bx+30;x+=3.2){ if(B.gaps.some(g=>Math.abs(x-g)<6)){ prev=null; continue; } const z=zz+rr(-.8,.8), y=ww1Sample(W,x,z);
-        P.push([x,y,z]); if(prev){ for(const hh of [.35,.8,1.15]) lines.push(prev[0],prev[1]+hh,prev[2],x,y+(hh===.8?.35:hh===.35?.8:1.15),z); lines.push(prev[0],prev[1]+1.15,prev[2],x,y+.35,z); } prev=[x,y,z]; } } }
+        P.push([x,y,z,rr(-.15,.15)]); if(prev){ for(const hh of [.35,.8,1.15]) lines.push(prev[0],prev[1]+hh,prev[2],x,y+(hh===.8?.35:hh===.35?.8:1.15),z); lines.push(prev[0],prev[1]+1.15,prev[2],x,y+.35,z); } prev=[x,y,z]; } } }
     const pg=new THREE.CylinderGeometry(.045,.05,1.3,5); pg.translate(0,.6,0); const im=new THREE.InstancedMesh(pg,new THREE.MeshLambertMaterial({color:0x4a3f33}),P.length), M4=new THREE.Matrix4();
-    P.forEach((p,i)=>{ M4.makeRotationZ(rr(-.15,.15)); M4.setPosition(p[0],p[1]-.1,p[2]); im.setMatrixAt(i,M4); }); im.castShadow=true; worldGroup.add(im);
-    const lg=new THREE.BufferGeometry(); lg.setAttribute('position',new THREE.Float32BufferAttribute(lines,3)); worldGroup.add(new THREE.LineSegments(lg,new THREE.LineBasicMaterial({color:0x2a2622,transparent:true,opacity:.75}))); }
+    P.forEach((p,i)=>{ M4.makeRotationZ(p[3]); M4.setPosition(p[0],p[1]-.1,p[2]); im.setMatrixAt(i,M4); }); im.castShadow=true; worldGroup.add(im);
+    const lg=new THREE.BufferGeometry(); lg.setAttribute('position',new THREE.Float32BufferAttribute(lines,3)); worldGroup.add(new THREE.LineSegments(lg,new THREE.LineBasicMaterial({color:0x2a2622,transparent:true,opacity:.75})));
+    // un tanque que pasa por encima aplasta la alambrada: los postes quedan tirados, el alambre en el suelo y se abre un paso
+    const LP=lg.attributes.position;
+    W.wireCrush=(x,z,r)=>{ let hit=false; for(const B of belts){ if(z<B.z0-r||z>B.z1+r||B.gaps.some(g=>Math.abs(x-g)<6)||B.cut.some(c=>Math.abs(x-c)<r*.6)) continue; B.cut.push(x); hit=true; }
+      if(!hit) return false;
+      P.forEach((p,i)=>{ if(Math.abs(p[0]-x)<r+.5&&Math.abs(p[2]-z)<r+3&&!p[4]){ p[4]=1; M4.makeRotationFromEuler(new THREE.Euler(Math.PI/2*(R2()<.5?1:-1),R2()*3,0)); M4.setPosition(p[0],p[1]+.05,p[2]); im.setMatrixAt(i,M4); } });
+      for(let k=0;k<LP.count;k++){ const X=LP.getX(k), Z=LP.getZ(k); if(Math.abs(X-x)<r+2&&Math.abs(Z-z)<r+3) LP.setY(k,ww1Sample(W,X,Z)+.06); }
+      im.instanceMatrix.needsUpdate=true; LP.needsUpdate=true; return true; }; }
   // ---- pueblo en ruinas (y caserío) ----
   const houses=[]; const town=(V,small)=>{ const n=V.n; for(let i=0,tries=0;i<n&&tries<n*12;tries++){ const a=R()*Math.PI*2, r=Math.sqrt(R())*V.r, x=V.x+Math.cos(a)*r, z=V.z+Math.sin(a)*r;
       if(roadSegs.some(S=>segDistW(x,z,S)<6.5)) continue; if(segs.some(S=>segDistW(x,z,S)<S.w/2+5)) continue;

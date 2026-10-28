@@ -185,16 +185,13 @@ function updateBotCrews(dt){
 let zones=[], tickets=[400,400], tickT=0;
 function resetZones(){
   zones=W.zones.map(Z=>({...Z,cap:0,owner:0})); zones.forEach(Z=>Z.mat.color.set(0xefe7d2));
-  $('zones').innerHTML=zones.map(Z=>`<div class="zw"><div class="zb" id="zb${Z.id}"><i></i><span>${Z.id}</span></div><small id="zd${Z.id}"></small></div>`).join(''); zDistT=0;
+  $('zones').innerHTML=zones.map(Z=>`<div class="zw"><div class="zb" id="zb${Z.id}"><i></i><span>${Z.id}</span></div></div>`).join('');
 }
-// distancia desde tu tanque (o desde la cámara si no estás desplegado) a cada punto, debajo de su letra
-let zDistT=0;
-function zoneDist(dt){ zDistT-=dt; if(zDistT>0) return; zDistT=.25; const p=player&&!player.dead?player.pos:camera.position;
-  for(const Z of zones){ const el=$('zd'+Z.id); if(!el) continue; const d=Math.hypot(p.x-Z.x,p.z-Z.z); el.textContent=d<Z.r?'acá':d<1000?Math.round(d/10)*10+' m':(d/1000).toFixed(1).replace('.',',')+' km'; }
-}
+// distancia desde tu tanque (o desde la cámara si no estás desplegado) a cada punto: va flotando sobre el punto (drawOverlay)
+function zoneDistTxt(Z){ const p=player&&!player.dead?player.pos:camera.position, d=Math.hypot(p.x-Z.x,p.z-Z.z);
+  return d<Z.r?'acá':d<1000?Math.round(d/10)*10+' m':(d/1000).toFixed(1).replace('.',',')+' km'; }
 const TICKET_KILL=6; let bleed=0;
 function updateZones(dt){
-  zoneDist(dt);
   for(const Z of zones){
     let a=0,e=0; const inside=[];
     for(const t of tanks){ if(t.dead) continue; if(Math.hypot(t.pos.x-Z.x,t.pos.z-Z.z)<Z.r){ inside.push(t); if(t.team===0)a++; else e++; } }

@@ -153,7 +153,7 @@ function renderSettings(){
   const rows=ACTIONS.map(([k,label])=>`<span>${label}</span><button class="kb${bindCapture===k?' cap':''}" data-k="${k}">${bindCapture===k?'Presioná una tecla…':keyName(binds[k])}</button>`).join('');
   $('panel').innerHTML=`<div class="side settings"><h1 class="logo">Ajustes</h1>
     <h2>Mouse</h2><label class="sens">Sensibilidad <input type="range" id="sens" min="0.4" max="3" step="0.1" value="${sens}"><span id="sensV">${sens.toFixed(1)}</span></label>
-    <p class="s">Clic izquierdo: cañón. Clic derecho: ametralladora. Rueda: zoom de la mira.</p>
+    <p class="s">Clic izquierdo: cañón. Clic derecho (mantener): zoom. Espacio: ametralladora. Mayús: entrar y salir de la mira. Rueda: aumento de la mira.</p>
     <h2>Sonido</h2><label class="sens">Volumen <input type="range" id="volR" min="0" max="1" step="0.05" value="${volMaster}"><span id="volV">${Math.round(volMaster*100)} %</span></label>
     <label class="chk"><input type="checkbox" id="radioC" ${radioOn?'checked':''}> Radio de la tripulación (voces en el idioma de cada nación)</label>
     <h2>Dificultad de los enemigos</h2><div class="hgOpt" id="difR">${Object.entries(DIF).map(([k,D])=>`<button class="${difficulty===k?'sel':''}" data-d="${k}">${D.n}</button>`).join('')}</div>
@@ -197,7 +197,7 @@ document.addEventListener('pointerlockchange',()=>{
   if(document.pointerLockElement!==renderer.domElement) releaseAll();
   if(document.pointerLockElement===renderer.domElement){
     if(state==='paused'){ state='play'; $('overlay').style.display='none'; }
-  } else if(state==='play'&&player&&!player.dead){
+  } else if(state==='play'&&player&&!player.dead&&!artyPick){
     state='paused'; mouseDown=false; rightDown=false; if(engGain) engGain.gain.value=0;
     $('overlay').style.display='flex';
     $('panel').innerHTML=`<h1>Pausa</h1><p>La batalla te espera.</p><button class="go" id="resume">Volver al combate</button><button class="go alt" id="quit">Abandonar</button>`;
@@ -207,7 +207,7 @@ document.addEventListener('pointerlockchange',()=>{
 renderer.domElement.addEventListener('click',()=>{ if(state==='play'&&!document.pointerLockElement&&!freeAim) lock(); });
 document.addEventListener('mousemove',e=>{
   mx=e.clientX; my=e.clientY;
-  if(state!=='play'||!(document.pointerLockElement||freeAim)) return;
+  if(state!=='play'||artyPick||!(document.pointerLockElement||freeAim)) return;
   const s=.0022*sens*(scoped?Math.max(.08,camera.fov/65):1);
   camYaw=wrap(camYaw-e.movementX*s); camPitch=clamp(camPitch-e.movementY*s,-.45,.6);
 });
@@ -217,7 +217,7 @@ document.addEventListener('mousedown',e=>{
       list.forEach((t,i)=>{const p=project(t.pos);if(p){const d=Math.hypot(p.x-e.clientX,p.y-e.clientY);if(d<bd){bd=d;bi=i;}}});
       if(bi>=0){specIdx=bi;aerial=false;} return;}
     specIdx+=e.button===2?-1:1;return;}
-  if(state!=='play'||!(document.pointerLockElement||(freeAim&&e.target===renderer.domElement)))return; if(e.button===0)mouseDown=true; if(e.button===2)rightDown=true;});
+  if(state!=='play'||artyPick||!(document.pointerLockElement||(freeAim&&e.target===renderer.domElement)))return; if(e.button===0)mouseDown=true; if(e.button===2)rightDown=true;});
 document.addEventListener('mouseup',e=>{if(e.button===0)mouseDown=false;if(e.button===2)rightDown=false;});
 document.addEventListener('contextmenu',e=>e.preventDefault());
 document.addEventListener('mouseleave',()=>{ mx=-1; });
@@ -246,11 +246,14 @@ document.addEventListener('keydown',e=>{
   if(bindCapture){ e.preventDefault(); if(e.code!=='Escape'){ const prev=Object.keys(binds).find(k=>binds[k]===e.code&&k!==bindCapture); if(prev) binds[prev]=binds[bindCapture]; binds[bindCapture]=e.code; saveSettings(); }
     bindCapture=null; renderSettings(); return; }
   keys[e.code]=true;
+  if(artyPick&&e.code==='Escape'){ artyMap(false); return; }
   if(e.code===binds.ping&&state==='play'&&player&&!player.dead&&!e.repeat){ doPing(); return; }
+  if(net.guest&&state==='play'&&player&&!player.dead&&lastAim&&e.code===binds.arty&&!e.repeat){ if(artyPick) artyFire(lastAim); else artyMap(true); return; }
   if(net.guest&&state==='play'&&player&&!player.dead&&lastAim&&[binds.arty,binds.air,binds.nuke].includes(e.code)&&!e.repeat){ hostSend({t:'sup',k:e.code===binds.arty?'arty':e.code===binds.air?'air':'nuke',p:[lastAim.x,lastAim.y,lastAim.z]}); return; }
   if(net.guest&&state==='play'&&e.code===binds.troops&&player&&!player.dead&&!e.repeat){ hostSend({t:'troops'}); return; }
   if(net.on&&state==='play'&&[binds.aerial].includes(e.code)){ hitMsg('No disponible en online (por ahora)','var(--paper)'); return; }
   if(net.guest&&state==='play'&&player&&!player.dead&&(e.code===binds.repair||e.code===binds.crewSwap)&&!e.repeat){ hostSend({t:e.code===binds.repair?'rep':'crew'}); return; }
+  if(state==='play'&&player&&!player.dead&&!e.repeat&&(e.code===binds.scope||(binds.scope==='ShiftLeft'&&e.code==='ShiftRight'))) scopeOn=!scopeOn; // la mira queda puesta hasta volver a apretar
   if(e.code===binds.fullscreen&&!e.repeat) toggleFS();
   if(state==='play'&&player&&!player.dead){
     for(let i=0;i<3;i++) if(e.code===binds['ammo'+(i+1)]&&i<player.T.ammo.length){ if(player.ammoCount&&player.ammoCount[i]<=0) hitMsg('No queda munición de ese tipo','var(--enemy)'); else selectAmmo(player,i); }
@@ -262,7 +265,7 @@ document.addEventListener('keydown',e=>{
   if(state==='spectate'){ if(e.code==='ArrowRight'){specIdx++;aerial=false;} if(e.code==='ArrowLeft'){specIdx--;aerial=false;} if(e.code==='Space'){aerial=!aerial;e.preventDefault();}
     if(e.code==='Escape'&&!playerCrew){clearBattle();mainMenu();} }
   if(state==='play'&&player&&!player.dead&&lastAim){
-    if(e.code===binds.arty&&callArtillery(player,lastAim)) teamSup[0].arty=Math.max(teamSup[0].arty,TEAM_ARTY_CD*.6);
+    if(e.code===binds.arty&&!e.repeat&&playerCrew.sp>=ARTY_COST&&playerCrew.artyCD<=0){ if(artyPick) artyFire(lastAim); else artyMap(true); } // F: abre el mapa para elegir dónde; F otra vez: donde apunta la mira
     else if(e.code===binds.arty) hitMsg(playerCrew.artyCD>0?`Artillería del equipo en espera: ${Math.ceil(playerCrew.artyCD)} s`:`Artillería: te faltan ${ARTY_COST-playerCrew.sp} puntos`,'var(--paper)');
     if(e.code===binds.air&&callAirstrike(player,lastAim)) teamSup[0].air=Math.max(teamSup[0].air,TEAM_AIR_CD*.6);
     else if(e.code===binds.air&&!RULE().sup.air) hitMsg('En esta época todavía no hay aviones de ataque a tierra','var(--paper)');
@@ -363,3 +366,17 @@ function frame(dt){
   drawOverlay(); if(state!=='menu'&&state!=='summary') drawMinimap();
 }
 try{ const S=JSON.parse(localStorage.getItem('tw_settings')||'null'); if(S){ if(S.sens) sens=+S.sens; if(S.binds) binds={...DEF_BINDS,...S.binds}; if(S.vol!=null) volMaster=+S.vol; if(S.radio!=null) radioOn=!!S.radio; if(S.fs!=null) fsAuto=!!S.fs; if(DIF[S.dif]) difficulty=S.dif; } }catch(e){}
+
+// ---- Artillería desde el mapa: F agranda el mapa, clic elige el lugar (o F otra vez: donde apunta la mira); Esc cancela ----
+let artyPick=false, artyHover=null;
+function artyMap(on){ artyPick=on; artyHover=null; document.body.classList.toggle('artyPick',on);
+  if(on){ if(document.pointerLockElement) document.exitPointerLock(); banner('Artillería','Clic en el mapa: dónde cae · F: donde apuntás · Esc: cancelar',3); }
+  else if(state==='play'&&!freeAim&&!document.pointerLockElement) lock(); }
+function mmWorld(e){ const r=mm.getBoundingClientRect(), S=400, k=S/(Math.max(W.bx,W.bz)*2+20), px=(e.clientX-r.left)/r.width*S, py=(e.clientY-r.top)/r.height*S;
+  const x=(S/2-px)/k, z=(S/2-py)/k; return new THREE.Vector3(x,heightAt(x,z),z); }
+function artyFire(p){ artyMap(false); if(!player||player.dead) return;
+  if(net.guest){ hostSend({t:'sup',k:'arty',p:[p.x,p.y,p.z]}); return; }
+  if(callArtillery(player,p)) teamSup[0].arty=Math.max(teamSup[0].arty,TEAM_ARTY_CD*.6); }
+mm.addEventListener('mousemove',e=>{ if(artyPick) artyHover=mmWorld(e); });
+mm.addEventListener('mouseleave',()=>{ artyHover=null; });
+mm.addEventListener('mousedown',e=>{ if(!artyPick||e.button!==0) return; e.preventDefault(); e.stopPropagation(); artyFire(mmWorld(e)); });

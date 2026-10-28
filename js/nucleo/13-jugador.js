@@ -1,7 +1,7 @@
 /* ---------- Jugador y cámara ---------- */
 // ---------- Ajustes: sensibilidad y teclas personalizables (se guardan en el navegador) ----------
 const ACTIONS=[['fwd','Avanzar','KeyW'],['back','Retroceder','KeyS'],['left','Girar a la izquierda','KeyA'],['right','Girar a la derecha','KeyD'],
-  ['scope','Mira telescópica (mantener)','ShiftLeft'],['mg','Ametralladora','Space'],['ammo1','Munición 1','Digit1'],['ammo2','Munición 2','Digit2'],['ammo3','Munición 3','Digit3'],
+  ['scope','Mira del artillero (entra y sale)','ShiftLeft'],['mg','Ametralladora','Space'],['ammo1','Munición 1','Digit1'],['ammo2','Munición 2','Digit2'],['ammo3','Munición 3','Digit3'],
   ['ammoAuto','Munición automática','Digit4'],['arty','Artillería','KeyF'],['air','Ataque aéreo','KeyG'],['nuke','Nuke','KeyN'],['thermal','Visión térmica','KeyT'],
   ['aerial','Vista aérea (la IA maneja)','KeyV'],['troops','Bajar la infantería','KeyE'],['fullscreen','Pantalla completa','KeyP'],['repair','Reparar','KeyR'],['crewSwap','Reemplazar tripulante (infantería)','KeyC'],['smoke','Granadas de humo','KeyX'],['ping','Marcar: enemigo / punto / atención','KeyQ'],['ext','Extintor (apagar incendio)','KeyZ']];
 const DEF_BINDS=Object.fromEntries(ACTIONS.map(a=>[a[0],a[2]]));
@@ -11,7 +11,7 @@ const keyName=c=>!c?'—':c.startsWith('Key')?c.slice(3):c.startsWith('Digit')?c
     Enter:'Enter',Backspace:'Retroceso',ArrowUp:'↑',ArrowDown:'↓',ArrowLeft:'←',ArrowRight:'→',Backquote:'º',Minus:'-',Equal:'=',Comma:',',Period:'.',Slash:'-',Semicolon:'Ñ',Quote:'´',BracketLeft:'`',BracketRight:'+'}[c]||c);
 const down=a=>{ const c=binds[a]; return !!(keys[c]||(c==='ShiftLeft'&&keys.ShiftRight)||(c==='ControlLeft'&&keys.ControlRight)); };
 function saveSettings(){ try{ localStorage.setItem('tw_settings',JSON.stringify({sens,binds,vol:volMaster,radio:radioOn,fs:fsAuto,gfx,dif:difficulty})); }catch(e){} }
-let player=null, playerCrew=null, crews=[], camYaw=0, camPitch=.12, sens=1.2, scoped=false, mouseDown=false, rightDown=false, shake=0, vig=0, lastAim=null, camDist=14, playerDeadT=0, specIdx=0;
+let player=null, playerCrew=null, crews=[], camYaw=0, camPitch=.12, sens=1.2, scoped=false, scopeOn=false, mouseDown=false, rightDown=false, shake=0, vig=0, lastAim=null, camDist=14, playerDeadT=0, specIdx=0;
 const keys={};
 function aimPoint(){
   const o=camera.position.clone(), d=camera.getWorldDirection(new THREE.Vector3());
@@ -47,24 +47,25 @@ function updatePlayer(dt){
     const th=(down('fwd')?1:0)-(down('back')?1:0), st=(down('left')?1:0)-(down('right')?1:0);
     drive(t,th,st,dt);
   }
-  scoped=!t.dead&&down('scope');
+  if(t.dead){ scopeOn=false; if(artyPick) artyMap(false); } scoped=scopeOn;
   const dir=new THREE.Vector3(Math.sin(camYaw)*Math.cos(camPitch),Math.sin(camPitch),Math.cos(camYaw)*Math.cos(camPitch));
   if(scoped){
     t.root.updateMatrixWorld(true);
     const tp=t.turret.getWorldPosition(new THREE.Vector3()); tp.y+=t.T.m.th+.4;
     camera.position.copy(tp); camera.lookAt(tp.clone().add(dir));
-    const mags=t.T.optic||[8], mag=mags[Math.min(t.magIdx||0,mags.length-1)], tf=2*Math.atan(Math.tan(32.5*Math.PI/180)/mag)*180/Math.PI;
+    // clic derecho: zoom (el mayor aumento de la mira; si tiene uno solo, el doble)
+    const mags=t.T.optic||[8], mag=rightDown?(mags.length>1?Math.max(...mags):mags[0]*2):mags[Math.min(t.magIdx||0,mags.length-1)], tf=2*Math.atan(Math.tan(32.5*Math.PI/180)/mag)*180/Math.PI;
     camera.fov+=(tf-camera.fov)*Math.min(1,dt*12);
-  } else { chaseCam(t,dt,dir); camera.fov+=(65-camera.fov)*Math.min(1,dt*12); }
+  } else { chaseCam(t,dt,dir); camera.fov+=((rightDown?30:65)-camera.fov)*Math.min(1,dt*12); } // clic derecho: zoom de la vista del comandante
   if(shake>0){shake-=dt;camera.position.x+=rand(-1,1)*shake*.25;camera.position.y+=rand(-1,1)*shake*.25;}
   camera.updateProjectionMatrix(); camera.updateMatrixWorld();
   t.root.visible=!scoped;
-  t.mgHeat=Math.max(0,t.mgHeat-dt*(rightDown&&!t.mgLock?.05:.3)); if(t.mgLock&&t.mgHeat<.35) t.mgLock=false;
+  t.mgHeat=Math.max(0,t.mgHeat-dt*(down('mg')&&!t.mgLock?.05:.3)); if(t.mgLock&&t.mgHeat<.35) t.mgLock=false;
   if(!t.dead){
     lastAim=aimPoint();
     aimAt(t,lastAim,dt);
     if(mouseDown) fireGun(t);
-    if((rightDown||down('mg'))&&now>t.mgNext){fireMG(t);t.mgNext=now+.085;}
+    if(down('mg')&&now>t.mgNext){fireMG(t);t.mgNext=now+.085;}
     if(t.reloadT>0&&t.ammoManual==null){ t.ammoT=(t.ammoT||0)-dt; if(t.ammoT<=0){ t.ammoT=.2; let n=bestAmmo(t,aimInfo(t)); if(t.ammoCount&&t.ammoCount[n]<=0) n=t.ammoCount.findIndex(c=>c>0); if(n>=0&&n!==t.ammoIdx) t.ammoIdx=n; } }
     const showR=!realMode||hasFcs(t); $('rngR').style.display=showR?'':'none';
     if(showR) $('rngT').textContent=Math.round(lastAim.distanceTo(t.pos))+' m';
@@ -105,7 +106,7 @@ let boardMode=false;
 // Final por nuke, estilo War Thunder: se corta el control, la cámara muestra el hongo y aparece VICTORIA/DERROTA.
 function nukeEnd(winner){
   state='end'; const N=winner===0?allyLabel():NATIONS[foeNation].label;
-  if(document.pointerLockElement) document.exitPointerLock(); mouseDown=rightDown=scoped=false; if(engGain) engGain.gain.value=0;
+  if(document.pointerLockElement) document.exitPointerLock(); mouseDown=rightDown=scoped=scopeOn=false; if(engGain) engGain.gain.value=0;
   document.body.classList.remove('deploy','brief'); document.body.classList.add('spec'); $('specT').innerHTML='';
   const p=nuke.p, a=Math.atan2(camera.position.x-p.x,camera.position.z-p.z);
   nukeView={p:p.clone(),a:isFinite(a)?a:0,t:0};
@@ -234,7 +235,9 @@ function drawOverlay(){
   }
   oc.font='700 20px "Saira Condensed",sans-serif';
   for(const Z of zones){const zs=project(new THREE.Vector3(Z.x,heightAt(Z.x,Z.z)+11,Z.z));
-    if(zs){oc.fillStyle=Z.owner===1?'#8fd16a':Z.owner===-1?'#ff5a3c':'#efe7d2';oc.fillText(Z.id,zs.x,zs.y);}}
+    if(zs){oc.fillStyle=Z.owner===1?'#8fd16a':Z.owner===-1?'#ff5a3c':'#efe7d2';oc.fillText(Z.id,zs.x,zs.y);
+      // distancia debajo de la letra (se ve solo cuando el punto está en pantalla)
+      oc.font='600 14px "Saira Condensed",sans-serif'; oc.fillText(zoneDistTxt(Z),zs.x,zs.y+16); oc.font='700 20px "Saira Condensed",sans-serif';}}
 
   for(const A of a10s){ if(A.t!==player&&!(A.t&&A.t.isPlayer)) continue; const s=project(A.g.position), dist=Math.round(A.g.position.distanceTo(camera.position));
     if(!s||s.x<20||s.y<20||s.x>innerWidth-20||s.y>innerHeight-20){ // fuera de la pantalla: flecha en el borde que apunta al avión
@@ -295,6 +298,8 @@ function drawMinimap(){
   }
   for(const P of infantry){ if(P.dead) continue; if(P.team===1&&playerCrew&&!tanks.some(t=>t.team===0&&!t.dead&&t.pos.distanceTo(P.pos)<120)) continue;
     mc.fillStyle=isCiv(P)?'#e8e2cf':P.team===0?'#8fd16a':'#ff5a3c'; mc.beginPath(); mc.arc(tx(P.pos.x),tz(P.pos.z),isCiv(P)?2.5:3.5,0,7); mc.fill(); }
+  if(artyPick){ for(const [P,c] of [[lastAim,'rgba(255,255,255,.7)'],[artyHover,'#ffb43c']]){ if(!P) continue; const X=tx(P.x), Y=tz(P.z), r=Math.max(6,(W.era<=2?14:10)*k);
+      mc.strokeStyle=c; mc.lineWidth=2.5; mc.beginPath(); mc.arc(X,Y,r,0,7); mc.moveTo(X-r-8,Y); mc.lineTo(X+r+8,Y); mc.moveTo(X,Y-r-8); mc.lineTo(X,Y+r+8); mc.stroke(); } }
   if(player&&!player.dead&&state==='play'){mc.strokeStyle='rgba(255,255,255,.6)';mc.lineWidth=2;mc.beginPath();
     mc.moveTo(tx(player.pos.x),tz(player.pos.z));mc.lineTo(tx(player.pos.x+Math.sin(camYaw)*60),tz(player.pos.z+Math.cos(camYaw)*60));mc.stroke();}
 }

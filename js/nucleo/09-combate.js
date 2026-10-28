@@ -426,7 +426,8 @@ function callAirstrike(by,point){
 }
 const bombGeo=new THREE.CylinderGeometry(.25,.25,1.6,8); bombGeo.rotateX(Math.PI/2);
 function updateArty(dt){
-  for(let i=arty.length-1;i>=0;i--){ const a=arty[i]; if(!a.w&&now>=a.t-1.6){ a.w=true; incoming(a.p.clone().setY(heightAt(a.p.x,a.p.z)),a.t-now,.5,'shell'); } if(now<a.t) continue;
+  for(let i=arty.length-1;i>=0;i--){ const a=arty[i]; if(!a.fl&&now>=a.t-3.2){ a.fl=true; gunFlash(a.by.team,a.p); } // fogonazo de la batería, 3 s antes de caer
+    if(!a.w&&now>=a.t-1.6){ a.w=true; incoming(a.p.clone().setY(heightAt(a.p.x,a.p.z)),a.t-now,.5,'shell'); } if(now<a.t) continue;
     a.p.y=heightAt(a.p.x,a.p.z); blast(a.p,1); addCrater(a.p,3.4,1.1); splash(a.p,a.by,13,1.25,120); arty.splice(i,1); }
   for(let i=planes.length-1;i>=0;i--){ const P=planes[i]; P.g.position.addScaledVector(P.dir,P.v*dt); P.life-=dt; if(P.snd) P.snd.set(P.g.position);
     for(const d of P.drops){ if(d.done) continue; const rel=P.g.position.clone().sub(d.at); rel.y=0;

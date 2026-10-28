@@ -106,7 +106,7 @@ function cardsHTML(items,group,cur){
     `<button class="tk" role="radio" data-g="${group}" data-k="${it.k}" aria-checked="${it.k===cur}" aria-disabled="${!!it.off}">${it.img?miniHTML(it.k):''}<b>${it.label}</b>${it.desc||''}${it.tag?`<em>${it.tag}</em>`:''}</button>`).join('')}</div>`;
 }
 function openDeploy(){
-  state='deploy'; syncIntro(); mouseDown=false; rightDown=false; if(engGain) engGain.gain.value=0;
+  state='deploy'; syncIntro(); mouseDown=false; rightDown=false; scopeOn=false; if(artyPick) artyMap(false); if(engGain) engGain.gain.value=0;
   if(document.pointerLockElement) document.exitPointerLock();
   document.body.classList.remove('menu','spec'); document.body.classList.add('deploy');
   $('overlay').style.display='flex'; renderDeploy();
@@ -114,7 +114,7 @@ function openDeploy(){
 function handOver(){
   if(!playerCrew) return; const c=playerCrew;
   c.isPlayer=false; c.name='Vos (IA)'; if(c.tank){c.tank.isPlayer=false;c.tank.name=c.name;} else c.respawnT=2;
-  if(engGain) engGain.gain.value=0; mouseDown=rightDown=scoped=false; playerCrew=null; player=null;
+  if(engGain) engGain.gain.value=0; mouseDown=rightDown=scoped=scopeOn=false; artyPick=false; document.body.classList.remove('artyPick'); playerCrew=null; player=null;
   if(document.pointerLockElement) document.exitPointerLock();
 }
 function goSpectate(){handOver();state='spectate';aerial=true;aer.init=false;aer.zoom=1;$('overlay').style.display='none';document.body.classList.remove('deploy');document.body.classList.add('spec');banner('Modo espectador','La IA ocupa tu lugar. Esc vuelve al menú',3.5);}
@@ -191,7 +191,7 @@ const tutAmmo=()=>player.ammoCount?player.ammoCount.reduce((a,b)=>a+b,0):0;
 function buildTutSteps(P){
   const T=P.T, S=[], K=k=>keyName(binds[k]);
   S.push({t:'Moverse',x:`${K('fwd')} y ${K('back')} aceleran y frenan; ${K('left')} y ${K('right')} giran. Recorré unos 40 metros.`,ok:U=>U.start.distanceTo(player.pos)>40});
-  S.push({t:'Mirar y apuntar',x:`Mové el mouse para mirar. Mantené ${K('scope')} unos segundos para usar la mira telescópica (la rueda cambia el aumento).`,ok:U=>(U.scope||0)>2.5});
+  S.push({t:'Mirar y apuntar',x:`Mové el mouse para mirar. Apretá ${K('scope')} para entrar a la mira del artillero y quedate unos segundos (la rueda cambia el aumento, clic derecho hace zoom; ${K('scope')} de nuevo para salir).`,ok:U=>(U.scope||0)>2.5});
   S.push({t:'Disparar',x:'Destruí el tanque ligero marcado. Clic izquierdo dispara.',ok:U=>U.d[0].dead});
   S.push({t:'Blindaje',x:'El frente es grueso; los costados y la parte de atrás, finos. Destruí el tanque medio pegándole de costado.',ok:U=>U.d[1].dead});
   if(T.ammo.length>1) S.push({t:'Munición',x:`Tu tanque lleva ${T.ammo.map((A,i)=>`<b>${i+1}</b> ${A.n}`).join(', ')}. Elegí una a mano con ${T.ammo.map((_,i)=>K('ammo'+(i+1))).join('/')} y después volvé a la automática con ${K('ammoAuto')}.`,ok:U=>U.manual&&U.autoBack});
@@ -211,7 +211,7 @@ function buildTutSteps(P){
   if(T.troops) S.push({t:'Infantería',x:`Tu vehículo lleva soldados. Apretá ${K('troops')} para bajarlos: capturan puntos y tienen un antitanque.`,ok:()=>!player.troops});
   if(T.auto) S.push({t:'Ráfaga',x:'Tu cañón es automático: mantené el clic y dispará una ráfaga al tanque lejano. Al vaciar el cargador hay una recarga larga.',enter:U=>{U.shots=0;},ok:U=>U.shots>=3});
   else if(T.autoL) S.push({t:'Cargador automático',x:'Tu tanque tiene cargador automático: recarga a la misma velocidad aunque pierdas tripulantes. Disparale dos veces al tanque lejano.',enter:U=>{U.shots=0;},ok:U=>U.shots>=2});
-  S.push({t:'Artillería',x:`Apuntá al tanque lejano y apretá ${K('arty')}. Cuesta ${ARTY_COST} puntos; para practicar tenés de sobra.`,enter:()=>{playerCrew.sp=Math.max(playerCrew.sp,600);playerCrew.artyCD=0;},ok:U=>U.arty});
+  S.push({t:'Artillería',x:`Apretá ${K('arty')}: se abre el mapa; hacé clic sobre el tanque lejano (o ${K('arty')} otra vez para que caiga donde apunta la mira). Cuesta ${ARTY_COST} puntos; para practicar tenés de sobra.`,enter:()=>{playerCrew.sp=Math.max(playerCrew.sp,600);playerCrew.artyCD=0;},ok:U=>U.arty});
   if(RULE().sup.air) S.push({t:'Ataque aéreo',x:`Apuntá a la zona y apretá ${K('air')}: un avión suelta cuatro bombas en línea. Cuesta ${AIR_COST} puntos.`,enter:()=>{playerCrew.sp=Math.max(playerCrew.sp,600);playerCrew.airCD=0;},ok:U=>U.air});
   S.push({t:'Rematar',x:'Terminá con el tanque lejano como quieras.',skip:U=>U.d[2].dead,ok:U=>U.d[2].dead});
   if(T.arc!=null) S.splice(2,0,{t:'Sin torre',x:`Tu ${T.label} no tiene torre: el cañón gira solo ${Math.round(T.arc*180/Math.PI)}° a cada lado${T.m.ww1==='rhombo'?' (dispara el de la barbeta del costado hacia donde apuntás)':''}. Para apuntar más allá, girá el casco: dá media vuelta con ${K('left')} o ${K('right')}.`,enter:U=>{U.h0=player.heading;},ok:U=>Math.abs(wrap(player.heading-U.h0))>1.4});
@@ -270,7 +270,7 @@ function guide(){
   $('panel').innerHTML=`<h1>Cómo jugar</h1><div class="guide">
   <h2>Objetivo</h2><p>Cada bando empieza con 400 tickets. Bajan cuando el enemigo controla más puntos de captura (A, B y C) y cuando perdés tanques. Gana quien deja al otro en cero o sin tanques para salir. La nuke, a los 1500 puntos, gana la batalla de una.</p>
   <h2>Tu línea de tanques</h2><p>Elegís un tanque ligero, medio o principal. Cada uno sale una vez y puede reaparecer otra si te alcanzan los puntos de reaparición. Los ganás penetrando, destruyendo, capturando y abatiendo infantería. El tanque de élite sale una sola vez.</p>
-  <h2>Controles</h2><p>W/S acelerar y frenar, A/D girar, mouse para mirar, clic izquierdo cañón, clic derecho o Espacio ametralladora, Shift mira telescópica, F artillería, G ataque aéreo, N nuke, T visión térmica, V vista aérea, Esc pausa.</p>
+  <h2>Controles</h2><p>W/S acelerar y frenar, A/D girar, mouse para mirar, clic izquierdo cañón, clic derecho zoom, Espacio ametralladora, Shift entra y sale de la mira, F artillería, G ataque aéreo, N nuke, T visión térmica, V vista aérea, Esc pausa.</p>
   <h2>Apuntar en modo realista</h2><p>Los tanques con telémetro compensan solos la caída del proyectil. En los demás usá la escala de la mira: las marcas 2, 4 y 6 son 200, 400 y 600 metros. A más distancia, apuntá más arriba.</p>
   <h2>Munición</h2><p>Se elige sola mientras recargás, según lo que tengas en la mira. La cinética pierde fuerza con la distancia y rebota en ángulos cerrados; la carga hueca no pierde fuerza; la HESH ignora la inclinación pero rebota fácil; la explosiva sirve contra infantería, edificios y blindados livianos.</p>
   <h2>Blindaje y ángulo</h2><p>El frente es lo más grueso. Pegale a los costados y atrás. Si el impacto llega muy inclinado, rebota. Para protegerte, mostrá el frente un poco girado.</p>

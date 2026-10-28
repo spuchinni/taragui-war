@@ -22,8 +22,22 @@ function explode(p,kind,big=1){
   if(kind==='ground'){debris(p,10*big,dirtMat,5*big);for(let i=0;i<3*big;i++)puff(p.clone().add(new THREE.Vector3(rand(-1,1),rand(0,1),rand(-1,1))),0x6a5a44,rand(3,5)*big,rand(1.2,2),1.2);}
   else {debris(p,12,sparkMat,7);puff(p,0xffa040,3,.25,0,1,true);puff(p,0x444038,3,1.2,1);}
 }
+// Fogonazos de la artillería propia o enemiga: un resplandor bajo en el horizonte, del lado de la base del que dispara
+// (sin niebla, así se ve aunque la batería esté lejos) y un destello que ilumina el cielo y el campo, que de noche se nota mucho.
+const gunGlow=new THREE.HemisphereLight(0xffc27a,0x332211,0); scene.add(gunGlow);
+function gunFlash(team,target){
+  const B=W.sp&&W.sp[team]&&W.sp[team].length?W.sp[team]:null; if(!B) return;
+  const bx=B.reduce((a,s)=>a+s.x,0)/B.length, bz=B.reduce((a,s)=>a+s.z,0)/B.length;
+  let dx=bx-target.x, dz=bz-target.z; const L=Math.hypot(dx,dz)||1; dx/=L; dz/=L;
+  const gx=bx+dx*500+rand(-80,80), gz=bz+dz*500+rand(-80,80);              // la batería, unos 500 m detrás de la base
+  const cx=gx-camera.position.x, cz=gz-camera.position.z, D=Math.hypot(cx,cz)||1, R=Math.min(D,320);
+  const p=new THREE.Vector3(camera.position.x+cx/D*R,camera.position.y+R*.03,camera.position.z+cz/D*R);
+  const m=new THREE.Sprite(new THREE.SpriteMaterial({map:smokeTex,color:0xffb050,transparent:true,opacity:.95,depthWrite:false,fog:false,blending:THREE.AdditiveBlending}));
+  m.position.copy(p); m.scale.set(R*.28,R*.12,1); scene.add(m); fx.push({m,life:.22,max:.22,vy:0,grow:0,op:.95,sprite:true});
+  gunGlow.intensity=Math.max(gunGlow.intensity,(WX.night?.55:.15)*clamp(500/D,.35,1));
+}
 function updateFx(dt){
-  flash.intensity=Math.max(0,flash.intensity-dt*30);
+  flash.intensity=Math.max(0,flash.intensity-dt*30); gunGlow.intensity=Math.max(0,gunGlow.intensity-dt*3.5);
   for(let i=fx.length-1;i>=0;i--){const f=fx[i];f.life-=dt;
     if(f.sprite){f.m.material.opacity=f.op*f.life/f.max;f.m.position.y+=f.vy*dt;f.m.scale.addScalar(f.grow*dt);}
     if(f.line) f.m.material.opacity=Math.max(0,f.life/f.max)*.85;
