@@ -172,7 +172,7 @@ body.artyPick #mm{width:min(80vh,80vw);height:min(80vh,80vw);right:50%;bottom:50
 body.deploy #status,body.deploy #scope{display:none}
 #overlay{position:fixed;inset:0;display:flex;padding:24px;box-sizing:border-box;overflow:auto;
   background:linear-gradient(180deg,rgba(28,25,20,.5),rgba(28,25,20,.9))}
-body.menu:not(.deploy) #overlay{background:linear-gradient(0deg,rgba(12,11,9,.98) 0,rgba(12,11,9,.96) 18%,rgba(12,11,9,0) 32%),linear-gradient(90deg,rgba(20,18,14,.9) 0,rgba(20,18,14,.65) 480px,rgba(20,18,14,.25) 820px),url(../img/portada.jpg) center/cover no-repeat}
+body.menu:not(.deploy) #overlay{background:linear-gradient(0deg,rgba(12,11,9,.98) 0,rgba(12,11,9,.96) 18%,rgba(12,11,9,0) 32%),linear-gradient(90deg,rgba(20,18,14,.9) 0,rgba(20,18,14,.65) 480px,rgba(20,18,14,.25) 820px),url(../img/portada-nueva.jpg) center/cover no-repeat}
 body.deploy #overlay{background:linear-gradient(90deg,rgba(28,25,20,.92) 0,rgba(28,25,20,.75) 620px,rgba(28,25,20,0) 900px)}
 .panel{max-width:640px;width:100%;margin:auto}
 body.deploy .panel{margin:auto auto auto 0}

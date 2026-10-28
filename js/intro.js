@@ -67,7 +67,7 @@ function coverStart(){
   ui.querySelectorAll('.iBar,.iFade,.iTxt,.iLogo,#iSkip,#iStart').forEach(e=>e.hidden=true);
   let c=$('iCover'); if(c) c.remove();
   c=document.createElement('div'); c.id='iCover'; c.className='ready'; c.innerHTML=`<div class="cvArt"><img class="cvBg" src="img/portada-nueva.jpg" alt="Taragüí War: Frente de Acero"></div><div class="cvGo">Hacé clic para empezar</div>`;
-  ui.appendChild(c);
+  ui.appendChild(c); const bt=$('boot'); if(bt) bt.remove();
   c.onclick=()=>{ initAudio(); if(AC.state==='suspended') AC.resume(); introEnd(); };
 }
 function introStart(){
@@ -147,6 +147,7 @@ function introFrame(dt){
 function introEnd(){
   if(state!=='intro') return;
   try{ localStorage.setItem('tw_intro_vista',INTRO_ID); }catch(e){}
+  { const bt=$('boot'); if(bt) bt.remove(); }
   const I=intro; if(I.cover){ const c=$('iCover'); if(c) c.remove(); I.cover=false; $('introUI').hidden=true; document.body.classList.remove('intro'); state='menu'; menuScreen='home'; mainMenu(); return; } if(I.tank){ I.sc.remove(I.tank.root); I.tank=null; } I.fx.forEach(F=>{ I.sc.remove(F.m); F.m.material.dispose(); }); I.fx.length=0; I.on=false; I.vid=false;
   const v=$('iVid'); if(v){ v.pause(); v.hidden=true; } document.querySelectorAll('#introUI .iBar').forEach(b=>b.hidden=false);
   $('introUI').hidden=true; document.body.classList.remove('intro');
