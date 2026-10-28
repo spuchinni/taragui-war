@@ -50,5 +50,25 @@ function groundDetail(mat){
    d=mix(.6,d,clamp(1.25-distance(vWp,cameraPosition)/160.,.35,1.)); // de lejos, más parejo
    diffuseColor.rgb*=d*1.42; }`); };
   return mat; }
+// Detalle del acero de los tanques (img/suelo/metal.png, hecha con herramientas/suelo/metal.py): chapa despareja,
+// rayones y saltaduras, chorreaduras de óxido en las caras verticales y polvo del terreno que sube desde abajo.
+// Se proyecta desde los tres ejes en el espacio de cada pieza (no "nada" cuando el tanque se mueve). root = posición del tanque.
+let _metal=null; const metalTex=()=>_metal||(_metal=(()=>{ const t=new THREE.TextureLoader().load('img/suelo/metal.png'+(window.GAME_V?'?v='+GAME_V:'')); t.wrapS=t.wrapT=THREE.RepeatWrapping; t.anisotropy=Math.min(4,ANISO); return t; })());
+function tankDetail(mat,root,dust){
+  mat.onBeforeCompile=sh=>{ sh.uniforms.sM={value:metalTex()}; sh.uniforms.uRoot={value:root}; sh.uniforms.uDust={value:new THREE.Color(dust||0xb6a27f)};
+    sh.vertexShader=sh.vertexShader.replace('#include <common>','#include <common>\nvarying vec3 vLp; varying vec3 vLn; varying float vWy;')
+      .replace('#include <begin_vertex>','#include <begin_vertex>\n vLp=transformed; vLn=objectNormal; vWy=(modelMatrix*vec4(transformed,1.)).y;');
+    sh.fragmentShader=sh.fragmentShader.replace('#include <common>','#include <common>\nvarying vec3 vLp; varying vec3 vLn; varying float vWy; uniform sampler2D sM; uniform vec3 uRoot; uniform vec3 uDust;')
+      .replace('#include <map_fragment>',`#include <map_fragment>
+ { vec3 an=abs(normalize(vLn)); an/=an.x+an.y+an.z; vec3 q=vLp*1.4;
+   vec3 m=texture2D(sM,q.zy).rgb*an.x+texture2D(sM,q.xz).rgb*an.y+texture2D(sM,q.xy).rgb*an.z;
+   diffuseColor.rgb*=1.+(m.r/.6-1.)*2.2;                                             // chapa despareja
+   float st=texture2D(sM,vec2((vLp.x+vLp.z)*.9,vLp.y*.3)).b*(1.-an.y);               // chorreaduras (caras verticales)
+   diffuseColor.rgb*=1.-st*.55;
+   diffuseColor.rgb=mix(diffuseColor.rgb,vec3(.40,.38,.35),m.g*.8);                  // rayones y saltaduras: metal a la vista
+   float h=vWy-uRoot.y; diffuseColor.rgb=mix(diffuseColor.rgb,uDust*.9,clamp(smoothstep(1.9,.2,h)*.7+an.y*step(0.,vLn.y)*.15,0.,.75)); // polvo y barro de abajo
+   if(vLn.y<-.3) diffuseColor.rgb*=.65; }                                            // panza más oscura
+`); };
+  return mat; }
 const wallTex=canvasTex(128,(x,s)=>{x.fillStyle='#ffffff';x.fillRect(0,0,s,s);speckle(x,s,s,1500,['#d8d8d8','#eeeeee','#c8c8c8'],1,3);});
 

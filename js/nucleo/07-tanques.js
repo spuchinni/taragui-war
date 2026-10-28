@@ -141,6 +141,7 @@ function makeTank(crew,key,x,z,heading,id){
   const cid=crew&&crew.isPlayer?(PROG&&PROG.camo&&PROG.camo[key]):(crew&&crew.cams&&crew.cams[key]), CT=(T.camo&&(!cid||cid==='base'))?vehCamo(key):camoFor(nat,cid);
   const mat=new THREE.MeshStandardMaterial({map:CT[0],roughness:.78,metalness:.18});
   const mud=new THREE.MeshStandardMaterial({map:CT[1],roughness:.95,metalness:.05});
+  const root=new THREE.Group(); tankDetail(mat,root.position,W.dust); tankDetail(mud,root.position,W.dust);
   const t={crew,key,team:crew.team,name:crew.name,isPlayer:crew.isPlayer,T,mat,hp:T.hp,dead:false,deadT:0,heading,speed:0,turretYaw:0,gunPitch:0,
     pitch:0,roll:0,reloadT:0,reloadMax:T.reload*(crew.isPlayer?1:rand(1.1,1.3)),recoil:0,smokeT:0,R:Math.max(2.2,M.L*.4),cr:M.W/2+.1,co:Math.max(0,M.L/2-M.W/2-.1),
     target:null,thinkT:0,goal:null,path:null,stuckT:0,revT:0,errScale:1,prefRange:rand(110,180),angleOff:rand(.3,.5)*(Math.random()<.5?-1:1),
@@ -151,7 +152,7 @@ function makeTank(crew,key,x,z,heading,id){
   applyLevel(t,crew&&crew.isPlayer?tankLv(key):crew&&crew.lvs?crew.lvs[key]||1:1);
   if(!crew.isPlayer){ t.sk=clamp((crew.team===1||net.quick?enemySkill():.55)+rand(-.07,.07),.15,1); t.reloadMax*=1.5-t.sk*.4; /* online: los bots de los dos bandos igual de hábiles */ t.eY*=1.6-t.sk; t.eP*=1.6-t.sk; t.smokeN=t.noSmk?0:t.sk>.8?2:t.sk>.45?1:0; t.mode='adv'; }
   if(crew&&crew.isPlayer) initAmmo(t);
-  const root=new THREE.Group(); t.root=root; root.rotation.order='YXZ';
+  t.root=root; root.rotation.order='YXZ';
   t.wheels=_wl=[]; t.mud=mud; buildModel(t,M,mat); _wl=null; scene.add(root);
   t.pos=root.position; t.pos.set(x,heightAt(x,z),z);
   tanks.push(t); placeOnGround(t,1); return t;
