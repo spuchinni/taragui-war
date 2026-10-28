@@ -6,7 +6,7 @@ const ACTIONS=[['fwd','Avanzar','KeyW'],['back','Retroceder','KeyS'],['left','Gi
   ['aerial','Vista aérea (la IA maneja)','KeyV'],['troops','Bajar la infantería','KeyE'],['fullscreen','Pantalla completa','KeyP'],['repair','Reparar','KeyR'],['crewSwap','Reemplazar tripulante (infantería)','KeyC'],['smoke','Granadas de humo','KeyX'],['ping','Marcar: enemigo / punto / atención','KeyQ'],['ext','Extintor (apagar incendio)','KeyZ']];
 const DEF_BINDS=Object.fromEntries(ACTIONS.map(a=>[a[0],a[2]]));
 let binds={...DEF_BINDS}, bindCapture=null, difficulty='normal';
-const keyName=c=>!c?'—':c.startsWith('Key')?c.slice(3):c.startsWith('Digit')?c.slice(5):c.startsWith('Numpad')?'Num '+c.slice(6):
+let keyName=c=>!c?'—':c.startsWith('Key')?c.slice(3):c.startsWith('Digit')?c.slice(5):c.startsWith('Numpad')?'Num '+c.slice(6):
   ({ShiftLeft:'Shift izq.',ShiftRight:'Shift der.',ControlLeft:'Ctrl izq.',ControlRight:'Ctrl der.',AltLeft:'Alt',AltRight:'Alt Gr',Space:'Espacio',Tab:'Tab',CapsLock:'Bloq Mayús',
     Enter:'Enter',Backspace:'Retroceso',ArrowUp:'↑',ArrowDown:'↓',ArrowLeft:'←',ArrowRight:'→',Backquote:'º',Minus:'-',Equal:'=',Comma:',',Period:'.',Slash:'-',Semicolon:'Ñ',Quote:'´',BracketLeft:'`',BracketRight:'+'}[c]||c);
 const down=a=>{ const c=binds[a]; return !!(keys[c]||(c==='ShiftLeft'&&keys.ShiftRight)||(c==='ControlLeft'&&keys.ControlRight)); };

@@ -2,12 +2,20 @@
 <html lang="es">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<!-- Celular: se puede agregar a la pantalla de inicio y abre a pantalla completa, acostado -->
+<link rel="manifest" href="manifest.json">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Taragüí War">
+<meta name="theme-color" content="#0d0f12">
+<link rel="apple-touch-icon" href="img/icono-180.png">
 <title>Taragüí War: Frente de Acero</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Saira+Condensed:wght@500;700&display=swap">
 <!-- Versión del juego: la pone version.sh en cada subida (también en los ?v= de abajo y en version.json) -->
-<script>window.GAME_V='20261028-0453';</script>
-<link rel="stylesheet" href="css/juego.css?v=20261028-0453">
+<script>window.GAME_V='20261028-2346';</script>
+<link rel="stylesheet" href="css/juego.css?v=20261028-2346">
 </head>
 <body class="menu">
 <!-- Portada mientras carga el juego (la reemplaza coverStart en intro.js, así no se ve otra imagen antes) -->
@@ -66,49 +74,50 @@
 <div id="overlay"><div class="panel" id="panel"></div></div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <!-- El código está repartido en archivos: nucleo/ (motor reutilizado de la versión 1) y eras/ (épocas, tanques, mapas y campaña) -->
-<script src="js/nucleo/00-base.js?v=20261028-0453"></script>
-<script src="js/nucleo/01-naciones.js?v=20261028-0453"></script>
-<script src="js/eras/eras.js?v=20261028-0453"></script>
-<script src="js/eras/gm1-datos.js?v=20261028-0453"></script>
-<script src="js/eras/gm2-datos.js?v=20261028-0453"></script>
-<script src="js/eras/gm3-datos.js?v=20261028-0453"></script>
-<script src="js/nucleo/02-escena.js?v=20261028-0453"></script>
-<script src="js/nucleo/03-mapas.js?v=20261028-0453"></script>
-<script src="js/nucleo/04-mundo.js?v=20261028-0453"></script>
-<script src="js/eras/gm1-mapas.js?v=20261028-0453"></script>
-<script src="js/eras/gm2-mapas.js?v=20261028-0453"></script>
-<script src="js/eras/gm3-mapas.js?v=20261028-0453"></script>
-<script src="js/eras/osm-mapas.js?v=20261028-0453"></script>
-<script src="js/nucleo/05-audio.js?v=20261028-0453"></script>
-<script src="js/nucleo/06-efectos.js?v=20261028-0453"></script>
-<script src="js/nucleo/07-tanques.js?v=20261028-0453"></script>
-<script src="js/eras/gm1-modelos.js?v=20261028-0453"></script>
-<script src="js/eras/gm2-modelos.js?v=20261028-0453"></script>
-<script src="js/eras/gm3-modelos.js?v=20261028-0453"></script>
-<script src="js/nucleo/08-progresion.js?v=20261028-0453"></script>
-<script src="js/nucleo/09-combate.js?v=20261028-0453"></script>
-<script src="js/nucleo/10-marcas-apoyo.js?v=20261028-0453"></script>
-<script src="js/nucleo/11-personas.js?v=20261028-0453"></script>
-<script src="js/nucleo/12-ia.js?v=20261028-0453"></script>
-<script src="js/nucleo/13-jugador.js?v=20261028-0453"></script>
-<script src="js/nucleo/14-partida.js?v=20261028-0453"></script>
-<script src="js/nucleo/15-menus.js?v=20261028-0453"></script>
-<script src="js/eras/campana.js?v=20261028-0453"></script>
-<script src="js/eras/gm2-campana.js?v=20261028-0453"></script>
-<script src="js/eras/gm3-campana.js?v=20261028-0453"></script>
-<script src="js/eras/objetivos.js?v=20261028-0453"></script>
-<script src="js/nucleo/16-online.js?v=20261028-0453"></script>
-<script src="js/eras/refuerzos.js?v=20261028-0453"></script>
+<script src="js/nucleo/00-base.js?v=20261028-2346"></script>
+<script src="js/nucleo/01-naciones.js?v=20261028-2346"></script>
+<script src="js/eras/eras.js?v=20261028-2346"></script>
+<script src="js/eras/gm1-datos.js?v=20261028-2346"></script>
+<script src="js/eras/gm2-datos.js?v=20261028-2346"></script>
+<script src="js/eras/gm3-datos.js?v=20261028-2346"></script>
+<script src="js/nucleo/02-escena.js?v=20261028-2346"></script>
+<script src="js/nucleo/03-mapas.js?v=20261028-2346"></script>
+<script src="js/nucleo/04-mundo.js?v=20261028-2346"></script>
+<script src="js/eras/gm1-mapas.js?v=20261028-2346"></script>
+<script src="js/eras/gm2-mapas.js?v=20261028-2346"></script>
+<script src="js/eras/gm3-mapas.js?v=20261028-2346"></script>
+<script src="js/eras/osm-mapas.js?v=20261028-2346"></script>
+<script src="js/nucleo/05-audio.js?v=20261028-2346"></script>
+<script src="js/nucleo/06-efectos.js?v=20261028-2346"></script>
+<script src="js/nucleo/07-tanques.js?v=20261028-2346"></script>
+<script src="js/eras/gm1-modelos.js?v=20261028-2346"></script>
+<script src="js/eras/gm2-modelos.js?v=20261028-2346"></script>
+<script src="js/eras/gm3-modelos.js?v=20261028-2346"></script>
+<script src="js/nucleo/08-progresion.js?v=20261028-2346"></script>
+<script src="js/nucleo/09-combate.js?v=20261028-2346"></script>
+<script src="js/nucleo/10-marcas-apoyo.js?v=20261028-2346"></script>
+<script src="js/nucleo/11-personas.js?v=20261028-2346"></script>
+<script src="js/nucleo/12-ia.js?v=20261028-2346"></script>
+<script src="js/nucleo/13-jugador.js?v=20261028-2346"></script>
+<script src="js/nucleo/14-partida.js?v=20261028-2346"></script>
+<script src="js/nucleo/15-menus.js?v=20261028-2346"></script>
+<script src="js/eras/campana.js?v=20261028-2346"></script>
+<script src="js/eras/gm2-campana.js?v=20261028-2346"></script>
+<script src="js/eras/gm3-campana.js?v=20261028-2346"></script>
+<script src="js/eras/objetivos.js?v=20261028-2346"></script>
+<script src="js/nucleo/16-online.js?v=20261028-2346"></script>
+<script src="js/eras/refuerzos.js?v=20261028-2346"></script>
 <!-- Cuentas (Google o mail) y progreso en la nube. Si Firebase no carga, se juega igual con el progreso en el navegador. -->
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
-<script src="js/nube-config.js?v=20261028-0453"></script>
-<script src="js/nube.js?v=20261028-0453"></script>
-<script src="js/salas.js?v=20261028-0453"></script>
-<script src="js/relevo.js?v=20261028-0453"></script>
-<script src="js/miniaturas.js?v=20261028-0453"></script>
-<script src="js/intro.js?v=20261028-0453"></script>
-<script src="js/inicio.js?v=20261028-0453"></script>
+<script src="js/nube-config.js?v=20261028-2346"></script>
+<script src="js/nube.js?v=20261028-2346"></script>
+<script src="js/salas.js?v=20261028-2346"></script>
+<script src="js/relevo.js?v=20261028-2346"></script>
+<script src="js/miniaturas.js?v=20261028-2346"></script>
+<script src="js/intro.js?v=20261028-2346"></script>
+<script src="js/movil.js?v=20261028-2346"></script>
+<script src="js/inicio.js?v=20261028-2346"></script>
 </body>
 </html>

@@ -303,3 +303,52 @@ body.menu #objT{display:none!important}
 
 /* Modo retro: el canvas del juego se agranda sin suavizar (applyGfx) */
 body.retro #game>canvas{image-rendering:pixelated}
+
+/* ---------- Celular y tablet (body.movil, ver js/movil.js) ---------- */
+body.movil{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;-webkit-tap-highlight-color:transparent;overscroll-behavior:none}
+body.movil #game canvas{touch-action:none}
+#tch{display:none}
+body.movil #tch{display:block;position:fixed;inset:0;z-index:30;pointer-events:none}
+body.movil.menu #tch,body.movil.brief #tch,body.movil.deploy #tch,body.movil.spec #tch{display:none}
+#tch .tb{position:absolute;pointer-events:auto;border-radius:50%;border:2px solid rgba(239,231,210,.45);background:rgba(20,22,30,.42);color:#f4efe0;
+  font:700 22px/1 system-ui,sans-serif;display:grid;place-items:center;padding:0;touch-action:none;-webkit-tap-highlight-color:transparent}
+#tch .tb.on{background:rgba(230,190,90,.55);border-color:#f4efe0}
+#tch .tFire{width:88px;height:88px;right:calc(22px + env(safe-area-inset-right,0px));bottom:calc(26px + env(safe-area-inset-bottom,0px));font-size:34px;background:rgba(150,40,24,.5);border-color:rgba(255,190,160,.6)}
+#tch .tMg{width:58px;height:58px;right:calc(124px + env(safe-area-inset-right,0px));bottom:calc(20px + env(safe-area-inset-bottom,0px));font-size:20px;letter-spacing:-2px}
+#tch .tScope{width:58px;height:58px;right:calc(30px + env(safe-area-inset-right,0px));bottom:calc(126px + env(safe-area-inset-bottom,0px));font-size:30px}
+#tch .tZoom{width:52px;height:52px;right:calc(112px + env(safe-area-inset-right,0px));bottom:calc(96px + env(safe-area-inset-bottom,0px));font-size:20px}
+#tch .tMenu,#tch .tTab,#tch .tPing{width:40px;height:40px;font-size:18px;top:calc(8px + env(safe-area-inset-top,0px))}
+#tch .tMenu{left:calc(8px + env(safe-area-inset-left,0px))} #tch .tTab{left:calc(54px + env(safe-area-inset-left,0px))} #tch .tPing{left:calc(100px + env(safe-area-inset-left,0px));font-size:16px}
+#tStick{position:absolute;width:120px;height:120px;border-radius:50%;border:2px solid rgba(239,231,210,.35);background:rgba(20,22,30,.25);
+  left:calc(30px + env(safe-area-inset-left,0px));bottom:calc(30px + env(safe-area-inset-bottom,0px));opacity:.55;transition:opacity .15s}
+#tStick.on{opacity:1;bottom:auto}
+#tStick i{position:absolute;left:35px;top:35px;width:50px;height:50px;border-radius:50%;background:rgba(239,231,210,.55);border:2px solid #f4efe0}
+#rotar{display:none}
+@media (orientation:portrait){ body.movil #rotar{display:flex;position:fixed;inset:0;z-index:100;background:#0d0f12;color:var(--paper);flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:24px}
+  body.movil #rotar div{font-size:64px;white-space:nowrap;animation:rotarA 1.6s ease-in-out infinite} body.movil #rotar p{font-size:20px;margin-top:12px} }
+@keyframes rotarA{0%,30%{transform:rotate(0)}60%,100%{transform:rotate(-90deg)}}
+/* HUD más chico */
+body.movil #top{transform:translateX(-50%) scale(.68);transform-origin:top center;top:calc(4px + env(safe-area-inset-top,0px))}
+body.movil #counts{display:none}
+body.movil #status{left:calc(8px + env(safe-area-inset-left,0px));top:calc(54px + env(safe-area-inset-top,0px));bottom:auto;width:auto;transform:scale(.46);transform-origin:top left}
+body.movil #status .wt-name,body.movil #status .wt-state,body.movil #status .wt-sub{display:none}
+body.movil #status .wt-tele{font-size:24px}
+body.movil #mm{width:112px;height:112px;right:calc(8px + env(safe-area-inset-right,0px));top:calc(8px + env(safe-area-inset-top,0px));bottom:auto}
+body.movil.artyPick #mm{width:min(86vh,86vw);height:min(86vh,86vw);right:50%;top:50%;bottom:auto;transform:translate(50%,-50%)}
+body.movil #fsBtn{right:calc(128px + env(safe-area-inset-right,0px));top:calc(8px + env(safe-area-inset-top,0px));width:36px;height:36px;font-size:18px}
+body.movil #feed{top:calc(126px + env(safe-area-inset-top,0px));right:calc(8px + env(safe-area-inset-right,0px));max-width:46vw}
+body.movil #feed div{font-size:11px;padding:1px 6px}
+body.movil #feed div:nth-child(n+4){display:none}
+body.movil #ammobar{transform:translateX(-50%) scale(.72);transform-origin:bottom center;bottom:calc(4px + env(safe-area-inset-bottom,0px))}
+body.movil #ammobar .wt-wpn,body.movil #ammobar .ab-info{display:none}
+body.movil #ammoSlots .as{width:50px;pointer-events:auto;touch-action:none} body.movil #ammoSlots .as .k{display:none} body.movil #ammoSlots .as .ic{height:48px}
+body.movil #banner{font-size:28px} body.movil #banner small{font-size:14px}
+body.movil #hitmsg{font-size:18px;top:62%}
+body.movil .homeCopy .iosTip{color:#ffd27a}
+body.movil.ios #fsBtn{display:none}
+/* Paneles (antes de la partida, despliegue, vehículos, árbol, campaña, ajustes, resumen): el mismo diseño de la PC, achicado para que entre */
+body.movil:not(.menu.home):not(.hangar) #overlay{zoom:.56;padding:14px}
+body.movil #overlay{-webkit-overflow-scrolling:touch}
+body.movil :is(.guide,.sumwrap,.tree,.side.settings){max-height:none}
+body.movil .binds,body.movil .noMovil{display:none}
+body.movil #tutbox{top:calc(40px + env(safe-area-inset-top,0px));max-width:min(440px,52vw);font-size:12px;padding:6px 10px}
