@@ -34,6 +34,14 @@ function hgRender(dt){
   H.cam.setViewOffset(w,h,w>900?w*.1:0,h*.06,w,h); H.cam.updateProjectionMatrix();
   renderer.render(H.sc,H.cam); return true;
 }
+// Calibre del cañón principal, sacado del nombre de la munición (mm, cm, libras, pulgadas o la notación italiana 75/34)
+function gunCal(V){ const n=(V.ammo&&V.ammo[0]&&V.ammo[0].n)||''; let m;
+  if((m=n.match(/(\d+(?:[,.]\d+)?)\s*cm/))) return Math.round(parseFloat(m[1].replace(',','.'))*10)+' mm';
+  if((m=n.match(/(\d+(?:[,.]\d+)?)\s*mm/))) return m[1]+' mm';
+  if((m=n.match(/(\d+)\s*(?:lb|libras)/))) return ({2:'40 mm (2 libras)',3:'47 mm (3 libras)',6:'57 mm (6 libras)',17:'76,2 mm (17 libras)'})[m[1]]||m[1]+' libras';
+  if((m=n.match(/(\d+)\s*in\b/))) return (+m[1]*25.4).toFixed(1).replace('.',',')+' mm';
+  if((m=n.match(/\b(\d{2})\/\d{2}\b/))) return m[1]+' mm';
+  return ''; }
 const CLS_ES={ligero:'Ligero',medio:'Medio',pesado:'Pesado',principal:'Principal',cazatanques:'Cazatanques','de élite':'De élite','cañón':'Cañón'};
 // Estado de un tanque: comprado (own), investigado sin comprar (bought=false), investigándose (res), investigable (can) o bloqueado (why)
 function hgStatus(k){ const own=owned(k), done=researched(k), inG=garageOf(chosenNation).includes(k), res=!done&&k===nextResearch(VEH[k].nation);
@@ -65,10 +73,12 @@ function renderHangar(){
 </div>
     <button class="setB" id="setB" title="Ajustes" aria-label="Ajustes">⚙</button>
     <div class="hgInfo"><div class="nm">${V.label}</div><div class="sub">${NATIONS[chosenNation].label} · ${CLS_ES[V.cls]||V.cls} · BR ${brTxt(V.br)}</div>
-      <div class="st"><span>Velocidad</span><b>${Math.round(V.maxF*3.6)} km/h</b><span>Blindaje frontal</span><b>${V.armor.hull.front} / ${V.armor.turret.front} mm</b>
-        <span>Penetración</span><b>${Math.max(...V.ammo.map(A=>A.pen))} mm</b><span>Recarga</span><b>${V.reload} s</b><span>Tripulación</span><b>${V.crewReal||V.crew}</b>${V.year?`<span>Año</span><b>${V.year}</b>`:''}</div>
+      <div class="st">${gunCal(V)?`<span>Cañón</span><b>${gunCal(V)}</b>`:''}<span>Penetración máx.</span><b>${Math.max(...V.ammo.map(A=>A.pen))} mm</b>
+        <span>Recarga</span><b>${String(V.reload).replace('.',',')} s</b><span>Velocidad</span><b>${Math.round(V.maxF*3.6)} km/h</b>
+        <span>Blindaje casco</span><b>${V.armor.hull.front} / ${V.armor.hull.side} / ${V.armor.hull.rear} mm</b><span>Blindaje torre</span><b>${V.armor.turret.front} / ${V.armor.turret.side} / ${V.armor.turret.rear} mm</b>
+        <span>Tripulación</span><b>${V.crewReal||V.crew}</b><span>Pendiente máx.</span><b>${Math.round(climbOf(V)*180/Math.PI)}°</b>${V.year?`<span>Año</span><b>${V.year}</b>`:''}</div>
+      <div class="am"><b>Munición</b>${V.ammo.map(A=>`<div><span>${A.n}</span><small>${KIND_ES[A.kind]} · ${A.pen} mm · ${Math.round(A.v)} m/s</small></div>`).join('')}</div>
       <div class="chips">${eq.map(e=>`<span>${e}</span>`).join('')}</div>
-      <div class="am">${V.ammo.map(A=>`${A.n} <small>(${KIND_ES[A.kind]}, ${A.pen} mm)</small>`).join('<br>')}</div>
       ${S.own?`<div class="lvl"><b>Nivel ${lv}</b>${lv<5?` · ${xp.toLocaleString('es-AR')} / ${LV_XP[lv].toLocaleString('es-AR')} XP<i class="pb"><i style="width:${Math.round(xp/LV_XP[lv]*100)}%"></i></i>`:' · máximo'}<ul>${upg}</ul></div>
         ${(()=>{ const T=(PROG.tstat||{})[hgSel]; return T?`<small>Partidas ${T.b} · victorias ${T.w} · bajas ${T.k} · muertes ${T.d}${T.d?` · K/D ${(T.k/T.d).toFixed(1).replace('.',',')}`:''}</small>`:'<small>Todavía no jugaste con este tanque.</small>'; })()}
         <div class="btns"><button class="hgB" id="hgGar">${S.inG?'Quitar del garaje':'Al garaje'}</button><button class="hgB" id="hgCam">Camuflaje</button><button class="hgB" id="hgTut">Tutorial</button></div>`
@@ -87,6 +97,8 @@ function renderHangar(){
   document.querySelectorAll('.hgc').forEach(b=>b.onclick=()=>{ hgSel=b.dataset.k; renderHangar(); });
   document.querySelectorAll('.hgModes button').forEach(b=>b.onclick=()=>{ playMode=b.dataset.m; renderHangar(); });
   document.querySelectorAll('.hgOpt [data-side]').forEach(b=>b.onclick=()=>{ specialSide=b.dataset.side; renderHangar(); });
+  // la ficha arranca debajo de la barra de épocas y naciones (con muchas naciones esa barra ocupa dos renglones)
+  { const ht=document.querySelector('.hg .hgTop'), hi=document.querySelector('.hgInfo'); if(ht&&hi){ const y=Math.round(ht.getBoundingClientRect().bottom+8); hi.style.top=y+'px'; hi.style.maxHeight=`calc(100% - ${y+180}px)`; } }
   $('hgBack').onclick=()=>{ menuScreen='home'; mainMenu(); };
   $('hgTree').onclick=()=>{ menuScreen='tree'; treeNation=chosenNation; mainMenu(); };
   $('setB').onclick=()=>{ menuScreen='settings'; mainMenu(); };
