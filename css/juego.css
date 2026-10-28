@@ -289,21 +289,11 @@ button:focus-visible{outline:3px solid var(--paper);outline-offset:3px}
 #objT b{color:var(--amber);margin-right:4px} #objT .ot{opacity:.75;margin-left:4px}
 body.menu #objT{display:none!important}
 
-/* Portada animada (coverStart en intro.js): la ilustración mantiene su proporción (2000 × 1342) y cubre la pantalla */
+/* Portada (coverStart en intro.js): la ilustración quieta mantiene su proporción (2000 × 1342) y cubre la pantalla */
 #iCover{position:absolute;inset:0;background:#000;overflow:hidden;pointer-events:auto;cursor:pointer}
-#iCover .cvArt{position:absolute;left:50%;top:50%;width:max(100vw,calc(100vh*1.4903));height:max(100vh,calc(100vw/1.4903));transform:translate(-50%,-50%) scale(1.14);
-  animation:cvZoom 9s cubic-bezier(.2,.6,.3,1) forwards,cvShake .45s 1.85s linear}
-#iCover .cvBg{position:absolute;inset:0;width:100%;height:100%;filter:brightness(.25);animation:cvLight 2.2s .2s ease-out forwards}
-#iCover .cvTit{position:absolute;left:25%;top:3.13%;width:50.55%;height:auto;opacity:0;transform:scale(2.4);transform-origin:50% 55%;
-  animation:cvSlam .5s 1.4s cubic-bezier(.5,0,.75,0) forwards;filter:drop-shadow(0 8px 18px rgba(0,0,0,.7))}
-#iCover .cvFlash{position:absolute;inset:0;background:#fff3d6;opacity:0;pointer-events:none;animation:cvFlash .6s 1.85s ease-out}
-#iCover .cvGo{position:absolute;left:0;right:0;bottom:7vh;text-align:center;font-size:clamp(18px,2.2vw,26px);color:var(--khaki);letter-spacing:.04em;text-shadow:0 2px 6px #000;opacity:0;transition:opacity .6s}
-#iCover.ready .cvGo{opacity:1;animation:pressP 1.6s infinite}
-@keyframes cvZoom{to{transform:translate(-50%,-50%) scale(1)}}
-@keyframes cvLight{to{filter:brightness(1)}}
-@keyframes cvSlam{0%{opacity:0;transform:scale(2.4)}60%{opacity:1}100%{opacity:1;transform:scale(1)}}
-@keyframes cvFlash{0%{opacity:.55}100%{opacity:0}}
-@keyframes cvShake{0%,100%{margin:0}20%{margin:-6px 0 0 5px}40%{margin:5px 0 0 -6px}60%{margin:-3px 0 0 3px}80%{margin:2px 0 0 -2px}}
+#iCover .cvArt{position:absolute;left:50%;top:50%;width:max(100vw,calc(100vh*1.4903));height:max(100vh,calc(100vw/1.4903));transform:translate(-50%,-50%)}
+#iCover .cvBg{position:absolute;inset:0;width:100%;height:100%}
+#iCover .cvGo{position:absolute;left:0;right:0;bottom:7vh;text-align:center;font-size:clamp(18px,2.2vw,26px);color:var(--khaki);letter-spacing:.04em;text-shadow:0 2px 6px #000;animation:pressP 1.6s infinite}
 
 /* Chips de datos en las tarjetas de vehículos (vehStatsHTML en miniaturas.js) */
 .vsts{display:flex;flex-wrap:wrap;gap:4px 5px;margin:5px 0 3px}
