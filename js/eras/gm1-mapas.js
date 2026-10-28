@@ -142,11 +142,7 @@ function buildWW1Map(key){
   const px=x=>(MX-x)/(2*MX)*S2, py=z=>(MZ-z)/(2*MZ)*S2, pm=S2/(2*MX);
   paintWW1Ground(ctx,S2,C,R,{px,py,pm,segs,crs,roadSegs,belts,MX,MZ});
   const tex=new THREE.CanvasTexture(cv); tex.anisotropy=ANISO; tex.wrapS=tex.wrapT=THREE.ClampToEdgeWrapping;
-  const det=canvasTex(256,(x,s)=>{ x.fillStyle='#ffffff'; x.fillRect(0,0,s,s); speckle(x,s,s,9000,['#cfc8bc','#eae4da','#b8b0a2','#f6f2ea'],1,3); });
-  det.repeat.set(Lx/6,Lz/6);
-  const mat=new THREE.MeshLambertMaterial({map:tex});
-  mat.onBeforeCompile=sh=>{ sh.uniforms.det={value:det}; sh.fragmentShader=sh.fragmentShader.replace('#include <map_pars_fragment>','#include <map_pars_fragment>\nuniform sampler2D det;')
-    .replace('#include <map_fragment>',`#include <map_fragment>\n diffuseColor.rgb*=texture2D(det,vUv*vec2(${(Lx/5).toFixed(1)},${(Lz/5).toFixed(1)})).rgb*.9;`); };
+  const mat=groundDetail(new THREE.MeshLambertMaterial({map:tex}));
   for(const [g,gl] of terrGeos){ const terr=new THREE.Mesh(g,mat); terr.receiveShadow=true; terr.userData.ground=true; worldGroup.add(terr);
     if(gl){ const lo=new THREE.Mesh(gl,mat); lo.receiveShadow=true; worldGroup.add(lo); const S=g.boundingSphere; cullAdd(terr,S.center.x,S.center.y,S.center.z,S.radius,0,{m:lo,d:140}); } }
   W.mmCanvas=(()=>{ const m=document.createElement('canvas'); m.width=m.height=512; m.getContext('2d').drawImage(cv,0,0,512,512); return m; })(); W.mmEX=MX; W.mmEZ=MZ;

@@ -32,5 +32,23 @@ function canvasTex(size,draw){const c=document.createElement('canvas');c.width=c
 function speckle(x,w,h,n,cols,a,b){for(let i=0;i<n;i++){x.fillStyle=cols[i%cols.length];x.globalAlpha=rand(.08,.4);const r=rand(a,b);x.fillRect(Math.random()*w,Math.random()*h,r,r);}x.globalAlpha=1;}
 const grassTex=canvasTex(512,(x,s)=>{x.fillStyle='#d8d8d0';x.fillRect(0,0,s,s);speckle(x,s,s,14000,['#b8b8ae','#f0f0e8','#a0a096'],1,3);});
 grassTex.repeat.set(60,60);
+// Detalle del suelo (img/suelo/suelo.png, hecha con herramientas/suelo/texturas.py): en gris, un canal por material
+// (R tierra, G pasto, B arena, A roca). Se elige según el color del mapa pintado (verde = pasto, claro = arena)
+// y la pendiente (empinado = pared de tierra con vetas). De lejos el detalle se aplana para que no se vean rayas.
+let _suelo=null; const sueloTex=()=>_suelo||(_suelo=(()=>{ const t=new THREE.TextureLoader().load('img/suelo/suelo.png'+(window.GAME_V?'?v='+GAME_V:'')); t.wrapS=t.wrapT=THREE.RepeatWrapping; t.anisotropy=Math.min(4,ANISO); return t; })());
+function groundDetail(mat){
+  mat.onBeforeCompile=sh=>{ sh.uniforms.sD={value:sueloTex()};
+    sh.vertexShader=sh.vertexShader.replace('#include <common>','#include <common>\nvarying vec3 vWp; varying float vNy;')
+      .replace('#include <begin_vertex>','#include <begin_vertex>\n vWp=(modelMatrix*vec4(transformed,1.)).xyz; vNy=normalize(mat3(modelMatrix)*objectNormal).y;');
+    sh.fragmentShader=sh.fragmentShader.replace('#include <common>','#include <common>\nvarying vec3 vWp; varying float vNy; uniform sampler2D sD;')
+      .replace('#include <map_fragment>',`#include <map_fragment>
+ { vec3 c=diffuseColor.rgb;
+   float gr=clamp((c.g-max(c.r,c.b)*.95)*12.,0.,1.), br=clamp((dot(c,vec3(.333))-.52)*5.,0.,1.);
+   vec4 n=texture2D(sD,vWp.xz*.31), f=texture2D(sD,vWp.xz*.043+.37);
+   float d=mix(mix(n.r,n.b,br),n.g,gr)*(.6+.4*f.r/.6);              // dos escalas: que no se note la repetición
+   d=mix(d,texture2D(sD,vec2(vWp.x+vWp.z,vWp.y)*.33).a,smoothstep(.82,.55,vNy)); // pendiente fuerte: vetas de tierra
+   d=mix(.6,d,clamp(1.25-distance(vWp,cameraPosition)/160.,.35,1.)); // de lejos, más parejo
+   diffuseColor.rgb*=d*1.42; }`); };
+  return mat; }
 const wallTex=canvasTex(128,(x,s)=>{x.fillStyle='#ffffff';x.fillRect(0,0,s,s);speckle(x,s,s,1500,['#d8d8d8','#eeeeee','#c8c8c8'],1,3);});
 

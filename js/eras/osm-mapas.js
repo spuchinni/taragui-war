@@ -211,10 +211,7 @@ function buildOSM(key){
   const tex=new THREE.CanvasTexture(cv); tex.anisotropy=ANISO; tex.wrapS=tex.wrapT=THREE.ClampToEdgeWrapping;
   // ---- terreno en sectores (con versión liviana de lejos) ----
   const step=C.step||3, xs=[], zs=[]; for(let v=-EX;v<EX;v+=step) xs.push(v); xs.push(EX); for(let v=-EZ;v<EZ;v+=step) zs.push(v); zs.push(EZ);
-  const det=canvasTex(256,(c,s)=>{ c.fillStyle='#ffffff'; c.fillRect(0,0,s,s); speckle(c,s,s,9000,['#cfc8bc','#eae4da','#b8b0a2','#f6f2ea'],1,3); });
-  const mat=new THREE.MeshLambertMaterial({map:tex});
-  mat.onBeforeCompile=sh=>{ sh.uniforms.det={value:det}; sh.fragmentShader=sh.fragmentShader.replace('#include <map_pars_fragment>','#include <map_pars_fragment>\nuniform sampler2D det;')
-    .replace('#include <map_fragment>',`#include <map_fragment>\n diffuseColor.rgb*=texture2D(det,vUv*vec2(${(EX*2/5).toFixed(1)},${(EZ*2/5).toFixed(1)})).rgb*.95;`); };
+  const mat=groundDetail(new THREE.MeshLambertMaterial({map:tex}));
   const uvOf=(X,Z)=>[(EX-X)/(2*EX),(Z+EZ)/(2*EZ)];
   const CH=60; for(let i0=0;i0<xs.length-1;i0+=CH) for(let j0=0;j0<zs.length-1;j0+=CH){
     const X=xs.slice(i0,Math.min(xs.length,i0+CH+1)), Z=zs.slice(j0,Math.min(zs.length,j0+CH+1));
