@@ -98,7 +98,8 @@ function renderHangar(){
   document.querySelectorAll('.hgModes button').forEach(b=>b.onclick=()=>{ playMode=b.dataset.m; renderHangar(); });
   document.querySelectorAll('.hgOpt [data-side]').forEach(b=>b.onclick=()=>{ specialSide=b.dataset.side; renderHangar(); });
   // la ficha arranca debajo de la barra de épocas y naciones (con muchas naciones esa barra ocupa dos renglones)
-  { const ht=document.querySelector('.hg .hgTop'), hi=document.querySelector('.hgInfo'); if(ht&&hi){ const y=Math.round(ht.getBoundingClientRect().bottom+8); hi.style.top=y+'px'; hi.style.maxHeight=`calc(100% - ${y+180}px)`; } }
+  // la ficha va debajo de las naciones (con zoom, en el celular, las medidas vienen achicadas)
+  { const ht=document.querySelector('.hg .hgTop'), hi=document.querySelector('.hgInfo'); if(ht&&hi){ const zm=parseFloat(getComputedStyle($('overlay')).zoom)||1, y=Math.round(ht.getBoundingClientRect().bottom/zm+8); hi.style.top=y+'px'; hi.style.maxHeight=`calc(100% - ${y+180}px)`; } }
   $('hgBack').onclick=()=>{ menuScreen='home'; mainMenu(); };
   $('hgTree').onclick=()=>{ menuScreen='tree'; treeNation=chosenNation; mainMenu(); };
   $('setB').onclick=()=>{ menuScreen='settings'; mainMenu(); };
@@ -201,11 +202,13 @@ function renderSettings(){
 // Si el navegador bloquea el bloqueo del puntero (por ejemplo, dentro de una vista previa), se juega con el mouse libre:
 // el movimiento del mouse gira la cámara y, al llevarlo a los bordes, sigue girando.
 let freeAim=false, mx=-1, my=-1, fsAuto=true;
+// íconos dibujados (el ⛶ no existe en las letras de muchos Android y salía como un cuadradito)
+const FS_IN='<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M4 9V4h5M15 4h5v5M20 15v5h-5M9 20H4v-5"/></svg>', FS_OUT='<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M9 4v5H4M20 9h-5V4M15 20v-5h5M4 15h5v5"/></svg>';
 // Pantalla completa: evita que el mouse salga del juego (y que el tanque quede "congelado" al perder el foco).
 function enterFS(){ const el=document.documentElement; if(document.fullscreenElement||!el.requestFullscreen) return;
   try{ const r=el.requestFullscreen({navigationUI:'hide'}); if(r&&r.catch) r.catch(()=>banner('Pantalla completa bloqueada','Descargá el archivo y abrilo directo en Chrome o Edge',4)); }catch(e){} }
 function toggleFS(){ if(document.fullscreenElement){ document.exitFullscreen&&document.exitFullscreen(); } else enterFS(); }
-document.addEventListener('fullscreenchange',()=>{ const b=document.getElementById('fsBtn'); if(b) b.textContent=document.fullscreenElement?'🗗':'⛶';
+document.addEventListener('fullscreenchange',()=>{ const b=document.getElementById('fsBtn'); if(b) b.innerHTML=document.fullscreenElement?FS_OUT:FS_IN;
   if(document.fullscreenElement&&state==='play'&&!document.pointerLockElement&&!freeAim) lock(); });
 function enableFreeAim(){ if(freeAim) return; freeAim=true; document.body.classList.add('freeaim');
   if(state==='paused'){ state='play'; $('overlay').style.display='none'; }

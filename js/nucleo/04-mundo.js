@@ -535,7 +535,10 @@ function buildMalvinas(){
 function buildMinimapBg(){
   const S=400; mmBg=document.createElement('canvas'); mmBg.width=mmBg.height=S; const x=mmBg.getContext('2d');
   const k=S/(Math.max(W.bx,W.bz)*2+20), tx=v=>S/2-v*k, tz=v=>S/2-v*k;
-  if(W.mmCanvas){ x.drawImage(W.mmCanvas,tx(W.mmEX),tz(W.mmEZ),W.mmEX*2*k,W.mmEZ*2*k); }
+  if(topShot){ x.drawImage(topShot,0,0,S,S);
+    x.fillStyle='rgba(18,34,14,.5)'; const tr=Math.max(1.1,2.6*k); for(const t of trees){ if(t.fallen) continue; x.beginPath(); x.arc(tx(t.x),tz(t.z),tr,0,6.283); x.fill(); }   // bosques
+    mmGrid(x,S,k,tx,tz); }
+  else if(W.mmCanvas){ x.drawImage(W.mmCanvas,tx(W.mmEX),tz(W.mmEZ),W.mmEX*2*k,W.mmEZ*2*k); mmShotWant=true; }
   else if(W===WORLDS.sor){ x.save(); x.translate(tx(W.bx),tz(W.bz)); drawSorGround(x,k*SPX,false); x.restore(); }
   else if(W===WORLDS.malvinas){ x.drawImage(malCanvas,tx(MAL_E),tz(MAL_E),MAL_E*2*k,MAL_E*2*k); }
   else if(W===WORLDS.cordillera){ x.drawImage(kCanvas,tx(KX),tz(KZ),KX*2*k,KZ*2*k); }
@@ -544,11 +547,33 @@ function buildMinimapBg(){
   else if(W===WORLDS.puente){ x.drawImage(puenteCanvas,tx(PX),tz(PZ),PX*2*k,PZ*2*k); }
   else if(W===WORLDS.costanera){ x.drawImage(costCanvas,tx(CEX),tz(CEZ),CEX*2*k,CEZ*2*k); }
   else if(W===WORLDS.aeropuerto){ const EX=(AW/2+APAD)*AS, EZ=(AH/2+APAD)*AS; x.drawImage(aerCanvas,tx(EX),tz(EZ),EX*2*k,EZ*2*k); }
-  else { x.fillStyle='#55603a'; x.fillRect(tx(W.bx),tz(W.bz),W.bx*2*k,W.bz*2*k); }
-  x.fillStyle='rgba(235,228,210,.85)';
-  for(const b of houseBoxes){if(b.dead)continue;const o=b.ob; x.save(); x.translate(tx(o.cx),tz(o.cz)); x.rotate(o.s?Math.atan2(o.s,o.c):0); x.fillRect(-o.hw*k,-o.hd*k,o.hw*2*k,o.hd*2*k); x.restore();}
+  else { x.fillStyle='#55603a'; x.fillRect(tx(W.bx),tz(W.bz),W.bx*2*k,W.bz*2*k); mmShotWant=true; }
+  x.fillStyle='rgba(235,228,210,.85)'; x.strokeStyle='rgba(30,26,20,.7)'; x.lineWidth=1;
+  for(const b of houseBoxes){if(b.dead)continue;const o=b.ob; x.save(); x.translate(tx(o.cx),tz(o.cz)); x.rotate(o.s?Math.atan2(o.s,o.c):0); x.fillRect(-o.hw*k,-o.hd*k,o.hw*2*k,o.hd*2*k); if(topShot) x.strokeRect(-o.hw*k,-o.hd*k,o.hw*2*k,o.hd*2*k); x.restore();}
   if(W.boundary){x.strokeStyle='rgba(255,255,255,.5)';x.setLineDash([6,5]);x.lineWidth=2;x.beginPath();W.boundary.forEach((p,i)=>i?x.lineTo(tx(p[0]),tz(p[1])):x.moveTo(tx(p[0]),tz(p[1])));x.closePath();x.stroke();}
 }
+// Foto desde arriba del mapa (terreno, caminos, bosques, casas) para el minimapa y el mapa de artillería: se saca una vez por mapa,
+// de día, sin niebla y sin tanques ni personas, con una cámara ortográfica sobre el centro (pedido de Sebastián: el mapa se veía muy básico)
+let topShot=null, mmShotWant=false;
+function takeTopShot(){
+  const N=512, ext=Math.max(W.bx,W.bz)+10, rt=new THREE.WebGLRenderTarget(N,N), cam=new THREE.OrthographicCamera(-ext,ext,ext,-ext,1,3000);
+  cam.position.set(0,1200,0); cam.up.set(0,0,1); cam.lookAt(0,0,0);                     // arriba de la imagen = norte (+z), izquierda = +x, como el minimapa
+  const hid=[]; const hide=o=>{ if(o&&o.visible){ o.visible=false; hid.push(o); } };
+  tanks.forEach(t=>hide(t.root)); infantry.forEach(P=>hide(P.g)); if(typeof traffic!=='undefined') traffic.forEach(C=>hide(C.g)); if(typeof skyDome!=='undefined') hide(skyDome);
+  const cv=cullList.map(c=>[c,c.o.visible,c.lod&&c.lod.m.visible]); for(const c of cullList){ c.o.visible=true; if(c.lod) c.lod.m.visible=false; }
+  const fn=scene.fog.near, ff=scene.fog.far, hi=hemi.intensity, si=sun.intensity, bg=scene.background.clone();
+  scene.fog.near=1e5; scene.fog.far=2e5; hemi.intensity=.85; sun.intensity=.9;
+  renderer.setRenderTarget(rt); renderer.render(scene,cam); const px=new Uint8Array(N*N*4); renderer.readRenderTargetPixels(rt,0,0,N,N,px); renderer.setRenderTarget(null); rt.dispose();
+  scene.fog.near=fn; scene.fog.far=ff; hemi.intensity=hi; sun.intensity=si; scene.background.copy(bg);
+  for(const [c,v,l] of cv){ c.o.visible=v; if(c.lod) c.lod.m.visible=l; } hid.forEach(o=>o.visible=true);
+  const cvs=document.createElement('canvas'); cvs.width=cvs.height=N; const g=cvs.getContext('2d'), im=g.createImageData(N,N);
+  for(let y=0;y<N;y++) im.data.set(px.subarray((N-1-y)*N*4,(N-y)*N*4),y*N*4);              // la lectura viene de abajo hacia arriba
+  g.putImageData(im,0,0); return cvs; }
+// Cuadrícula cada 100 m (sirve para pedir la artillería) y escala
+function mmGrid(x,S,k,tx,tz){ const e=Math.max(W.bx,W.bz)+10; x.save(); x.strokeStyle='rgba(255,255,255,.13)'; x.lineWidth=1;
+  for(let v=-Math.floor(e/100)*100;v<=e;v+=100){ x.beginPath(); x.moveTo(tx(v),0); x.lineTo(tx(v),S); x.stroke(); x.beginPath(); x.moveTo(0,tz(v)); x.lineTo(S,tz(v)); x.stroke(); }
+  const L=100*k; x.fillStyle='rgba(0,0,0,.45)'; x.fillRect(S-L-22,S-22,L+16,16); x.strokeStyle='#fff'; x.lineWidth=2; x.beginPath(); x.moveTo(S-L-14,S-12); x.lineTo(S-14,S-12); x.stroke();
+  x.fillStyle='#fff'; x.font='600 10px system-ui,sans-serif'; x.textAlign='center'; x.fillText('100 m',S-14-L/2,S-15); x.restore(); }
 // Recorte por sectores: en los mapas grandes el terreno, los árboles y el revestimiento de trincheras van partidos en sectores;
 // cada sector se dibuja solo si está dentro de la cámara y más cerca que la niebla (los instanciados no se recortan solos).
 const cullList=[], _frus=new THREE.Frustum(), _cullPM=new THREE.Matrix4();
@@ -563,7 +588,7 @@ function cullUpdate(){ if(!cullList.length) return; _cullPM.multiplyMatrices(cam
 // Agrupa una lista de elementos (con x,z) en sectores cuadrados de 'cell' metros
 function cells(list,cell,X=e=>e.x,Z=e=>e.z){ const M=new Map(); for(const e of list){ const k=Math.floor(X(e)/cell)+','+Math.floor(Z(e)/cell); if(!M.has(k)) M.set(k,[]); M.get(k).push(e); } return M; }
 function buildWorld(key){
-  W=WORLDS[key]; craters.length=0; cullList.length=0;
+  W=WORLDS[key]; craters.length=0; cullList.length=0; topShot=null; mmShotWant=false;
   // misiones de campaña con un punto como objetivo (tomar, llegar, defender, escoltar, incursión): figura solo ese punto
   if(!W.zones0) W.zones0=W.zones; { const ob=typeof curSpecial!=='undefined'&&curSpecial&&curSpecial.obj, keep=ob&&(ob.zones||(ob.zone&&[ob.zone]));
     W.zones=keep?W.zones0.filter(Z=>keep.includes(Z.id)):W.zones0; }

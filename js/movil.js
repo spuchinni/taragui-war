@@ -13,6 +13,8 @@ if(MOVIL){
   try{ const S=JSON.parse(localStorage.getItem('tw_settings')||'null'); if(!S||!S.gfx){ gfx='baja'; applyGfx(); } }catch(e){}
   // Pantalla completa en Android: además deja el celular acostado
   const _efs=enterFS; enterFS=function(){ if(IOS) return; _efs(); try{ const p=screen.orientation&&screen.orientation.lock&&screen.orientation.lock('landscape'); if(p&&p.catch) p.catch(()=>{}); }catch(e){} };
+  // sin mouse no hay giro por el borde de la pantalla (el último toque quedaba como "mouse en el borde" y la cámara giraba sola)
+  edgeTurn=function(){}; mx=-1;
   // los carteles de "mouse libre" no tienen sentido acá
   const _ban=banner; banner=function(t,s,d){ if(/^Mouse libre|Pantalla completa bloqueada/.test(t)) return;
     if(s) s=s.replace(/^Clic en el mapa/,'Tocá el mapa').replace(/ \(abajo\): donde apuntás/,' otra vez: donde apuntás').replace('Esc: cancelar','☰: cancelar'); return _ban(t,s,d); };

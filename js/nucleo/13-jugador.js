@@ -294,6 +294,7 @@ function drawMinimap(){
   const S=400, k=S/(Math.max(W.bx,W.bz)*2+20); mc.clearRect(0,0,S,S);
   if(mmBg) mc.drawImage(mmBg,0,0);
   const tx=x=>S/2-x*k, tz=z=>S/2-z*k;
+  if(mmShotWant&&['play','deploy','spectate'].includes(state)){ mmShotWant=false; topShot=takeTopShot(); mmDirty=true; }
   if(mmDirty){mmDirty=false;buildMinimapBg();mc.drawImage(mmBg,0,0);}
   // cono de visión (como War Thunder): el campo de la cámara queda claro y el resto del mapa más oscuro; con la mira o el zoom se angosta
   if(player&&!player.dead&&state==='play'&&!artyPick){ const px=tx(player.pos.x), py=tz(player.pos.z), a0=Math.atan2(-Math.cos(camYaw),-Math.sin(camYaw)),
@@ -302,7 +303,8 @@ function drawMinimap(){
     mc.strokeStyle='rgba(255,255,255,.35)'; mc.lineWidth=1.5; mc.beginPath(); mc.moveTo(px+Math.cos(a0-hf)*R,py+Math.sin(a0-hf)*R); mc.lineTo(px,py); mc.lineTo(px+Math.cos(a0+hf)*R,py+Math.sin(a0+hf)*R); mc.stroke(); mc.restore(); }
   mc.font='700 22px "Saira Condensed",sans-serif'; mc.textAlign='center'; mc.textBaseline='middle';
   for(const Z of zones){const c=Z.owner===1?'#8fd16a':Z.owner===-1?'#ff5a3c':'#ffffff'; mc.strokeStyle=c; mc.lineWidth=3;
-    mc.beginPath(); mc.arc(tx(Z.x),tz(Z.z),Z.r*k,0,7); mc.stroke(); mc.fillStyle=c; mc.fillText(Z.id,tx(Z.x),tz(Z.z));}
+    mc.beginPath(); mc.arc(tx(Z.x),tz(Z.z),Z.r*k,0,7); mc.strokeStyle='rgba(0,0,0,.55)'; mc.lineWidth=6; mc.stroke(); mc.strokeStyle=c; mc.lineWidth=3; mc.stroke();
+    mc.fillStyle=c; mc.lineWidth=4; mc.strokeStyle='rgba(0,0,0,.6)'; mc.strokeText(Z.id,tx(Z.x),tz(Z.z)); mc.fillText(Z.id,tx(Z.x),tz(Z.z));}   // borde oscuro: se ven en la nieve y en el desierto
   for(const s of W.sp[0]){mc.fillStyle='rgba(143,209,106,.85)';mc.fillRect(tx(s.x)-7,tz(s.z)-7,14,14);}
   for(const s of W.sp[1]){mc.fillStyle='rgba(255,90,60,.85)';mc.fillRect(tx(s.x)-7,tz(s.z)-7,14,14);mc.strokeStyle='#000';mc.lineWidth=1.5;mc.strokeRect(tx(s.x)-7,tz(s.z)-7,14,14);} // bases enemigas
   for(const t of tanks){
