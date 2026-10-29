@@ -357,3 +357,5 @@ body.movil.menu.home #fsBtn{right:auto;left:calc(12px + env(safe-area-inset-left
 /* hangar en el celular: un poco más chico y la ficha del tanque debajo de las naciones, con su barra para deslizar */
 body.movil.hangar #overlay{zoom:.74}
 body.movil .hgInfo{width:300px;-webkit-overflow-scrolling:touch}
+.hgMapB{font:600 12px system-ui,sans-serif;text-align:left;padding:6px 9px;background:#2b3038;color:#e8e4da;border:1px solid #59616e;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hgMapB:hover{background:#3a414d} .hgMapB b{color:var(--khaki);font-weight:600}

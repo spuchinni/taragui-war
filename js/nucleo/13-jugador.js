@@ -32,9 +32,10 @@ function predictImpact(t){
   }
   return p;
 }
+let chaseK=1;   // el director del espectador acerca y aleja la cámara (elegir.js)
 function chaseCam(t,dt,dir){
   const piv=t.pos.clone(); piv.y+=t.topH+.8;
-  let want=Math.max(10,t.T.m.L*1.9); const back=dir.clone().negate();
+  let want=Math.max(10,t.T.m.L*1.9)*chaseK; const back=dir.clone().negate();
   ray.set(piv,back); ray.far=want; const hh=ray.intersectObjects(houseMeshes,false); ray.far=Infinity;
   if(hh.length) want=Math.max(4,hh[0].distance-.8);
   camDist+=(want-camDist)*Math.min(1,dt*(want<camDist?20:4));

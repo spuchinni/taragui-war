@@ -70,7 +70,7 @@ function startBattle(spectator=false,forceMap=null,special=null,noBrief=false){ 
   for(let i=0;i<(spectator?5:vsN?vsN-1-gA.length:Math.max(special&&special.mission?0:1,nA-gA.length));i++){ const nat=special?allyNation:pick(allyPool.length?allyPool:[allyNation]);
     const nm=NATIONS[nat].names.find(n=>!used.has(n))||NATIONS[nat].names[i%NATIONS[nat].names.length]; used.add(nm); allyCrews.push(newCrew(nm,0,nat,false)); }
   allyMixed=allyCrews.some(c=>c.nation!==allyNation);
-  playerCrew=spectator?null:newCrew(net.on?net.name:'Vos',0,allyNation,true);
+  playerCrew=spectator?null:newCrew(net.on?net.name:(netName||'Vos'),0,allyNation,true);
   crews=[...(playerCrew?[playerCrew]:[]),...guests.map(remoteCrew),...allyCrews,...Array.from({length:vsN?vsN-gB.length:Math.max(special&&special.mission?0:1,nE-gB.length)},(_,i)=>NATIONS[foeNation].names[i%NATIONS[foeNation].names.length]).map(n=>newCrew(n,1,foeNation,false))];
   if(net.host){ net.startMsg={t:'start',seed:net.seed,map:builtKey,ally:allyNation,foe:foeNation,br:battleBR,wx:wxKey}; net.inBattle=true; net.o=0; guests.forEach(c=>c.send({...net.startMsg,side:sideOf(c)})); }
   for(const c of crews){ if(c.isPlayer||c.peer) continue; const pts=W.sp[c.team]; spawnCrew(c,c.lineup[0],pts[(Math.random()*pts.length)|0]); }
