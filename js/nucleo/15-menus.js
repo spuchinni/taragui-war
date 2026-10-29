@@ -174,7 +174,7 @@ function renderSettings(){
   const rows=ACTIONS.map(([k,label])=>`<span>${label}</span><button class="kb${bindCapture===k?' cap':''}" data-k="${k}">${bindCapture===k?'Presioná una tecla…':keyName(binds[k])}</button>`).join('');
   $('panel').innerHTML=`<div class="side settings"><h1 class="logo">Ajustes</h1>
     <h2>Mouse</h2><label class="sens">Sensibilidad <input type="range" id="sens" min="0.4" max="3" step="0.1" value="${sens}"><span id="sensV">${sens.toFixed(1)}</span></label>
-    <p class="s">Clic izquierdo: cañón. Clic derecho (mantener): zoom. Espacio: ametralladora. Mayús: entrar y salir de la mira. Rueda: aumento de la mira.</p>
+    <p class="s">Clic izquierdo: cañón. Clic derecho: zoom (queda puesto; otro clic lo saca). Espacio: ametralladora. Mayús: entrar y salir de la mira. Rueda: aumento de la mira.</p>
     <h2>Sonido</h2><label class="sens">Volumen <input type="range" id="volR" min="0" max="1" step="0.05" value="${volMaster}"><span id="volV">${Math.round(volMaster*100)} %</span></label>
     <label class="chk"><input type="checkbox" id="radioC" ${radioOn?'checked':''}> Radio de la tripulación (voces en el idioma de cada nación)</label>
     <h2>Dificultad de los enemigos</h2><div class="hgOpt" id="difR">${Object.entries(DIF).map(([k,D])=>`<button class="${difficulty===k?'sel':''}" data-d="${k}">${D.n}</button>`).join('')}</div>
@@ -240,8 +240,8 @@ document.addEventListener('mousedown',e=>{
       list.forEach((t,i)=>{const p=project(t.pos);if(p){const d=Math.hypot(p.x-e.clientX,p.y-e.clientY);if(d<bd){bd=d;bi=i;}}});
       if(bi>=0){specIdx=bi;aerial=false;} return;}
     specIdx+=e.button===2?-1:1;return;}
-  if(state!=='play'||artyPick||!(document.pointerLockElement||(freeAim&&e.target===renderer.domElement)))return; if(e.button===0)mouseDown=true; if(e.button===2)rightDown=true;});
-document.addEventListener('mouseup',e=>{if(e.button===0)mouseDown=false;if(e.button===2)rightDown=false;});
+  if(state!=='play'||artyPick||!(document.pointerLockElement||(freeAim&&e.target===renderer.domElement)))return; if(e.button===0)mouseDown=true; if(e.button===2)rightDown=!rightDown;}); // clic derecho: el zoom queda puesto hasta volver a hacer clic (pedido de Sebastián)
+document.addEventListener('mouseup',e=>{if(e.button===0)mouseDown=false;});
 document.addEventListener('contextmenu',e=>e.preventDefault());
 document.addEventListener('mouseleave',()=>{ mx=-1; });
 function edgeTurn(dt){

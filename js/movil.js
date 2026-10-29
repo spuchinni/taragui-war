@@ -40,8 +40,8 @@ if(MOVIL){
   function pauseMenu(){ if(state!=='play') return; releaseAll(); stickOff(); state='paused'; if(engGain) engGain.gain.value=0; $('overlay').style.display='flex';
     $('panel').innerHTML=`<h1>Pausa</h1><p>La batalla te espera.</p><button class="go" id="resume">Volver al combate</button><button class="go alt" id="quit">Abandonar</button>`;
     $('resume').onclick=()=>lock(); $('quit').onclick=()=>{clearBattle();mainMenu();}; }
-  function press(b,on){ const t=b.dataset.t; b.classList.toggle('on',on);
-    if(t==='fire') mouseDown=on; else if(t==='mg') setKey('mg',on); else if(t==='zoom') rightDown=on;
+  function press(b,on){ const t=b.dataset.t; if(t==='zoom'){ if(on) rightDown=!rightDown; b.classList.toggle('on',rightDown); return; } b.classList.toggle('on',on);
+    if(t==='fire') mouseDown=on; else if(t==='mg') setKey('mg',on);
     else if(!on) return; else if(t==='scope'){ if(player&&!player.dead) scopeOn=!scopeOn; }
     else if(t==='tab') tabBoard(!tabOn); else if(t==='ping'){ if(player&&!player.dead) doPing(); }
     else if(t==='menu'){ if(artyPick) artyMap(false); else pauseMenu(); } }
@@ -94,14 +94,14 @@ if(MOVIL){
   const TLBL={fwd:'palanca ↑',back:'palanca ↓',left:'palanca ←',right:'palanca →',scope:'◎',mg:'⁞⁞',ammo1:'la 1.ª munición (abajo)',ammo2:'la 2.ª munición (abajo)',ammo3:'la 3.ª munición (abajo)',
     ammoAuto:'AUTO (abajo)',arty:'✸ (abajo)',air:'✈ (abajo)',nuke:'☢ (abajo)',repair:'🔧 (abajo)',crewSwap:'👤 (abajo)',smoke:'☁ (abajo)',ext:'🧯 (abajo)',thermal:'◐ (abajo)',troops:'⇩ (abajo)',ping:'❗'};
   const _kn=keyName; keyName=function(c){ const a=Object.keys(binds).find(k=>binds[k]===c); return a&&TLBL[a]?TLBL[a]:_kn(c); };
-  const TUT_TXT=[[/Mové el mouse para mirar/g,'Deslizá el dedo para mirar'],[/la rueda cambia el aumento, clic derecho hace zoom/g,'🔍 hace zoom'],[/Clic izquierdo dispara/g,'🔥 dispara'],
+  const TUT_TXT=[[/Mové el mouse para mirar/g,'Deslizá el dedo para mirar'],[/la rueda cambia el aumento, clic derecho pone y saca el zoom/g,'🔍 hace zoom'],[/Clic izquierdo dispara/g,'🔥 dispara'],
     [/mantené el clic/g,'mantené apretado 🔥'],[/hacé clic sobre/g,'tocá'],[/hacé clic donde/g,'tocá donde'],[/hacé clic/gi,'tocá']];
   const _st=showTut; showTut=function(){ const r=_st.apply(this,arguments); const b=$('tutbox'); if(b){ let h=b.innerHTML; for(const [re,t] of TUT_TXT) h=h.replace(re,t); if(h!==b.innerHTML) b.innerHTML=h; } return r; };
   // ajustes: explica los controles táctiles en vez de las teclas
   const _rs=renderSettings; renderSettings=function(){ const r=_rs.apply(this,arguments);
     for(const h of document.querySelectorAll('.settings h2,#panel h2')){ if(h.textContent==='Mouse') h.textContent='Sensibilidad del dedo';
       if(h.textContent==='Teclas'){ h.classList.add('noMovil'); const n=h.nextElementSibling; if(n&&n.tagName==='P') n.classList.add('noMovil'); } }
-    for(const p of document.querySelectorAll('p.s')) if(/^Clic izquierdo/.test(p.textContent)) p.textContent='Palanca a la izquierda: manejar (aparece donde apoyás el pulgar). Deslizá el dedo a la derecha: mirar y apuntar. 🔥 cañón, ⁞⁞ ametralladora (mantener), ◎ entra y sale de la mira, 🔍 zoom (mantener). Tocá la barra de abajo para cambiar munición, pedir artillería o bombardeo (después tocá el mapa), reparar y demás. ☰ pausa.';
+    for(const p of document.querySelectorAll('p.s')) if(/^Clic izquierdo/.test(p.textContent)) p.textContent='Palanca a la izquierda: manejar (aparece donde apoyás el pulgar). Deslizá el dedo a la derecha: mirar y apuntar. 🔥 cañón, ⁞⁞ ametralladora (mantener), ◎ entra y sale de la mira, 🔍 zoom (tocá para ponerlo y sacarlo). Tocá la barra de abajo para cambiar munición, pedir artillería o bombardeo (después tocá el mapa), reparar y demás. ☰ pausa.';
     return r; };
   const _mm=mainMenu; mainMenu=function(){ const r=_mm.apply(this,arguments); fixHome(); return r; }; fixHome();
 }

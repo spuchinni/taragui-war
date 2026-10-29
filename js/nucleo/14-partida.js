@@ -18,7 +18,7 @@ function updateWeather(dt){
 }
 function clearBattle(){
   tanks.slice().forEach(removeTank); colliders=[]; mechCorpses.forEach(g=>scene.remove(g)); mechCorpses.length=0;
-  shells.forEach(s=>scene.remove(s.m)); shells.length=0; arty.length=0; scorches.forEach(S=>{scene.remove(S.m);S.m.material.dispose();}); scorches.length=0;
+  shells.forEach(s=>scene.remove(s.m)); shells.length=0; arty.length=0; supQ.length=0; scorches.forEach(S=>{scene.remove(S.m);S.m.material.dispose();}); scorches.length=0;
   marks.forEach(M=>scene.remove(M.g)); marks.length=0; planes.forEach(P=>{scene.remove(P.g); if(P.snd) P.snd.stop();}); planes.length=0; stopAllLoops(); bombs.forEach(B=>scene.remove(B.m)); bombs.length=0;
   if(builtKey){buildWorld(builtKey);}
   tickets=[400,400]; tickT=0; resetZones(); player=null; hitDirs.length=0; smolder.length=0; smokes.length=0; pings.length=0; a10s.forEach(A=>{scene.remove(A.g); if(A.snd) A.snd.stop();}); a10s.length=0; { const o=document.getElementById('oob'); if(o) o.style.opacity=0; }
@@ -191,7 +191,7 @@ const tutAmmo=()=>player.ammoCount?player.ammoCount.reduce((a,b)=>a+b,0):0;
 function buildTutSteps(P){
   const T=P.T, S=[], K=k=>keyName(binds[k]);
   S.push({t:'Moverse',x:`${K('fwd')} y ${K('back')} aceleran y frenan; ${K('left')} y ${K('right')} giran. Recorré unos 40 metros.`,ok:U=>U.start.distanceTo(player.pos)>40});
-  S.push({t:'Mirar y apuntar',x:`Mové el mouse para mirar. Apretá ${K('scope')} para entrar a la mira del artillero y quedate unos segundos (la rueda cambia el aumento, clic derecho hace zoom; ${K('scope')} de nuevo para salir).`,ok:U=>(U.scope||0)>2.5});
+  S.push({t:'Mirar y apuntar',x:`Mové el mouse para mirar. Apretá ${K('scope')} para entrar a la mira del artillero y quedate unos segundos (la rueda cambia el aumento, clic derecho pone y saca el zoom; ${K('scope')} de nuevo para salir).`,ok:U=>(U.scope||0)>2.5});
   S.push({t:'Disparar',x:'Destruí el tanque ligero marcado. Clic izquierdo dispara.',ok:U=>U.d[0].dead});
   S.push({t:'Blindaje',x:'El frente es grueso; los costados y la parte de atrás, finos. Destruí el tanque medio pegándole de costado.',ok:U=>U.d[1].dead});
   if(T.ammo.length>1) S.push({t:'Munición',x:`Tu tanque lleva ${T.ammo.map((A,i)=>`<b>${i+1}</b> ${A.n}`).join(', ')}. Elegí una a mano con ${T.ammo.map((_,i)=>K('ammo'+(i+1))).join('/')} y después volvé a la automática con ${K('ammoAuto')}.`,ok:U=>U.manual&&U.autoBack});
@@ -211,8 +211,8 @@ function buildTutSteps(P){
   if(T.troops) S.push({t:'Infantería',x:`Tu vehículo lleva soldados. Apretá ${K('troops')} para bajarlos: capturan puntos y tienen un antitanque.`,ok:()=>!player.troops});
   if(T.auto) S.push({t:'Ráfaga',x:'Tu cañón es automático: mantené el clic y dispará una ráfaga al tanque lejano. Al vaciar el cargador hay una recarga larga.',enter:U=>{U.shots=0;},ok:U=>U.shots>=3});
   else if(T.autoL) S.push({t:'Cargador automático',x:'Tu tanque tiene cargador automático: recarga a la misma velocidad aunque pierdas tripulantes. Disparale dos veces al tanque lejano.',enter:U=>{U.shots=0;},ok:U=>U.shots>=2});
-  S.push({t:'Artillería',x:`Apretá ${K('arty')}: se abre el mapa; hacé clic sobre el tanque lejano (o ${K('arty')} otra vez para que caiga donde apunta la mira). Se recarga en ${ARTY_CD} s; la marcan bengalas en el suelo.`,enter:()=>{playerCrew.sp=Math.max(playerCrew.sp,600);playerCrew.artyCD=0;},ok:U=>U.arty});
-  if(RULE().sup.air) S.push({t:'Ataque aéreo',x:`Apretá ${K('air')}: se abre el mapa; hacé clic donde querés las bombas (o ${K('air')} otra vez: donde apunta la mira). El avión pasa en línea desde tu tanque y suelta cuatro bombas. Se recarga en ${AIR_CD} s.`,enter:()=>{playerCrew.sp=Math.max(playerCrew.sp,600);playerCrew.airCD=0;},ok:U=>U.air});
+  S.push({t:'Artillería',x:`Apretá ${K('arty')}: se abre el mapa; hacé clic sobre el tanque lejano (o ${K('arty')} otra vez para que caiga donde apunta la mira). La batería tarda unos segundos en disparar (apuntá adonde va a estar el enemigo); se recarga en ${ARTY_CD} s y la marcan bengalas en el suelo.`,enter:()=>{playerCrew.sp=Math.max(playerCrew.sp,600);playerCrew.artyCD=0;},ok:U=>U.arty});
+  if(RULE().sup.air) S.push({t:'Ataque aéreo',x:`Apretá ${K('air')}: se abre el mapa; hacé clic donde querés las bombas (o ${K('air')} otra vez: donde apunta la mira). El avión pasa en línea desde tu tanque y suelta cuatro bombas; tarda unos segundos en llegar. Se recarga en ${AIR_CD} s.`,enter:()=>{playerCrew.sp=Math.max(playerCrew.sp,600);playerCrew.airCD=0;},ok:U=>U.air});
   S.push({t:'Rematar',x:'Terminá con el tanque lejano como quieras.',skip:U=>U.d[2].dead,ok:U=>U.d[2].dead});
   if(T.arc!=null) S.splice(2,0,{t:'Sin torre',x:`Tu ${T.label} no tiene torre: el cañón gira solo ${Math.round(T.arc*180/Math.PI)}° a cada lado${T.m.ww1==='rhombo'?' (dispara el de la barbeta del costado hacia donde apuntás)':''}. Para apuntar más allá, girá el casco: dá media vuelta con ${K('left')} o ${K('right')}.`,enter:U=>{U.h0=player.heading;},ok:U=>Math.abs(wrap(player.heading-U.h0))>1.4});
   if(!RULE().sup.nuke) S.push({t:'¡Contraataque enemigo!',x:`¡Entran 5 tanques enemigos! Pedí artillería con ${K('arty')} sobre ellos y destruí al menos dos. Tu tanque está protegido en esta prueba.`,

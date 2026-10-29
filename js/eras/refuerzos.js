@@ -85,9 +85,9 @@ function planeFall(P,dt){ P.vy=(P.vy||0)-G*dt*.7; P.g.position.addScaledVector(P
   const pt=q.clone().setY(gh); blast(pt,2); addCrater(pt,6,1.8); infBlast(pt,12,P.killer); boom(distVol(pt,1),2,250); return true; }
 function unhit(P){ if(!P.hit) return; const j=civHits.indexOf(P.hit); if(j>=0) civHits.splice(j,1); }
 // Los bombarderos del ataque aéreo también se pueden derribar
-{ const _cas=callAirstrike; callAirstrike=function(by,point){ const n=planes.length, r=_cas(by,point);
-    if(r&&planes.length>n){ const P=planes[planes.length-1], hit=new THREE.Mesh(new THREE.BoxGeometry(14,2.5,11),new THREE.MeshBasicMaterial({visible:false})); P.g.add(hit); P.hit=hit; P.hp=60; P.team=by.team; hit.userData.wplane=P; civHits.push(hit); }
-    return r; }; }
+// (el avión sale unos segundos después de pedirlo: airPass en 09-combate.js)
+{ const _ap=airPass; airPass=function(by,point,dir){ const n=planes.length; _ap(by,point,dir);
+    if(planes.length>n){ const P=planes[planes.length-1], hit=new THREE.Mesh(new THREE.BoxGeometry(14,2.5,11),new THREE.MeshBasicMaterial({visible:false})); P.g.add(hit); P.hit=hit; P.hp=60; P.team=by.team; hit.userData.wplane=P; civHits.push(hit); } }; }
 
 // ---- Antiaéreos ----
 function aaTargets(team){ const L=[]; for(const P of planes) if(!P.down&&P.by&&P.by.team!==team) L.push({P,pos:P.g.position,vel:P.dir.clone().multiplyScalar(P.v)});

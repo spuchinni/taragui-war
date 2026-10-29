@@ -372,6 +372,10 @@ function fireMG(t){
 /* ---------- Apoyo: artillería y ataque aéreo ---------- */
 // Pedido de Sebastián: los apoyos no cuestan puntos, se recargan con el tiempo (artillería cada 45 s, bombardeo cada 1:30)
 const ARTY_COST=0, AIR_COST=0, ARTY_CD=45, AIR_CD=90;
+// Demora desde que se pide hasta que llega (pedido de Sebastián): la batería calcula y carga, el avión tiene que venir.
+// Fija, sin azar, para que el anfitrión y los invitados la vean igual. En la 1ª Guerra y Entreguerras, por teléfono de campaña, tarda más.
+const artyDelay=()=>W.era<=2?14:10, AIR_DELAY=9;
+const supQ=[]; // apoyos pedidos que todavía no salieron: {t, f}
 // La recarga es del equipo: cuando alguien pide un apoyo, todo su equipo espera
 const teamCD=(team,k,v)=>{ for(const c of crews) if(c.team===team) c[k]=Math.max(c[k]||0,v); };
 const arty=[], marks=[], planes=[], bombs=[];
@@ -426,10 +430,12 @@ function callArtillery(by,point){
   const c=by.crew; if(c.sp<ARTY_COST||c.artyCD>0) return false;
   if(tut&&by.isPlayer) tut.arty=true;
   c.sp-=ARTY_COST; c.artyCD=ARTY_CD; teamCD(by.team,'artyCD',ARTY_CD); if(c.isPlayer) $('spT').textContent=c.sp;
-  const ww=W.era<=2, nS=ww?10:7, sp=ww?14:10;
-  for(let i=0;i<nS;i++) arty.push({t:now+4+i*.4,p:point.clone().add(new THREE.Vector3(rand(-sp,sp),0,rand(-sp,sp))),by});
-  markZone(point,13,0xffb43c,now+4+7*.4+.6);
-  if(AC&&SFX.thump&&SFX.thump.length){ for(let i=0;i<4;i++) setTimeout(()=>sfx('thump',null,.35,{rate:rand(.55,.75)}),i*260+rand(0,120)); } else whistle();
+  const ww=W.era<=2, nS=ww?10:7, sp=ww?14:10, D=artyDelay();
+  for(let i=0;i<nS;i++) arty.push({t:now+D+i*.4,p:point.clone().add(new THREE.Vector3(rand(-sp,sp),0,rand(-sp,sp))),by});
+  markZone(point,13,0xffb43c,now+D+nS*.4+.6);
+  // la batería dispara unos 4 s antes de que caigan: ahí se oyen los cañonazos lejanos
+  supQ.push({t:now+D-4,f:()=>{ if(AC&&SFX.thump&&SFX.thump.length){ for(let i=0;i<4;i++) setTimeout(()=>sfx('thump',null,.35,{rate:rand(.55,.75)}),i*260+rand(0,120)); } else whistle(); }});
+  if(by.isPlayer) banner('Artillería pedida',`La batería calcula y dispara: cae en ${D} s`,2.5);
   supNet('arty',by,point); feed(`${by.name} pidió artillería`,by.team===0?'var(--amber)':'var(--enemy)'); return true;
 }
 function callAirstrike(by,point){
@@ -437,6 +443,14 @@ function callAirstrike(by,point){
   if(tut&&by.isPlayer) tut.air=true;
   c.sp-=AIR_COST; c.airCD=AIR_CD; teamCD(by.team,'airCD',AIR_CD); if(c.isPlayer) $('spT').textContent=c.sp;
   const dir=new THREE.Vector3(point.x-by.pos.x,0,point.z-by.pos.z); if(dir.lengthSq()<1) dir.set(0,0,1); dir.normalize();
+  const tf=Math.sqrt(2*65/G);
+  markZone(point.clone(),20,0xff4b32,now+AIR_DELAY+420/105+tf+1);
+  if(by.isPlayer) banner('Bombardeo pedido',`El avión está en camino: llega en unos ${AIR_DELAY+4} s`,2.5);
+  supQ.push({t:now+AIR_DELAY,f:()=>airPass(by,point,dir)});
+  supNet('air',by,point); feed(`${by.name} pidió un ataque aéreo`,by.team===0?'var(--amber)':'var(--enemy)');
+  return true;
+}
+function airPass(by,point,dir){
   const g=new THREE.Group(), pm=new THREE.MeshLambertMaterial({color:by.team===0?0x4b5440:0x5a5348});
   box(g,1.3,1.3,10,0,0,0,pm); box(g,13,.25,2.4,0,0,.5,pm); box(g,4.6,.2,1.3,0,.1,-4.3,pm); box(g,.2,1.8,1.4,0,1,-4.3,pm);
   cyl(g,.5,.7,1.2,0,0,5.3,8,darkMat).rotation.x=Math.PI/2;
@@ -444,15 +458,13 @@ function callAirstrike(by,point){
   g.position.copy(start); g.lookAt(start.clone().add(dir)); scene.add(g);
   const drops=[-16,-5,6,17].map(o=>point.clone().addScaledVector(dir,o)), tf=Math.sqrt(2*65/G);
   planes.push({g,dir,v:105,by,drops:drops.map(d=>({at:d.clone().addScaledVector(dir,-105*tf),hit:d,done:false})),life:9,snd:movingLoop(SFX.plane&&SFX.plane.length?'plane':'prop',2.6,{rate:1,start:rand(0,15),ref:80})});
-  markZone(point.clone(),20,0xff4b32,now+420/105+tf+1);
-  supNet('air',by,point); feed(`${by.name} pidió un ataque aéreo`,by.team===0?'var(--amber)':'var(--enemy)');
   if(AC&&SFX.prop&&SFX.prop.length){ /* el sonido viaja con el avión (ver updateArty) */ }
   else if(AC){const t=AC.currentTime,o=AC.createOscillator(),gn=AC.createGain();o.type='sawtooth';o.frequency.setValueAtTime(70,t);o.frequency.linearRampToValueAtTime(140,t+4);o.frequency.linearRampToValueAtTime(60,t+7);
     gn.gain.setValueAtTime(.001,t);gn.gain.linearRampToValueAtTime(.05,t+3.8);gn.gain.exponentialRampToValueAtTime(.001,t+7.5);o.connect(gn).connect(master);o.start(t);o.stop(t+7.6);}
-  return true;
 }
 const bombGeo=new THREE.CylinderGeometry(.25,.25,1.6,8); bombGeo.rotateX(Math.PI/2);
 function updateArty(dt){
+  for(let i=supQ.length-1;i>=0;i--) if(now>=supQ[i].t){ const q=supQ[i]; supQ.splice(i,1); q.f(); }
   for(let i=arty.length-1;i>=0;i--){ const a=arty[i]; if(!a.fl&&now>=a.t-3.2){ a.fl=true; gunFlash(a.by.team,a.p); } // fogonazo de la batería, 3 s antes de caer
     if(!a.w&&now>=a.t-1.6){ a.w=true; incoming(a.p.clone().setY(heightAt(a.p.x,a.p.z)),a.t-now,.5,'shell'); } if(now<a.t) continue;
     a.p.y=heightAt(a.p.x,a.p.z); blast(a.p,1); addCrater(a.p,3.4,1.1); splash(a.p,a.by,13,1.25,120); arty.splice(i,1); }

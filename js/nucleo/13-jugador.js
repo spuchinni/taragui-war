@@ -263,20 +263,23 @@ function drawOverlay(){
   if(state==='play'&&player&&!player.dead) drawHitDirs(1/60);
   if(state!=='play'||!player||player.dead) return;
   const cx=innerWidth/2, cy=innerHeight/2;
-  if(scoped){ oc.fillStyle='rgba(255,255,255,.9)'; oc.beginPath(); oc.arc(cx,cy,2.2,0,7); oc.fill(); }
+  // Mira del artillero como se ve en la nieve de Bastogne (pedido de Sebastián): trazos negros nítidos con un halo claro,
+  // así contrastan igual sobre pasto, barro, desierto o de noche
+  const halo=(f)=>{ oc.lineWidth=4; oc.strokeStyle='rgba(235,238,240,.55)'; f(); oc.stroke(); oc.lineWidth=1.6; oc.strokeStyle='rgba(15,15,15,.95)'; f(); oc.stroke(); };
+  if(scoped){ oc.fillStyle='rgba(235,238,240,.6)'; oc.beginPath(); oc.arc(cx,cy,3.4,0,7); oc.fill(); oc.fillStyle='rgba(15,15,15,.95)'; oc.beginPath(); oc.arc(cx,cy,2,0,7); oc.fill(); }
   else { // Mira central estilo War Thunder: anillo fino con borde oscuro y punto central
     oc.lineWidth=3.5; oc.strokeStyle='rgba(0,0,0,.45)'; oc.beginPath(); oc.arc(cx,cy,9,0,7); oc.stroke();
     oc.lineWidth=1.5; oc.strokeStyle='rgba(255,255,255,.92)'; oc.beginPath(); oc.arc(cx,cy,9,0,7); oc.stroke();
     oc.fillStyle='rgba(0,0,0,.5)'; oc.beginPath(); oc.arc(cx,cy,2.4,0,7); oc.fill();
     oc.fillStyle='rgba(255,255,255,.95)'; oc.beginPath(); oc.arc(cx,cy,1.4,0,7); oc.fill(); }
-  if(scoped){oc.strokeStyle='rgba(20,20,20,.9)';oc.lineWidth=1.5;oc.beginPath();
-    oc.moveTo(cx-200,cy);oc.lineTo(cx-14,cy);oc.moveTo(cx+14,cy);oc.lineTo(cx+200,cy);oc.moveTo(cx,cy+14);oc.lineTo(cx,cy+160);oc.stroke();}
+  if(scoped) halo(()=>{ oc.beginPath(); oc.moveTo(cx-200,cy);oc.lineTo(cx-14,cy);oc.moveTo(cx+14,cy);oc.lineTo(cx+200,cy);oc.moveTo(cx,cy+14);oc.lineTo(cx,cy+160); });
   const manual=realMode&&!hasFcs(player);
   if(scoped&&manual){ // escala de alzas: marcas para 100 a 600 m
     const v=ammoOf(player).v, z0=ballisticPitch(200,0,v), ppr=innerHeight/(2*Math.tan(camera.fov*Math.PI/360));
-    oc.strokeStyle='rgba(20,20,20,.95)'; oc.fillStyle='rgba(20,20,20,.95)'; oc.lineWidth=1.5; oc.font='600 13px "Saira Condensed",sans-serif'; oc.textAlign='left';
+    oc.font='600 13px "Saira Condensed",sans-serif'; oc.textAlign='left';
     for(let d=100;d<=600;d+=100){ const y=cy+Math.tan(ballisticPitch(d,0,v)-z0)*ppr, w=d%200===0?16:9;
-      oc.beginPath(); oc.moveTo(cx-w,y); oc.lineTo(cx+w,y); oc.stroke(); if(d%200===0) oc.fillText(String(d/100),cx+w+4,y+4); }
+      halo(()=>{ oc.beginPath(); oc.moveTo(cx-w,y); oc.lineTo(cx+w,y); });
+      if(d%200===0){ oc.lineWidth=3; oc.strokeStyle='rgba(235,238,240,.6)'; oc.strokeText(String(d/100),cx+w+4,y+4); oc.fillStyle='rgba(15,15,15,.95)'; oc.fillText(String(d/100),cx+w+4,y+4); } }
     oc.textAlign='center';
   }
   if(manual&&player.reloadT>0){ oc.strokeStyle='#ffc65c';oc.lineWidth=3;oc.beginPath();oc.arc(cx,cy,20,-Math.PI/2,-Math.PI/2+Math.PI*2*(1-player.reloadT/(player.reloadMax*reloadFactor(player))));oc.stroke(); }
