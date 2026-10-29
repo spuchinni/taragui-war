@@ -162,3 +162,60 @@ function runningGear(t,dt){
   if(susp&&nF){ const f=F/nF; if(t._rgF!=null) t.sPv=clamp((t.sPv||0)+(f-t._rgF)*2.2*Math.min(1,Math.abs(t.speed)/4),-1.5,1.5); t._rgF=f; }
 }
 { const _tf=tankFX; tankFX=function(t,dt){ _tf(t,dt); recoilFX(t); if(t.pos.distanceToSquared(camera.position)<200*200){ exhaustFX(t,dt); } runningGear(t,dt); }; }
+
+/* ---------- Tanda 3: textura del acero (pedido de Sebastián: "más textura") ----------
+   reliefTex: relieve hecho por código, repetible sin costura (512 px = 0,71 m, como metal.png).
+     R = grano del acero (picado del fundido y martillado leve en todos), G = remaches en hileras con la junta de la chapa,
+     B = zimmerit (la pasta antimagnética alemana de 1943–44: surcos verticales en franjas, aplicada a mano).
+   El shader (tankDetail, 02-escena.js) tuerce la normal con eso, cambia el brillo del metal gastado y aclara la pasta.
+   Números tácticos en la torre: alemanes (rojo con borde blanco, 3 cifras: compañía, pelotón, tanque) y soviéticos (blancos). */
+let _relief=null;
+function reliefTex(){ if(_relief) return _relief;
+  const S=512, c=document.createElement('canvas'); c.width=c.height=S; const x=c.getContext('2d'), img=x.createImageData(S,S), d=img.data;
+  // ruido de valor repetible
+  const vn=(n,seed)=>{ const g=new Float32Array(n*n); let s=seed; for(let i=0;i<n*n;i++){ s=(s*16807)%2147483647; g[i]=s/2147483647; }
+    return (u,v)=>{ u=u*n; v=v*n; const i=Math.floor(u), j=Math.floor(v), fu=u-i, fv=v-j, a=g[(j%n)*n+i%n], b=g[(j%n)*n+(i+1)%n], cc=g[((j+1)%n)*n+i%n], dd=g[((j+1)%n)*n+(i+1)%n],
+      su=fu*fu*(3-2*fu), sv=fv*fv*(3-2*fv); return a+(b-a)*su+(cc-a)*sv+(a-b-cc+dd)*su*sv; }; };
+  const n1=vn(16,11), n2=vn(48,23), n3=vn(128,37), zr=vn(9,51);
+  const R=new Float32Array(S*S), Gc=new Float32Array(S*S), B=new Float32Array(S*S);
+  for(let j=0;j<S;j++) for(let i=0;i<S;i++){ const u=i/S, v=j/S, k=j*S+i;
+    R[k]=n1(u,v)*.45+n2(u,v)*.35+n3(u,v)*.2;
+    // zimmerit: franjas horizontales de ~8 cm con surcos verticales de ~1,5 cm, cada franja corrida y un poco torcida
+    const band=Math.floor(v*7), ph=zr(band/7,.37)*6.28, wob=Math.sin(v*40+band)*.01;
+    const rid=.5+.5*Math.sin((u+wob)*6.2832*26+ph); B[k]=Math.pow(rid,2.2)*(.8+.2*n2(u*2,v*2))*(Math.abs(v*7-band-.5)<.47?1:.5); }
+  // picaduras del fundido
+  let s=9; const rnd=()=>{ s=(s*16807)%2147483647; return s/2147483647; };
+  for(let p=0;p<2600;p++){ const cx=rnd()*S, cy=rnd()*S, r=1+rnd()*2.2; for(let j=-3;j<=3;j++) for(let i=-3;i<=3;i++){ const dd=Math.hypot(i,j)/r; if(dd>1) continue; const k=((Math.floor(cy)+j+S)%S)*S+(Math.floor(cx)+i+S)%S; R[k]-=(1-dd)*.35; } }
+  // remaches: dos hileras horizontales (cada 0,36 m) y una vertical, uno cada ~9 cm, con la junta de la chapa
+  const rivet=(cx,cy)=>{ for(let j=-7;j<=7;j++) for(let i=-7;i<=7;i++){ const dd=Math.hypot(i,j)/6; if(dd>1) continue; const k=((cy+j+S)%S)*S+(cx+i+S)%S; Gc[k]=Math.max(Gc[k],Math.sqrt(1-dd*dd)); } };
+  for(const ry of [20,276]){ for(let cx=0;cx<S;cx+=64) rivet(cx+32,ry); for(let i=0;i<S;i++){ Gc[((ry+12)%S)*S+i]=Math.max(Gc[((ry+12)%S)*S+i],.25); } }
+  for(let cy=0;cy<S;cy+=64) rivet(20,cy+32); for(let j=0;j<S;j++) Gc[j*S+32]=Math.max(Gc[j*S+32],.25);
+  for(let k=0;k<S*S;k++){ d[k*4]=clamp(R[k],0,1)*255; d[k*4+1]=Gc[k]*255; d[k*4+2]=B[k]*255; d[k*4+3]=255; }
+  x.putImageData(img,0,0);
+  const t=new THREE.CanvasTexture(c); t.wrapS=t.wrapT=THREE.RepeatWrapping; t.anisotropy=Math.min(4,ANISO); _relief=t; return t; }
+
+// qué tanques llevan qué (por tanque; la 1ª Guerra y Entreguerras casi todos remachados)
+const RIVETED=['m3stuart','valentine','crusader3','pz38t','hago','chiha','chihe','l640','m1340','sem7518','p40','h39','v6cn','t26cn','m3a3cn','bt7','kv2','achilles','m10'];
+const CAST=['m4a1','m4a3e8','m4a2fr','m4a4cn','matilda2','is2','t3485','s35f','h39','m26','churchill7','firefly','m36','chinu'];
+const ZIMMERIT=['pz4h','panther','tiger1','stug3g','jagdpanther','tiger2'];
+for(const k in VEH){ const V=VEH[k]; if(V.static) continue;
+  V.rel=[RIVETED.includes(k)||(V.era<=2&&!['s35','b1bis','r35'].includes(k))?1:0, ZIMMERIT.includes(k)?1:0, CAST.includes(k)||(V.era<=2&&['s35','r35'].includes(k))?1:V.era>=5?.4:.15]; }
+
+// números tácticos en la torre
+const _numTex={};
+function numTex(txt,nat){ const key=nat+txt; if(_numTex[key]) return _numTex[key];
+  const c=document.createElement('canvas'); c.width=256; c.height=128; const x=c.getContext('2d'); x.font='900 92px "Saira Condensed",Arial Narrow,sans-serif'; x.textAlign='center'; x.textBaseline='middle';
+  if(nat==='de'){ x.lineWidth=12; x.strokeStyle='#e8e4d8'; x.strokeText(txt,128,66); x.fillStyle='#8a1a14'; x.fillText(txt,128,66); }
+  else { x.fillStyle='#ecebe4'; x.fillText(txt,128,66); }
+  // pintura gastada: le saca puntos al número
+  x.globalCompositeOperation='destination-out'; for(let i=0;i<260;i++){ x.globalAlpha=Math.random()*.7; x.fillRect(Math.random()*256,Math.random()*128,1+Math.random()*3,1+Math.random()*3); } x.globalAlpha=1;
+  const t=new THREE.CanvasTexture(c); t.anisotropy=2; return _numTex[key]=t; }
+{ const _mk=makeTank; makeTank=function(crew,key){ const t=_mk.apply(this,arguments), V=t.T, M=V.m;
+    if(V.rel){ t.mat.userData.rel=V.rel; if(t.mud) t.mud.userData.rel=V.rel; }
+    const nat=(crew&&crew.nation)||V.nation, I=M&&M.w2;
+    if((nat==='de'||nat==='ru')&&I&&t.turret&&!V.aa&&!V.static&&!['none','open'].includes(I.tur)&&!I.case){
+      const n=nat==='de'?`${1+(t.id%8)}${1+((t.id>>3)%3)}${1+((t.id>>5)%4)}`:String(100+(t.id*37)%800);
+      const m=new THREE.MeshLambertMaterial({map:numTex(n,nat),transparent:true,alphaTest:.3,depthWrite:false,polygonOffset:true,polygonOffsetFactor:-2});
+      const y=(t.gunPivot&&t.gunPivot.parent===t.turret?t.gunPivot.position.y:M.th*.5)+.05; // a la altura de las insignias
+      for(const sx of [-1,1]){ const p=new THREE.Mesh(new THREE.PlaneGeometry(.8*M.th/.95,.4*M.th/.95),m); p.position.set(sx*(M.tw/2*(['box','hex'].includes(I.tur)?1:.92)+.04),y,M.tl*.2); p.rotation.y=sx>0?Math.PI/2:-Math.PI/2; t.turret.add(p); } }
+  return t; }; }

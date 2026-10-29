@@ -55,21 +55,38 @@ function groundDetail(mat){
 // rayones y saltaduras, chorreaduras de óxido en las caras verticales y polvo del terreno que sube desde abajo.
 // Se proyecta desde los tres ejes en el espacio de cada pieza (no "nada" cuando el tanque se mueve). root = posición del tanque.
 let _metal=null; const metalTex=()=>_metal||(_metal=(()=>{ const t=new THREE.TextureLoader().load('img/suelo/metal.png'+(window.GAME_V?'?v='+GAME_V:'')); t.wrapS=t.wrapT=THREE.RepeatWrapping; t.anisotropy=Math.min(4,ANISO); return t; })());
+// Relieve (realismo.js, reliefTex): R = grano del acero (fundido), G = remaches y juntas de chapas, B = zimmerit. mat.userData.rel = [remaches, zimmerit, fundido].
+// Con eso se tuerce la normal (bump por derivadas), así el relieve cambia con la luz; se apaga de lejos para que no titile.
 function tankDetail(mat,root,dust){
+  mat.extensions={derivatives:true};
   mat.onBeforeCompile=sh=>{ sh.uniforms.sM={value:metalTex()}; sh.uniforms.uRoot={value:root}; sh.uniforms.uDust={value:new THREE.Color(dust||0xb6a27f)};
+    const R=mat.userData.rel||[0,0,0]; sh.uniforms.sR={value:typeof reliefTex==='function'?reliefTex():metalTex()}; sh.uniforms.uRel={value:new THREE.Vector3(R[0],R[1],R[2])};
     sh.vertexShader=sh.vertexShader.replace('#include <common>','#include <common>\nvarying vec3 vLp; varying vec3 vLn; varying float vWy;')
       .replace('#include <begin_vertex>','#include <begin_vertex>\n vLp=transformed; vLn=objectNormal; vWy=(modelMatrix*vec4(transformed,1.)).y;');
-    sh.fragmentShader=sh.fragmentShader.replace('#include <common>','#include <common>\nvarying vec3 vLp; varying vec3 vLn; varying float vWy; uniform sampler2D sM; uniform vec3 uRoot; uniform vec3 uDust;')
+    sh.fragmentShader=sh.fragmentShader.replace('#include <common>','#include <common>\nvarying vec3 vLp; varying vec3 vLn; varying float vWy; uniform sampler2D sM; uniform sampler2D sR; uniform vec3 uRel; uniform vec3 uRoot; uniform vec3 uDust;')
       .replace('#include <map_fragment>',`#include <map_fragment>
+ vec3 tdM=vec3(.6,0.,0.); float tdH=0.; float tdZ=0.;
  { vec3 an=abs(normalize(vLn)); an/=an.x+an.y+an.z; vec3 q=vLp*1.4;
-   vec3 m=texture2D(sM,q.zy).rgb*an.x+texture2D(sM,q.xz).rgb*an.y+texture2D(sM,q.xy).rgb*an.z;
+   vec3 m=texture2D(sM,q.zy).rgb*an.x+texture2D(sM,q.xz).rgb*an.y+texture2D(sM,q.xy).rgb*an.z; tdM=m;
+   vec3 rl=texture2D(sR,q.zy).rgb*an.x+texture2D(sR,q.xz).rgb*an.y+texture2D(sR,q.xy).rgb*an.z;
+   tdZ=uRel.y*rl.b*(1.-an.y)*step(.6,vWy-uRoot.y);                                   // zimmerit: solo en las caras verticales
+   tdH=(rl.r*(.0012+uRel.z*.004)+rl.g*uRel.x*.009+tdZ*.009)*clamp(1.-length(vViewPosition)/70.,0.,1.);
+   diffuseColor.rgb*=1.+(rl.r-.5)*uRel.z*.25-rl.g*uRel.x*.12;                       // fundido manchado; borde oscuro del remache
+   diffuseColor.rgb=mix(diffuseColor.rgb,diffuseColor.rgb*vec3(1.08,1.05,.98),tdZ*.8); // la pasta del zimmerit, más clara
    diffuseColor.rgb*=1.+(m.r/.6-1.)*2.2;                                             // chapa despareja
    float st=texture2D(sM,vec2((vLp.x+vLp.z)*.9,vLp.y*.3)).b*(1.-an.y);               // chorreaduras (caras verticales)
    diffuseColor.rgb*=1.-st*.55;
    diffuseColor.rgb=mix(diffuseColor.rgb,vec3(.40,.38,.35),m.g*.8);                  // rayones y saltaduras: metal a la vista
    float h=vWy-uRoot.y; diffuseColor.rgb=mix(diffuseColor.rgb,uDust*.9,clamp(smoothstep(1.9,.2,h)*.7+an.y*step(0.,vLn.y)*.15,0.,.75)); // polvo y barro de abajo
    if(vLn.y<-.3) diffuseColor.rgb*=.65; }                                            // panza más oscura
-`); };
+`).replace('#include <roughnessmap_fragment>',`#include <roughnessmap_fragment>
+ roughnessFactor=clamp(roughnessFactor-tdM.g*.4+tdZ*.2,.18,1.);`)                    // el metal pelado brilla, la pasta es mate
+      .replace('#include <metalnessmap_fragment>',`#include <metalnessmap_fragment>
+ metalnessFactor=clamp(metalnessFactor+tdM.g*.45,0.,1.);`)
+      .replace('#include <normal_fragment_maps>',`#include <normal_fragment_maps>
+ { vec3 vp=-vViewPosition, sx=dFdx(vp), sy=dFdy(vp); float hx=dFdx(tdH), hy=dFdy(tdH);
+   vec3 r1=cross(sy,normal), r2=cross(normal,sx); float det=dot(sx,r1); det*=float(gl_FrontFacing)*2.-1.;
+   normal=normalize(abs(det)*normal-sign(det)*(hx*r1+hy*r2)); }`); };
   return mat; }
 sueloTex(); metalTex(); // se bajan ya, así no hay un cuadro negro hasta que llegan
 const wallTex=canvasTex(128,(x,s)=>{x.fillStyle='#ffffff';x.fillRect(0,0,s,s);speckle(x,s,s,1500,['#d8d8d8','#eeeeee','#c8c8c8'],1,3);});
