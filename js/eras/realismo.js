@@ -281,3 +281,51 @@ function updateEngVoices(dt){
 { const _vs2=vehStatsHTML; vehStatsHTML=function(k){ const h=_vs2(k), V=VEH[k]; if(!V||!V.eng||!ENGINES[V.eng]) return h;
     return h.replace(/(<span class="vst"><i>Mira<\/i>)/,`<span class="vst"><i>Motor</i>${ENGINES[V.eng].n}</span>$1`); }; }
 { const _fr=frame; frame=function(dt){ _fr(dt); if(AC&&engVoices.length&&!['play','spectate','deploy','end'].includes(state)) for(const V of engVoices){ V.d.g.gain.value=0; V.i.g.gain.value=0; } }; }
+
+/* ---------- Giro real de la torre (pedido de Sebastián: que en todos los tanques el círculo siga al cañón con retraso) ----------
+   Antes las torres giraban a 25–100°/s; las reales, a manivela, hidráulicas o eléctricas, entre 6 y 30°/s.
+   T.trav (rad/s) lo usa aimAt (07-tanques.js) para el jugador y los bots; el círculo de impacto ya muestra adonde apunta el cañón. */
+const TRAV_DEG={pz3j:18,pz4f2:14,pz4h:14,stug3g:10,panther:18,tiger1:10,tiger2:10,jagdpanther:8,pz38t:12,
+  t70:12,t34:25,t3485:22,kv1:12,kv2:6,is2:14,su100:8,bt7:20,
+  m3stuart:30,m4a1:24,m4a3e8:24,m10:10,m18:24,m24:30,m26:20,m36:10,
+  matilda2:20,crusader3:25,cromwell:24,churchill7:20,firefly:24,comet:24,valentine:20,achilles:10,nahuel:15,
+  l640:12,m1340:10,sem7518:8,p40:12,hago:20,chiha:12,chihe:14,chinu:10,h39:10,s35f:10,b1f:8,m4a2fr:24,v6cn:20,t26cn:15,m3a3cn:30,m4a4cn:24};
+const TRAV_CLS={ligero:25,medio:18,pesado:11,cazatanques:9,principal:40};
+for(const k in VEH){ const V=VEH[k]; if(V.static||V.aa||V.support||V.era<=1) continue;
+  const d=TRAV_DEG[k]||(V.era>=5?40:V.era===2?Math.min(18,TRAV_CLS[V.cls]||16):TRAV_CLS[V.cls]||16); V.trav=d*deg; }
+{ const _vs3=vehStatsHTML; vehStatsHTML=function(k){ const h=_vs3(k), V=VEH[k]; if(!V||V.static||V.aa||!V.trav) return h;
+    return h.replace(/(<span class="vst"><i>Cañón<\/i>)/,`<span class="vst"><i>Torre</i>${Math.round(V.trav/deg)}°/s</span>$1`); }; }
+
+/* ---------- Motores que se distingan de verdad (Sebastián: "suenan iguales") ----------
+   Lo que más se oye son las grabaciones idle/drive: ahora pasan por un filtro de tono y un golpeteo de volumen propios de cada motor,
+   las velocidades de reproducción se separan más y la parte sintética (que cambia de carácter) se oye más fuerte. */
+// q = filtro de las grabaciones [tipo, Hz, dB], tr = golpeteo [profundidad, Hz], mix = cuánto se oye el motor sintético, rr = velocidad de las grabaciones
+const ENG_SND={maybach:{q:['highshelf',1800,7],tr:[.04,20],mix:.32,rr:1.32},v2:{q:['lowshelf',160,9],tr:[.3,8.5],mix:.5,rr:.76},
+  radial:{q:['peaking',420,9],tr:[.38,5.5],mix:.4,rr:1.12},fordv8:{q:['lowshelf',120,7],tr:[.24,6.5],mix:.4,rr:.88},
+  gmdiesel:{q:['peaking',260,7],tr:[.28,11],mix:.45,rr:.84},aero:{q:['peaking',1300,6],tr:[.06,18],mix:.3,rr:1.26},
+  multibank:{q:['peaking',700,5],tr:[.18,14],mix:.36,rr:1.04},gas6:{q:['highshelf',2200,5],tr:[.12,16],mix:.3,rr:1.42},
+  jpdiesel:{q:['peaking',320,7],tr:[.28,10],mix:.45,rr:.94},early:{q:['lowpass',2200,0],tr:[.2,8],mix:.35,rr:.92},
+  ww1:{q:['lowpass',1100,0],tr:[.42,3.8],mix:.45,rr:.64},diesel:{q:['peaking',300,4],tr:[.15,12],mix:.3,rr:1}};
+const engSnd=T=>ENG_SND[T.eng]||ENG_SND.diesel;
+let engChain=null;
+function engChainFor(){ // filtro + golpeteo entre cada grabación y su volumen (se arma una sola vez)
+  if(engChain||!AC||!LOOPS.idle||!LOOPS.drive) return engChain;
+  const F=AC.createBiquadFilter(), T=AC.createGain(), lfo=AC.createOscillator(), lg=AC.createGain(); T.gain.value=1; lg.gain.value=0; lfo.frequency.value=8; lfo.connect(lg).connect(T.gain); lfo.start();
+  for(const k of ['idle','drive']){ const L=LOOPS[k]; L.src.disconnect(); L.src.connect(L.g); L.g.disconnect(); L.g.connect(F); }
+  F.connect(T).connect(engGain); engChain={F,T,lfo,lg,key:null}; return engChain; }
+function applyEngSnd(C,S,now){ C.F.type=S.q[0]; C.F.frequency.setTargetAtTime(S.q[1],now,.05); C.F.gain.setTargetAtTime(S.q[2],now,.05); C.F.Q.value=S.q[0]==='peaking'?1.1:.7;
+  C.lg.gain.setTargetAtTime(S.tr[0],now,.1); }
+{ const _eu2=engineUpdate; engineUpdate=function(t,dt){ _eu2(t,dt); if(!AC||t.dead) return; const S=engSnd(t.T), now=AC.currentTime, R=t._rpm||.2, C=engChainFor();
+    if(C){ if(C.key!==t.T.eng){ C.key=t.T.eng; applyEngSnd(C,S,now); } C.lfo.frequency.setTargetAtTime(S.tr[1]*(.75+R*.7),now,.1); }
+    engMix.gain.setTargetAtTime(S.mix,now,.2);
+    if(LOOPS.idle) LOOPS.idle.src.playbackRate.setTargetAtTime((.85+R*.4)*S.rr,now,.08);
+    if(LOOPS.drive) LOOPS.drive.src.playbackRate.setTargetAtTime((.72+R*.48)*S.rr,now,.08); }; }
+// y los motores de los otros tanques, con la misma receta (filtro + golpeteo por voz)
+{ const _ev=engVoice; engVoice=function(){ const V=_ev(); const F=AC.createBiquadFilter(), T=AC.createGain(), lfo=AC.createOscillator(), lg=AC.createGain();
+    T.gain.value=1; lg.gain.value=0; lfo.connect(lg).connect(T.gain); lfo.start(); V.d.g.disconnect(); V.i.g.disconnect(); V.d.g.connect(F); V.i.g.connect(F); F.connect(T).connect(V.f);
+    Object.assign(V,{F,T,lfo,lg,key:null}); return V; }; }
+{ const _ue=updateEngVoices; updateEngVoices=function(dt){ _ue(dt); if(!AC) return; const now=AC.currentTime;
+    for(const V of engVoices){ const t=V.t; if(!t||!V.F) continue; const S=engSnd(t.T);
+      if(V.key!==t.T.eng){ V.key=t.T.eng; applyEngSnd(V,S,now); V.lfo.frequency.value=S.tr[1]; }
+      const r=clamp(Math.abs(t.speed)/Math.max(1,t.T.maxF||10),0,1);
+      V.d.s.playbackRate.setTargetAtTime((.7+r*.5)*S.rr,now,.1); V.i.s.playbackRate.setTargetAtTime(.86*S.rr,now,.1); } }; }
