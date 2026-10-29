@@ -217,7 +217,7 @@ function numTex(txt,nat){ const key=nat+txt; if(_numTex[key]) return _numTex[key
       const n=nat==='de'?`${1+(t.id%8)}${1+((t.id>>3)%3)}${1+((t.id>>5)%4)}`:String(100+(t.id*37)%800);
       const m=new THREE.MeshLambertMaterial({map:numTex(n,nat),transparent:true,alphaTest:.3,depthWrite:false,polygonOffset:true,polygonOffsetFactor:-2});
       const y=(t.gunPivot&&t.gunPivot.parent===t.turret?t.gunPivot.position.y:M.th*.5)+.05; // a la altura de las insignias
-      for(const sx of [-1,1]){ const p=new THREE.Mesh(new THREE.PlaneGeometry(.8*M.th/.95,.4*M.th/.95),m); p.position.set(sx*(M.tw/2*(['box','hex'].includes(I.tur)?1:.92)+.04),y,M.tl*.2); p.rotation.y=sx>0?Math.PI/2:-Math.PI/2; t.turret.add(p); } }
+      for(const sx of [-1,1]){ const p=new THREE.Mesh(new THREE.PlaneGeometry(.8*M.th/.95,.4*M.th/.95),m); p.position.set(sx*(M.tw/2*(['box','hex','tiger'].includes(I.tur)?1:.92)+.04),y,M.tl*.2); p.rotation.y=sx>0?Math.PI/2:-Math.PI/2; t.turret.add(p); } }
   return t; }; }
 
 /* ---------- Sonido del motor según el tanque (pedido de Sebastián) ----------

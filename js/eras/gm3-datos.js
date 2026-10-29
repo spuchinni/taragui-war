@@ -48,7 +48,7 @@ Object.assign(VEH,{
     maxF:kmh2(38),maxR:2.2,turn:.5,trav:.45,reload:6.0,pen:165,hp:190,crewReal:5,seats:['driver','commander','gunner','loader','mg1'],
     armor:{hull:{front:100,side:80,rear:80,top:25},turret:{front:120,side:80,rear:80,top:25}},camo:W2DE,camoMode:'de',mgc:7.92,
     m:{ww1:'w2',L:6.32,W:3.56,H:3.0,tz:.05,tw:2.3,th:.95,tl:2.7,gl:4.7,gr:.06,
-      w2:{trW:.72,trH:1.05,trF:1.05,trR:1.0,deck:1.9,glacis:.6,lowF:.4,nW:8,wR:.4,inter:1,ret:0,tur:'box',cup:1,mant:'box',mantW:1.2,mb:2,ins:'de',bmg:.55,sideH:.75,rearS:.1}}},
+      w2:{trW:.72,trH:1.05,trF:1.05,trR:1.0,deck:1.9,glacis:.15,lowF:.4,nW:8,wR:.4,inter:1,ret:0,tur:'tiger',tiger:1,cup:1,cupX:-.68,mant:'tiger',mb:2,ins:'de',bmg:.55,sideH:.75,rearS:.1}}},
   // ---- Unión Soviética ----
   t70:{nation:'ru',era:3,year:1942,br:3.0,cls:'ligero',label:'T-70',desc:'Tanque ligero barato y fácil de fabricar con motores de camión: 45 mm y 45 mm de frente inclinado. El comandante hace de cargador y de artillero a la vez.',
     maxF:kmh2(45),maxR:3,turn:.85,trav:.8,reload:4.0,pen:54,hp:75,crewReal:2,seats:['driver','gunner'],
