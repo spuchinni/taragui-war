@@ -219,3 +219,65 @@ function numTex(txt,nat){ const key=nat+txt; if(_numTex[key]) return _numTex[key
       const y=(t.gunPivot&&t.gunPivot.parent===t.turret?t.gunPivot.position.y:M.th*.5)+.05; // a la altura de las insignias
       for(const sx of [-1,1]){ const p=new THREE.Mesh(new THREE.PlaneGeometry(.8*M.th/.95,.4*M.th/.95),m); p.position.set(sx*(M.tw/2*(['box','hex'].includes(I.tur)?1:.92)+.04),y,M.tl*.2); p.rotation.y=sx>0?Math.PI/2:-Math.PI/2; t.turret.add(p); } }
   return t; }; }
+
+/* ---------- Sonido del motor según el tanque (pedido de Sebastián) ----------
+   Cada tanque tiene su familia de motor real (V.eng). Con los mismos sonidos de siempre (motor sintético + grabaciones idle/drive)
+   cambian el tono, el golpeteo de los cilindros, el ruido y el filtro: el Maybach suena agudo y liso, el diésel V-2 ronco y golpeado,
+   el radial del Sherman con su zumbido de avión, el V8 Ford grave. Además se oyen los motores de los 3 tanques más cercanos (engVoices). */
+// f = tono, lfo = golpeteo (Hz), dep = cuánto golpea, nz = ruido/traqueteo, lp = brillo, rate = velocidad de las grabaciones, h2 = segundo armónico
+const ENGINES={
+  maybach:{n:'Maybach V12 a nafta',f:1.28,lfo:24,dep:.08,nz:.22,lp:1.3,rate:1.12,h2:3.0},
+  v2:{n:'Diésel V-2 V12',f:.84,lfo:12,dep:.36,nz:.6,lp:.85,rate:.9,h2:2.03},
+  radial:{n:'Radial Continental (de avión)',f:1.1,lfo:7,dep:.32,nz:.3,lp:1.1,rate:1.05,h2:1.5},
+  fordv8:{n:'Ford V8 a nafta',f:.95,lfo:8.5,dep:.3,nz:.3,lp:.95,rate:.95,h2:2.0},
+  gmdiesel:{n:'Doble diésel GM',f:.9,lfo:13,dep:.3,nz:.5,lp:.9,rate:.92,h2:2.08},
+  aero:{n:'V12 de avión',f:1.22,lfo:21,dep:.1,nz:.25,lp:1.25,rate:1.1,h2:2.0},
+  multibank:{n:'Chrysler multibanco (5 motores)',f:1.05,lfo:17,dep:.22,nz:.35,lp:1.05,rate:1.0,h2:2.5},
+  gas6:{n:'6 cilindros a nafta',f:1.4,lfo:18,dep:.16,nz:.3,lp:1.15,rate:1.2,h2:2.0},
+  jpdiesel:{n:'Diésel refrigerado por aire',f:1.0,lfo:14,dep:.32,nz:.55,lp:.95,rate:.97,h2:2.02},
+  early:{n:'Nafta de entreguerras',f:.95,lfo:10,dep:.3,nz:.4,lp:.9,rate:.95,h2:2.0},
+  ww1:{n:'Motor de la 1ª Guerra (lento)',f:.6,lfo:5,dep:.45,nz:.65,lp:.7,rate:.72,h2:2.0},
+  diesel:{n:'Diésel moderno',f:1.0,lfo:15,dep:.24,nz:.45,lp:1.0,rate:1.0,h2:2.03}};
+const ENG_OF={maybach:['pz3j','pz4f2','pz4h','stug3g','panther','tiger1','tiger2','jagdpanther','wirbelwind','ostwind'],
+  v2:['t34','t3485','kv1','kv2','is2','su100'], radial:['m3stuart','m4a1','m18','m3a3cn'], fordv8:['m4a3e8','m26','m24','m36','s35f','churchill7','b1f'],
+  gmdiesel:['m10','m4a2fr','matilda2','valentine','achilles'], aero:['crusader3','cromwell','comet','bt7','nahuel','crusaderaa'],
+  multibank:['firefly','m4a4cn'], gas6:['pz38t','t70','zsu37','m16mgmc','l640','h39','v6cn','t26cn'], jpdiesel:['hago','chiha','chihe','chinu','tase','m1340','sem7518','p40']};
+for(const k in VEH){ const V=VEH[k]; if(V.static) continue; let e=null;
+  for(const f in ENG_OF) if(ENG_OF[f].includes(k)){ e=f; break; }
+  V.eng=e||(V.era<=1?'ww1':V.era===2?(['bt5'].includes(k)?'aero':'early'):V.era>=5?'diesel':V.diesel?'gmdiesel':'fordv8'); }
+const engOf=T=>ENGINES[T.eng]||ENGINES.diesel;
+
+// motor del jugador: después de lo que hace el núcleo, se corrige según la familia
+{ const _eu=engineUpdate; engineUpdate=function(t,dt){ _eu(t,dt); if(!AC||!engNodes||t.dead) return; const E=engOf(t.T), now=AC.currentTime, R=t._rpm||.2, thr=(down('fwd')||down('back'))?1:0;
+    const base=(24+R*42)*E.f; eng.frequency.setTargetAtTime(base,now,.05); eng2.frequency.setTargetAtTime(base*E.h2,now,.05);
+    engNodes.lfo.frequency.setTargetAtTime(E.lfo*(.7+R*.6),now,.1); lfoG.gain.setTargetAtTime(E.dep+thr*.1,now,.1);
+    engNodes.nzg.gain.setTargetAtTime(E.nz,now,.1); engNodes.nzf.frequency.setTargetAtTime(180*E.f,now,.1);
+    engLP.frequency.setTargetAtTime((220+R*700+thr*250)*E.lp,now,.08);
+    if(LOOPS.idle) LOOPS.idle.src.playbackRate.setTargetAtTime((.85+R*.45)*E.rate,now,.08);
+    if(LOOPS.drive) LOOPS.drive.src.playbackRate.setTargetAtTime((.72+R*.5)*E.rate,now,.08); }; }
+
+// motores de los otros tanques: 3 voces con posición que se reparten entre los más cercanos
+const engVoices=[]; let engVT=0;
+function engVoice(){ const mk=n=>{ const s=AC.createBufferSource(); s.buffer=SFX[n][0]; s.loop=true; s.loopStart=.2; s.loopEnd=.2+(LOOP_LEN[n]||2.5); const g=AC.createGain(); g.gain.value=0; s.connect(g); s.start(0,rand(.2,2)); return {s,g}; };
+  const d=mk('drive'), i=mk('idle'), f=AC.createBiquadFilter(); f.type='lowpass'; f.frequency.value=4000; const pn=AC.createPanner(); pn.panningModel='equalpower'; pn.distanceModel='inverse'; pn.refDistance=14; pn.rolloffFactor=1.1;
+  d.g.connect(f); i.g.connect(f); f.connect(pn).connect(extBus); return {d,i,f,pn,t:null}; }
+function updateEngVoices(dt){
+  if(!AC||!SFX.drive||!SFX.drive.length||!SFX.idle||!SFX.idle.length||!['play','spectate','deploy'].includes(state)){ for(const V of engVoices){ V.d.g.gain.value=0; V.i.g.gain.value=0; } return; }
+  while(engVoices.length<3) engVoices.push(engVoice());
+  engVT-=dt; if(engVT<=0){ engVT=.5; const L=tanks.filter(t=>!t.dead&&t!==player&&!t.T.static&&t.pos.distanceToSquared(camera.position)<170*170).sort((a,b)=>a.pos.distanceToSquared(camera.position)-b.pos.distanceToSquared(camera.position)).slice(0,3);
+    engVoices.forEach((V,i)=>{ V.t=L[i]||null; }); }
+  const now=AC.currentTime;
+  for(const V of engVoices){ const t=V.t; if(!t||t.dead){ V.d.g.gain.setTargetAtTime(0,now,.3); V.i.g.gain.setTargetAtTime(0,now,.3); continue; }
+    const E=engOf(t.T), v=Math.abs(t.speed), mv=clamp(v/3,0,1), r=clamp(v/Math.max(1,t.T.maxF||10),0,1), p=t.pos;
+    if(V.pn.positionX){ V.pn.positionX.value=p.x; V.pn.positionY.value=p.y+1; V.pn.positionZ.value=p.z; } else V.pn.setPosition(p.x,p.y+1,p.z);
+    V.f.frequency.setTargetAtTime(Math.max(500,5000*E.lp*Math.exp(-p.distanceTo(camera.position)/120)),now,.1);
+    V.d.g.gain.setTargetAtTime(mv*.75,now,.2); V.i.g.gain.setTargetAtTime((1-mv*.7)*.45,now,.2);
+    V.d.s.playbackRate.setTargetAtTime((.7+r*.55)*E.rate,now,.1); V.i.s.playbackRate.setTargetAtTime(.85*E.rate*(E.f>1.2?1.08:1),now,.1); }
+}
+{ const _ua2=updateArty; updateArty=function(dt){ _ua2(dt); updateEngVoices(dt); }; }
+{ const _sl=stopAllLoops; stopAllLoops=function(){ _sl(); if(AC) for(const V of engVoices){ V.d.g.gain.value=0; V.i.g.gain.value=0; V.t=null; } }; }
+
+// la ficha muestra el motor
+{ const _vs2=vehStatsHTML; vehStatsHTML=function(k){ const h=_vs2(k), V=VEH[k]; if(!V||!V.eng||!ENGINES[V.eng]) return h;
+    return h.replace(/(<span class="vst"><i>Mira<\/i>)/,`<span class="vst"><i>Motor</i>${ENGINES[V.eng].n}</span>$1`); }; }
+{ const _fr=frame; frame=function(dt){ _fr(dt); if(AC&&engVoices.length&&!['play','spectate','deploy','end'].includes(state)) for(const V of engVoices){ V.d.g.gain.value=0; V.i.g.gain.value=0; } }; }

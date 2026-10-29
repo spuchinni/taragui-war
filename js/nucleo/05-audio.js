@@ -14,6 +14,7 @@ function sndPaths(){ const L=[]; for(const [k,n] of Object.entries(SND_FILES)) f
 function prefetchAudio(){ if(location.protocol==='file:'){ console.warn('Taragüí War: abrí el juego desde un servidor (GitHub Pages o Live Server); con file:// el navegador bloquea la carga de sonidos.'); return; }
   sndPaths().forEach(p=>sndFetch(p).catch(e=>console.warn('Sonido no cargado:',e.message))); }
 addEventListener('load',()=>setTimeout(prefetchAudio,300));
+let engNodes=null; // piezas del motor sintético (realismo.js las ajusta según el motor de cada tanque)
 let AC,noiseBuf,eng,engGain,master,extBus,extLP,engMix,engLP,eng2,lfoG,trkSrc,trkGain,introNode=null;
 const SFX={}, VO={}; let volMaster=.8, radioOn=true;
 // Bucles grabados: largo del ciclo (s) dentro de cada archivo, que trae el ciclo repetido para empalmar sin cortes.
@@ -46,7 +47,7 @@ function initAudio(){
     for(let i=0;i<L*.035&&st+i<L;i++){ const t=i/L; td[st+i]+=amp*Math.exp(-t*140)*(Math.sin(2*Math.PI*f*t)*.6+(Math.random()*2-1)*.7); } }
   trkSrc=AC.createBufferSource(); trkSrc.buffer=tb; trkSrc.loop=true; const tf=AC.createBiquadFilter(); tf.type='lowpass'; tf.frequency.value=2600;
   trkGain=AC.createGain(); trkGain.gain.value=0; trkSrc.connect(tf).connect(trkGain).connect(engGain);
-  [eng,eng2,nz,lfo,trkSrc].forEach(n=>n.start());
+  engNodes={lfo,g2,nzg,nzf}; [eng,eng2,nz,lfo,trkSrc].forEach(n=>n.start());
   for(const [k,n] of Object.entries(SND_FILES)){ SFX[k]=[]; for(let i=0;i<n;i++) sndFetch(`snd/${k}_${i}.mp3`).then(ab=>
     AC.decodeAudioData(ab,buf=>{ SFX[k].push(buf); if(k==='intro'&&musMode==='hangar'){ musMode=null; syncIntro(); } if(['idle','drive','turret','mgburst'].includes(k)) startLoops(); },()=>{})).catch(()=>{}); }
   for(const lang of VO_LANGS){ VO[lang]=[]; for(let i=0;i<VO_N;i++) sndFetch(`voz/${lang}/${String(i).padStart(2,'0')}.mp3`).then(ab=>
