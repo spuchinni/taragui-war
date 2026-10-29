@@ -98,3 +98,67 @@ function updateRack(dt){
 { const _d=destroy; destroy=function(t,by,rack){ const was=t.dead; _d.apply(this,arguments); if(rack&&!was&&t.dead){ t.popV=0; rackBlow(t); } }; }
 { const _nk=netKill; netKill=function(t,rack){ const was=t.dead; _nk.apply(this,arguments); if(rack&&!was){ t.popV=0; rackBlow(t); } }; }
 { const _ua=updateArty; updateArty=function(dt){ _ua(dt); updateTracks(); updateRack(dt); }; }
+
+/* ---------- Tanda 2 (pedido de Sebastián) ----------
+   5) Retroceso según el calibre: el tubo va para atrás de golpe (37 mm ≈ 25 cm, 88 mm ≈ 48 cm, 122 mm ≈ 63 cm) y vuelve despacio
+      con el recuperador (≈ 0,9 s); el casco se sacude más con cañones grandes. El disparo levanta polvo (o nieve) delante de la boca.
+   6) Escape: bocanada al arrancar, humo suave al ralentí, negro en los diésel (T-34, KV, IS, japoneses, M10, Valentine, modernos),
+      vapor blanco con frío.
+   7) Suspensión: cada rueda de rodaje copia los pozos del suelo y el casco cabecea al pasarlos.
+   8) Orugas y ruedas de cada lado por separado: al girar, la de adentro va más lenta; girando en el lugar, una avanza y la otra retrocede. */
+const DIESEL=['t34','t3485','kv1','kv2','is2','su100','valentine','m10','m4a2fr','hago','chiha','chihe','chinu'];
+for(const k in VEH){ const V=VEH[k]; if(DIESEL.includes(k)||V.era>=5) V.diesel=1;
+  const c=parseFloat(String(typeof gunCal==='function'?gunCal(V):'').replace(',','.'))||75; V.cal=c; V.recL=clamp(.08+c*.0045,.15,.65); }
+
+// 5) retroceso: el núcleo pone barrel.position.z cada cuadro (15-menus.js); acá se reemplaza por la curva real
+function recoilFX(t){
+  if(t.T.auto||t.firedT==null||!t.barrel) return; const s=now-t.firedT; if(s<0||s>1.2) return;
+  const k=s<.035?s/.035:1-((x)=>x*x*(3-2*x))(clamp((s-.035)/.9,0,1)); t.barrel.position.z=-t.T.recL*k; }
+{ const _fg=fireGun; fireGun=function(t,F){ const p0=t.sPv||0, r0=t.sRv||0, ok=_fg.apply(this,arguments);
+    if(ok===false||t.T.auto) return ok;
+    const k=clamp((t.T.cal||75)/75,.4,1.7)/clamp((t.T.m.L||6)/6,.8,1.4); t.sPv=p0+((t.sPv||0)-p0)*k; t.sRv=r0+((t.sRv||0)-r0)*k;
+    // polvo del fogonazo contra el suelo
+    if(t.muzzle&&t.pos.distanceToSquared(camera.position)<400*400){ const m=t.muzzle.getWorldPosition(new THREE.Vector3()), d=t.barrel.getWorldDirection(new THREE.Vector3());
+      const q=m.clone().addScaledVector(d,2.5), gh=heightAt(q.x,q.z);
+      if(q.y-gh<3.2&&!(W.water!=null&&gh<W.water)){ const sz=clamp((t.T.cal||75)/75,.5,1.8), col=wxKey==='nieve'||builtKey==='ardenas'?0xe8ecef:W.dust||0xb6a27f;
+        for(let i=0;i<5;i++) puff(new THREE.Vector3(q.x+d.x*i*.8+rand(-1,1),gh+.4,q.z+d.z*i*.8+rand(-1,1)),col,rand(2.5,4)*sz,rand(1.2,2),1.5,.5); } }
+    return ok; }; }
+
+// 6) escape
+function exhaustFX(t,dt){
+  if(t.dead||t.mod.engine<=0) return;
+  const M=t.T.m, fx=Math.sin(t.heading), fz=Math.cos(t.heading), v=Math.abs(t.speed), cold=wxKey==='nieve'||wxKey==='noche'||builtKey==='ardenas';
+  const thr=t.isPlayer?((down('fwd')||down('back'))?1:0):(v>1?1:0);
+  if(thr&&!t.exOn&&v<2){ t.exBurst=.7; } t.exOn=!!thr;               // arranque: bocanada
+  t.exI=(t.exI||0)-dt; const burst=(t.exBurst||0)>0; if(burst) t.exBurst-=dt;
+  if(t.exI>0) return; t.exI=burst?.07:thr?.35:.8;
+  const col=t.T.diesel?(burst?0x141210:0x2a2826):(burst?0x4a4a4e:0x8a8c90), op=burst?(t.T.diesel?.6:.38):thr?.22:.12;
+  for(const sx of [-1,1]){ const x=t.pos.x-fx*(M.L/2+.15)+fz*sx*M.W*.28, z=t.pos.z-fz*(M.L/2+.15)-fx*sx*M.W*.28;
+    puff(new THREE.Vector3(x,t.pos.y+t.hTop+.1,z),col,rand(.7,1.1)*(burst?1.6:1),burst?1.6:1,.9,op);
+    if(cold) puff(new THREE.Vector3(x,t.pos.y+t.hTop+.3,z),0xf2f4f6,rand(.9,1.4),1.4,1.2,.25); }
+}
+
+// 7) suspensión de cada rueda + 8) orugas por lado
+const _wv=new THREE.Vector3();
+function runningGear(t,dt){
+  const M=t.T.m; if(!t.wheels||!t.wheels.length) return;
+  // 8) velocidad de cada lado (+x = izquierda: girando hacia +x esa oruga va más lenta)
+  const yr=dt>0?wrap(t.heading-(t._rgH??t.heading))/dt:0; t._rgH=t.heading;
+  const hw=M.W/2, dP=-yr*hw*dt, dN=yr*hw*dt; // lo que agrega el giro a cada lado (en metros este cuadro)
+  if(t.trk&&t.trk.mats&&t.trk.mats.length===2&&!M.wheeled){ t.trk.top.map.offset.x=(t.trk.top.map.offset.x+dP*.42)%1; t.trk.sideP.map.offset.x=(t.trk.sideP.map.offset.x+dN*.42)%1; }
+  const susp=!t.dead&&!M.wheeled&&t.pos.distanceToSquared(camera.position)<100*100; let F=0,nF=0;
+  if(susp) t.root.updateMatrixWorld(true);
+  let sum=0,n=0;
+  for(const w of t.wheels){ const o=w.w;
+    if(!M.wheeled) o.rotation.y+=(o.position.x>0?dP:dN)/w.r;
+    if(!susp) continue;
+    if(w.y0==null){ w.y0=o.position.y; w.road=w.r>=.18&&o.position.y<w.r*1.4+.12; w.dy=0; }
+    if(!w.road) continue;
+    _wv.set(o.position.x,w.y0-w.r,o.position.z).applyMatrix4(t.root.matrixWorld); w.raw=heightAt(_wv.x,_wv.z)-_wv.y; sum+=w.raw; n++; }
+  // cuenta el pozo respecto del promedio (el casco ya sigue la pendiente general)
+  if(susp&&n) for(const w of t.wheels){ if(!w.road) continue; const o=w.w, tgt=clamp(w.raw-sum/n,-.05,.14);
+    w.dy+=(tgt-w.dy)*Math.min(1,dt*18); o.position.y=w.y0+w.dy; if(o.position.z>M.L*.15){ F+=w.dy; nF++; } }
+  // el golpe en las ruedas de adelante levanta la trompa
+  if(susp&&nF){ const f=F/nF; if(t._rgF!=null) t.sPv=clamp((t.sPv||0)+(f-t._rgF)*2.2*Math.min(1,Math.abs(t.speed)/4),-1.5,1.5); t._rgF=f; }
+}
+{ const _tf=tankFX; tankFX=function(t,dt){ _tf(t,dt); recoilFX(t); if(t.pos.distanceToSquared(camera.position)<200*200){ exhaustFX(t,dt); } runningGear(t,dt); }; }
