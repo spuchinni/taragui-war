@@ -89,7 +89,7 @@ function spall(t,pointW,dirW,kind,by,sc=1,over=1){
     const s0=clamp(c.clone().sub(P).dot(d),0,S.len), q=P.clone().addScaledVector(d,s0), dist=c.distanceTo(q), r=S.r0+s0*S.sp+.35;
     if(dist>r) continue;
     const dmg=S.base*sc*(1-dist/r)*(1-s0/(S.len*1.5))*rand(.75,1.15);
-    if(name==='ammo'||name==='ammo2'){ if(dmg>45&&Math.random()<.45) rack=true; else if(Math.random()<.3){ t.fireT=Math.max(t.fireT,30); hurt.push('¡incendio!'); } hurt.push('munición'); continue; }
+    if(name==='ammo'||name==='ammo2'){ if(dmg>45&&Math.random()<.45*(typeof rackOdds==='function'?rackOdds(t):1)) rack=true; /* menos con poca munición o estiba húmeda (realismo.js) */ else if(Math.random()<.3){ t.fireT=Math.max(t.fireT,30); hurt.push('¡incendio!'); } hurt.push('munición'); continue; }
     if(name==='engine'){ t.mod.engine-=dmg; if(t.mod.engine<=0){t.engT=20; hurt.push('motor destruido'); if(Math.random()<.4){ t.fireT=Math.max(t.fireT,30); hurt.push('¡incendio!'); } } else hurt.push('motor'); continue; }
     if(name==='trans'){ t.mod.trans-=dmg; hurt.push(t.mod.trans<=0?'transmisión rota':'transmisión'); continue; }
     if(name==='breech'){ t.mod.breech-=dmg; if(t.mod.breech<=0){t.breechT=12; hurt.push('cañón inutilizado');} continue; }

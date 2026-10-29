@@ -337,10 +337,12 @@ function aimAt(t,point,dt,eY=0,eP=0){
   const wy=Math.atan2(dx,dz)+eY, wp=(manual?Math.atan2(point.y-gp.y,d)+ballisticPitch(200,0,v):ballisticPitch(d,point.y-gp.y,v))+eP;
   const dir=new THREE.Vector3(Math.sin(wy)*Math.cos(wp),Math.sin(wp),Math.cos(wy)*Math.cos(wp));
   qInv.copy(t.root.quaternion).invert(); dir.applyQuaternion(qInv);
-  const ly0=Math.atan2(dir.x,dir.z); let ly=ly0; const lp=clamp(Math.asin(clamp(dir.y,-1,1)),-.14,t.T.elev||.35); // los antiaéreos suben casi vertical (T.elev)
+  // cuánto baja y sube el cañón según el tanque (T.depr / T.elevMax en grados, realismo.js); los antiaéreos suben casi vertical (T.elev)
+  const ly0=Math.atan2(dir.x,dir.z), lp0=Math.asin(clamp(dir.y,-1,1)), dn=-(t.T.depr??8)*Math.PI/180, up=t.T.elev||(t.T.elevMax??20)*Math.PI/180; let ly=ly0; const lp=clamp(lp0,dn,up);
+  t.gunLim=lp0<dn-.01?-1:lp0>up+.01?1:0;
   if(t.T.arc!=null){ const c0=t.T.arcC||0; ly=c0+clamp(wrap(ly-c0),-t.T.arc,t.T.arc); }
   t.turretYaw=stepAng(t.turretYaw,ly,t.T.trav*dt);
-  const ps=t.T.aa?1.1:.5; t.gunPitch+=clamp(lp-t.gunPitch,-ps*dt,ps*dt);
+  const ps=t.T.aa?1.1:(t.T.elevSp||.5); t.gunPitch+=clamp(lp-t.gunPitch,-ps*dt,ps*dt);
   if(t.sponsons) sponsonAim(t); else { t.turret.rotation.y=t.turretYaw-(t.turretBase||0); t.gunPivot.rotation.x=-t.gunPitch; }
   return Math.abs(wrap(ly0-t.turretYaw))+Math.abs(lp-t.gunPitch);
 }

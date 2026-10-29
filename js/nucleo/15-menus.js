@@ -76,7 +76,7 @@ function renderHangar(){
       <div class="st">${gunCal(V)?`<span>Cañón</span><b>${gunCal(V)}</b>`:''}<span>Penetración máx.</span><b>${Math.max(...V.ammo.map(A=>A.pen))} mm</b>
         <span>Recarga</span><b>${String(V.reload).replace('.',',')} s</b><span>Velocidad</span><b>${Math.round(V.maxF*3.6)} km/h</b>
         <span>Blindaje casco</span><b>${V.armor.hull.front} / ${V.armor.hull.side} / ${V.armor.hull.rear} mm</b><span>Blindaje torre</span><b>${V.armor.turret.front} / ${V.armor.turret.side} / ${V.armor.turret.rear} mm</b>
-        <span>Tripulación</span><b>${V.crewReal||V.crew}</b><span>Pendiente máx.</span><b>${Math.round(climbOf(V)*180/Math.PI)}°</b>${V.year?`<span>Año</span><b>${V.year}</b>`:''}</div>
+        <span>Tripulación</span><b>${V.crewReal||V.crew}</b><span>Pendiente máx.</span><b>${Math.round(climbOf(V)*180/Math.PI)}°</b>${typeof gunArcTxt==='function'&&!V.aa?`<span>Cañón (baja/sube)</span><b>${gunArcTxt(V)}</b>`:''}${V.year?`<span>Año</span><b>${V.year}</b>`:''}</div>
       <div class="am"><b>Munición</b>${V.ammo.map(A=>`<div><span>${A.n}</span><small>${KIND_ES[A.kind]} · ${A.pen} mm · ${Math.round(A.v)} m/s</small></div>`).join('')}</div>
       <div class="chips">${eq.map(e=>`<span>${e}</span>`).join('')}</div>
       ${S.own?`<div class="lvl"><b>Nivel ${lv}</b>${lv<5?` · ${xp.toLocaleString('es-AR')} / ${LV_XP[lv].toLocaleString('es-AR')} XP<i class="pb"><i style="width:${Math.round(xp/LV_XP[lv]*100)}%"></i></i>`:' · máximo'}<ul>${upg}</ul></div>

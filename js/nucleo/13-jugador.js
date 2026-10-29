@@ -286,7 +286,8 @@ function drawOverlay(){
   const ip=manual?null:project(predictImpact(player));
   if(ip){
     const ready=player.reloadT<=0, onTarget=Math.hypot(ip.x-cx,ip.y-cy)<10;
-    oc.lineWidth=2; oc.strokeStyle=ready?(onTarget?'rgba(143,209,106,1)':'rgba(239,231,210,.85)'):'rgba(239,231,210,.45)';
+    oc.lineWidth=2; oc.strokeStyle=player.gunLim?'rgba(255,90,60,.9)':ready?(onTarget?'rgba(143,209,106,1)':'rgba(239,231,210,.85)'):'rgba(239,231,210,.45)';
+    if(player.gunLim){ oc.fillStyle='rgba(255,90,60,.95)'; oc.font='700 15px "Saira Condensed",sans-serif'; oc.fillText(player.gunLim<0?'El cañón no baja más':'El cañón no sube más',ip.x,ip.y+36); } // depresión/elevación real del tanque (realismo.js)
     oc.beginPath(); oc.arc(ip.x,ip.y,12,0,7); oc.stroke();
     oc.beginPath(); oc.moveTo(ip.x-18,ip.y); oc.lineTo(ip.x-12,ip.y); oc.moveTo(ip.x+12,ip.y); oc.lineTo(ip.x+18,ip.y); oc.stroke();
     if(!ready){oc.strokeStyle='#ffc65c';oc.lineWidth=3;oc.beginPath();

@@ -45,7 +45,7 @@ function vficha(k,row){
   F.innerHTML=`<img alt="">
     <div class="vfN">${V.label}</div><div class="vfS">${N?N.label+' · ':''}${CLS_ES[V.cls]||V.cls}${V.year?' · '+V.year:''} · Rango ${RANK_ROMAN[rankOf(k)]} · BR ${brTxt(V.br)}</div>
     <div class="vfG"><span>Velocidad</span><b>${Math.round(V.maxF*3.6)} km/h</b><span>Tripulación</span><b>${V.crewReal||V.crew||V.seats.length}</b>
-      <span>Penetración</span><b>${pen} mm</b><span>Pendiente máx.</span><b>${Math.round(climbOf(V)*180/Math.PI)}°</b><span>Recarga</span><b>${V.reload} s</b>
+      <span>Penetración</span><b>${pen} mm</b><span>Pendiente máx.</span><b>${Math.round(climbOf(V)*180/Math.PI)}°</b>${typeof gunArcTxt==='function'&&!V.aa?`<span>Cañón (baja/sube)</span><b>${gunArcTxt(V)}</b>`:''}<span>Recarga</span><b>${V.reload} s</b>
       <span>Blindaje casco</span><b>${A.hull.front} / ${A.hull.side} / ${A.hull.rear} mm</b><span>Blindaje torre</span><b>${A.turret.front} / ${A.turret.side} / ${A.turret.rear} mm</b>
       ${V.trench?`<span>Cruza trincheras</span><b>${String(V.trench).replace('.',',')} m</b>`:''}</div>
     ${V.ammo?`<div class="vfA">${V.ammo.map(a=>`${a.n} <small>(${KIND_ES[a.kind]||a.kind}, ${a.pen} mm)</small>`).join('<br>')}</div>`:''}
