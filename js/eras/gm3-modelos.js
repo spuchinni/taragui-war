@@ -47,6 +47,9 @@ function castTurret(parent,w,l,h,mat,shape){ const r=w/2, P=(shape||[[.0,0],[1,0
 function w2Turret(tur,M,I,mat){ const w=M.tw, l=M.tl, h=M.th, hw=w/2, hl=l/2;
   switch(I.tur){
     case 'cast': castTurret(tur,w,l,h,mat); if(I.bus) castTurret(tur,w*.75,l*.45,h*.8,mat).position.z=-hl*.7; break;          // Sherman, T-34-85, IS-2, Churchill VII
+    case 't23': { // torre T23 del Sherman 76 mm (Easy Eight): costados más rectos, frente inclinado y un cesto trasero largo de contrapeso
+      const b=castTurret(tur,w,l*.82,h,mat,[[0,0],[1,0],[1.01,.5],[.95,.82],[.72,.98],[.3,1],[0,1]]); b.position.z=hl*.08;
+      const r=castTurret(tur,w*.84,l*.6,h*.86,mat,[[0,0],[1,0],[1,.6],[.9,.9],[.5,1],[0,1]]); r.position.z=-hl*.48; break; }
     case 'cyl': { const c=cyl(tur,hw*.96,hw,h,0,h/2,0,14,mat); c.scale.z=l/w*.85; break; }                                          // BT-7: cilíndrica
     case 'hex': prism(tur,[[-hw*.55,hl],[hw*.55,hl],[hw,hl*.15],[hw*.8,-hl],[-hw*.8,-hl],[-hw,hl*.15]],h,.22,0,0,0,mat); break;     // T-34/76
     case 'box': prism(tur,[[-hw*.85,hl],[hw*.85,hl],[hw,hl*.6],[hw,-hl*.55],[hw*.75,-hl],[-hw*.75,-hl],[-hw,-hl*.55],[-hw,hl*.6]],h,.04,0,0,0,mat); break; // Tiger, Churchill, Cromwell
@@ -87,8 +90,8 @@ function buildW2(t,M,mat,root,lkL,lkR){
   profMesh(root,[[zf-gz,deck],[zr+rz,deck],[zr,deck-rz*.9],[zr,.38],[zf-.55,.3],[zf,low+.18],[zf,low+.3]],iw2,0,mat);
   // parte alta que sobresale sobre las orugas (con los costados inclinados si corresponde)
   { const top=I.cover?M.W-.1:M.W-.02, yb=deck-(I.sideH??.6);
-    const g=profGeo([[zf-gz+.02,deck],[zr+rz,deck],[zr+rz*.4,yb+.05],[zr+.1,yb],[zf-gz*.15,yb],[zf-gz*.05,yb+.1]],top);
-    if(I.slope) slopeX(g,yb,deck,I.slope);
+    const g=I.castHull?castHullGeo(zf,zr,deck,yb,top,gz,rz,I.slope||0):profGeo([[zf-gz+.02,deck],[zr+rz,deck],[zr+rz*.4,yb+.05],[zr+.1,yb],[zf-gz*.15,yb],[zf-gz*.05,yb+.1]],top);
+    if(I.slope&&!I.castHull) slopeX(g,yb,deck,I.slope);
     const m=new THREE.Mesh(g,mat); m.castShadow=m.receiveShadow=true; root.add(m); }
   if(I.nose==='sher'){ const n=cyl(root,.42,.42,iw2*.95,0,.62,zf-.25,16,mat); n.rotation.z=Math.PI/2; shermanHull(root,M,I,mat,iw2,deck,gz,zf,zr,L); } // trompa redonda del Sherman y sus detalles
   // casamata (StuG, M10 no: torre abierta) y detalles
@@ -105,12 +108,12 @@ function buildW2(t,M,mat,root,lkL,lkR){
   const tur=new THREE.Group(); tur.position.set(I.tx||0,I.case?deck+I.case.h*.35:deck,M.tz); root.add(tur);
   const gy=I.case?0:w2Turret(tur,M,I,mat);
   if(I.cup) { cyl(tur,.28,.3,.25,I.cupX??-M.tw*.2,M.th+.12,-M.tl*.22,12,mat); slits(tur,3,I.cupX??-M.tw*.2,M.th+.16,-M.tl*.22+.29,0,.08); }
-  else if(!I.case&&I.tur!=='open'&&!(I.nose==='sher'&&I.tur==='cast')) rbox(tur,.5,.06,.5,-M.tw*.18,M.th+.03,-M.tl*.15,mat,.02);
+  else if(!I.case&&I.tur!=='open'&&!shCast(I)) rbox(tur,.5,.06,.5,-M.tw*.18,M.th+.03,-M.tl*.15,mat,.02);
   if(I.ins&&I.tur!=='none'&&!I.case&&['ru','us','ar','de','jp','cn','fr'].includes(I.ins)) for(const sx of [-1,1]) w2Insignia(tur,I.ins,sx*(M.tw/2*.92+.01),gy+.05,-M.tl*.1,sx>0?0:Math.PI,.65);
   const G=gunMount(t,tur,0,gy,I.case?.0:M.tl/2-.08,M.gl,M.gr,mat,{shR:Math.max(.16,M.gr*3.4)});
   // mantelete
   if(I.mant==='round'){ const m=cyl(G.gp,M.gr*4.2,M.gr*4.2,.35,0,0,.12,12,mat); m.rotation.x=Math.PI/2; }
-  else if(I.nose==='sher'&&I.tur==='cast') shermanTurret(tur,G,M,I,mat,gy);                                   // mantelete M34A1, escotillas, .50
+  else if(shCast(I)) shermanTurret(tur,G,M,I,mat,gy);                                   // mantelete M34A1, escotillas, .50
   else if(I.mant!=='none'){ const mw=I.mantW||Math.max(.6,M.tw*.42); rbox(G.gp,mw,Math.max(.32,M.gr*7),.28,0,0,.08,mat,.06); }
   // freno de boca
   if(I.mb){ const b=cyl(G.barrel,M.gr*2.1,M.gr*2.1,.32,0,0,M.gl-.04,10,darkMat); b.rotation.x=Math.PI/2; if(I.mb===2){ const b2=cyl(G.barrel,M.gr*2.1,M.gr*2.1,.14,0,0,M.gl-.36,10,darkMat); b2.rotation.x=Math.PI/2; } }
@@ -121,7 +124,7 @@ function buildW2(t,M,mat,root,lkL,lkR){
       if(i===0&&n!==2&&n!==4) continue; const b=cyl(G.barrel,M.gr,M.gr,M.gl,x,y,M.gl/2+z,8,darkMat); b.rotation.x=Math.PI/2;
       const fh=cyl(G.barrel,M.gr*1.7,M.gr*1.3,.3,x,y,M.gl+z-.1,8,darkMat); fh.rotation.x=Math.PI/2; }
     if(n===2||n===4) G.bm.visible=false; box(G.gp,sp*2.4,sp*(n===4?2.2:1.2),.5,0,0,-.05,mat); }
-  if(I.aa&&!(I.nose==='sher'&&I.tur==='cast')) { cyl(tur,.03,.03,.3,M.tw*.25,M.th+.12,-M.tl*.2,6,darkMat); const a=cyl(tur,.022,.022,.85,M.tw*.25,M.th+.3,-M.tl*.2+.3,6,darkMat); a.rotation.x=Math.PI/2.15; } // ametralladora antiaérea sobre su soporte
+  if(I.aa&&!shCast(I)) { cyl(tur,.03,.03,.3,M.tw*.25,M.th+.12,-M.tl*.2,6,darkMat); const a=cyl(tur,.022,.022,.85,M.tw*.25,M.th+.3,-M.tl*.2+.3,6,darkMat); a.rotation.x=Math.PI/2.15; } // ametralladora antiaérea sobre su soporte
   t.turret=tur; t.gunPivot=G.gp; t.barrel=G.barrel; t.muzzle=G.muzzle; t.coax=G.coax; t.barrelMesh=G.bm;
   if(I.case) collider(root,I.case.w,I.case.h,I.case.l,0,deck+I.case.h/2,I.case.z,t,'turret'); else collider(tur,M.tw,M.th,M.tl,0,M.th/2,0,t,'turret');
   collider(root,M.W-.1,deck-.25,L,0,(deck+.25)/2,0,t,'hull');
@@ -206,7 +209,7 @@ function shermanHull(root,M,I,mat,iw2,deck,gz,zf,zr,L){
   for(const fx of [-iw2*.3,iw2*.3]){ const k=new THREE.Mesh(_shShackle,darkMat); k.position.set(fx,.32,zf+.12); k.rotation.y=Math.PI/2; root.add(k); }      // ganchos de remolque
   // faros con su protector, sirena y ventilador entre las escotillas
   const gy=deck-gz*.18, gzz=zf-gz*.2;
-  for(const sx of [-1,1]){ const hx=sx*(M.W/2-.42); cyl(root,.07,.07,.08,hx,gy,gzz+.05,8,_shHead).rotation.x=Math.PI/2;
+  for(const sx of [-1,1]){ const hx=sx*(M.W/2-.42); cyl(root,.075,.075,.1,hx,gy,gzz+.05,8,darkMat).rotation.x=Math.PI/2; { const ln=new THREE.Mesh(_shLens,_shHead); ln.position.set(hx,gy,gzz+.105); root.add(ln); }
     const gd=new THREE.Mesh(_shGuard,darkMat); gd.position.set(hx,gy+.02,gzz+.05); gd.rotation.x=-.9; root.add(gd); }
   cyl(root,.07,.06,.14,iw2*.05,gy+.05,gzz+.02,8,darkMat).rotation.x=Math.PI/2;                                           // sirena
   cyl(root,.13,.15,.1,0,deck+.05,zf-gz-.42,10,mat);                                                                      // ventilador
@@ -223,22 +226,48 @@ function shermanHull(root,M,I,mat,iw2,deck,gz,zf,zr,L){
   box(root,.04,.04,1.3,(M.W/2-.35),deck+.04,zr+L*.24,_shSteel);
 }
 const _shShackle=new THREE.TorusGeometry(.07,.02,6,10), _shGuard=new THREE.TorusGeometry(.12,.018,4,10,Math.PI);
-const _shHead=new THREE.MeshLambertMaterial({color:0xd8d4c0}), _shSteel=new THREE.MeshLambertMaterial({color:0x6a6a66});
+const _shLens=new THREE.CircleGeometry(.06,10), _shHead=new THREE.MeshLambertMaterial({color:0xd8d4c0}), _shSteel=new THREE.MeshLambertMaterial({color:0x6a6a66});
 function shermanTurret(tur,G,M,I,mat,gy){
   // mantelete M34A1: plancha ancha con el rotor detrás, abertura de la mira a la izquierda y de la coaxial a la derecha
-  rbox(G.gp,.98,.52,.13,0,.02,.1,mat,.05); rbox(G.gp,.7,.4,.2,0,0,-.04,mat,.04);
-  box(G.gp,.07,.1,.05,-.3,.08,.17,darkMat); box(G.gp,.06,.06,.05,.24,-.05,.17,darkMat);
+  if(I.tur==='t23'){ rbox(G.gp,.74,.5,.2,0,.02,.12,mat,.12); rbox(G.gp,.5,.36,.16,0,0,-.04,mat,.05);                 // M62: más angosto y grueso
+    box(G.gp,.06,.09,.05,-.26,.09,.23,darkMat); box(G.gp,.05,.05,.05,.2,-.06,.23,darkMat); }
+  else { rbox(G.gp,.98,.52,.13,0,.02,.1,mat,.05); rbox(G.gp,.7,.4,.2,0,0,-.04,mat,.04);
+    box(G.gp,.07,.1,.05,-.3,.08,.17,darkMat); box(G.gp,.06,.06,.05,.24,-.05,.17,darkMat); }
   // techo: escotilla partida del comandante con su aro, la del cargador, periscopios y ventilador
   const ty=M.th*.98, cx=-M.tw*.2, cz=-M.tl*.16;
   if(!I.cup){ cyl(tur,.36,.38,.06,cx,ty,cz,14,mat); for(const sx of [-1,1]){ const h=new THREE.Mesh(_shHalf,mat); h.position.set(cx+sx*.005,ty+.05,cz); h.rotation.y=sx>0?0:Math.PI; tur.add(h); } }
-  rbox(tur,.34,.05,.5,M.tw*.2,ty+.01,-M.tl*.12,mat,.03);                                                                // escotilla del cargador
+  if(I.tur==='t23'){ const o=cyl(tur,.24,.24,.05,M.tw*.2,ty+.01,-M.tl*.08,14,mat); o.scale.z=1.4;                       // escotilla oval del cargador
+    if(I.cup) for(let i=0;i<6;i++){ const a=i/6*Math.PI*2; const v=box(tur,.08,.07,.05,(I.cupX??-M.tw*.2)+Math.sin(a)*.3,M.th+.27,-M.tl*.22+Math.cos(a)*.3,_shGlass); v.rotation.y=a; } } // bloques de visión de la cúpula
+  else rbox(tur,.34,.05,.5,M.tw*.2,ty+.01,-M.tl*.12,mat,.03);                                                           // escotilla del cargador
   for(const [px,pz] of [[cx+.3,cz+.35],[M.tw*.2,-M.tl*.12+.36],[-M.tw*.05,M.tl*.18]]) box(tur,.13,.11,.08,px,ty+.07,pz,darkMat); // periscopios
   cyl(tur,.1,.12,.08,M.tw*.05,ty+.02,-M.tl*.35,8,mat);                                                                   // ventilador
   // puerta de pistola a la izquierda y chapa extra en la mejilla derecha
   { const p=cyl(tur,.11,.11,.04,-M.tw*.47,M.th*.45,-M.tl*.05,10,mat); p.rotation.z=Math.PI/2; }
   { const c=rbox(tur,.05,.5,.6,M.tw*.46,M.th*.42,M.tl*.2,mat,.02); c.rotation.y=-.25; }
   // .50 en el aro: cajón, tubo y caja de munición
-  { const ax=M.tw*.22, az=-M.tl*.2; cyl(tur,.03,.03,.38,ax,ty+.18,az,6,darkMat); box(tur,.1,.12,.32,ax,ty+.42,az+.05,darkMat);
+  { const ax=M.tw*.22, az=I.tur==='t23'?-M.tl*.42:-M.tl*.2;                                                          // en la T23 la .50 va atrás cyl(tur,.03,.03,.38,ax,ty+.18,az,6,darkMat); box(tur,.1,.12,.32,ax,ty+.42,az+.05,darkMat);
     const b=cyl(tur,.03,.03,.95,ax,ty+.44,az+.65,6,darkMat); b.rotation.x=Math.PI/2; box(tur,.12,.14,.24,ax+.14,ty+.38,az,_shGreenBox); }
 }
 const _shHalf=new THREE.CylinderGeometry(.3,.3,.05,12,1,false,0,Math.PI), _shGreenBox=new THREE.MeshLambertMaterial({color:0x4a5236});
+
+const shCast=I=>I.nose==='sher'&&(I.tur==='cast'||I.tur==='t23');
+const _shGlass=new THREE.MeshLambertMaterial({color:0x2a3a44});
+// Casco superior fundido de una pieza (M4A1): secciones transversales con los cantos de arriba redondeados, de la popa a la trompa,
+// la altura sigue el perfil (techo plano, glacis y popa inclinados) y los costados se cierran un poco hacia arriba (slope).
+function castHullGeo(zf,zr,deck,yb,W,gz,rz,slope){
+  const z0=zr+.1, z1=zf-gz*.05, NZ=26, NA=7, hw=W/2, pos=[], uv=[], idx=[];
+  const topAt=z=>z>zf-gz?deck+(yb+.1-deck)*clamp((z-(zf-gz))/(gz*.95),0,1):z<zr+rz?yb+(deck-yb)*clamp((z-z0)/(zr+rz-z0),0,1):deck;
+  const sec=z=>{ const tp=topAt(z), hh=Math.max(.06,tp-yb), r=Math.min(.34,hh*.62), P=[];
+    const xs=y=>hw*(1-slope*clamp((y-yb)/Math.max(.01,deck-yb),0,1));
+    P.push([-xs(yb),yb]); P.push([-xs(tp-r),tp-r]);
+    for(let i=1;i<NA;i++){ const a=Math.PI-i/NA*Math.PI/2, cx=-xs(tp)+r; P.push([cx+Math.cos(a)*r,tp-r+Math.sin(a)*r]); }
+    for(let i=0;i<NA;i++){ const a=Math.PI/2-i/NA*Math.PI/2, cx=xs(tp)-r; P.push([cx+Math.cos(a)*r,tp-r+Math.sin(a)*r]); }
+    P.push([xs(tp-r),tp-r]); P.push([xs(yb),yb]); return P; };
+  let NP=0;
+  for(let k=0;k<=NZ;k++){ const z=z0+(z1-z0)*k/NZ, P=sec(z); NP=P.length; let s=0;
+    P.forEach((p,i)=>{ if(i) s+=Math.hypot(p[0]-P[i-1][0],p[1]-P[i-1][1]); pos.push(p[0],p[1],z); uv.push(z*.28,s*.28); }); }
+  for(let k=0;k<NZ;k++) for(let i=0;i<NP-1;i++){ const a=k*NP+i, b=a+NP; idx.push(a,b,a+1, a+1,b,b+1); }
+  for(const [k,flip] of [[0,1],[NZ,0]]){ const c=pos.length/3, z=z0+(z1-z0)*k/NZ; pos.push(0,yb,z); uv.push(0,0);           // tapas de los extremos
+    for(let i=0;i<NP-1;i++){ const a=k*NP+i; flip?idx.push(c,a+1,a):idx.push(c,a,a+1); } }
+  const g=new THREE.BufferGeometry(); g.setAttribute('position',new THREE.Float32BufferAttribute(pos,3)); g.setAttribute('uv',new THREE.Float32BufferAttribute(uv,2));
+  g.setIndex(idx); g.computeVertexNormals(); return g; }
