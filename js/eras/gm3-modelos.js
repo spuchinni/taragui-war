@@ -456,38 +456,52 @@ function genTurret(tur,M,I,mat){ const hw=M.tw/2, hl=M.tl/2, th=M.th;
     const r=new THREE.Mesh(_tgEye,darkMat); r.position.set(sx*hw*.5,th+.03,hl*.35); r.rotation.y=Math.PI/2; tur.add(r); }              // argollas para izar
   box(tur,.12,.07,.1,hw*.32,th+.05,hl*.3,darkMat); box(tur,.12,.07,.1,-hw*.15,th+.05,hl*.42,darkMat); }                              // periscopios
 
-// ---- Nahuel DL-43 (pedido de Sebastián: el primero, porque Argentina tiene uno solo) ----
-// Suspensión tipo Sherman (VVSS: tres bogies por lado, motriz adelante), casco de chapas abulonadas con la trompa inclinada,
-// torre angulosa también abulonada con cesto atrás y cúpula, y el 75 mm Krupp sacado de la pieza de campaña Modelo 1909:
-// por eso lleva los cilindros del freno y el recuperador arriba del tubo.
-function nahuelGear(root,I,x,s,tw,zf,zr,mat){ shermanGear(root,I,x,s,tw,zf,zr,mat); }
+// ---- Nahuel DL-43 (pedido de Sebastián; datos de Tank Encyclopedia: "Tanque Mediano Nahuel", con sus fotos) ----
+// 6,23 × 2,63 × 2,95 m, 35 t. Casco soldado de formas rectas como el del Sherman temprano, glacis plano de 80 mm a 55°, placa de abajo del frente
+// remachada (como la popa); suspensión VVSS de 3 bogies con 2 ruedas, motriz de 12 dientes adelante, 5 rodillos de retorno (3 sobre los bogies)
+// y tensora atrás. Dos escotillas grandes del conductor y su ayudante que se abren para arriba (con un periscopio cada una), dos faros sin
+// protector, otro sobre la torre; rejilla del radiador al costado y pico, hacha y pala atrás. Torre fundida redondeada, frente de 80 mm a 30°,
+// escotilla partida del comandante sin periscopios; el Krupp 1909 L/30 con los cilindros de retroceso arriba y abajo tapados por el mantelete.
+function nahuelGear(root,I,x,s,tw,zf,zr,mat){ shermanGear(root,I,x,s,tw,zf,zr,mat);
+  for(const z of [zr+1.1,zf-1.35]) dWheel(root,x,I.trF-.06,z,.09,mat,{rim:.7}); }                                    // los dos rodillos de retorno sueltos
 function nahuelHull(root,M,I,mat,iw2,deck,gz,zf,zr,L){
-  const hw=M.W/2, ft=hw-I.trW/2, fy=Math.max(I.trF,I.trR)+.06;
-  for(const sx of [-1,1]){ rivetsRow(root,sx*(hw+.005),deck-.1,zr+.3,zf-gz-.1,13); rivetsRow(root,sx*(hw+.005),deck-.5,zr+.3,zf-gz-.3,12); }   // bulones de las chapas
-  for(let k=0;k<2;k++){ const p=glacisPt(I,deck,gz,zf,k?.95:.03,.02); for(let i=0;i<9;i++) cyl(root,.025,.025,.03,-iw2*.42+i*iw2*.105,p.y,p.z,5,darkMat).rotation.x=Math.PI/2-p.a; }
-  { const p=glacisPt(I,deck,gz,zf,.25,.07), v=rbox(root,.5,.14,.18,-iw2*.22,p.y,p.z,mat,.03); v.rotation.x=p.a; box(v,.32,.025,.03,0,.02,.1,darkMat); }   // visor del conductor
-  for(const sx of [-1,1]){ const p=glacisPt(I,deck,gz,zf,.08,.1); cyl(root,.08,.08,.14,sx*iw2*.42,p.y,p.z,8,darkMat).rotation.x=Math.PI/2;      // faros con su protector
-    const g=new THREE.Mesh(_shGuard,darkMat); g.position.set(sx*iw2*.42,p.y+.02,p.z+.05); root.add(g);
-    const q=glacisPt(I,deck,gz,zf,.97,.05), k=new THREE.Mesh(_tgShackle,darkMat); k.scale.setScalar(.8); k.position.set(sx*iw2*.35,q.y,q.z); k.rotation.y=Math.PI/2; root.add(k); }
-  for(let k=0;k<4;k++){ const p=glacisPt(I,deck,gz,zf,.55+k*.1,.04), b=box(root,iw2*.6,.05,.15,0,p.y,p.z,trackMat); b.rotation.x=p.a; }     // eslabones de repuesto
-  for(const sx of [-1,1]){ rbox(root,I.trW*.8,.3,.7,sx*ft,fy+.15,zf-1.55,mat,.04); rbox(root,I.trW*.8,.3,.6,sx*ft,fy+.15,zr+1.1,mat,.04);   // cajones sobre los guardabarros
-    const f=box(root,I.trW+.06,.03,.55,sx*ft,I.trF+.1,zf-.14,mat); f.rotation.x=-.3; }
-  { const c=cyl(root,.03,.03,L*.6,hw+.03,deck-.25,-.1,6,darkMat); c.rotation.x=Math.PI/2; box(root,.08,.08,1.3,-(hw+.03),deck-.25,.2,_wdMat); }   // cable y pala
-  rbox(root,.7,.06,.6,0,deck+.03,zr+1.55,mat,.03); box(root,iw2*.7,.03,.8,0,deck+.02,zr+.75,darkMat);                                      // escotilla y rejilla del motor (Lorraine-Dietrich)
-  for(let i=0;i<5;i++) box(root,iw2*.7,.04,.04,0,deck+.04,zr+.42+i*.16,mat);
-  for(const sx of [-1,1]){ const e=cyl(root,.11,.11,.7,sx*iw2*.28,deck-.45,zr-.1,10,darkMat); e.rotation.z=Math.PI/2; cyl(root,.04,.04,.25,sx*iw2*.28,deck-.25,zr-.12,6,darkMat); }   // silenciadores atrás
-  for(const sx of [-1,1]) rbox(root,.32,.06,.42,sx*iw2*.24,deck+.04,zf-gz-.45,mat,.02);                                                       // escotillas del conductor y radio
+  const hw=M.W/2, ft=hw-I.trW/2, low=(I.lowF??.35)+.3;
+  { const p=glacisPt(I,deck,gz,zf,.995,0); for(let i=0;i<12;i++){ const r=cyl(root,.03,.03,.04,-iw2*.45+i*iw2*.082,low-.12,zf+.01,6,darkMat); r.rotation.x=Math.PI/2; }   // remaches de la placa de abajo
+    box(root,iw2*.96,.04,.05,0,low-.02,zf+.005,darkMat); }
+  for(const sx of [-1,1]){                                                                                              // escotillas del conductor y del ayudante, con periscopio
+    const p=glacisPt(I,deck,gz,zf,.13,.05), h=rbox(root,.62,.1,.55,sx*iw2*.25,p.y,p.z,mat,.03); h.rotation.x=p.a;
+    box(h,.13,.07,.1,0,.08,.08,darkMat); for(const dx of [-.22,.22]) cyl(h,.03,.03,.1,dx,.04,-.27,6,darkMat).rotation.z=Math.PI/2;   // periscopio y bisagras
+    const q=glacisPt(I,deck,gz,zf,.04,.12); cyl(root,.13,.13,.12,sx*(hw-.18),q.y,q.z,12,darkMat).rotation.x=Math.PI/2;                  // faros grandes sin protector
+    const ln=new THREE.Mesh(_shLens,_shHead); ln.position.set(sx*(hw-.18),q.y,q.z+.065); root.add(ln); }
+  { const p=glacisPt(I,deck,gz,zf,.55,.05); for(const dx of [.12,.24]){ const m=cyl(root,.03,.03,.22,iw2*.3+dx,p.y,p.z,6,darkMat); m.rotation.x=Math.PI/2-.3; } }  // ametralladoras fijas del ayudante
+  for(const sx of [-1,1]){ const q=glacisPt(I,deck,gz,zf,.98,.04), k=new THREE.Mesh(_tgShackle,darkMat); k.scale.setScalar(.75); k.position.set(sx*iw2*.38,q.y-.08,q.z+.04); k.rotation.y=Math.PI/2; root.add(k);
+    const r=new THREE.Mesh(_tgShackle,darkMat); r.scale.setScalar(.75); r.position.set(sx*iw2*.38,.62,zr-.03); r.rotation.y=Math.PI/2; root.add(r); }   // 4 ganchos de remolque
+  for(const sx of [-1,1]){ const gx=sx*(hw+.005);                                                                        // rejilla del radiador al costado (bajo la torre)
+    box(root,.03,.42,1.25,gx,deck-.32,-.15,darkMat); for(let i=0;i<6;i++) box(root,.05,.04,1.2,gx,deck-.5+i*.07,-.15,mat); }
+  { const sx=-1, X=sx*(hw+.03), y=deck-.3;                                                                                // pico, hacha y pala atrás a la izquierda
+    box(root,.05,.05,1.05,X,y+.12,zr+1.2,_wdMat); box(root,.04,.38,.06,X,y+.12,zr+.7,darkMat);                            // pico
+    box(root,.05,.05,.85,X,y-.08,zr+1.0,_wdMat); box(root,.04,.16,.12,X,y-.08,zr+.6,darkMat);                             // hacha
+    box(root,.05,.05,.95,X,y+.02,zr+1.85,_wdMat); box(root,.04,.22,.2,X,y+.02,zr+2.4,darkMat); }                          // pala
+  for(const sx of [-1,1]) rivetsRow(root,sx*(hw+.005),deck-.15,zr+.1,zr+1.0,6);                                           // popa remachada
+  for(let i=0;i<10;i++){ const r=cyl(root,.025,.025,.03,-iw2*.42+i*iw2*.093,deck-.3,zr-.005,5,darkMat); r.rotation.x=Math.PI/2; }
+  box(root,iw2*.65,.03,.85,0,deck+.02,zr+.75,darkMat); for(let i=0;i<5;i++) box(root,iw2*.65,.04,.04,0,deck+.04,zr+.42+i*.16,mat);   // rejilla del motor
+  rbox(root,.7,.06,.6,0,deck+.03,zr+1.55,mat,.03);
+  for(const sx of [-1,1]){ const e=cyl(root,.08,.08,.5,sx*iw2*.3,deck-.42,zr+.12,8,_shHead); e.rotation.z=Math.PI/2; e.scale.y=.5; }    // dos escapes envueltos en soga de amianto
+  { const c=cyl(root,.025,.025,.5,iw2*.1,deck-.6,zr-.04,6,darkMat); c.rotation.z=Math.PI/2; }                              // manija de arranque
+  for(const sx of [-1,1]){ const f=box(root,I.trW+.06,.03,.55,sx*ft,I.trF+.1,zf-.14,mat); f.rotation.x=-.3; }
 }
 function nahuelTurret(tur,G,M,I,mat,gy){ const hw=M.tw/2, hl=M.tl/2, th=M.th;
-  rbox(G.gp,.66,.46,.26,0,0,.08,mat,.05); for(const [x,y] of [[-.24,.15],[.24,.15],[-.24,-.15],[.24,-.15]]) cyl(G.gp,.025,.025,.04,x,y,.22,5,darkMat).rotation.x=Math.PI/2;  // mantelete abulonado
-  for(const dy of [.13,.21]){ const c=cyl(G.barrel,.065-(dy>.2?.015:0),.065-(dy>.2?.015:0),M.gl*.42,0,dy,M.gl*.21+.18,10,mat); c.rotation.x=Math.PI/2; }   // freno y recuperador del Krupp 1909
-  box(G.barrel,.05,.08,M.gl*.4,0,.08,M.gl*.21+.18,mat);
-  cyl(G.gp,.035,.035,.1,-.22,.06,.24,8,darkMat).rotation.x=Math.PI/2; cyl(G.gp,.035,.035,.1,.24,-.02,.24,8,darkMat).rotation.x=Math.PI/2;   // mira y coaxial
-  for(const sx of [-1,1]){ rivetsRow(tur,sx*(hw*.96+.01),th*.25,-hl*.8,hl*.5,7); rivetsRow(tur,sx*(hw*.92+.01),th*.75,-hl*.75,hl*.4,7);
-    const pp=cyl(tur,.06,.06,.04,sx*(hw*.95+.02),th*.5,-hl*.2,8,mat); pp.rotation.z=Math.PI/2; }
-  rbox(tur,M.tw*.7,th*.6,.5,0,th*.42,-hl-.2,mat,.04);                                                                                      // cesto trasero
-  cyl(tur,.26,.26,.06,M.tw*.22,th+.02,-hl*.15,14,mat); box(tur,.12,.07,.1,M.tw*.22,th+.07,hl*.25,darkMat);                                  // escotilla del cargador y periscopio
-  { const cx=I.cupX??-M.tw*.2, cz=-M.tl*.22; const a=cyl(tur,.025,.025,.35,cx,th+.43,cz,6,darkMat); const mg=cyl(tur,.025,.025,.9,cx,th+.6,cz+.35,6,darkMat); mg.rotation.x=Math.PI/2.2; box(tur,.09,.12,.3,cx,th+.58,cz+.05,darkMat); }   // ametralladora antiaérea sobre la cúpula
+  { const m=cyl(G.gp,.28,.28,.9,0,0,.1,14,mat); m.rotation.z=Math.PI/2; m.scale.set(1,1,.7); }                        // mantelete fundido que tapa los cilindros
+  rbox(G.gp,.5,.82,.42,0,0,.14,mat,.12);
+  { const sl=cyl(G.gp,.1,.13,.32,0,0,.46,12,mat); sl.rotation.x=Math.PI/2; }
+  cyl(G.gp,.045,.045,.12,.24,-.05,.36,8,darkMat).rotation.x=Math.PI/2;                                                   // Madsen de 11,35 mm coaxial
+  cyl(G.gp,.035,.035,.08,-.24,.18,.32,8,darkMat).rotation.x=Math.PI/2;                                                    // mira periscópica Zeiss
+  const cx=-hw*.35, cz=-hl*.2;                                                                                            // escotilla partida del comandante
+  cyl(tur,.33,.33,.06,cx,th+.0,cz,16,mat); for(const sx of [-1,1]){ const h=new THREE.Mesh(_shHalf,mat); h.position.set(cx,th+.05,cz); h.rotation.y=sx>0?0:Math.PI; tur.add(h); }
+  { const x=hw*.38, z=-hl*.05; cyl(tur,.04,.04,.12,x,th+.05,z,6,darkMat); const l=cyl(tur,.1,.1,.12,x,th+.16,z+.03,10,darkMat); l.rotation.x=Math.PI/2;   // faro sobre el cargador
+    const ln=new THREE.Mesh(_shLens,_shHead); ln.position.set(x,th+.16,z+.1); tur.add(ln); }
+  for(const sx of [-1,1]){ const pp=cyl(tur,.055,.055,.04,sx*(hw*.95),th*.45,-hl*.3,8,mat); pp.rotation.z=Math.PI/2; }
+  { const a=cyl(tur,.012,.012,1.7,hw*.6,th+.85,-hl*.6,4,darkMat); }
 }
 DET.nahuel={gear:nahuelGear,hull:nahuelHull,tur:nahuelTurret};
 
