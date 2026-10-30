@@ -80,10 +80,12 @@ function buildW2(t,M,mat,root,lkL,lkR){
     else if(I.det) DET[I.det].gear(root,I,x,s,tw,zf,zr,mat);                                             // Panther, T-34, IS-2                                                   // Tiger: ruedas intercaladas en capas, motriz adelante
     else {
     for(let i=0;i<nW;i++){ const z=-span/2+i*span/Math.max(1,nW-1), dx=I.inter?(i%2?-.12:.1):0;          // intercaladas: dos filas
-      wheel(root,x+s*(.02+dx),wR+.03,z,wR); }
+      dWheel(root,x+s*(.02+dx),wR+.03,z,wR,mat,{rim:wR>.3?.8:.74,holes:I.holes||(wR>.35&&!I.bog?6:0)}); }      // goma, disco del color del casco y cubo
     if(I.bog) for(let i=0;i<Math.ceil(nW/2);i++){ const z=-span/2+(i*2+.5)*span/Math.max(1,nW-1); rbox(root,.1,wR*1.2,wR*2.4,x+s*(tw/2+.04),wR*1.2,z,darkMat,.03); }
-    for(let i=0;i<(I.ret||0);i++){ const z=-span*.36+i*span*.72/Math.max(1,I.ret-1); wheel(root,x,(I.trF+I.trR)/2-.12,z,.09); }
-    wheel(root,x,I.trR*.62,zr+.36,.26); wheel(root,x,I.trF*.62,zf-.33,.25); }                              // motriz y tensora
+    for(let i=0;i<(I.ret||0);i++){ const z=-span*.36+i*span*.72/Math.max(1,I.ret-1); dWheel(root,x,(I.trF+I.trR)/2-.12,z,.09,mat,{rim:.7}); }
+    // rueda motriz con dientes (atrás en los británicos y soviéticos, adelante en el resto) y tensora con disco
+    const rear=I.rearDrive??['uk','ru'].includes(t.T.nation);
+    sprocketT(root,x,(rear?I.trR:I.trF)*.62,rear?zr+.36:zf-.33,.26,13,mat); dWheel(root,x,(rear?I.trF:I.trR)*.62,rear?zf-.33:zr+.36,.24,mat,{rim:.75}); }
     if(I.skirt) profMesh(root,[[zf-.55,H*I.skirt+.08],[zr+.45,H*I.skirt+.08],[zr+.5,H*.28],[zf-.6,H*.28]],.05,x+s*(tw/2+.06),t.mud||mat); // faldón
     if(I.schurz) for(let k=0;k<5;k++){ const z=zr+.8+k*(L-1.6)/5; box(root,.04,.62,(L-1.6)/5-.06,x+s*(tw/2+.16),I.deck-.2,z+(L-1.6)/10,mat); } // Schürzen (planchas sueltas)
     if(I.chur) profMesh(root,[[zf-.35,H+.06],[zr+.35,H+.06],[zr+.1,H*.8],[zf-.1,H*.8]],tw+.08,x,mat);        // techo de la oruga envuelta
@@ -101,6 +103,7 @@ function buildW2(t,M,mat,root,lkL,lkR){
   if(I.nose==='sher'){ const n=cyl(root,.42,.42,iw2*.95,0,.62,zf-.25,16,mat); n.rotation.z=Math.PI/2; shermanHull(root,M,I,mat,iw2,deck,gz,zf,zr,L); } // trompa redonda del Sherman y sus detalles
   if(I.tiger) tigerHull(root,M,I,mat,iw2,deck,gz,zf,zr,L);
   if(I.det) DET[I.det].hull(root,M,I,mat,iw2,deck,gz,zf,zr,L);
+  else if(!I.tiger&&I.nose!=='sher'&&!I.case) genHull(t,root,M,I,mat,iw2,deck,gz,zf,zr,L);
   // casamata (StuG, M10 no: torre abierta) y detalles
   if(I.case){ const C=I.case; prism(root,[[-C.w/2,C.l/2],[C.w/2,C.l/2],[C.w/2,-C.l/2],[-C.w/2,-C.l/2]],C.h,C.taper||.15,0,deck-.02,C.z,mat); }
   if(!I.det) box(root,iw2*.62,.05,L*.22,0,deck+.03,zr+L*.16,darkMat);                                                   // rejilla del motor
@@ -124,6 +127,7 @@ function buildW2(t,M,mat,root,lkL,lkR){
   else if(shCast(I)) shermanTurret(tur,G,M,I,mat,gy);
   else if(I.tur==='tiger') tigerTurret(tur,G,M,I,mat,gy);                                                       // mantelete con la mira binocular, cajón, lanzahumos                                   // mantelete M34A1, escotillas, .50
   else if(I.mant!=='none'){ const mw=I.mantW||Math.max(.6,M.tw*.42); rbox(G.gp,mw,Math.max(.32,M.gr*7),.28,0,0,.08,mat,.06); }
+  if(!I.det&&I.tur!=='tiger'&&!shCast(I)&&!['none','open'].includes(I.tur)&&!I.case) genTurret(tur,M,I,mat);
   // freno de boca
   if(I.mb){ const b=cyl(G.barrel,M.gr*2.1,M.gr*2.1,.32,0,0,M.gl-.04,10,darkMat); b.rotation.x=Math.PI/2; if(I.mb===2){ const b2=cyl(G.barrel,M.gr*2.1,M.gr*2.1,.14,0,0,M.gl-.36,10,darkMat); b2.rotation.x=Math.PI/2; } }
   if(I.sleeve){ const s=cyl(G.barrel,M.gr*1.6,M.gr*1.6,M.gl*.32,0,0,M.gl*.16+.12,10,mat); s.rotation.x=Math.PI/2; }        // manguito del tubo (Pz IV, Sherman 76)
@@ -435,3 +439,19 @@ function is2Turret(tur,G,M,I,mat,gy){ const hw=M.tw/2, hl=M.tl/2, th=M.th;
   for(const sx of [-1,1]){ rail(tur,sx*(hw*.93+.04),th*.55,-hl*.55,hl*.1,3); const pp=cyl(tur,.06,.06,.04,sx*(hw*.92+.02),th*.38,-hl*.3,8,mat); pp.rotation.z=Math.PI/2; }
   box(tur,.12,.07,.1,-hw*.1,th+.06,hl*.3,darkMat); }
 const DET={panther:{gear:pantherGear,hull:pantherHull,tur:pantherTurret},t34:{gear:t34Gear,hull:t34Hull,tur:t34Turret},is2:{gear:is2Gear,hull:is2Hull,tur:is2Turret}};
+
+// ---- Detalles generales para los tanques que todavía no tienen su versión fiel (como el Tiger, el Sherman, el Panther, el T-34 y el IS-2) ----
+// Ganchos de remolque, faros, cable a un costado, gato o cajón de herramientas, eslabones de repuesto, periscopios del conductor;
+// en la torre: periscopios, puertas de pistola y argollas para izarla. Pocos triángulos.
+function genHull(t,root,M,I,mat,iw2,deck,gz,zf,zr,L){ const hw=M.W/2, k=t.key||'', hsh=[...k].reduce((a,c)=>a+c.charCodeAt(0),0);
+  for(const sx of [-1,1]){ const p=glacisPt(I,deck,gz,zf,.96,.06), sh=new THREE.Mesh(_tgShackle,darkMat); sh.scale.setScalar(.75); sh.position.set(sx*iw2*.36,p.y,p.z); sh.rotation.y=Math.PI/2; root.add(sh); }   // ganchos
+  { const p=glacisPt(I,deck,gz,zf,.06,.07); for(const sx of (hsh%3?[-1,1]:[-1])){ const h=cyl(root,.07,.07,.12,sx*iw2*.4,p.y,p.z,8,darkMat); h.rotation.x=Math.PI/2; } }   // faros
+  { const p=glacisPt(I,deck,gz,zf,.08,.05); for(const sx of [-1,1]) box(root,.13,.07,.1,sx*iw2*.22,p.y+.03,p.z-.12,darkMat); }   // periscopios de conductor y radio
+  { const c=cyl(root,.03,.03,L*.62,hw-.04,deck-.18,-L*.05,6,darkMat); c.rotation.x=Math.PI/2; }                                    // cable de remolque
+  rbox(root,.3,.24,.75,-(hw-I.trW/2),Math.max(I.trF,I.trR)+.2,zr+L*.32,mat,.04);                                                   // cajón de herramientas sobre el guardabarros
+  if(hsh%2&&!I.spare) for(let i=0;i<3;i++){ const p=glacisPt(I,deck,gz,zf,.6+i*.13,.04), b=box(root,iw2*.5,.05,.15,0,p.y,p.z,trackMat); b.rotation.x=p.a; }   // eslabones de repuesto
+}
+function genTurret(tur,M,I,mat){ const hw=M.tw/2, hl=M.tl/2, th=M.th;
+  for(const sx of [-1,1]){ const pp=cyl(tur,.06,.06,.04,sx*(hw*.94+.01),th*.45,-hl*.25,8,mat); pp.rotation.z=Math.PI/2;                // puertas de pistola
+    const r=new THREE.Mesh(_tgEye,darkMat); r.position.set(sx*hw*.5,th+.03,hl*.35); r.rotation.y=Math.PI/2; tur.add(r); }              // argollas para izar
+  box(tur,.12,.07,.1,hw*.32,th+.05,hl*.3,darkMat); box(tur,.12,.07,.1,-hw*.15,th+.05,hl*.42,darkMat); }                              // periscopios
