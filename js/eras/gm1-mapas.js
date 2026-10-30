@@ -95,9 +95,15 @@ function buildWW1Map(key){
     for(const x of xs0) for(let j=0;j<zs0.length-1;j++) seg(x+rr(-6,6),zs0[j],x+rr(-6,6),zs0[j+1]);
     for(const z of zs0) for(let i=0;i<xs0.length-1;i++) seg(xs0[i],z+rr(-6,6),xs0[i+1],z+rr(-6,6)); }
   // ---- caminos hundidos (cruzan el pueblo) ----
-  const roads=[]; { const pts=[]; for(let z=-bz-60;z<=bz+60;z+=10) pts.push([vX+9*Math.sin(z*.02+C.seed),z]); roads.push(pts);
+  const roads=[]; if(!C.noRoads){ const pts=[]; for(let z=-bz-60;z<=bz+60;z+=10) pts.push([vX+9*Math.sin(z*.02+C.seed),z]); roads.push(pts);
     const p2=[]; for(let x=-bx-60;x<=bx+60;x+=10) p2.push([x,vZ+7*Math.sin(x*.025+1)]); roads.push(p2); }
   const roadSegs=[]; for(const P of roads) for(let i=0;i<P.length-1;i++) roadSegs.push({ax:P[i][0],az:P[i][1],bx:P[i+1][0],bz:P[i+1][1]});
+  // ---- ciudad en cuadrícula (Stalingrado, Berlín): calles anchas entre manzanas; coordenadas ya en la escala grande ----
+  if(C.city){ const Ct=C.city, st=Ct.street||14; Ct.xs=[]; Ct.zs=[];
+    for(let x=Ct.x0;x<=Ct.x1+1;x+=Ct.bw+st) Ct.xs.push(x); for(let z=Ct.z0;z<=Ct.z1+1;z+=Ct.bd+st) Ct.zs.push(z);
+    const X0=Ct.xs[0]-st, X1=Ct.xs[Ct.xs.length-1]+st, Z0=Ct.zs[0]-st, Z1=Ct.zs[Ct.zs.length-1]+st;
+    for(const x of Ct.xs) roadSegs.push({ax:x,az:Z0,bx:x,bz:Z1,city:1,w:st}); for(const z of Ct.zs) roadSegs.push({ax:X0,az:z,bx:X1,bz:z,city:1,w:st});
+    for(const A of Ct.av||[]) roadSegs.push({ax:A[0],az:A[1],bx:A[2],bz:A[3],city:1,w:A[4]||22}); }
   // ---- embudos de obuses (más en la tierra de nadie) ----
   const crs=[]; for(let i=0;i<C.craters;i++){ let x=rr(-bx-50,bx+50), z=rr(-bz-50,bz+50); if(R()<.55) z=rr(-C.front-10,C.front+10);
     if(Math.abs(z)>(C.spawnZ||bz)-40&&Math.abs(x)<(C.big?160:90)) continue; const r=rr(C.crR[0],C.crR[1])*(R()<.12?1.6:1); crs.push({x,z,r,d:r*rr(.28,.42)}); }
@@ -106,7 +112,7 @@ function buildWW1Map(key){
   for(let j=0;j<nz;j++){ const z=-EZ+j*res; for(let i=0;i<nx;i++){ const x=-EX+i*res; A[j*nx+i]=base(x,z); } }
   const stamp=(cx,cz,rad,f)=>{ const i0=Math.max(0,Math.floor((cx-rad+EX)/res)), i1=Math.min(nx-1,Math.ceil((cx+rad+EX)/res)), j0=Math.max(0,Math.floor((cz-rad+EZ)/res)), j1=Math.min(nz-1,Math.ceil((cz+rad+EZ)/res));
     for(let j=j0;j<=j1;j++) for(let i=i0;i<=i1;i++){ const x=-EX+i*res, z=-EZ+j*res; f(j*nx+i,x,z); } };
-  for(const S of roadSegs){ const L=Math.hypot(S.bx-S.ax,S.bz-S.az); for(let t=0;t<=L;t+=2){ const x=S.ax+(S.bx-S.ax)*t/L, z=S.az+(S.bz-S.az)*t/L;
+  for(const S of roadSegs){ if(S.city) continue; const L=Math.hypot(S.bx-S.ax,S.bz-S.az); for(let t=0;t<=L;t+=2){ const x=S.ax+(S.bx-S.ax)*t/L, z=S.az+(S.bz-S.az)*t/L;
     stamp(x,z,4,(k,X,Z)=>{ const q=Math.hypot(X-x,Z-z); if(q<4) A[k]=Math.min(A[k],base(X,Z)-.45*(1-Math.max(0,(q-2.5)/1.5))); }); } }
   for(const c of crs){ stamp(c.x,c.z,c.r*1.45,(k,X,Z)=>{ const q=Math.hypot(X-c.x,Z-c.z)/c.r; A[k]+=q<1?-c.d*(1-q*q):q<1.45?c.d*.25*Math.sin((q-1)/.45*Math.PI):0; }); }
   for(const S of hedges){ const L=Math.hypot(S.bx-S.ax,S.bz-S.az); for(let t=0;t<=L;t+=1.5){ const x=S.ax+(S.bx-S.ax)*t/L, z=S.az+(S.bz-S.az)*t/L;
@@ -183,10 +189,28 @@ function buildWW1Map(key){
       if(addBuilding(x,z,w,d,h,rot,wall,roof,true,100,true)){ houses.push({ruin:R()<V.ruin}); i++; } }
     if(V.church){ if(addBuilding(V.x+4,V.z-6,9,18,9,0,0xc4b8a0,0x4a4e52,true,300,true)) houses.push({ruin:R()<V.ruin*.6}); if(addBuilding(V.x+4,V.z+4.5,5,5,17,0,0xc4b8a0,0x4a4e52,true,300,false)) houses.push({ruin:R()<V.ruin*.5}); } };
   town(C.village); if(C.hamlet) town(C.hamlet,true); for(const H of C.hamlets||[]) town(H,true);
+  const lms=[]; if(C.city){ const Ct=C.city, st=Ct.street||14, lm=Ct.lm||[];
+    const rectD=(px,pz,x0,x1,z0,z1)=>Math.hypot(Math.max(x0-px,0,px-x1),Math.max(z0-pz,0,pz-z1));
+    for(const L of lm){ const parts=L.parts||[[0,0,L.w,L.d,L.h]];                                    // edificios famosos (no se derrumban de entrada)
+      for(const [ox,oz,w,d,h] of parts){ const c=Math.cos(L.a||0), sn=Math.sin(L.a||0), x=L.x+ox*c+oz*sn, z=L.z-ox*sn+oz*c;
+        if(addBuilding(x,z,w,d,h,L.a||0,L.wall,L.roof,true,L.hp||800,!!L.pitched)) houses.push({ruin:false,lm:1}); } lms.push(L); }
+    for(let i=0;i<Ct.xs.length-1;i++) for(let j=0;j<Ct.zs.length-1;j++){
+      const x0=Ct.xs[i]+st/2, x1=Ct.xs[i+1]-st/2, z0=Ct.zs[j]+st/2, z1=Ct.zs[j+1]-st/2;
+      if(C.zones.some(Z=>rectD(Z.x,Z.z,x0,x1,z0,z1)<Z.r*.75)) continue;                                // los puntos quedan en plazas abiertas
+      if(lm.some(L=>rectD(L.x,L.z,x0,x1,z0,z1)<Math.max(L.w,L.d)/2+(L.pad??8))) continue;
+      if((Ct.skip||[]).some(([sx,sz,sr])=>rectD(sx,sz,x0,x1,z0,z1)<sr)) continue;                     // parques, cerros, baldíos
+      if(roadSegs.some(S=>S.city&&S.w>st&&rectD((S.ax+S.bx)/2,(S.az+S.bz)/2,x0,x1,z0,z1)<1&&segDistW((x0+x1)/2,(z0+z1)/2,S)<S.w/2+(x1-x0)/2)) continue; // avenidas
+      if(R()<(Ct.open||.1)) continue;                                                                   // plaza o baldío
+      const nx=Math.max(1,Math.round((x1-x0)/Ct.lot)), nz=Math.max(1,Math.round((z1-z0)/Ct.lot)), lw=(x1-x0)/nx, ld=(z1-z0)/nz;
+      for(let a=0;a<nx;a++) for(let b=0;b<nz;b++){ if(a>0&&a<nx-1&&b>0&&b<nz-1) continue;               // alrededor de un patio
+        const x=x0+lw*(a+.5), z=z0+ld*(b+.5), h=rr(Ct.h[0],Ct.h[1]);
+        if(roadSegs.some(S=>S.city&&S.w>st&&segDistW(x,z,S)<S.w/2+Math.max(lw,ld)/2)) continue;
+        if(addBuilding(x,z,lw-1.4,ld-1.4,h,0,pickR(Ct.walls),pickR(Ct.roofs),true,160,R()<(Ct.pitched||0))) houses.push({ruin:R()<Ct.ruin,col:Ct.col}); } } }
   // casamatas de hormigón para ametralladoras (Línea Hindenburg)
   if(C.bunkers) for(let i=0;i<C.bunkers;i++){ const x=-bx*.75+i*(bx*1.5/(C.bunkers-1))+rr(-10,10), z=C.front+16+rr(-3,3); if(roadSegs.some(S=>segDistW(x,z,S)<5)) continue; if(addBuilding(x,z,4.5,4,1.8,rr(-.2,.2),0x8e8c84,0x7a7870,true,260,false)) houses.push({ruin:false,bunker:1}); }
   finalizeBuildings();
-  buildings.forEach((b,i)=>{ const H=houses[i]; if(!H) return; if(H.ruin) ruinBuilding(b,R()<.65); else if(!H.bunker&&R()<.6) ruinBuilding(b,false); });
+  buildings.forEach((b,i)=>{ const H=houses[i]; if(!H||H.lm) return; if(H.ruin) ruinBuilding(b,R()<(H.col??.65)); else if(!H.bunker&&R()<.6) ruinBuilding(b,false); });
+  for(const L of lms) if(L.extra) L.extra(ww1Sample(W,L.x,L.z));                                       // cúpula, torres, columnas, chimeneas
   // ---- bosques (vivos o hechos astillas) y álamos junto a los caminos ----
   const list=[]; const wood=(Wd)=>{ for(let i=0;i<Wd.n;i++){ const a=R()*Math.PI*2, r=Math.sqrt(R())*Wd.r, x=Wd.x+Math.cos(a)*r, z=Wd.z+Math.sin(a)*r;
       if(segs.some(S=>segDistW(x,z,S)<S.w/2+1.2)) continue; if(gridQuery(x,z,4).some(b=>obPush(x,z,3,b))) continue;
@@ -211,6 +235,13 @@ function buildWW1Map(key){
   W.setup=C.noTrench?null:()=>{ for(const tm of (C.trenchSides||[-1,1]).map(s=>s<0?0:1)){ const s=tm?1:-1, F=C.front+(tm?4:0); for(let i=0;i<(C.big?14:6);i++){ const x=C.big?-bx*.85+i*(bx*1.7/13)+rand(-8,8):-130+i*52+rand(-8,8), z=s*(F+1.6);
       const P=makePerson(i%2?'rifle':'hmg',tm,x,z); P.hold=true; P.goal=null; } } };
   nodes=null; W.boundary=null;
+  // ciudades: grafo de la IA en una grilla de 12 m por donde no hay edificios (si no, los tanques se traban entre las manzanas)
+  if(C.city){ nodes=[]; const NG=new Map(), sp=12, idx=new Map(), blocked=(x,z,r)=>gridQuery(x,z,r+4).some(b=>obPush(x,z,r,b));
+    for(let x=-bx+10;x<=bx-10;x+=sp) for(let z=-bz+10;z<=bz-10;z+=sp){ if(blocked(x,z,4.5)) continue; const nd={p:new THREE.Vector3(x,0,z),nb:[]}; nodes.push(nd); idx.set(x+','+z,nd);
+      const k=Math.floor(x/10)*7919+Math.floor(z/10); if(!NG.has(k)) NG.set(k,[]); NG.get(k).push(nd); }
+    for(const nd of nodes) for(const [dx,dz] of [[sp,0],[0,sp],[sp,sp],[sp,-sp]]){ const o=idx.get((nd.p.x+dx)+','+(nd.p.z+dz)); if(!o) continue;
+      if(blocked(nd.p.x+dx/2,nd.p.z+dz/2,3.5)) continue; nd.nb.push(o); o.nb.push(nd); }
+    nodes.near=NG; }
 }
 
 // Pintura del suelo: barro, pasto, embudos, trincheras, caminos y alambradas (vista desde arriba)
@@ -225,9 +256,12 @@ function paintWW1Ground(x,S,C,R,o){
   x.globalAlpha=.08; x.strokeStyle='#2a2218'; x.lineWidth=1.2; for(let y=0;y<S;y+=4){ const zW=o.MZ-y/pm; if(Math.abs(zW)<C.front+20) continue; x.beginPath(); x.moveTo(0,y); x.lineTo(S,y+rr(-2,2)); x.stroke(); }
   x.globalAlpha=1;
   // caminos de tierra blanca (tiza)
-  x.lineCap='round'; for(const S2 of o.roadSegs){ x.strokeStyle='#a69a80'; x.lineWidth=6.2*pm; x.beginPath(); x.moveTo(px(S2.ax),py(S2.az)); x.lineTo(px(S2.bx),py(S2.bz)); x.stroke(); }
-  for(const S2 of o.roadSegs){ x.strokeStyle='#b8ad94'; x.lineWidth=3.6*pm; x.beginPath(); x.moveTo(px(S2.ax),py(S2.az)); x.lineTo(px(S2.bx),py(S2.bz)); x.stroke(); }
-  for(const S2 of o.roadSegs){ x.strokeStyle='rgba(90,78,60,.45)'; x.lineWidth=.5*pm; for(const off of [-.9,.9]){ const L=Math.hypot(S2.bx-S2.ax,S2.bz-S2.az)||1, nx=-(S2.bz-S2.az)/L*off, nz=(S2.bx-S2.ax)/L*off; x.beginPath(); x.moveTo(px(S2.ax+nx),py(S2.az+nz)); x.lineTo(px(S2.bx+nx),py(S2.bz+nz)); x.stroke(); } }
+  if(C.city){ x.lineCap='butt'; for(const S2 of o.roadSegs) if(S2.city){ x.strokeStyle=C.city.curb||'#8e8a80'; x.lineWidth=(S2.w+3)*pm; x.beginPath(); x.moveTo(px(S2.ax),py(S2.az)); x.lineTo(px(S2.bx),py(S2.bz)); x.stroke(); }
+    for(const S2 of o.roadSegs) if(S2.city){ x.strokeStyle=C.city.pave||'#6c6962'; x.lineWidth=S2.w*pm; x.beginPath(); x.moveTo(px(S2.ax),py(S2.az)); x.lineTo(px(S2.bx),py(S2.bz)); x.stroke(); }
+    for(let i=0;i<9000;i++){ const X=R()*S, Y=R()*S; x.globalAlpha=rr(.15,.4); x.fillStyle=R()<.5?'#5a5650':'#9a948a'; x.fillRect(X,Y,rr(1,3),rr(1,3)); } x.globalAlpha=1; }   // escombros y polvo
+  x.lineCap='round'; for(const S2 of o.roadSegs){ if(S2.city) continue; x.strokeStyle='#a69a80'; x.lineWidth=6.2*pm; x.beginPath(); x.moveTo(px(S2.ax),py(S2.az)); x.lineTo(px(S2.bx),py(S2.bz)); x.stroke(); }
+  for(const S2 of o.roadSegs){ if(S2.city) continue; x.strokeStyle='#b8ad94'; x.lineWidth=3.6*pm; x.beginPath(); x.moveTo(px(S2.ax),py(S2.az)); x.lineTo(px(S2.bx),py(S2.bz)); x.stroke(); }
+  for(const S2 of o.roadSegs){ if(S2.city) continue; x.strokeStyle='rgba(90,78,60,.45)'; x.lineWidth=.5*pm; for(const off of [-.9,.9]){ const L=Math.hypot(S2.bx-S2.ax,S2.bz-S2.az)||1, nx=-(S2.bz-S2.az)/L*off, nz=(S2.bx-S2.ax)/L*off; x.beginPath(); x.moveTo(px(S2.ax+nx),py(S2.az+nz)); x.lineTo(px(S2.bx+nx),py(S2.bz+nz)); x.stroke(); } }
   // embudos: tierra removida clara alrededor, fondo oscuro y húmedo
   for(const c of o.crs){ const X=px(c.x), Y=py(c.z), r=c.r*pm;
     const g=x.createRadialGradient(X,Y,r*.2,X,Y,r*1.55); g.addColorStop(0,'rgba(40,32,24,.85)'); g.addColorStop(.55,'rgba(70,56,40,.6)'); g.addColorStop(.72,'rgba(150,132,104,.55)'); g.addColorStop(1,'rgba(150,132,104,0)');
