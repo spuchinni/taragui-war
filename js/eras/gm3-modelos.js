@@ -455,3 +455,95 @@ function genTurret(tur,M,I,mat){ const hw=M.tw/2, hl=M.tl/2, th=M.th;
   for(const sx of [-1,1]){ const pp=cyl(tur,.06,.06,.04,sx*(hw*.94+.01),th*.45,-hl*.25,8,mat); pp.rotation.z=Math.PI/2;                // puertas de pistola
     const r=new THREE.Mesh(_tgEye,darkMat); r.position.set(sx*hw*.5,th+.03,hl*.35); r.rotation.y=Math.PI/2; tur.add(r); }              // argollas para izar
   box(tur,.12,.07,.1,hw*.32,th+.05,hl*.3,darkMat); box(tur,.12,.07,.1,-hw*.15,th+.05,hl*.42,darkMat); }                              // periscopios
+
+// ---- Nahuel DL-43 (pedido de Sebastián: el primero, porque Argentina tiene uno solo) ----
+// Suspensión tipo Sherman (VVSS: tres bogies por lado, motriz adelante), casco de chapas abulonadas con la trompa inclinada,
+// torre angulosa también abulonada con cesto atrás y cúpula, y el 75 mm Krupp sacado de la pieza de campaña Modelo 1909:
+// por eso lleva los cilindros del freno y el recuperador arriba del tubo.
+function nahuelGear(root,I,x,s,tw,zf,zr,mat){ shermanGear(root,I,x,s,tw,zf,zr,mat); }
+function nahuelHull(root,M,I,mat,iw2,deck,gz,zf,zr,L){
+  const hw=M.W/2, ft=hw-I.trW/2, fy=Math.max(I.trF,I.trR)+.06;
+  for(const sx of [-1,1]){ rivetsRow(root,sx*(hw+.005),deck-.1,zr+.3,zf-gz-.1,13); rivetsRow(root,sx*(hw+.005),deck-.5,zr+.3,zf-gz-.3,12); }   // bulones de las chapas
+  for(let k=0;k<2;k++){ const p=glacisPt(I,deck,gz,zf,k?.95:.03,.02); for(let i=0;i<9;i++) cyl(root,.025,.025,.03,-iw2*.42+i*iw2*.105,p.y,p.z,5,darkMat).rotation.x=Math.PI/2-p.a; }
+  { const p=glacisPt(I,deck,gz,zf,.25,.07), v=rbox(root,.5,.14,.18,-iw2*.22,p.y,p.z,mat,.03); v.rotation.x=p.a; box(v,.32,.025,.03,0,.02,.1,darkMat); }   // visor del conductor
+  for(const sx of [-1,1]){ const p=glacisPt(I,deck,gz,zf,.08,.1); cyl(root,.08,.08,.14,sx*iw2*.42,p.y,p.z,8,darkMat).rotation.x=Math.PI/2;      // faros con su protector
+    const g=new THREE.Mesh(_shGuard,darkMat); g.position.set(sx*iw2*.42,p.y+.02,p.z+.05); root.add(g);
+    const q=glacisPt(I,deck,gz,zf,.97,.05), k=new THREE.Mesh(_tgShackle,darkMat); k.scale.setScalar(.8); k.position.set(sx*iw2*.35,q.y,q.z); k.rotation.y=Math.PI/2; root.add(k); }
+  for(let k=0;k<4;k++){ const p=glacisPt(I,deck,gz,zf,.55+k*.1,.04), b=box(root,iw2*.6,.05,.15,0,p.y,p.z,trackMat); b.rotation.x=p.a; }     // eslabones de repuesto
+  for(const sx of [-1,1]){ rbox(root,I.trW*.8,.3,.7,sx*ft,fy+.15,zf-1.55,mat,.04); rbox(root,I.trW*.8,.3,.6,sx*ft,fy+.15,zr+1.1,mat,.04);   // cajones sobre los guardabarros
+    const f=box(root,I.trW+.06,.03,.55,sx*ft,I.trF+.1,zf-.14,mat); f.rotation.x=-.3; }
+  { const c=cyl(root,.03,.03,L*.6,hw+.03,deck-.25,-.1,6,darkMat); c.rotation.x=Math.PI/2; box(root,.08,.08,1.3,-(hw+.03),deck-.25,.2,_wdMat); }   // cable y pala
+  rbox(root,.7,.06,.6,0,deck+.03,zr+1.55,mat,.03); box(root,iw2*.7,.03,.8,0,deck+.02,zr+.75,darkMat);                                      // escotilla y rejilla del motor (Lorraine-Dietrich)
+  for(let i=0;i<5;i++) box(root,iw2*.7,.04,.04,0,deck+.04,zr+.42+i*.16,mat);
+  for(const sx of [-1,1]){ const e=cyl(root,.11,.11,.7,sx*iw2*.28,deck-.45,zr-.1,10,darkMat); e.rotation.z=Math.PI/2; cyl(root,.04,.04,.25,sx*iw2*.28,deck-.25,zr-.12,6,darkMat); }   // silenciadores atrás
+  for(const sx of [-1,1]) rbox(root,.32,.06,.42,sx*iw2*.24,deck+.04,zf-gz-.45,mat,.02);                                                       // escotillas del conductor y radio
+}
+function nahuelTurret(tur,G,M,I,mat,gy){ const hw=M.tw/2, hl=M.tl/2, th=M.th;
+  rbox(G.gp,.66,.46,.26,0,0,.08,mat,.05); for(const [x,y] of [[-.24,.15],[.24,.15],[-.24,-.15],[.24,-.15]]) cyl(G.gp,.025,.025,.04,x,y,.22,5,darkMat).rotation.x=Math.PI/2;  // mantelete abulonado
+  for(const dy of [.13,.21]){ const c=cyl(G.barrel,.065-(dy>.2?.015:0),.065-(dy>.2?.015:0),M.gl*.42,0,dy,M.gl*.21+.18,10,mat); c.rotation.x=Math.PI/2; }   // freno y recuperador del Krupp 1909
+  box(G.barrel,.05,.08,M.gl*.4,0,.08,M.gl*.21+.18,mat);
+  cyl(G.gp,.035,.035,.1,-.22,.06,.24,8,darkMat).rotation.x=Math.PI/2; cyl(G.gp,.035,.035,.1,.24,-.02,.24,8,darkMat).rotation.x=Math.PI/2;   // mira y coaxial
+  for(const sx of [-1,1]){ rivetsRow(tur,sx*(hw*.96+.01),th*.25,-hl*.8,hl*.5,7); rivetsRow(tur,sx*(hw*.92+.01),th*.75,-hl*.75,hl*.4,7);
+    const pp=cyl(tur,.06,.06,.04,sx*(hw*.95+.02),th*.5,-hl*.2,8,mat); pp.rotation.z=Math.PI/2; }
+  rbox(tur,M.tw*.7,th*.6,.5,0,th*.42,-hl-.2,mat,.04);                                                                                      // cesto trasero
+  cyl(tur,.26,.26,.06,M.tw*.22,th+.02,-hl*.15,14,mat); box(tur,.12,.07,.1,M.tw*.22,th+.07,hl*.25,darkMat);                                  // escotilla del cargador y periscopio
+  { const cx=I.cupX??-M.tw*.2, cz=-M.tl*.22; const a=cyl(tur,.025,.025,.35,cx,th+.43,cz,6,darkMat); const mg=cyl(tur,.025,.025,.9,cx,th+.6,cz+.35,6,darkMat); mg.rotation.x=Math.PI/2.2; box(tur,.09,.12,.3,cx,th+.58,cz+.05,darkMat); }   // ametralladora antiaérea sobre la cúpula
+}
+DET.nahuel={gear:nahuelGear,hull:nahuelHull,tur:nahuelTurret};
+
+// ---- Británicos más fieles (m.w2.det='uk', I.uk = 'matilda'|'crusader'|'cromwell'|'churchill'|'valentine'|'comet') ----
+// Todos con la motriz atrás. Christie (Crusader, Cromwell, Comet): cinco ruedas grandes de disco con agujeros; Matilda: diez ruedas chicas
+// en bogies tapadas por los faldones con sus bocas para el barro; Churchill: once ruedas chicas debajo de las cajas laterales que envuelven la
+// oruga, con las puertas redondas de escape; Valentine: dos bogies de tres ruedas (una grande y dos chicas).
+function ukGear(root,I,x,s,tw,zf,zr,mat){ const u=I.uk;
+  if(u==='churchill'){ for(let i=0;i<11;i++) dWheel(root,x,.2,zr+.95+i*(zf-zr-1.9)/10,.17,mat,{rim:.7});
+    sprocketT(root,x,I.trH*.72,zr+.32,.36,14,mat); dWheel(root,x,I.trH*.72,zf-.32,.33,mat,{rim:.75}); return; }
+  if(u==='matilda'){ for(let b=0;b<5;b++) for(const d of [-.24,.24]) dWheel(root,x,.2,zr+1.05+b*(zf-zr-2.05)/4+d,.17,mat,{rim:.7});
+    sprocketT(root,x,I.trR*.62,zr+.38,.32,13,mat); dWheel(root,x,I.trF*.62,zf-.36,.28,mat,{rim:.75}); return; }
+  if(u==='valentine'){ for(const bc of [zr+1.45,zf-1.45]){ dWheel(root,x,.33,bc,.3,mat,{rim:.78,holes:6}); for(const d of [-.62,.62]) dWheel(root,x,.22,bc+d,.19,mat,{rim:.72}); }
+    for(let k=0;k<3;k++) dWheel(root,x,I.trF-.08,zr+1.0+k*(zf-zr-2)/2,.09,mat,{rim:.7});
+    sprocketT(root,x,I.trR*.62,zr+.38,.3,13,mat); dWheel(root,x,I.trF*.62,zf-.36,.28,mat,{rim:.75}); return; }
+  const r=I.wR, n=I.nW, z0=zr+.95, z1=zf-.95;                                                                    // Christie
+  for(let i=0;i<n;i++) dWheel(root,x,r+.03,z0+(z1-z0)*i/(n-1),r,mat,{rim:.8,holes:u==='crusader'?8:6});
+  for(let k=0;k<(I.ret||0);k++) dWheel(root,x,I.trF-.08,z0+(z1-z0)*(k+.5)/I.ret,.1,mat,{rim:.7});
+  sprocketT(root,x,I.trR*.62,zr+.36,.33,15,mat); dWheel(root,x,I.trF*.62,zf-.34,.3,mat,{rim:.78}); }
+function ukHull(root,M,I,mat,iw2,deck,gz,zf,zr,L){ const u=I.uk, hw=M.W/2, ft=hw-I.trW/2, fy=Math.max(I.trF,I.trR)+.06;
+  for(const sx of [-1,1]){ const q=glacisPt(I,deck,gz,zf,.97,.05), k=new THREE.Mesh(_tgShackle,darkMat); k.scale.setScalar(.75); k.position.set(sx*iw2*.36,q.y,q.z); k.rotation.y=Math.PI/2; root.add(k);
+    const p=glacisPt(I,deck,gz,zf,.1,.1); cyl(root,.07,.07,.12,sx*iw2*.42,p.y,p.z,8,darkMat).rotation.x=Math.PI/2; }                       // ganchos y faros
+  { const p=glacisPt(I,deck,gz,zf,.3,.06), v=rbox(root,.5,.12,.16,-iw2*.22,p.y,p.z,mat,.03); v.rotation.x=p.a; box(v,.3,.025,.03,0,.02,.09,darkMat); } // visor del conductor
+  { const c=cyl(root,.03,.03,L*.55,hw+.02,deck-.22,0,6,darkMat); c.rotation.x=Math.PI/2; }                                                // cable
+  if(u==='matilda'){ for(const sx of [-1,1]){ for(let k=0;k<6;k++) box(root,.05,.16,.32,sx*(hw-.01),.62,zr+.9+k*(L-1.8)/5,darkMat);           // bocas para el barro en los faldones
+      rivetsRow(root,sx*(hw-.005),1.05,zr+.4,zf-.4,12); }
+    rbox(root,.42,.5,.5,-iw2*.32,deck-.05,zr-.15,mat,.06); box(root,.06,.36,.3,-iw2*.32,deck-.05,zr-.42,darkMat);                          // escape blindado atrás a la izquierda
+    rbox(root,iw2*.5,.32,.3,iw2*.18,deck-.25,zr-.18,mat,.04); }                                                                          // cajón trasero
+  else if(u==='churchill'){ for(const sx of [-1,1]){ const d=cyl(root,.36,.36,.05,sx*(hw+.01),I.trH*.62,-.2,16,mat); d.rotation.z=Math.PI/2;   // puertas de escape redondas en las cajas laterales
+      cyl(root,.06,.06,.08,sx*(hw+.03),I.trH*.62,-.2,8,darkMat).rotation.z=Math.PI/2;
+      for(let k=0;k<5;k++) box(root,.05,.14,.3,sx*(hw+.005),I.trH*.3,zr+1.0+k*(L-2)/4,darkMat);                                             // bocas para el barro
+      for(let k=0;k<4;k++) box(root,.04,.04,.6,sx*(hw-.02),deck-.1-k*.07,zr+.9,darkMat);                                                    // tomas de aire con persianas
+      rbox(root,.5,.3,.7,sx*(hw-.35),I.trH+.22,zf-1.3,mat,.04); }                                                                            // cajones arriba de la oruga
+    for(const sx of [-1,1]){ const e=cyl(root,.09,.09,.5,sx*iw2*.3,deck-.3,zr-.05,8,darkMat); e.rotation.x=Math.PI/2; } }
+  else { for(const sx of [-1,1]){ rbox(root,I.trW*.85,.28,.75,sx*ft,fy+.14,zf-1.5,mat,.04); rbox(root,I.trW*.85,.28,.6,sx*ft,fy+.14,zr+1.2,mat,.04); }   // cajones sobre los guardabarros
+    if(u==='crusader'||u==='crusaderaa') for(const sx of [-1,1]) box(root,.03,.3,L-1.3,sx*(hw+.04),fy-.08,0,mat);                                              // chapas contra la arena
+    if(u==='valentine') for(const sx of [-1,1]){ rivetsRow(root,sx*(hw-.005),deck-.15,zr+.3,zf-gz-.1,11); rivetsRow(root,sx*(hw-.005),deck-.5,zr+.3,zf-gz-.3,10); }
+    if(u==='crusader'){ const c=cyl(root,.28,.28,iw2*.7,0,deck-.35,zr-.32,12,mat); c.rotation.z=Math.PI/2; }                                  // tanque de combustible externo
+    box(root,iw2*.65,.03,.9,0,deck+.02,zr+.8,darkMat); for(let i=0;i<5;i++) box(root,iw2*.65,.04,.04,0,deck+.04,zr+.45+i*.18,mat);          // rejilla del motor
+    for(const sx of [-1,1]){ const e=cyl(root,.08,.09,.3,sx*iw2*.32,deck-.32,zr-.08,8,darkMat); e.rotation.x=Math.PI/2+.4; }                // escapes
+    if(u==='cromwell'||u==='comet') box(root,iw2*.9,.5,.05,0,deck-.35,zr-.22,mat); }                                                        // deflector del escape (Cromwell, Comet)
+  for(const sx of [-1,1]) rbox(root,.32,.06,.42,sx*iw2*.24,deck+.04,zf-gz-.45,mat,.02); }                                                    // escotillas
+function ukTurret(tur,G,M,I,mat,gy){ const u=I.uk, hw=M.tw/2, hl=M.tl/2, th=M.th;
+  for(const sx of [-1,1]){ const pp=cyl(tur,.055,.055,.04,sx*(hw*.94+.01),th*.45,-hl*.2,8,mat); pp.rotation.z=Math.PI/2; }                  // puertas de pistola
+  // manteletes: externo con funda (Crusader III, Cromwell, Comet), interno chico (Matilda, Valentine), fundido redondo (Churchill)
+  if(I.aaN){}                                                                                                                              // antiaéreo: sin mantelete
+  else if(u==='crusader'){ rbox(G.gp,.62,.5,.32,0,0,.1,mat,.05); const sl=cyl(G.gp,.1,.12,.4,0,0,.42,10,mat); sl.rotation.x=Math.PI/2; }
+  else if(u==='cromwell'||u==='comet'){ rbox(G.gp,.95,.55,.24,0,0,.1,mat,.06); const sl=cyl(G.gp,.11,.13,.42,0,0,.4,10,mat); sl.rotation.x=Math.PI/2;
+    for(const sx of [-1,1]){ rivetsRow(tur,sx*(hw*.98),th*.3,-hl*.7,hl*.7,7); rivetsRow(tur,sx*(hw*.98),th*.75,-hl*.7,hl*.7,7);              // chapas abulonadas y cajones a los costados
+      rbox(tur,.3,th*.55,hl*1.1,sx*(hw+.16),th*.45,-hl*.15,mat,.04); } }
+  else if(u==='churchill'){ const m=cyl(G.gp,.36,.36,.85,0,0,.05,14,mat); m.rotation.z=Math.PI/2; }
+  else { rbox(G.gp,.42,.34,.2,0,0,.06,mat,.05); }
+  cyl(G.gp,.03,.03,.1,-.2,.05,.25,8,darkMat).rotation.x=Math.PI/2;                                                                         // mira
+  for(let k=0;k<(u==='matilda'||u==='valentine'?2:1);k++){ const sm=cyl(tur,.05,.05,.32,hw*.78,th*.6+k*.12,hl*.2,8,darkMat); sm.rotation.x=Math.PI/2.5; }   // lanzahumos
+  box(tur,.12,.07,.1,hw*.3,th+.05,hl*.3,darkMat); box(tur,.12,.07,.1,-hw*.25,th+.05,hl*.4,darkMat);                                       // periscopios
+  if(u!=='matilda'&&u!=='valentine'){ const a=cyl(tur,.012,.012,1.8,hw*.6,th+.9,-hl*.55,4,darkMat); }                                     // antena
+  if(u==='matilda'||u==='valentine') cyl(tur,.25,.25,.06,-hw*.3,th+.02,-hl*.2,12,mat);                                                    // escotilla (sin cúpula)
+}
+DET.uk={gear:ukGear,hull:ukHull,tur:ukTurret};
