@@ -101,6 +101,7 @@ Cada vehículo y mapa tiene `era`; garaje por nación y época (`garRef`).
 - 2ª Guerra hecha hasta ahora: 50 tanques (34 + 16 de Italia, Japón, Francia y China) (22 del primer lote + Pz 38(t), Jagdpanther, Tiger II, BT-7, KV-2, SU-100, M18, M24, M36, Valentine IX, Comet, Achilles) y 8 misiones de campaña (los dos lados en El Alamein, Kursk, Normandía y Ardenas).
 - Entreguerras: los cañones antitanque usan el modelo del cañón de campaña de la 1ª Guerra (ruedas de rayos); falta uno propio. La Guerra del Chaco no tiene misión (faltan los Vickers 6 toneladas bolivianos).
 - Probar rendimiento real de los mapas de trincheras en su PC.
+- Publicar (lo dejó para más adelante): itch.io (gratis), dominio propio (.com.ar) apuntando a GitHub Pages, y Play Store como app web empaquetada con PWABuilder (US$25 una vez; cuenta personal nueva = prueba cerrada con 12 personas por 14 días; falta política de privacidad, service worker, `assetlinks.json` en la raíz del dominio y las imágenes de la ficha). iPhone: seguir con "Agregar a inicio" (App Store US$99/año y suelen rechazar apps que son solo una web).
 - Voces en francés, italiano, japonés y chino (hoy usan las de español). Mapas del Pacífico, Italia y China para las naciones nuevas, y misiones de campaña con ellas.
 
 ## Cómo trabajar
