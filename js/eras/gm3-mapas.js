@@ -78,9 +78,45 @@ Object.assign(WW1_CFG,{
     woods:[{x:-95,z:25,r:22,n:60,dead:.3,sp:['pinoR','palmera']},{x:85,z:30,r:18,n:40,dead:.5,sp:['pinoR']},{x:-140,z:-40,r:24,n:60,dead:.1,sp:['palmera','pinoR','palmera']},{x:130,z:-50,r:22,n:50,dead:.1,sp:['palmera','pinoR']}],
     zones:[{id:'A',x:-95,z:25,r:19,label:'Cresta Kakazu'},{id:'B',x:5,z:5,r:19,label:'Aldea de Maeda'},{id:'C',x:85,z:30,r:18,label:'Sugar Loaf'}]}
 });
-const W2_MAPS=['normandia','prokhorovka','alamein','ardenas','stalingrado','berlin','okinawa'];
+// ---- Mapas para Italia, Japón y China (pedido de Sebastián: que las naciones nuevas tengan dónde pelear) ----
+const W2_TUN={walls:[0xe2dac6,0xd4c8ae,0xe8e0cc,0xc8bc9e],roofs:[0xd0c4a8,0xc2b698,0xb8ab8c]},
+  W2_ITA={walls:[0xc8b896,0xb8a888,0xd2c4a4,0xa89a7c,0xbfae8c],roofs:[0xa0583c,0x8e4c34,0xb06444,0x7a4a38]},
+  W2_CHN={walls:[0x8a8a86,0x7c7c78,0x9a968c,0x6e6c66,0xa8a296,0x8c7c6a],roofs:[0x3e4246,0x4a4e52,0x55585c,0x5a4a40]},
+  W2_SAI={walls:[0xd8d0bc,0xc8c0aa,0xb8ae96,0xe0d8c4],roofs:[0x8a5a3a,0x6a6e70,0x9a6040,0x5a5e60]};
+Object.assign(WW1_CFG,{
+  kasserine:{seed:1943.2,era:3,label:'Paso de Kasserine (Túnez, 1943)',desc:'Febrero de 1943: Rommel ataca por el paso de Kasserine, entre dos cordones de montañas peladas (los djebels). Los Panzer y la División Centauro italiana con sus M13/40 y Semovente arrollan a la 1.ª Blindada de EE. UU. en su primera gran batalla. Uadis secos, olivares y pedregal.',
+    bx:175,bz:155,sky:0xcfc8b4,fog:[150,500],ground:['#b9a67c','#ab9870','#c4b288','#9c8a64'],grass:.12,craters:160,crR:[1,3.2],front:60,noTrench:1,churn:.25,deadTrees:2,ridge:3,
+    hills:[{x:-150,z:15,r:48,h:9},{x:-140,z:-70,r:32,h:6},{x:150,z:30,r:46,h:9},{x:150,z:-60,r:30,h:6},{x:-30,z:90,r:30,h:3}],
+    ditches:[[[-120,-40],[-40,-20],[30,-35],[120,-10]]],ditchW:7,ditchD:1.6,ditchGap:70,
+    village:{x:5,z:10,n:16,ruin:.25,r:22,name:'Kasserine',...W2_TUN},hamlet:{x:95,z:-30,n:6,ruin:.2,r:12,...W2_TUN},
+    woods:[{x:-70,z:40,r:24,n:70,dead:0,sp:['olivo']},{x:60,z:55,r:20,n:50,dead:0,sp:['olivo']},{x:-110,z:-30,r:22,n:40,dead:0,sp:['espinillo']},{x:120,z:5,r:20,n:35,dead:0,sp:['espinillo']}],
+    zones:[{id:'A',x:-95,z:15,r:19,label:'Djebel Chambi'},{id:'B',x:5,z:10,r:19,label:'Kasserine'},{id:'C',x:95,z:-30,r:18,label:'Cruce de Thala'}]},
+  saipan:{seed:1944.6,era:3,label:'Saipán (Marianas, 1944)',desc:'Noche del 16 al 17 de junio de 1944: el 9.º Regimiento de Tanques japonés lanza el ataque de tanques más grande del Pacífico contra la cabeza de playa de los marines. Cañaverales, palmeras, el pueblo de Charan Kanoa y el ingenio azucarero, con el monte Tapochau atrás.',
+    bx:175,bz:155,sky:0xb8c6cc,fog:[120,440],ground:['#7c8a46','#6f7e3e','#8a9450','#a69a6a'],grass:.85,craters:200,crR:[1,3.2],front:58,noTrench:1,churn:.3,deadTrees:6,bunkers:5,
+    hills:[{x:20,z:160,r:60,h:12},{x:-140,z:60,r:34,h:5},{x:130,z:70,r:30,h:6}],
+    village:{x:-5,z:-5,n:20,ruin:.4,r:26,name:'Charan Kanoa',church:1,...W2_SAI},hamlet:{x:100,z:40,n:7,ruin:.35,r:14,...W2_SAI},
+    woods:[{x:-100,z:-35,r:26,n:70,dead:.2,sp:['palmera']},{x:-120,z:55,r:22,n:60,dead:.1,sp:['palmera','pinoR']},{x:60,z:-50,r:22,n:50,dead:.2,sp:['palmera']},{x:110,z:95,r:24,n:60,dead:.1,sp:['pinoR','palmera']}],
+    zones:[{id:'A',x:-100,z:-15,r:19,label:'Playa Verde'},{id:'B',x:-5,z:-5,r:19,label:'Charan Kanoa'},{id:'C',x:100,z:40,r:18,label:'Ingenio azucarero'}]},
+  cassino:{seed:1944.2,era:3,label:'Montecassino (Italia, 1944)',desc:'Mayo de 1944: la cuarta batalla de Montecassino. El pueblo de Cassino reducido a escombros por los bombardeos, la estación del ferrocarril y, arriba del cerro, las ruinas de la abadía benedictina. Los paracaidistas alemanes aguantan cuatro meses; polacos, británicos y franceses los desalojan.',
+    bx:175,bz:155,sky:0xb8bec0,fog:[120,420],ground:['#7c7454','#70684a','#8a8060','#625c44'],grass:.4,craters:500,crR:[1,3.4],front:58,noTrench:1,noRoads:1,churn:.45,deadTrees:20,
+    hills:[{x:118,z:66,r:36,h:16},{x:-150,z:80,r:40,h:7}],
+    village:{x:0,z:0,n:0,r:4,...W2_ITA},woods:[{x:-120,z:40,r:26,n:80,dead:.4,sp:['olivo']},{x:40,z:-80,r:24,n:60,dead:.2,sp:['olivo']},{x:150,z:-30,r:20,n:40,dead:.6,sp:['roble']}],
+    city:{x0:-358,x1:122,z0:-238,z1:122,bw:46,bd:46,street:14,lot:15.3,h:[6,14],ruin:.85,col:.7,open:.18,pitched:.35,...W2_ITA,
+      lm:[{x:500,z:282,w:96,d:56,h:13,wall:0xcfc4ac,roof:0x8a8478,pad:6,ruin:.35,parts:[[-30,0,36,14,13],[18,0,24,14,9],[40,0,16,14,12],[-28,42,40,14,11],[24,42,48,14,7],[-41,21,14,28,12],[41,21,14,28,6],[0,21,30,16,17]],hp:1200},   // abadía de Montecassino (claustro)
+          {x:-292,z:-190,w:50,d:14,h:9,wall:0xc4b48e,roof:0x8e4c34,pad:6,pitched:1}]},                                                                          // estación del ferrocarril
+    zones:[{id:'A',x:-75,z:-35,r:18,label:'Estación'},{id:'B',x:-20,z:5,r:18,label:'Cassino'},{id:'C',x:100,z:48,r:18,label:'Cota 593'}]},
+  shanghai:{seed:1937.8,era:3,label:'Shanghái: el almacén Sihang (1937)',desc:'Octubre de 1937: la batalla de Shanghái. Los "800 héroes" del Ejército Nacional Revolucionario defienden el almacén Sihang, junto al arroyo Suzhou, mientras el distrito de Zhabei arde. Los Ha-Go y Chi-Ha japoneses avanzan por las calles contra los Vickers chinos.',
+    bx:175,bz:155,sky:0xa8aeb0,fog:[110,380],ground:['#6c6a62','#625f58','#76736a','#58564f'],grass:.1,craters:320,crR:[1,3],front:58,noTrench:1,noRoads:1,churn:.3,deadTrees:14,
+    village:{x:0,z:0,n:0,r:4,...W2_CHN},woods:[{x:110,z:-60,r:20,n:50,dead:.3,sp:['alamo','roble']}],
+    city:{x0:-538,x1:542,z0:-358,z1:362,bw:46,bd:46,street:12,lot:12,h:[6,15],ruin:.6,col:.5,open:.1,pitched:.45,...W2_CHN,skip:[[460,-250,90]],
+      lm:[{x:378,z:96,w:64,d:54,h:25,wall:0x9a948a,roof:0x6e6a64,pad:12,hp:2000},                                                                              // almacén Sihang (hormigón, 6 pisos)
+          {x:-312,z:-130,w:80,d:22,h:14,wall:0xb0a490,roof:0x4e5256,pad:10,parts:[[0,0,80,22,14],[0,0,18,18,22]]},                                             // Estación Norte
+          {x:-90,z:20,w:30,d:20,h:12,wall:0x8c7c6a,roof:0x3e4246,pad:6,pitched:1}]},
+    zones:[{id:'A',x:-75,z:-30,r:18,label:'Estación Norte'},{id:'B',x:0,z:5,r:18,label:'Zhabei'},{id:'C',x:85,z:20,r:18,label:'Almacén Sihang'}]}
+});
+const W2_MAPS=['normandia','prokhorovka','alamein','ardenas','stalingrado','berlin','okinawa','kasserine','saipan','cassino','shanghai'];
 for(const k of W2_MAPS){ const C=ww1Big(WW1_CFG[k]);
-  WORLDS[k]={key:k,label:C.label,desc:C.desc,era:3,ww1:true,bx:C.bx,bz:C.bz,sky:C.sky,fog:C.fog,dust:k==='ardenas'?0xd8dde0:k==='alamein'?0xc8b48a:0x8a7a5a,cfg:C,
+  WORLDS[k]={key:k,label:C.label,desc:C.desc,era:3,ww1:true,bx:C.bx,bz:C.bz,sky:C.sky,fog:C.fog,dust:k==='ardenas'?0xd8dde0:k==='alamein'||k==='kasserine'?0xc8b48a:0x8a7a5a,cfg:C,
     h:(x,z)=>ww1Sample(WORLDS[k],x,z),zones:C.zones,
     spawns:{0:[{label:'Base oeste',x:-90,z:-C.spawnZ},{label:'Base este',x:90,z:-C.spawnZ}],
             1:[{label:'Retaguardia oeste',x:-90,z:C.spawnZ},{label:'Retaguardia este',x:90,z:C.spawnZ}]}}; }
@@ -88,3 +124,10 @@ WORLDS.ardenas.wxs=['nieve','nieve','niebla','dia','tarde'];
 WORLDS.alamein.wxs=['dia','dia','tarde','noche'];
 WORLDS.stalingrado.wxs=['dia','niebla','tarde','nieve','lluvia']; WORLDS.berlin.wxs=['dia','tarde','niebla','lluvia','noche']; WORLDS.okinawa.wxs=['lluvia','dia','niebla','lluvia','tarde'];
 WORLDS.stalingrado.dust=WORLDS.berlin.dust=0x7a746a;
+WORLDS.kasserine.wxs=['dia','dia','tarde','niebla','noche']; WORLDS.saipan.wxs=['noche','noche','dia','tarde','lluvia']; WORLDS.cassino.wxs=['dia','niebla','lluvia','tarde']; WORLDS.shanghai.wxs=['dia','niebla','lluvia','tarde','noche'];
+WORLDS.cassino.dust=WORLDS.shanghai.dust=0x7a746a;
+// naciones que pelearon en cada batalla: el enemigo sale de acá si es del bando contrario (14-partida.js)
+Object.assign(WORLDS.normandia,{hist:['uk','us','fr','de']}); Object.assign(WORLDS.prokhorovka,{hist:['ru','de']}); Object.assign(WORLDS.alamein,{hist:['uk','de','it']});
+Object.assign(WORLDS.ardenas,{hist:['us','uk','de']}); Object.assign(WORLDS.stalingrado,{hist:['ru','de','it']}); Object.assign(WORLDS.berlin,{hist:['ru','de']});
+Object.assign(WORLDS.okinawa,{hist:['us','jp']}); Object.assign(WORLDS.kasserine,{hist:['us','uk','fr','de','it']}); Object.assign(WORLDS.saipan,{hist:['us','jp']});
+Object.assign(WORLDS.cassino,{hist:['uk','us','fr','de']}); Object.assign(WORLDS.shanghai,{hist:['cn','jp']});

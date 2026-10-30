@@ -59,8 +59,9 @@ function startBattle(spectator=false,forceMap=null,special=null,noBrief=false){ 
   allyNation=special?special.ally:spectator?pick(NK):chosenNation;
   // con bandos históricos (Entente contra Imperios Centrales) el enemigo sale del bando contrario
   const side=eraSide(era,allyNation), foes=side<0?NK.filter(k=>k!==allyNation):NK.filter(k=>eraSide(era,k)===1-side), friends=side<0?NK.filter(k=>k!==foeNation):NK.filter(k=>eraSide(era,k)===side);
-  battleBR=special?null:spectator?pick([...new Set(NK.flatMap(n=>vehTreeE(n,era)).map(k=>VEH[k].br))]):garageBR(chosenNation); foeNation=special?special.foe:pick(foes.length?foes:NK.filter(k=>k!==allyNation));
   builtKey=forceMap||(chosenMap==='rand'||(WORLDS[chosenMap]&&(WORLDS[chosenMap].era||5)!==era)?nextRandomMap(era):chosenMap);
+  battleBR=special?null:spectator?pick([...new Set(NK.flatMap(n=>vehTreeE(n,era)).map(k=>VEH[k].br))]):garageBR(chosenNation); const hist=(WORLDS[builtKey]&&WORLDS[builtKey].hist||[]).filter(n=>foes.includes(n));   // el enemigo histórico del mapa, si es del bando contrario
+  foeNation=special?special.foe:pick(hist.length?hist:foes.length?foes:NK.filter(k=>k!==allyNation));
   net.seed=(Math.random()*1e9)|0; withSeed(net.on?net.seed:0,()=>{clearBattle(); assignSpawns(allyNation);}); applyWeather(noBrief||special&&!special.mission?'dia':special&&special.wx?special.wx:pickWeather()); $('feed').innerHTML='';
   const guests=net.host?net.conns.filter(c=>c.ready):[], gA=guests.filter(c=>sideOf(c)===0), gB=guests.filter(c=>sideOf(c)===1);
   // Aliados: cada tripulación de la IA sale de una nación al azar de tu bando (puede no ser la tuya). En el modo especial y en las misiones, todos de la misma.

@@ -193,7 +193,7 @@ function buildWW1Map(key){
     const rectD=(px,pz,x0,x1,z0,z1)=>Math.hypot(Math.max(x0-px,0,px-x1),Math.max(z0-pz,0,pz-z1));
     for(const L of lm){ const parts=L.parts||[[0,0,L.w,L.d,L.h]];                                    // edificios famosos (no se derrumban de entrada)
       for(const [ox,oz,w,d,h] of parts){ const c=Math.cos(L.a||0), sn=Math.sin(L.a||0), x=L.x+ox*c+oz*sn, z=L.z-ox*sn+oz*c;
-        if(addBuilding(x,z,w,d,h,L.a||0,L.wall,L.roof,true,L.hp||800,!!L.pitched)) houses.push({ruin:false,lm:1}); } lms.push(L); }
+        if(addBuilding(x,z,w,d,h,L.a||0,L.wall,L.roof,true,L.hp||800,!!L.pitched)) houses.push({ruin:false,lm:1,lmRuin:L.ruin}); } lms.push(L); }
     for(let i=0;i<Ct.xs.length-1;i++) for(let j=0;j<Ct.zs.length-1;j++){
       const x0=Ct.xs[i]+st/2, x1=Ct.xs[i+1]-st/2, z0=Ct.zs[j]+st/2, z1=Ct.zs[j+1]-st/2;
       if(C.zones.some(Z=>rectD(Z.x,Z.z,x0,x1,z0,z1)<Z.r*.75)) continue;                                // los puntos quedan en plazas abiertas
@@ -209,7 +209,7 @@ function buildWW1Map(key){
   // casamatas de hormigón para ametralladoras (Línea Hindenburg)
   if(C.bunkers) for(let i=0;i<C.bunkers;i++){ const x=-bx*.75+i*(bx*1.5/(C.bunkers-1))+rr(-10,10), z=C.front+16+rr(-3,3); if(roadSegs.some(S=>segDistW(x,z,S)<5)) continue; if(addBuilding(x,z,4.5,4,1.8,rr(-.2,.2),0x8e8c84,0x7a7870,true,260,false)) houses.push({ruin:false,bunker:1}); }
   finalizeBuildings();
-  buildings.forEach((b,i)=>{ const H=houses[i]; if(!H||H.lm) return; if(H.ruin) ruinBuilding(b,R()<(H.col??.65)); else if(!H.bunker&&R()<.6) ruinBuilding(b,false); });
+  buildings.forEach((b,i)=>{ const H=houses[i]; if(H&&H.lmRuin){ ruinBuilding(b,R()<H.lmRuin); return; } if(!H||H.lm) return; if(H.ruin) ruinBuilding(b,R()<(H.col??.65)); else if(!H.bunker&&R()<.6) ruinBuilding(b,false); });
   for(const L of lms) if(L.extra) L.extra(ww1Sample(W,L.x,L.z));                                       // cúpula, torres, columnas, chimeneas
   // ---- bosques (vivos o hechos astillas) y álamos junto a los caminos ----
   const list=[]; const wood=(Wd)=>{ for(let i=0;i<Wd.n;i++){ const a=R()*Math.PI*2, r=Math.sqrt(R())*Wd.r, x=Wd.x+Math.cos(a)*r, z=Wd.z+Math.sin(a)*r;
