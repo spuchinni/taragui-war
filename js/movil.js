@@ -88,7 +88,7 @@ if(MOVIL){
   // ---- menú principal: cambia el aviso de teclado y, en iPhone, explica cómo instalarlo ----
   function fixHome(){ const c=document.querySelector('.homeCopy'); if(!c||c.dataset.mv) return; c.dataset.mv=1;
     for(const n of c.childNodes) if(n.nodeType===3&&n.textContent.includes('necesita teclado')) n.textContent=n.textContent.replace('necesita teclado y mouse','versión para celular');   // sin tocar el botón de la intro
-    if(IOS&&!STANDALONE) c.insertAdjacentHTML('beforeend',' · <span class="iosTip">Para jugar a pantalla completa: <b>Compartir</b> → <b>Agregar a inicio</b></span>');
+    if(IOS&&!STANDALONE){ c.insertAdjacentHTML('beforeend',' · <button class="iosTip" id="iosInstB">📲 Instalar en el iPhone (pantalla completa)</button>'); $('iosInstB').onclick=iosGuide; }
     }
   // tutorial y carteles: nombran los botones de la pantalla en vez de las teclas
   const TLBL={fwd:'palanca ↑',back:'palanca ↓',left:'palanca ←',right:'palanca →',scope:'◎',mg:'⁞⁞',ammo1:'la 1.ª munición (abajo)',ammo2:'la 2.ª munición (abajo)',ammo3:'la 3.ª munición (abajo)',
@@ -104,4 +104,24 @@ if(MOVIL){
     for(const p of document.querySelectorAll('p.s')) if(/^Clic izquierdo/.test(p.textContent)) p.textContent='Palanca a la izquierda: manejar (aparece donde apoyás el pulgar). Deslizá el dedo a la derecha: mirar y apuntar. 🔥 cañón, ⁞⁞ ametralladora (mantener), ◎ entra y sale de la mira, 🔍 zoom (tocá para ponerlo y sacarlo). Tocá la barra de abajo para cambiar munición, pedir artillería o bombardeo (después tocá el mapa), reparar y demás. ☰ pausa.';
     return r; };
   const _mm=mainMenu; mainMenu=function(){ const r=_mm.apply(this,arguments); fixHome(); return r; }; fixHome();
+
+  // ---- iPhone: Safari no deja poner una página en pantalla completa; la única forma es instalarla en la pantalla de inicio ----
+  // El botón ⛶ abre una guía con los pasos según el navegador (Safari, Chrome, Firefox, Edge o el navegador interno de otra app).
+  if(IOS&&!STANDALONE){ document.body.classList.add('iosweb'); const _tfs=toggleFS; toggleFS=function(){ iosGuide(); };
+    // la primera vez que entra a una batalla desde el navegador, se lo recuerda
+    let told=false; try{ told=localStorage.getItem('tw2_iosguia')==='1'; }catch(e){}
+    if(!told) setTimeout(()=>{ if(state==='menu'){ iosGuide(); try{ localStorage.setItem('tw2_iosguia','1'); }catch(e){} } },4000); }
 }
+function iosGuide(){ const ua=navigator.userAgent, chrome=/CriOS/.test(ua), ff=/FxiOS/.test(ua), edge=/EdgiOS/.test(ua),
+    inApp=/FBAN|FBAV|Instagram|Line\/|WhatsApp|Twitter|TikTok|Snapchat|GSA\//.test(ua)||!/Safari\//.test(ua), ver=+((ua.match(/OS (\d+)_/)||[])[1]||0);
+  const share='<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="#4ea1ff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-5px"><path d="M12 3v12M8 7l4-4 4 4"/><path d="M6 11H5a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-8a1 1 0 0 0-1-1h-1"/></svg>';
+  const add='<b>Agregar a inicio</b> <span style="opacity:.7">(o "Agregar a pantalla de inicio")</span>';
+  let pasos;
+  if(inApp) pasos=`<li>Estás dentro de otra app (WhatsApp, Instagram…): desde ahí no se puede instalar.</li><li>Tocá los tres puntitos o el botón ${share} y elegí <b>Abrir en Safari</b>.</li><li>Ya en Safari, seguí los pasos de nuevo.</li>`;
+  else if((chrome||edge||ff)&&ver<16) pasos=`<li>En este iPhone solo se puede instalar desde <b>Safari</b>.</li><li>Copiá la dirección, abrila en Safari y tocá ${share} → ${add}.</li>`;
+  else if(chrome||edge) pasos=`<li>Tocá el botón ${share} <b>Compartir</b> que está arriba a la derecha, en la barra de la dirección.</li><li>Bajá en la lista y tocá ${add}.</li><li>Tocá <b>Agregar</b>. Abrí el juego desde el ícono nuevo: ahí se ve a pantalla completa.</li>`;
+  else if(ff) pasos=`<li>Tocá el menú <b>☰</b> abajo a la derecha y después <b>Compartir</b>.</li><li>Bajá en la lista y tocá ${add}.</li><li>Abrí el juego desde el ícono nuevo.</li>`;
+  else pasos=`<li>Tocá el botón ${share} <b>Compartir</b> de Safari (abajo en el medio; si no se ve, tocá una vez la parte de abajo de la pantalla para que aparezca la barra).</li><li>En la lista que se abre, <b>deslizá hacia abajo</b> hasta ${add}. Si no está, tocá <b>Editar acciones</b> al final y activala.</li><li>Tocá <b>Agregar</b> arriba a la derecha.</li><li>Cerrá Safari y abrí el juego desde el ícono nuevo de Taragüí War: se ve a pantalla completa y acostado, como una app.</li>`;
+  let m=$('iosInst'); if(!m){ m=document.createElement('div'); m.id='iosInst'; document.body.appendChild(m); }
+  m.innerHTML=`<div class="box"><h2>Jugar a pantalla completa en el iPhone</h2><p>Apple no deja poner una página en pantalla completa dentro del navegador. Hay que <b>instalar el juego en la pantalla de inicio</b> (es gratis y tarda unos segundos):</p><ol>${pasos}</ol><button class="go" id="iosInstOk">Entendido</button></div>`;
+  m.style.display='flex'; $('iosInstOk').onclick=()=>{ m.style.display='none'; }; }
