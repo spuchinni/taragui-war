@@ -378,3 +378,6 @@ body.movil.ios.iosweb #fsBtn{display:grid}
 #iosInst .box{max-width:560px;max-height:92vh;overflow:auto;background:#16191d;border:1px solid #6a7280;padding:14px 18px;color:#e8e4da;font:14px/1.4 system-ui,sans-serif}
 #iosInst h2{margin:0 0 6px;color:var(--khaki);font-size:18px} #iosInst ol{margin:8px 0 12px;padding-left:20px} #iosInst li{margin-bottom:7px}
 body.movil .homeCopy button.iosTip{font:inherit;color:#ffd27a;background:rgba(0,0,0,.4);border:1px solid #ffd27a;padding:2px 8px;cursor:pointer}
+/* garaje en la base: ayuda de la cámara y lista de blancos del campo de tiro */
+.hgHint{position:absolute;left:50%;bottom:150px;transform:translateX(-50%);font-size:12px;color:#fff;opacity:.75;text-shadow:0 1px 3px #000;pointer-events:none;white-space:nowrap}
+#tutbox .rgL{display:flex;flex-wrap:wrap;gap:4px 10px;margin-top:6px;font-size:12px;opacity:.9}
