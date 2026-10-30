@@ -339,7 +339,7 @@ function frame(dt){
         if(t.deadT<38){t.smokeT-=dt; if(t.smokeT<=0){t.smokeT=t.deadT<20?.3:.6;puff(t.pos.clone().add(new THREE.Vector3(rand(-1,1),2.5,rand(-1,1))),0x2a2622,rand(3,5),rand(3,5),2.5,.6);
           if(Math.random()<.4)puff(t.pos.clone().setY(t.pos.y+1.8),0xff7a20,2,.4,1,.9,true);}}
         if(t.popV){t.turret.position.y+=t.popV*dt;t.popV-=14*dt;t.turret.rotation.z+=dt*2;if(t.turret.position.y<t.hTop){t.turret.position.y=t.hTop;t.popV=0;}}
-        if(t.deadT>40&&t!==player&&!(net.guest&&t.net)) gone.push(t);
+        if(t.deadT>(t.keepT||40)&&t!==player&&!(net.guest&&t.net)) gone.push(t);
         continue;
       }
       if(!net.guest){ updateModules(t,dt); if(t.dead) continue; }

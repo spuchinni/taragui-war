@@ -45,12 +45,13 @@ function updateShells(dt){
         if(s.rocket){ blast(hit.point,.25); noise(hit.point,80); }
         infBlast(hit.point,(s.A.kind==='he'?6:s.A.kind==='hesh'?4:1.8)*(s.A.sc<1?.4:1),s.owner);
         if(hit.object.userData.tank) hitTank(s.owner,hit,dir,(s.A.kind==='ke'?s.A.pen*Math.max(.5,1-s.travel/3000):s.A.pen)*(s.owner.penK||1),'shell',s.A);
-        else { if((s.A.kind==='he'||s.A.kind==='hesh')&&s.A.sc<1){explode(hit.point,'ground');heSplash(hit.point,s.owner,s.A);} else if(s.A.kind==='he'||s.A.kind==='hesh'){blast(hit.point,.35);heSplash(hit.point,s.owner,s.A);} else {explode(hit.point,'ground');boom(distVol(hit.point,.25),.5,500);}
+        else { if(hit.object.userData.ground&&typeof groundHit==='function') groundHit(hit.point,s.A);
+          if((s.A.kind==='he'||s.A.kind==='hesh')&&s.A.sc<1){explode(hit.point,'ground');heSplash(hit.point,s.owner,s.A);} else if(s.A.kind==='he'||s.A.kind==='hesh'){blast(hit.point,.35);heSplash(hit.point,s.owner,s.A);} else {explode(hit.point,'ground');boom(distVol(hit.point,.25),.5,500);}
           const b=bldOf(hit); if(b){ const big=s.A.kind==='he'||s.A.kind==='hesh'; markBuilding(hit,b,big?rand(1.1,1.7)*(s.A.sc<1?.7:1):s.A.kind==='heat'?rand(.6,.85):rand(.4,.6),big||s.A.kind==='heat'?'big':'ke'); damageBuilding(b,(15+s.owner.T.m.gr*250)*({ke:.6,heat:1,hesh:2.2,he:2.2})[s.A.kind]*(s.A.sc||1)); } }
         done=true; break; }
       const gh=hAtY(s.p.x,s.p.z,s.p.y);
-      if(s.p.y<gh&&s.fx){ s.p.y=gh; explode(s.p,'ground'); boom(distVol(s.p,.25),.5,500); done=true; }
-      else if(s.p.y<gh){ s.p.y=gh; infBlast(s.p,(s.A.kind==='he'?6:s.A.kind==='hesh'?4:1.8)*(s.A.sc<1?.4:1),s.owner); noise(s.p,70); if((s.A.kind==='he'||s.A.kind==='hesh')&&!(s.A.sc<1)){blast(s.p,.35);heSplash(s.p,s.owner,s.A);} else {explode(s.p,'ground'); boom(distVol(s.p,.25),.5,500);} done=true; }
+      if(s.p.y<gh&&s.fx){ s.p.y=gh; explode(s.p,'ground'); if(typeof groundHit==='function') groundHit(s.p,s.A); boom(distVol(s.p,.25),.5,500); done=true; }
+      else if(s.p.y<gh){ s.p.y=gh; if(typeof groundHit==='function') groundHit(s.p,s.A); infBlast(s.p,(s.A.kind==='he'?6:s.A.kind==='hesh'?4:1.8)*(s.A.sc<1?.4:1),s.owner); noise(s.p,70); if((s.A.kind==='he'||s.A.kind==='hesh')&&!(s.A.sc<1)){blast(s.p,.35);heSplash(s.p,s.owner,s.A);} else {explode(s.p,'ground'); boom(distVol(s.p,.25),.5,500);} done=true; }
     }
     s.life-=dt; s.m.position.copy(s.p);
     if(done||s.life<=0||Math.abs(s.p.x)>W.bx+OUT+60||Math.abs(s.p.z)>W.bz+OUT+60){scene.remove(s.m);shells.splice(i,1);}
@@ -108,6 +109,10 @@ function afterHit(t,by,rack){
   updateHud();
 }
 let playerFocus=null, playerFocusT=0;
+// Altura de las ruedas y de la parte de arriba de la oruga en coordenadas del tanque. Los tanques de la v1 traen M.wr (radio de rueda);
+// los de las épocas 1–3 no (antes daba NaN y las orugas nunca se rompían por impactos ni por ametralladora)
+const wheelY=M=>M.wr!=null?(M.wr*2+.25)*.55:((M.w2&&Math.max(M.w2.trF||0,M.w2.trR||0,M.w2.trH||0))||(M.iw&&(M.iw.trH||M.iw.h))||M.H*.38)*.55;
+const trkTop=M=>M.wr!=null?(M.wr*2+.25)*.55+M.H*.3:((M.w2&&Math.max(M.w2.trF||0,M.w2.trR||0,M.w2.trH||0))||(M.iw&&(M.iw.trH||M.iw.h))||M.H*.42)+.12;
 function hitTank(by,hit,dir,pen,kind,A){
   const t=hit.object.userData.tank, zone=hit.object.userData.zone, face=faceOf(hit.face.normal);
   if(kind==='shell'){explode(hit.point,'metal'); if(!sfx('metal',hit.point,t.isPlayer?1.2:.9,{rate:rand(.55,.72),near:t.isPlayer})) clang(distVol(hit.point,.25));}
@@ -121,7 +126,7 @@ function hitTank(by,hit,dir,pen,kind,A){
   const wn=hit.face.normal.clone().transformDirection(hit.object.matrixWorld);
   const cos=Math.abs(dir.dot(wn)); let armor=t.T.armor[zone][face], spot='';
   // Puntos débiles y fuertes: placa inferior, tronera del conductor, anillo de la torre y mantelete del cañón
-  if(kind!=='mg'&&(face==='front'||face==='side')){ t.root.updateMatrixWorld(true); const q=hit.point.clone().applyMatrix4(new THREE.Matrix4().copy(t.root.matrixWorld).invert()), M=t.T.m, hy=(M.wr*2+.25)*.55;
+  if(kind!=='mg'&&(face==='front'||face==='side')){ t.root.updateMatrixWorld(true); const q=hit.point.clone().applyMatrix4(new THREE.Matrix4().copy(t.root.matrixWorld).invert()), M=t.T.m, hy=wheelY(M);
     if(zone==='hull'&&face==='front'){ if(q.y<hy+M.H*.38){ armor*=.62; spot='placa inferior'; } else if(q.y>hy+M.H*.62&&Math.abs(q.x+M.W*.25)<.35){ armor*=.7; spot='tronera del conductor'; } }
     else if(zone==='turret'&&!M.ww1){ const c=Math.cos(t.turretYaw), sn=Math.sin(t.turretYaw), lx=q.x*c-(q.z-M.tz)*sn;
       if(q.y<hy+M.H+M.th*.2){ armor*=.7; spot='anillo de la torre'; } else if(face==='front'&&Math.abs(lx)<M.tw*.18){ armor*=1.25; spot='mantelete'; } } }
@@ -130,15 +135,17 @@ function hitTank(by,hit,dir,pen,kind,A){
     if(pen*rand(.9,1.1)>armor/Math.max(cos,.2)){ res='mg'; damage(t,1.6,by,false); } else res='No penetró';
     // ametralladora contra la oruga: cada impacto la desgasta; aguanta unas 50 balas de 7,62 o unas 20 de 12,7 en la misma oruga
     if(zone==='hull'&&!(t.trackT>0)&&!t.T.m.wheeled){ t.root.updateMatrixWorld(true); const q=hit.point.clone().applyMatrix4(new THREE.Matrix4().copy(t.root.matrixWorld).invert()), M=t.T.m;
-      if(Math.abs(q.x)>M.W/2-.75&&q.y<(M.wr*2+.25)*.55+M.H*.3){ const sd=q.x>0?0:1; t.trkHP=t.trkHP||[100,100];
-        t.trkHP[sd]-=(pen>=25?5:2)*rand(.8,1.2); res='trk';
+      if(Math.abs(q.x)>M.W/2-.75&&q.y<trkTop(M)){ const sd=q.x>0?0:1; t.trkHP=t.trkHP||[100,100];
+        // realista: la de fusil (7,62/7,92) casi no le hace nada; la pesada (12,7 o más) corta la de un liviano o mediano con ráfagas largas
+        const heavyT=t.T.cls==='pesado'||(t.T.hp||0)>=150, h0=t.trkHP[sd]; t.trkHP[sd]-=(pen>=25?(heavyT?1.1:4):.3)*rand(.8,1.2); res='trk';
+        if(h0>=50&&t.trkHP[sd]<50) res='Oruga dañada';
         if(t.trkHP[sd]<=0){ t.trkHP[sd]=100; t.trackT=10; hurt.push('oruga rota'); res='Oruga cortada'; afterHit(t,by,false); } } }
   } else {
     const k=A.kind, ric={ke:.26,heat:.17,hesh:.34,he:0}[k], eff=k==='hesh'?armor:armor/Math.max(cos,.2);
     // Orugas: impacto bajo en el costado
     t.root.updateMatrixWorld(true);
     const lp=hit.point.clone().applyMatrix4(new THREE.Matrix4().copy(t.root.matrixWorld).invert()), M=t.T.m;
-    if(zone==='hull'&&Math.abs(lp.x)>M.W/2-.75&&lp.y<(M.wr*2+.25)*.55+M.H*.3&&Math.random()<.75*Math.sqrt(A.sc||1)){ t.trackT=Math.max(t.trackT,10); hurt.push('oruga rota'); }
+    if(zone==='hull'&&Math.abs(lp.x)>M.W/2-.75&&lp.y<trkTop(M)&&Math.random()<.75*Math.sqrt(A.sc||1)){ t.trackT=Math.max(t.trackT,10); hurt.push('oruga rota'); }
     if(zone==='turret'&&face==='front'&&Math.random()<.22*(A.sc||1)&&t.mod.breech>0){ t.mod.breech=0; t.breechT=12; hurt.push('cañón dañado'); }
     if(cos<ric&&k!=='he') res='Rebote';
     else if(pen*rand(.9,1.1)>eff){
@@ -152,13 +159,13 @@ function hitTank(by,hit,dir,pen,kind,A){
     }
   }
   const det=hurt.length?' · '+[...new Set(hurt)].slice(0,3).join(', '):'';
-  if(kind==='shell') hitMark(hit,res==='Penetración');
+  if(kind==='shell') hitMark(hit,res==='Penetración',res,dir,A);
   if(kind==='shell'&&res==='Rebote') sfx('ric',hit.point,t.isPlayer?1:.8,{near:t.isPlayer});
   if(kind==='shell'&&by.isPlayer&&!t.dead){ if(res==='Rebote') radio('¡Rebotó!'); else if(res==='No penetró') radio('No penetró.'); else if(res==='Penetración') radio('¡Penetración!'); }
   if(kind==='shell'&&t.isPlayer){ if(res==='Penetración') radio('¡Nos penetraron!',2); else if(res==='Rebote') radio('¡Rebotó en el blindaje!'); else if(res==='No penetró') radio('El blindaje aguantó.'); }
   if(by.isPlayer||isRemote(by)){
     // ametralladora: solo "Impacto"; el detalle aparece cuando rompe algo (oruga, daño que pasa el blindaje, destruido)
-    if(kind==='mg'){ const big=t.dead||res==='Oruga cortada', m=t.dead?'Destruido':res==='Oruga cortada'?'Impacto · oruga cortada':res==='mg'?'Impacto · daño':'Impacto';
+    if(kind==='mg'){ const big=t.dead||res==='Oruga cortada'||res==='Oruga dañada', m=t.dead?'Destruido':res==='Oruga cortada'?'Impacto · oruga cortada':res==='Oruga dañada'?'Impacto · oruga dañada':res==='mg'?'Impacto · daño':'Impacto';
       if(big||(by.isPlayer?mgMsgT<=0:(by.mgMsgT||0)<now)){ by.mgMsgT=now+.8; if(by.isPlayer) mgMsgT=.8; tell(by,m,big||res==='mg'?'var(--amber)':'var(--paper)'); } }
     else tell(by,res+(['Penetración','No penetró','Rebote'].includes(res)?' · '+(spot||FACE_ES[face]):'')+det, ['Penetración','Destruido','Estiba de munición'].includes(res)?'var(--amber)':'var(--paper)');
   }

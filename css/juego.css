@@ -366,3 +366,9 @@ body.movil .hgInfo{width:300px;-webkit-overflow-scrolling:touch}
 #aviso.on{transform:none;opacity:1;pointer-events:auto}
 #aviso b{color:var(--ally);white-space:nowrap} #aviso span{flex:1}
 #aviso .go{margin:0;padding:4px 14px;font-size:18px;width:auto}
+/* Cámara de impacto (js/eras/hitcam.js): recuadro arriba a la derecha; el tanque se dibuja adentro con un segundo render */
+#hcBox{position:fixed;right:16px;top:calc(64px + env(safe-area-inset-top,0px));width:380px;height:238px;border:1px solid rgba(220,230,242,.45);box-shadow:0 2px 14px rgba(0,0,0,.6);
+  pointer-events:none;z-index:6;display:none;font:600 13px system-ui,sans-serif;color:#f4f6ff;text-shadow:0 1px 2px #000}
+#hcBox.on{display:block} #hcBox b{position:absolute;left:8px;top:6px} #hcBox small{position:absolute;left:8px;bottom:6px;font-weight:500;color:#f2b33a}
+body.menu #hcBox,body.deploy #hcBox{display:none}
+body.movil #hcBox{width:230px;height:144px;right:calc(128px + env(safe-area-inset-right,0px));top:calc(8px + env(safe-area-inset-top,0px));font-size:10px}
