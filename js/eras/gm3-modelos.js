@@ -615,3 +615,55 @@ function usTurret(tur,G,M,I,mat,gy){ const u=I.us, hw=M.tw/2, hl=M.tl/2, th=M.th
     cyl(tur,.26,.26,.06,hw*.38,th+.02,-hl*.1,12,mat); fifty(-hw*.3,-hl*.35); const a=cyl(tur,.012,.012,1.8,hw*.6,th+.9,-hl*.7,4,darkMat); }
 }
 DET.us={gear:usGear,hull:usHull,tur:usTurret};
+
+// ---- Soviéticos más fieles (m.w2.det='ru', I.ru = 't70'|'kv1'|'kv2'|'su100'|'bt7'|'t26'|'zsu37') ----
+// KV: 6 ruedas chicas, 3 rodillos de retorno, motriz atrás, guardabarros anchos con cajones. T-70, ZSU-37 (chasis del SU-76M): ruedas con goma
+// y motriz adelante. BT-7 y SU-100: Christie (como el T-34) con ruedas grandes sin rodillos. T-26: 8 ruedas chicas en 4 bogies con ballestas.
+function ruGear(root,I,x,s,tw,zf,zr,mat){ const u=I.ru;
+  if(u==='su100'||u==='bt7'){ if(u==='su100') return t34Gear(root,I,x,s,tw,zf,zr,mat);
+    const r=I.wR, n=I.nW, z0=zr+.75, z1=zf-.85; for(let i=0;i<n;i++) dWheel(root,x,r+.03,z0+(z1-z0)*i/(n-1),r,mat,{rim:.8,holes:8});
+    const sp=wheel(root,x,I.trR*.6,zr+.32,.3); cyl(sp,.25,.25,.3,0,0,0,10,mat); dWheel(root,x,I.trF*.6,zf-.33,.27,mat,{rim:.75}); return; }
+  if(u==='t26'){ for(const bc of [zr+1.35,zf-1.15]) for(const pc of [-.32,.32]){ for(const d of [-.17,.17]) dWheel(root,x,.21,bc+pc+d,.17,mat,{rim:.7});
+      rbox(root,.1,.18,.55,x+s*(tw/2+.04),.3,bc+pc,darkMat,.03); }
+    for(const bc of [zr+1.35,zf-1.15]){ const l=box(root,.06,.06,1.05,x+s*(tw/2+.07),.48,bc,darkMat); }                              // ballestas
+    for(let k=0;k<4;k++) dWheel(root,x,I.trF-.06,zr+.95+k*(zf-zr-1.9)/3,.09,mat,{rim:.7});
+    sprocketT(root,x,I.trF*.62,zf-.3,.25,12,mat); dWheel(root,x,I.trR*.62,zr+.3,.24,mat,{rim:.75}); return; }
+  const kv=u==='kv1'||u==='kv2', n=I.nW, r=I.wR, z0=zr+.9, z1=zf-.9;
+  for(let i=0;i<n;i++) dWheel(root,x,r+.03,z0+(z1-z0)*i/(n-1),r,mat,{rim:kv?.78:.75,holes:kv?6:0});
+  for(let k=0;k<(I.ret||0);k++) dWheel(root,x,I.trF-.06,z0+(z1-z0)*(k+.5)/I.ret,.1,mat,{rim:.7});
+  if(kv){ sprocketT(root,x,I.trR*.62,zr+.38,.36,16,mat); dWheel(root,x,I.trF*.62,zf-.36,.32,mat,{rim:.75}); }
+  else { sprocketT(root,x,I.trF*.62,zf-.32,.27,13,mat); dWheel(root,x,I.trR*.62,zr+.32,.25,mat,{rim:.75}); } }
+function ruHull(root,M,I,mat,iw2,deck,gz,zf,zr,L){ const u=I.ru, hw=M.W/2, ft=hw-I.trW/2, fy=Math.max(I.trF,I.trR)+.06;
+  if(u==='su100'){ t34Hull(root,M,I,mat,iw2,deck,gz,zf,zr,L); return; }
+  { const p=glacisPt(I,deck,gz,zf,.25,.06), d=rbox(root,.5,.12,.3,-iw2*.2,p.y,p.z,mat,.03); d.rotation.x=p.a; box(d,.12,.06,.08,0,.08,-.05,darkMat); }   // escotilla o visor del conductor
+  { const p=glacisPt(I,deck,gz,zf,.1,.08); cyl(root,.075,.075,.13,-iw2*.42,p.y,p.z,8,darkMat).rotation.x=Math.PI/2; }                                     // faro
+  for(const sx of [-1,1]){ const q=glacisPt(I,deck,gz,zf,.96,.05), k=new THREE.Mesh(_tgShackle,darkMat); k.scale.setScalar(.8); k.position.set(sx*iw2*.35,q.y,q.z); k.rotation.y=Math.PI/2; root.add(k); }
+  if(u==='kv1'||u==='kv2'){ for(const sx of [-1,1]){ rbox(root,I.trW*.75,.3,.85,sx*ft,fy+.15,zf-1.4,mat,.04); rbox(root,I.trW*.75,.3,.85,sx*ft,fy+.15,zr+1.4,mat,.04);   // cajones en los guardabarros
+      rbox(root,I.trW*.6,.42,.55,sx*ft,fy+.21,0,mat,.05); for(let k=0;k<3;k++) box(root,.04,.04,.4,sx*(hw-.02),deck-.15-k*.08,zr+.7,darkMat); }       // tanque de aceite y tomas de aire
+    box(root,iw2*.65,.03,1.0,0,deck+.02,zr+.85,darkMat); for(let i=0;i<6;i++) box(root,iw2*.65,.04,.04,0,deck+.04,zr+.45+i*.16,mat);
+    for(const sx of [-1,1]){ const e=cyl(root,.09,.09,.3,sx*iw2*.3,deck-.45,zr-.06,8,darkMat); e.rotation.x=Math.PI/2; }
+    { const c=cyl(root,.035,.035,L*.6,hw-.02,deck-.15,0,6,darkMat); c.rotation.x=Math.PI/2; } return; }
+  if(u==='bt7'||u==='t26'){ for(const sx of [-1,1]) rivetsRow(root,sx*(hw-.005),deck-.15,zr+.3,zf-gz,10);
+    for(let i=0;i<4;i++) box(root,iw2*.6,.04,.04,0,deck+.04,zr+.4+i*.15,mat);
+    for(const sx of [-1,1]){ const e=cyl(root,.08,.08,.35,sx*iw2*.28,deck-.2,zr-.08,8,darkMat); e.rotation.x=Math.PI/2; }
+    if(u==='bt7') for(const sx of [-1,1]) for(let k=0;k<2;k++) box(root,.04,.05,.5,sx*(hw-.05),fy+.03+k*.07,0,trackMat);   // eslabones y cajones sobre los guardabarros
+    return; }
+  for(const sx of [-1,1]) rbox(root,I.trW*.85,.24,.6,sx*ft,fy+.12,zr+.9,mat,.04);                              // T-70 y ZSU-37: livianos
+  box(root,iw2*.6,.03,.6,0,deck+.02,zr+.6,darkMat); for(const sx of [-1,1]){ const e=cyl(root,.06,.06,.3,sx*iw2*.25,deck-.25,zr-.06,8,darkMat); e.rotation.x=Math.PI/2; } }
+function ruTurret(tur,G,M,I,mat,gy){ const u=I.ru, hw=M.tw/2, hl=M.tl/2, th=M.th;
+  if(u==='su100'){ const m=cyl(G.gp,.24,.24,.62,0,0,.05,14,mat); m.rotation.z=Math.PI/2; const sl=cyl(G.gp,.12,.15,.5,0,0,.4,12,mat); sl.rotation.x=Math.PI/2; return; }
+  if(u==='zsu37') return;
+  for(const sx of [-1,1]){ const pp=cyl(tur,.055,.055,.04,sx*(hw*.94),th*.45,-hl*.2,8,mat); pp.rotation.z=Math.PI/2; }
+  if(u==='kv1'){ rbox(G.gp,.75,.55,.3,0,0,.1,mat,.06); const sl=cyl(G.gp,.11,.13,.4,0,0,.42,10,mat); sl.rotation.x=Math.PI/2;
+    for(const sx of [-1,1]) for(const [y,z] of [[.3,.5],[.3,-.5],[.7,0]]) cyl(tur,.04,.04,.03,sx*(hw+.01),th*y,hl*z*.7,6,darkMat).rotation.z=Math.PI/2;   // bulones de las chapas extra
+    cyl(tur,.28,.28,.06,0,th+.02,-hl*.25,12,mat); box(tur,.12,.07,.1,hw*.4,th+.05,hl*.2,darkMat);
+    { const b=new THREE.Mesh(new THREE.SphereGeometry(.11,10,8),mat); b.position.set(0,th*.5,-hl+.01); tur.add(b); cyl(tur,.025,.025,.3,0,th*.5,-hl-.12,6,darkMat).rotation.x=Math.PI/2; } return; }
+  if(u==='kv2'){ rbox(G.gp,1.0,.85,.36,0,0,.12,mat,.08); const sl=cyl(G.gp,.18,.2,.45,0,0,.42,12,mat); sl.rotation.x=Math.PI/2;
+    { const d=rbox(tur,.8,1.0,.06,0,th*.45,-hl-.02,mat,.03); }                                                   // puerta trasera para cargar los proyectiles de 152 mm
+    for(const sx of [-1,1]) rivetsRow(tur,sx*(hw+.005),th*.85,-hl*.8,hl*.7,8);
+    cyl(tur,.28,.28,.06,hw*.3,th+.02,-hl*.3,12,mat); box(tur,.12,.07,.1,-hw*.35,th+.05,hl*.3,darkMat); return; }
+  if(u==='bt7'||u==='t26'){ rbox(G.gp,.42,.3,.18,0,0,.06,mat,.05); cyl(G.gp,.025,.025,.35,.18,-.02,.3,6,darkMat).rotation.x=Math.PI/2;
+    if(u==='t26') for(const sx of [-1,1]) rivetsRow(tur,sx*(hw*.97),th*.5,-hl*.6,hl*.6,6);
+    cyl(tur,.24,.24,.05,-hw*.3,th+.02,-hl*.1,12,mat); const a=cyl(tur,.012,.012,1.4,hw*.6,th+.7,-hl*.3,4,darkMat); return; }
+  rbox(G.gp,.4,.3,.18,0,0,.06,mat,.05); cyl(tur,.22,.22,.05,0,th+.02,-hl*.1,12,mat); box(tur,.11,.07,.09,hw*.4,th+.05,hl*.25,darkMat); }   // T-70
+DET.ru={gear:ruGear,hull:ruHull,tur:ruTurret};
