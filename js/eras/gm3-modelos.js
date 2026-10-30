@@ -667,3 +667,63 @@ function ruTurret(tur,G,M,I,mat,gy){ const u=I.ru, hw=M.tw/2, hl=M.tl/2, th=M.th
     cyl(tur,.24,.24,.05,-hw*.3,th+.02,-hl*.1,12,mat); const a=cyl(tur,.012,.012,1.4,hw*.6,th+.7,-hl*.3,4,darkMat); return; }
   rbox(G.gp,.4,.3,.18,0,0,.06,mat,.05); cyl(tur,.22,.22,.05,0,th+.02,-hl*.1,12,mat); box(tur,.11,.07,.09,hw*.4,th+.05,hl*.25,darkMat); }   // T-70
 DET.ru={gear:ruGear,hull:ruHull,tur:ruTurret};
+
+// ---- Alemanes más fieles (m.w2.det='de', I.de = 'pz3'|'pz4'|'stug'|'tiger2'|'jagdp'|'pz38'|'flak4'); datos de Tank Encyclopedia ----
+// Pz III y StuG III: 6 ruedas con barras de torsión, 3 rodillos, motriz de 6 rayos adelante, tensora atrás. Pz IV (y Wirbelwind/Ostwind):
+// 8 ruedas chicas en 4 bogies con ballestas, rodillos de retorno, motriz adelante. Tiger II: 9 ejes de ruedas de acero de 800 mm intercaladas.
+// Jagdpanther: el chasis del Panther. Pz 38(t): 4 ruedas grandes de a pares con ballestas semielípticas, 2 rodillos, todo remachado.
+function deGear(root,I,x,s,tw,zf,zr,mat){ const u=I.de;
+  if(u==='jagdp') return pantherGear(root,I,x,s,tw,zf,zr,mat);
+  if(u==='tiger2'){ const r=.4, n=9, z0=zr+1.0, z1=zf-1.1, o=tw*.32;
+    for(let i=0;i<n;i++){ const z=z0+(z1-z0)*i/(n-1); for(const d of (i%2?[0]:[o,-o])) dWheel(root,x+s*d,r+.03,z,r,mat,{rim:.86,holes:0}); }   // ruedas de acero (sin goma)
+    sprocketT(root,x,I.trF*.6,zf-.45,.42,18,mat); dWheel(root,x,I.trR*.6,zr+.45,.33,mat,{rim:.8}); return; }
+  if(u==='pz38'){ for(const c of [zr+1.25,zf-1.2]){ for(const d of [-.42,.42]) dWheel(root,x,.38,c+d,.36,mat,{rim:.78});
+      box(root,.08,.1,.95,x+s*(tw/2+.06),.62,c,darkMat); for(let k=0;k<4;k++) box(root,.07,.03,.95-k*.18,x+s*(tw/2+.06),.56-k*.035,c,darkMat); }   // ballesta
+    for(const z of [zr+1.2,zf-1.15]) dWheel(root,x,I.trF-.06,z,.11,mat,{rim:.7});
+    sprocketT(root,x,I.trF*.62,zf-.33,.32,19,mat); dWheel(root,x,I.trR*.62,zr+.3,.26,mat,{rim:.75}); return; }
+  if(u==='pz4'||u==='flak4'){ const z0=zr+.95, z1=zf-1.05;
+    for(let b=0;b<4;b++){ const c=z0+(z1-z0)*b/3; for(const d of [-.25,.25]) dWheel(root,x,.27,c+d,.24,mat,{rim:.72});
+      rbox(root,.08,.16,.62,x+s*(tw/2+.05),.36,c,darkMat,.03); for(let k=0;k<3;k++) box(root,.06,.025,.5-k*.12,x+s*(tw/2+.08),.47-k*.03,c,darkMat); }   // bogie con ballesta
+    for(let k=0;k<(I.ret||4);k++) dWheel(root,x,I.trF-.06,z0+(z1-z0)*(k+.5)/(I.ret||4),.1,mat,{rim:.7});
+    sprocketT(root,x,I.trF*.62,zf-.33,.3,20,mat); dWheel(root,x,I.trR*.62,zr+.3,.27,mat,{rim:.6,holes:6}); return; }
+  const r=I.wR, z0=zr+.85, z1=zf-.95;                                                                         // Pz III / StuG III
+  for(let i=0;i<6;i++){ const z=z0+(z1-z0)*i/5; dWheel(root,x,r+.03,z,r,mat,{rim:.76}); const a=box(root,.07,.07,.45,x+s*(tw/2+.02),r+.08,z+.18,darkMat); a.rotation.x=.45; }
+  for(let k=0;k<3;k++) dWheel(root,x,I.trF-.06,z0+(z1-z0)*(k*.5+.08)/1.16,.1,mat,{rim:.7});
+  const sp=sprocketT(root,x,I.trF*.62,zf-.33,.3,21,mat); dWheel(root,x,I.trR*.62,zr+.3,.27,mat,{rim:.6,holes:6}); }
+function deHull(root,M,I,mat,iw2,deck,gz,zf,zr,L){ const u=I.de, hw=M.W/2, ft=hw-I.trW/2, fy=Math.max(I.trF,I.trR)+.06;
+  if(u==='jagdp'){ pantherHull(root,M,I,mat,iw2,deck,gz,zf,zr,L); return; }
+  // frente: visera del conductor (Fahrersehklappe), faro Notek, ganchos, eslabones de repuesto
+  { const p=glacisPt(I,deck,gz,zf,.15,.06); rbox(root,.42,.18,.12,-iw2*.22,p.y-.1,zf-gz+.05,mat,.03); box(root,.3,.025,.03,-iw2*.22,p.y-.08,zf-gz+.12,darkMat); }
+  { const p=glacisPt(I,deck,gz,zf,.05,.08); cyl(root,.06,.06,.11,-hw*.6,deck+.07,zf-gz-.06,8,darkMat).rotation.x=Math.PI/2; box(root,.12,.06,.06,hw*.55,deck+.06,zf-gz-.05,darkMat); }   // faro y Notek
+  for(const sx of [-1,1]){ const k=new THREE.Mesh(_tgShackle,darkMat); k.scale.setScalar(.8); k.position.set(sx*(iw2/2-.1),.6,zf+.02); k.rotation.y=Math.PI/2; root.add(k);
+    const f=box(root,I.trW+.06,.03,.5,sx*ft,I.trF+.1,zf-.14,mat); f.rotation.x=-.3; }
+  if(u!=='tiger2') for(let i=0;i<4;i++){ const p=glacisPt(I,deck,gz,zf,.55+i*.1,.04), b=box(root,iw2*.65,.05,.14,0,p.y,p.z,trackMat); b.rotation.x=p.a; }
+  // costados: cable, herramientas, Schürzen; atrás: silenciadores, cajón, lanzahumos
+  { const c=cyl(root,.035,.035,L*.6,hw-.03,deck-.12,-.1,6,darkMat); c.rotation.x=Math.PI/2; box(root,.08,.08,1.2,-(hw-.08),deck+.04,.1,_wdMat); box(root,.12,.12,1.0,hw-.25,deck+.06,zr+L*.42,darkMat); }
+  if(u==='pz38'){ for(const sx of [-1,1]){ rivetsRow(root,sx*(hw-.005),deck-.1,zr+.3,zf-gz,12); rivetsRow(root,sx*(hw-.005),deck-.45,zr+.3,zf-gz,12); }
+    for(let k=0;k<2;k++){ const p=glacisPt(I,deck,gz,zf,k?.9:.1,.02); for(let i=0;i<7;i++) cyl(root,.025,.025,.03,-iw2*.4+i*iw2*.133,p.y,p.z,5,darkMat).rotation.x=Math.PI/2-p.a; }
+    const m=cyl(root,.13,.13,.7,0,deck-.35,zr-.15,10,darkMat); m.rotation.z=Math.PI/2; return; }
+  if(u==='tiger2'){ for(const sx of [-1,1]){ cyl(root,.08,.09,1.0,sx*.42,deck,zr-.08,8,darkMat); rbox(root,.3,.55,.16,sx*.42,deck+.05,zr-.14,mat,.04);
+      box(root,.7,.03,1.1,sx*iw2*.3,deck+.03,zr+L*.17,darkMat); } cyl(root,.3,.3,.05,0,deck+.04,zr+L*.17,16,darkMat); return; }
+  if(u==='pz4'||u==='flak4'){ for(const sx of [-1,1]) box(root,.7,.03,.85,sx*iw2*.28,deck+.03,zr+L*.2,darkMat);            // dos rejillas de radiadores (desde el Ausf.F)
+    { const m=cyl(root,.2,.2,.95,-iw2*.1,deck-.5,zr-.22,12,darkMat); m.rotation.z=Math.PI/2; cyl(root,.09,.09,.4,iw2*.35,deck-.55,zr-.18,8,darkMat).rotation.z=Math.PI/2; }   // silenciador grande y auxiliar
+    rbox(root,.4,.25,.25,iw2*.3,deck-.15,zr-.15,mat,.03); }                                                              // lanzahumos atrás
+  else { box(root,iw2*.6,.03,.9,0,deck+.03,zr+L*.18,darkMat); const m=cyl(root,.17,.17,iw2*.75,0,deck-.45,zr-.2,12,darkMat); m.rotation.z=Math.PI/2; rbox(root,.4,.25,.25,iw2*.3,deck-.12,zr-.15,mat,.03); }
+  if(u==='stug'){ const sh=box(root,.55,.45,.05,.3,deck+(I.case?I.case.h:0)+.2,(I.case?I.case.z:0)+.3,mat); box(root,.03,.03,.5,.3,deck+(I.case?I.case.h:0)+.32,(I.case?I.case.z:0)+.6,darkMat);   // escudo de la ametralladora del cargador
+    cyl(root,.25,.27,.18,-.4,deck+(I.case?I.case.h:0)+.08,(I.case?I.case.z:0)-.3,12,mat); }                               // cúpula
+}
+function deTurret(tur,G,M,I,mat,gy){ const u=I.de, hw=M.tw/2, hl=M.tl/2, th=M.th;
+  if(u==='jagdp'||u==='stug'){ const m=I.mant==='round'?cyl(G.gp,.3,.36,.55,0,0,.15,14,mat):rbox(G.gp,.62,.46,.32,0,0,.1,mat,.05); if(I.mant==='round') m.rotation.x=Math.PI/2; return; }   // Saukopf / mantelete de caja
+  if(u==='flak4') return;
+  for(const sx of [-1,1]){ if(u!=='tiger2'&&u!=='pz38'){ const d=rbox(tur,.04,th*.6,.55,sx*(hw*.97),th*.45,-hl*.05,mat,.02); }                         // puertas laterales de la torre (Pz III y IV)
+    const v=box(tur,.04,.06,.16,sx*(hw*.96),th*.6,hl*.55,darkMat); }                                                       // visores
+  if(u==='pz3'){ rbox(G.gp,.7,.45,.3,0,0,.1,mat,.05); cyl(G.gp,.03,.03,.1,.24,-.04,.28,8,darkMat).rotation.x=Math.PI/2; return; }
+  if(u==='pz4'){ rbox(G.gp,.62,.38,.24,0,0,.08,mat,.04); cyl(G.gp,.03,.03,.1,-.22,-.02,.24,8,darkMat).rotation.x=Math.PI/2; return; }
+  if(u==='pz38'){ rbox(G.gp,.42,.34,.2,0,0,.06,mat,.05); cyl(G.gp,.03,.03,.3,.17,-.02,.28,8,darkMat).rotation.x=Math.PI/2;           // ametralladora al lado del cañón
+    for(const sx of [-1,1]) rivetsRow(tur,sx*(hw*.97),th*.5,-hl*.6,hl*.6,6); cyl(tur,.2,.22,.18,-hw*.2,th+.06,-hl*.15,10,mat); return; }
+  if(u==='tiger2'){ const m=cyl(G.gp,.3,.42,.6,0,0,.2,14,mat); m.rotation.x=Math.PI/2;                                   // Saukopf de la torre Henschel
+    for(const sx of [-1,1]) for(let k=0;k<4;k++){ const b=box(tur,.04,.16,.3,sx*(hw+.03),th*.45,hl*.15-k*.32,trackMat); }  // eslabones colgados en la torre
+    cyl(tur,.26,.26,.06,hw*.35,th+.02,hl*.05,12,mat); box(tur,.12,.07,.1,hw*.35,th+.06,hl*.35,darkMat); cyl(tur,.07,.07,.1,0,th+.04,-hl*.4,8,darkMat);   // escotilla, periscopio y arma de defensa cercana
+    rbox(tur,.06,.5,.55,0,th*.45,-hl-.02,mat,.03); }                                                                   // escotilla trasera
+}
+DET.de={gear:deGear,hull:deHull,tur:deTurret};
