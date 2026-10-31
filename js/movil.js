@@ -45,16 +45,31 @@ if(MOVIL){
     else if(!on) return; else if(t==='scope'){ if(player&&!player.dead) scopeOn=!scopeOn; }
     else if(t==='tab') tabBoard(!tabOn); else if(t==='ping'){ if(player&&!player.dead) doPing(); }
     else if(t==='menu'){ if(artyPick) artyMap(false); else pauseMenu(); } }
-  function stickSet(dx,dy){ const d=Math.hypot(dx,dy), k=d>R?R/d:1; knob.style.transform=`translate(${dx*k}px,${dy*k}px)`;
-    const x=dx/R, y=dy/R; setKey('fwd',y<-.3); setKey('back',y>.35); setKey('left',x<-.35); setKey('right',x>.35); }
-  function stickOff(){ T.stick=null; stick.classList.remove('on'); knob.style.transform=''; stick.style.left=stick.style.top=''; for(const a of ['fwd','back','left','right']) setKey(a,false); }
+  // palanca analógica: cuánto la empujás es cuánto acelera o gira; si el pulgar se va más allá del borde, la palanca lo sigue
+  function stickSet(dx,dy){ let d=Math.hypot(dx,dy);
+    if(d>R*1.15&&T.stick){ const k=(d-R*1.15)/d; T.stick.x+=dx*k; T.stick.y+=dy*k; dx-=dx*k; dy-=dy*k; d=Math.hypot(dx,dy); stick.style.left=(T.stick.x-60)+'px'; stick.style.top=(T.stick.y-60)+'px'; }
+    const k=d>R?R/d:1; knob.style.transform=`translate(${dx*k}px,${dy*k}px)`; T.ax={x:dx*k/R,y:dy*k/R}; }
+  function stickOff(){ T.stick=null; T.ax=null; stick.classList.remove('on'); knob.style.transform=''; stick.style.left=stick.style.top=''; for(const a of ['fwd','back','left','right']) setKey(a,false); }
+  // dos formas de manejar: 'cam' (por defecto) = el tanque va hacia donde empujás según la cámara (arriba = hacia donde mirás);
+  // 'tank' = la de siempre pero analógica (arriba acelera, los costados giran el casco)
+  let manejo='cam'; try{ manejo=localStorage.getItem('tw2_manejo')||'cam'; }catch(e){}
+  window.mobAxis=function(t){ const r=mobAxis0(t); setKey('fwd',!!r&&r[0]>.1); setKey('back',!!r&&r[0]<-.1); return r; };   // las teclas quedan para el sonido del motor y el escape
+  function mobAxis0(t){ const A=T.ax; if(!A||state!=='play') return null; const m=Math.min(1,Math.hypot(A.x,A.y)); if(m<.15) return [0,0];
+    const mm=(m-.15)/.85;
+    if(manejo==='tank') return [clamp(-A.y*1.25,-1,1)*(Math.abs(A.y)>.15?1:0),clamp(-A.x*1.4,-1,1)*(Math.abs(A.x)>.15?1:0)];
+    const fx=Math.sin(camYaw), fz=Math.cos(camYaw), rx=-fz, rz=fx, wx=fx*(-A.y)+rx*A.x, wz=fz*(-A.y)+rz*A.x, want=Math.atan2(wx,wz);
+    let d=wrap(want-t.heading);
+    if(Math.abs(d)>2.4){ const d2=wrap(d+Math.PI); return [-mm,clamp(d2*2.5,-1,1)]; }                     // para atrás: retrocede enderezando la cola
+    return [mm*clamp(Math.cos(d)*1.3,0,1),clamp(d*2.5,-1,1)]; }                                            // gira hacia ahí y avanza cuando ya mira para ese lado
+  window.setManejo=v=>{ manejo=v; try{ localStorage.setItem('tw2_manejo',v); }catch(e){} };
+  window.getManejo=()=>manejo;
   const inGame=()=>state==='play'&&!artyPick;
   document.addEventListener('touchstart',e=>{
     for(const t of e.changedTouches){ const el=t.target, b=el.closest&&el.closest('[data-t]');
       if(b&&state==='play'){ T.hold.set(t.identifier,b); press(b,true); e.preventDefault(); continue; }
       const s=el.closest&&el.closest('#ammoSlots .as'); if(s&&state==='play'){ tapKey(SLOT[s.dataset.id]); e.preventDefault(); continue; }
       if(!inGame()||el!==renderer.domElement) continue; e.preventDefault();
-      if(t.clientX<innerWidth*.42&&t.clientY>innerHeight*.3&&!T.stick){ T.stick={id:t.identifier,x:t.clientX,y:t.clientY}; stick.style.left=(t.clientX-60)+'px'; stick.style.top=(t.clientY-60)+'px'; stick.classList.add('on'); stickSet(0,0); }
+      if(t.clientX<innerWidth*.48&&t.clientY>innerHeight*.18&&!T.stick){ T.stick={id:t.identifier,x:t.clientX,y:t.clientY}; stick.style.left=(t.clientX-60)+'px'; stick.style.top=(t.clientY-60)+'px'; stick.classList.add('on'); stickSet(0,0); }
       else if(!T.look) T.look={id:t.identifier,x:t.clientX,y:t.clientY}; } },{passive:false});
   document.addEventListener('touchmove',e=>{ let used=false;
     for(const t of e.changedTouches){
@@ -102,6 +117,9 @@ if(MOVIL){
     for(const h of document.querySelectorAll('.settings h2,#panel h2')){ if(h.textContent==='Mouse') h.textContent='Sensibilidad del dedo';
       if(h.textContent==='Teclas'){ h.classList.add('noMovil'); const n=h.nextElementSibling; if(n&&n.tagName==='P') n.classList.add('noMovil'); } }
     for(const p of document.querySelectorAll('p.s')) if(/^Clic izquierdo/.test(p.textContent)) p.textContent='Palanca a la izquierda: manejar (aparece donde apoyás el pulgar). Deslizá el dedo a la derecha: mirar y apuntar. 🔥 cañón, ⁞⁞ ametralladora (mantener), ◎ entra y sale de la mira, 🔍 zoom (tocá para ponerlo y sacarlo). Tocá la barra de abajo para cambiar munición, pedir artillería o bombardeo (después tocá el mapa), reparar y demás. ☰ pausa.';
+    { const h=[...document.querySelectorAll('.settings h2,#panel h2')].find(x=>x.textContent==='Sensibilidad del dedo');
+      if(h&&!$('manejoB')){ h.insertAdjacentHTML('beforebegin',`<h2>Manejo</h2><div class="hgOpt" id="manejoB"><button data-v="cam" class="${manejo==='cam'?'sel':''}">Hacia donde empujás</button><button data-v="tank" class="${manejo==='tank'?'sel':''}">Clásico (arriba acelera, costados giran)</button></div>`);
+        $('manejoB').querySelectorAll('button').forEach(b=>b.onclick=()=>{ setManejo(b.dataset.v); renderSettings(); }); } }
     return r; };
   const _mm=mainMenu; mainMenu=function(){ const r=_mm.apply(this,arguments); fixHome(); return r; }; fixHome();
 

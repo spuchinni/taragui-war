@@ -45,7 +45,8 @@ function chaseCam(t,dt,dir){
 function updatePlayer(dt){
   const t=player;
   if(!t.dead){
-    const th=(down('fwd')?1:0)-(down('back')?1:0), st=(down('left')?1:0)-(down('right')?1:0);
+    let th=(down('fwd')?1:0)-(down('back')?1:0), st=(down('left')?1:0)-(down('right')?1:0);
+    if(typeof mobAxis==='function'){ const m=mobAxis(t); if(m){ th=m[0]; st=m[1]; } }      // celular: palanca analógica (movil.js)
     drive(t,th,st,dt);
   }
   if(t.dead){ scopeOn=false; if(artyPick) artyMap(false); } scoped=scopeOn;
