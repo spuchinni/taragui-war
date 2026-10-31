@@ -133,12 +133,19 @@ function progGuardados(){ const L=[]; try{ for(let i=0;i<localStorage.length;i++
     L.push({k,P,b:(P.stats&&P.stats.battles)||0,own:Object.keys(P.owned||{}).length,yp:P.yp||0,t:P.t||0}); } }catch(e){}
   return L.sort((a,b)=>b.b-a.b||b.t-a.t); }
 { const _rs=renderSettings; renderSettings=function(){ const r=_rs.apply(this,arguments); const L=progGuardados().filter(x=>x.k!==PROG_KEY);
-    const me=progBat(PROG), h=document.querySelector('#panel h2');
-    if(h&&L.length&&!$('recP')){ const nm=k=>k==='tw2_progress'?'Sin cuenta':/#copia$/.test(k)?'Copia de seguridad'+(k.includes('@')?' (cuenta)':''):'Otra cuenta';
-      h.insertAdjacentHTML('beforebegin',`<h2>Recuperar progreso</h2><div id="recP" class="note" style="margin-bottom:8px">Tenés ${(PROG.stats&&PROG.stats.battles)||0} batallas. Progresos guardados en este navegador:
-        ${L.map((x,i)=>`<div style="display:flex;gap:8px;align-items:center;margin:4px 0"><span>${nm(x.k)} · ${x.b} batallas · ${x.own} tanques · ${ypTxt(x.yp)} ${YP}${x.t?' · '+new Date(x.t).toLocaleDateString('es-AR'):''}</span><button class="hgB" data-i="${i}">Usar este</button></div>`).join('')}</div>`);
-      $('recP').querySelectorAll('button').forEach(b=>b.onclick=()=>{ const x=L[+b.dataset.i]; if(!confirm(`¿Usar el progreso con ${x.b} batallas? El que tenés ahora queda como copia.`)) return;
-        try{ localStorage.setItem(PROG_KEY+'#copia',JSON.stringify(PROG)); }catch(e){} PROG=JSON.parse(JSON.stringify(x.P)); saveProg(); loadProg(); if(nube.ok) nubeSubir(); renderSettings(); banner('Progreso recuperado',`${x.b} batallas`,2.5); }); }
+    const h=document.querySelector('#panel h2');
+    if(h&&!$('recP')){ const nm=k=>k==='tw2_progress'?'Sin cuenta':/#copia$/.test(k)?'Copia de seguridad'+(k.includes('@')?' (cuenta)':''):'Otra cuenta';
+      const lista=L.length?L.map((x,i)=>`<div style="display:flex;gap:8px;align-items:center;margin:4px 0;flex-wrap:wrap"><span>${nm(x.k)} · ${x.b} batallas · ${x.own} tanques · ${ypTxt(x.yp)} ${YP}${x.t?' · '+new Date(x.t).toLocaleDateString('es-AR'):''}</span><button class="hgB" data-i="${i}">Usar este</button></div>`).join('')
+        :'<div style="margin:4px 0;opacity:.8">No hay otros progresos guardados en este navegador. Si jugaste en otro celular o compu, abrí el juego ahí, tocá "Copiar mi progreso" y pegalo acá con "Pegar un progreso".</div>';
+      h.insertAdjacentHTML('beforebegin',`<h2>Recuperar progreso</h2><div id="recP" class="note" style="margin-bottom:8px">Ahora tenés ${(PROG.stats&&PROG.stats.battles)||0} batallas${nube.user?` (cuenta ${escH(nubeNombre())})`:' (sin cuenta)'}.${lista}
+        <div style="display:flex;gap:8px;margin-top:6px;flex-wrap:wrap"><button class="hgB" id="recCopy">📋 Copiar mi progreso</button><button class="hgB" id="recPaste">📥 Pegar un progreso</button></div></div>`);
+      const usar=(P,txt)=>{ if(!confirm(`¿Usar el progreso con ${(P.stats&&P.stats.battles)||0} batallas? El que tenés ahora queda como copia.`)) return;
+        try{ localStorage.setItem(PROG_KEY+'#copia',JSON.stringify(PROG)); }catch(e){} PROG=JSON.parse(JSON.stringify(P)); saveProg(); loadProg(); if(nube.ok) nubeSubir(); renderSettings(); banner('Progreso recuperado',txt,2.5); };
+      $('recP').querySelectorAll('button[data-i]').forEach(b=>b.onclick=()=>{ const x=L[+b.dataset.i]; usar(x.P,`${x.b} batallas`); });
+      $('recCopy').onclick=()=>{ const code='TW2:'+btoa(unescape(encodeURIComponent(JSON.stringify(PROG))));
+        (navigator.clipboard?navigator.clipboard.writeText(code):Promise.reject()).then(()=>banner('Copiado','Pegalo en el otro dispositivo',2.5)).catch(()=>prompt('Copiá este código:',code)); };
+      $('recPaste').onclick=()=>{ const c=(prompt('Pegá el código del progreso (empieza con TW2:)')||'').trim(); if(!c) return;
+        try{ const P=JSON.parse(decodeURIComponent(escape(atob(c.replace(/^TW2:/,''))))); if(!P||P.v!==3) throw 0; usar(P,`${(P.stats&&P.stats.battles)||0} batallas`); }catch(e){ alert('Ese código no sirve. Copialo de nuevo completo.'); } }; }
     return r; }; }
 // aviso si al cargar se volvió a la copia de seguridad
 setTimeout(()=>{ if(PROG&&PROG.recuperado){ delete PROG.recuperado; saveProg(); if(typeof banner==='function') banner('Progreso recuperado','Se había pisado y volvimos a tu copia',3); } },4000);
