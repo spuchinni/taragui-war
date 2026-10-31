@@ -25,7 +25,7 @@ async function nubeSesion(u){
   // sin cuenta (o vacío) más nuevo y eso se subía (así se perdió el progreso de Sebastián)
   const KEY='tw2_progress@'+u.uid; nube.msg='Cargando tu progreso…'; nubeChip(); nubeVista();
   let remoto=null;
-  try{ const s=await nubeDoc().get(); remoto=s.exists?(s.data().prog||null):null; }
+  try{ const s=await nubeDoc().get(); remoto=s.exists?(s.data().prog||null):null; nube.ant=s.exists?(s.data().ant||null):null; nube.base=progT(remoto); }
   catch(e){ if(nube.user!==u) return; PROG_KEY=KEY; nube.msg='No se pudo conectar. Tu progreso se guarda en este navegador y se sube la próxima vez que entres.'; nubeCargarLocal(); nubeVista(); return; }
   if(nube.user!==u) return; // cerró sesión mientras cargaba
   PROG_KEY=KEY; const cache=leerLS(PROG_KEY);
@@ -45,8 +45,23 @@ async function nubeSesion(u){
 
 // Se llama desde saveProg: junta los cambios y sube uno solo cada 1,5 s
 function nubeGuardar(){ if(!nube.ok) return; clearTimeout(nube.timer); nube.timer=setTimeout(nubeSubir,1500); }
+// Juntar dos progresos de la misma cuenta (por ejemplo, la compu y el celular abiertos a la vez): la base es el de más batallas y del otro
+// se suma todo lo investigado, comprado, los PI de cada tanque y las misiones; así nunca se pierde un tanque comprado.
+function progMerge(A,B){ const M=JSON.parse(JSON.stringify(A));
+  for(const k of ['unlocked','owned','camp']){ M[k]=M[k]||{}; for(const x in (B[k]||{})) if(!M[k][x]) M[k][x]=B[k][x]; }
+  M.rp=M.rp||{}; for(const x in (B.rp||{})) if(!M.unlocked[x]) M.rp[x]=Math.max(M.rp[x]||0,B.rp[x]); for(const x in M.rp) if(M.unlocked[x]) delete M.rp[x];
+  return M; }
+// Subir: dentro de una transacción se mira lo que hay en la nube. Si otro dispositivo guardó algo después de que este lo cargó, se juntan
+// los dos en vez de pisarlo; lo anterior queda en el campo "ant" (una copia en la nube por si acaso).
 function nubeSubir(){ clearTimeout(nube.timer); nube.timer=0; if(!nube.ok||!PROG) return;
-  return nubeDoc().set({prog:JSON.stringify(PROG),nombre:nubeNombre(),actualizado:firebase.firestore.FieldValue.serverTimestamp()})
+  const u=nube.user, ref=nubeDoc(); let adopt=null;
+  return firebase.firestore().runTransaction(async tx=>{ adopt=null; const s=await tx.get(ref), rem=s.exists?(s.data().prog||null):null, R=progDe(rem);
+      let mine=JSON.parse(JSON.stringify(PROG));
+      if(R&&(R.t||0)>(nube.base||0)){ mine=progBat(R)>progBat(mine)?progMerge(R,mine):progMerge(mine,R); mine.t=Date.now(); adopt=mine; }   // otro dispositivo guardó: se juntan
+      tx.set(ref,{prog:JSON.stringify(mine),ant:rem||null,nombre:nubeNombre(),actualizado:firebase.firestore.FieldValue.serverTimestamp()});
+      return mine; })
+    .then(m=>{ if(nube.user!==u) return; nube.base=m.t;
+      if(adopt){ try{ localStorage.setItem(PROG_KEY,JSON.stringify(adopt)); }catch(e){} PROG=adopt; if(state==='menu'&&!net.on) mainMenu(); } })
     .catch(()=>{}); } // si falla queda en este navegador y se reintenta en el próximo guardado
 document.addEventListener('visibilitychange',()=>{ if(document.visibilityState==='hidden'&&nube.timer) nubeSubir(); });
 
@@ -129,12 +144,12 @@ if(nube.on){
 }
 
 // ---- Recuperar progreso (Ajustes): lista los progresos guardados en este navegador (sin cuenta, de cada cuenta y sus copias) ----
-function progGuardados(){ const L=[]; try{ for(let i=0;i<localStorage.length;i++){ const k=localStorage.key(i); if(!/^tw2_progress/.test(k)) continue; const P=progLS(k); if(!P) continue;
+function progGuardados(){ const L=[]; { const P=progDe(nube.ant); if(P) L.push({k:'nube#ant',P,b:(P.stats&&P.stats.battles)||0,own:Object.keys(P.owned||{}).length,yp:P.yp||0,t:P.t||0}); } try{ for(let i=0;i<localStorage.length;i++){ const k=localStorage.key(i); if(!/^tw2_progress/.test(k)) continue; const P=progLS(k); if(!P) continue;
     L.push({k,P,b:(P.stats&&P.stats.battles)||0,own:Object.keys(P.owned||{}).length,yp:P.yp||0,t:P.t||0}); } }catch(e){}
   return L.sort((a,b)=>b.b-a.b||b.t-a.t); }
 { const _rs=renderSettings; renderSettings=function(){ const r=_rs.apply(this,arguments); const L=progGuardados().filter(x=>x.k!==PROG_KEY);
     const h=document.querySelector('#panel h2');
-    if(h&&!$('recP')){ const nm=k=>k==='tw2_progress'?'Sin cuenta':/#copia$/.test(k)?'Copia de seguridad'+(k.includes('@')?' (cuenta)':''):'Otra cuenta';
+    if(h&&!$('recP')){ const nm=k=>k==='nube#ant'?'Versión anterior en la nube':k==='tw2_progress'?'Sin cuenta':/#copia$/.test(k)?'Copia de seguridad'+(k.includes('@')?' (cuenta)':''):'Otra cuenta';
       const lista=L.length?L.map((x,i)=>`<div style="display:flex;gap:8px;align-items:center;margin:4px 0;flex-wrap:wrap"><span>${nm(x.k)} · ${x.b} batallas · ${x.own} tanques · ${ypTxt(x.yp)} ${YP}${x.t?' · '+new Date(x.t).toLocaleDateString('es-AR'):''}</span><button class="hgB" data-i="${i}">Usar este</button></div>`).join('')
         :'<div style="margin:4px 0;opacity:.8">No hay otros progresos guardados en este navegador. Si jugaste en otro celular o compu, abrí el juego ahí, tocá "Copiar mi progreso" y pegalo acá con "Pegar un progreso".</div>';
       h.insertAdjacentHTML('beforebegin',`<h2>Recuperar progreso</h2><div id="recP" class="note" style="margin-bottom:8px">Ahora tenés ${(PROG.stats&&PROG.stats.battles)||0} batallas${nube.user?` (cuenta ${escH(nubeNombre())})`:' (sin cuenta)'}.${lista}
