@@ -51,9 +51,23 @@ function baseScene(){
     add(new THREE.CylinderGeometry(.18,.26,2.6,6),tt,x,1.3,z); const c=add(new THREE.IcosahedronGeometry(2.4+(i%3)*.5,0),tm,x,4.2,z); c.scale.y=1.2; }
   return sc;
 }
-// bandera de la nación elegida (franjas con los colores del uniforme si no hay otra cosa)
-function baseFlag(nat){ const f=baseScene.flag; if(!f||!NATIONS[nat]) return; const N=NATIONS[nat], c=document.createElement('canvas'); c.width=96; c.height=64; const x=c.getContext('2d');
-  const cols=N.flagC||(N.uni||N.camo||['#556','#999']); cols.forEach((k,i)=>{ x.fillStyle=typeof k==='number'?'#'+k.toString(16).padStart(6,'0'):k; x.fillRect(i*96/cols.length,0,96/cols.length+1,64); });
+// bandera de la nación elegida (simplificada; Alemania con los colores negro, blanco y rojo del Reich, sin símbolos)
+const FLAG_DRAW={
+  ar:x=>{ x.fillStyle='#74acdf'; x.fillRect(0,0,120,80); x.fillStyle='#fff'; x.fillRect(0,27,120,26); x.fillStyle='#f6b40e'; x.beginPath(); x.arc(60,40,8,0,7); x.fill(); },
+  uk:x=>{ x.fillStyle='#012169'; x.fillRect(0,0,120,80); x.lineCap='butt'; const L=(w,c)=>{ x.strokeStyle=c; x.lineWidth=w; x.beginPath(); x.moveTo(0,0); x.lineTo(120,80); x.moveTo(120,0); x.lineTo(0,80); x.stroke(); }; L(16,'#fff'); L(6,'#c8102e');
+    x.fillStyle='#fff'; x.fillRect(48,0,24,80); x.fillRect(0,28,120,24); x.fillStyle='#c8102e'; x.fillRect(53,0,14,80); x.fillRect(0,33,120,14); },
+  us:x=>{ for(let i=0;i<13;i++){ x.fillStyle=i%2?'#fff':'#b22234'; x.fillRect(0,i*80/13,120,80/13+.5); } x.fillStyle='#3c3b6e'; x.fillRect(0,0,52,43); x.fillStyle='#fff';
+    for(let r=0;r<6;r++) for(let c=0;c<(r%2?5:6);c++){ x.beginPath(); x.arc(5+c*8.4+(r%2)*4.2,4.5+r*6.8,1.4,0,7); x.fill(); } },
+  ru:x=>{ x.fillStyle='#cc0000'; x.fillRect(0,0,120,80); x.fillStyle='#ffd700'; x.beginPath(); for(let i=0;i<10;i++){ const a=-Math.PI/2+i*Math.PI/5, r=i%2?3:7; x.lineTo(20+Math.cos(a)*r,14+Math.sin(a)*r); } x.fill(); },
+  de:x=>{ ['#111','#fff','#d00'].forEach((c,i)=>{ x.fillStyle=c; x.fillRect(0,i*80/3,120,80/3+1); }); },
+  fr:x=>{ ['#0055a4','#fff','#ef4135'].forEach((c,i)=>{ x.fillStyle=c; x.fillRect(i*40,0,41,80); }); },
+  it:x=>{ ['#009246','#fff','#ce2b37'].forEach((c,i)=>{ x.fillStyle=c; x.fillRect(i*40,0,41,80); }); },
+  jp:x=>{ x.fillStyle='#fff'; x.fillRect(0,0,120,80); x.fillStyle='#bc002d'; x.beginPath(); x.arc(60,40,22,0,7); x.fill(); },
+  cn:x=>{ x.fillStyle='#fe0000'; x.fillRect(0,0,120,80); x.fillStyle='#000095'; x.fillRect(0,0,60,40); x.fillStyle='#fff'; x.beginPath();
+    for(let i=0;i<24;i++){ const a=i*Math.PI/12, r=i%2?7:13; x.lineTo(30+Math.cos(a)*r,20+Math.sin(a)*r); } x.fill(); x.fillStyle='#000095'; x.beginPath(); x.arc(30,20,7.5,0,7); x.fill(); x.fillStyle='#fff'; x.beginPath(); x.arc(30,20,6,0,7); x.fill(); }};
+function baseFlag(nat){ const f=baseScene.flag; if(!f||!NATIONS[nat]) return; const N=NATIONS[nat], c=document.createElement('canvas'); c.width=120; c.height=80; const x=c.getContext('2d');
+  if(FLAG_DRAW[nat]) FLAG_DRAW[nat](x);
+  else { const cols=N.uni||N.camo||['#556','#999']; cols.forEach((k,i)=>{ x.fillStyle=typeof k==='number'?'#'+k.toString(16).padStart(6,'0'):k; x.fillRect(i*120/cols.length,0,120/cols.length+1,80); }); }
   if(f.material.map) f.material.map.dispose(); f.material.map=new THREE.CanvasTexture(c); f.material.needsUpdate=true; }
 
 hgInit=function(){
@@ -84,7 +98,7 @@ hgRender=function(dt){
   if(baseScene.flag) baseScene.flag.rotation.y=Math.sin(performance.now()*.0011)*.25;
   const sm=renderer.shadowMap.enabled; renderer.shadowMap.enabled=true; renderer.render(H.sc,H.cam); renderer.shadowMap.enabled=sm; return true;
 };
-{ const _hs=hgShow; hgShow=function(key,nat){ const had=hg&&hg.key; _hs.apply(this,arguments); if(hg&&hg.obj){ hg.obj.root.traverse(o=>{ if(o.isMesh) o.castShadow=true; }); baseFlag(nat); } }; }
+{ const _hs=hgShow; hgShow=function(key,nat){ _hs.apply(this,arguments); if(hg&&hg.obj){ hg.obj.root.traverse(o=>{ if(o.isMesh) o.castShadow=true; }); baseFlag(nat); } }; }
 
 // ---- botones del hangar: campo de tiro y ayuda de la cámara ----
 { const _rh=renderHangar; renderHangar=function(){ const r=_rh.apply(this,arguments);
@@ -119,3 +133,5 @@ function rangeBox(){ const d=tut.d.map(t=>t&&!t.dead?`<span>${t.T.label} · ${t.
     tickets[0]=tickets[1]=400;                                                                          // en el campo de tiro no se pierde nada
     tut.ammoT=(tut.ammoT||0)+dt; if(tut.ammoT>2&&player.ammoCount){ tut.ammoT=0; player.ammoCount=player.ammoMax.slice(); player.mgBelt=250; }
     if(ch||(tut.boxT=(tut.boxT||0)+dt)>2){ tut.boxT=0; rangeBox(); } }; }
+// al abandonar el campo de tiro se vuelve al garaje, no al inicio
+{ const _cb=clearBattle; clearBattle=function(){ const r=tut&&tut.range; const o=_cb.apply(this,arguments); if(r){ menuScreen='hangar'; tut=null; } return o; }; }
