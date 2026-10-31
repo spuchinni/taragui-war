@@ -21,12 +21,17 @@ async function nubeSesion(u){
   if(!u){ nubeUsarClave('tw2_progress'); nubeVista(); return; }
   if(!u.emailVerified){ nubeUsarClave('tw2_progress'); if(nube.vista) nube.vista='verificar'; nubeVista(); return; } // al abrir el juego no salta solo: lo avisa el botón
   if(!netName) netName=cleanName(nubeNombre());
-  PROG_KEY='tw2_progress@'+u.uid; nube.msg='Cargando tu progreso…'; nubeChip(); nubeVista();
+  // la clave de la cuenta se usa recién cuando llegó lo de la nube: si el juego guardaba mientras tanto, pisaba la cuenta con el progreso
+  // sin cuenta (o vacío) más nuevo y eso se subía (así se perdió el progreso de Sebastián)
+  const KEY='tw2_progress@'+u.uid; nube.msg='Cargando tu progreso…'; nubeChip(); nubeVista();
   let remoto=null;
   try{ const s=await nubeDoc().get(); remoto=s.exists?(s.data().prog||null):null; }
-  catch(e){ if(nube.user!==u) return; nube.msg='No se pudo conectar. Tu progreso se guarda en este navegador y se sube la próxima vez que entres.'; nubeCargarLocal(); nubeVista(); return; }
+  catch(e){ if(nube.user!==u) return; PROG_KEY=KEY; nube.msg='No se pudo conectar. Tu progreso se guarda en este navegador y se sube la próxima vez que entres.'; nubeCargarLocal(); nubeVista(); return; }
   if(nube.user!==u) return; // cerró sesión mientras cargaba
-  const cache=leerLS(PROG_KEY);
+  PROG_KEY=KEY; const cache=leerLS(PROG_KEY);
+  // gana el que tiene más batallas jugadas (nunca bajan); si empatan, el más nuevo
+  if(remoto&&cache&&progJugado(remoto)!==progJugado(cache)){ const keep=progJugado(remoto)>progJugado(cache)?remoto:cache, other=keep===remoto?cache:remoto;
+    try{ localStorage.setItem(PROG_KEY+'#copia',other); localStorage.setItem(PROG_KEY,keep); }catch(e){} nube.ok=true; nube.msg=''; if(['menu','mail-entrar','mail-crear','olvide','verificar'].includes(nube.vista)) nube.vista=null; nubeCargarLocal(); if(keep===cache) saveProg(); nubeVista(); return; }
   nube.ok=true; nube.msg='';
   if(['menu','mail-entrar','mail-crear','olvide','verificar'].includes(nube.vista)) nube.vista=null;
   if(remoto&&progT(remoto)>=progT(cache)){ try{ localStorage.setItem(PROG_KEY,remoto); }catch(e){} nubeCargarLocal(); }
@@ -122,3 +127,18 @@ if(nube.on){
   nubeAuth().getRedirectResult().catch(e=>{ nube.msg=nubeErr(e); nube.vista='menu'; nubeVista(); });
   nubeAuth().onAuthStateChanged(nubeSesion);
 }
+
+// ---- Recuperar progreso (Ajustes): lista los progresos guardados en este navegador (sin cuenta, de cada cuenta y sus copias) ----
+function progGuardados(){ const L=[]; try{ for(let i=0;i<localStorage.length;i++){ const k=localStorage.key(i); if(!/^tw2_progress/.test(k)) continue; const P=progLS(k); if(!P) continue;
+    L.push({k,P,b:(P.stats&&P.stats.battles)||0,own:Object.keys(P.owned||{}).length,yp:P.yp||0,t:P.t||0}); } }catch(e){}
+  return L.sort((a,b)=>b.b-a.b||b.t-a.t); }
+{ const _rs=renderSettings; renderSettings=function(){ const r=_rs.apply(this,arguments); const L=progGuardados().filter(x=>x.k!==PROG_KEY);
+    const me=progBat(PROG), h=document.querySelector('#panel h2');
+    if(h&&L.length&&!$('recP')){ const nm=k=>k==='tw2_progress'?'Sin cuenta':/#copia$/.test(k)?'Copia de seguridad'+(k.includes('@')?' (cuenta)':''):'Otra cuenta';
+      h.insertAdjacentHTML('beforebegin',`<h2>Recuperar progreso</h2><div id="recP" class="note" style="margin-bottom:8px">Tenés ${(PROG.stats&&PROG.stats.battles)||0} batallas. Progresos guardados en este navegador:
+        ${L.map((x,i)=>`<div style="display:flex;gap:8px;align-items:center;margin:4px 0"><span>${nm(x.k)} · ${x.b} batallas · ${x.own} tanques · ${ypTxt(x.yp)} ${YP}${x.t?' · '+new Date(x.t).toLocaleDateString('es-AR'):''}</span><button class="hgB" data-i="${i}">Usar este</button></div>`).join('')}</div>`);
+      $('recP').querySelectorAll('button').forEach(b=>b.onclick=()=>{ const x=L[+b.dataset.i]; if(!confirm(`¿Usar el progreso con ${x.b} batallas? El que tenés ahora queda como copia.`)) return;
+        try{ localStorage.setItem(PROG_KEY+'#copia',JSON.stringify(PROG)); }catch(e){} PROG=JSON.parse(JSON.stringify(x.P)); saveProg(); loadProg(); if(nube.ok) nubeSubir(); renderSettings(); banner('Progreso recuperado',`${x.b} batallas`,2.5); }); }
+    return r; }; }
+// aviso si al cargar se volvió a la copia de seguridad
+setTimeout(()=>{ if(PROG&&PROG.recuperado){ delete PROG.recuperado; saveProg(); if(typeof banner==='function') banner('Progreso recuperado','Se había pisado y volvimos a tu copia',3); } },4000);

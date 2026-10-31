@@ -38,6 +38,7 @@ let PROG=null;
 // Con cuenta iniciada la clave pasa a tw2_progress@<uid> (ver nube.js), así cada cuenta tiene el suyo en este navegador.
 let PROG_KEY='tw2_progress';
 function loadProg(){ try{ PROG=JSON.parse(localStorage.getItem(PROG_KEY)||'null'); }catch(e){ PROG=null; }
+  { const cp=progLS(PROG_KEY+'#copia'); if(cp&&progBat(cp)>progBat(PROG&&PROG.v===3?PROG:null)+.5){ PROG=cp; PROG.recuperado=1; try{ localStorage.setItem(PROG_KEY,JSON.stringify(cp)); }catch(e){} } }   // se había pisado: vuelve la copia
   if(!PROG||PROG.v!==3) PROG={v:3,unlocked:{},owned:{},rp:{},target:{},yp:YP_START,garage:{},stats:{battles:0,wins:0},eraOpen:{1:1},camp:{}};
   PROG.camp=PROG.camp||{}; PROG.owned=PROG.owned||{}; PROG.target=PROG.target||{};
   // cada nación arranca, en cada época, con su primer tanque investigado y comprado
@@ -47,7 +48,12 @@ function loadProg(){ try{ PROG=JSON.parse(localStorage.getItem(PROG_KEY)||'null'
 // Una época se puede elegir si alguna nación tiene abierto ese rango
 function syncEraOpen(){ const out=[]; for(const e of eraList()) PROG.eraOpen[e]=eraPlayable(e)?1:0;
   return out; }
-function saveProg(){ if(!PROG) return; PROG.era=curEra; PROG.t=Date.now(); try{ localStorage.setItem(PROG_KEY,JSON.stringify(PROG)); }catch(e){}
+// Respaldo: las batallas jugadas nunca bajan, así que si lo que se va a guardar tiene menos que lo guardado, lo viejo se copia a <clave>#copia
+const progBat=P=>P?((P.stats&&P.stats.battles)||0)+Object.keys(P.camp||{}).length+Object.keys(P.owned||{}).length*.01:0;
+const progLS=k=>{ try{ const P=JSON.parse(localStorage.getItem(k)||'null'); return P&&P.v===3?P:null; }catch(e){ return null; } };
+function saveProg(){ if(!PROG) return; PROG.era=curEra; PROG.t=Date.now();
+  try{ const old=progLS(PROG_KEY), cp=progLS(PROG_KEY+'#copia'); if(old&&progBat(old)>progBat(PROG)+.5&&progBat(old)>progBat(cp)) localStorage.setItem(PROG_KEY+'#copia',JSON.stringify(old)); }catch(e){}
+  try{ localStorage.setItem(PROG_KEY,JSON.stringify(PROG)); }catch(e){}
   if(typeof nubeGuardar==='function') nubeGuardar(); }
 // Épocas que se abrieron recién (ya no pasa: se abren por fecha)
 function checkEraUnlock(){ const out=syncEraOpen(); if(out.length) saveProg(); return out; }
