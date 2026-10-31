@@ -144,7 +144,7 @@ function buildW2(t,M,mat,root,lkL,lkR){ shTurMG.t=t;
       if(i===0&&n!==2&&n!==4) continue; const b=cyl(G.barrel,M.gr,M.gr,M.gl,x,y,M.gl/2+z,8,darkMat); b.rotation.x=Math.PI/2;
       const fh=cyl(G.barrel,M.gr*1.7,M.gr*1.3,.3,x,y,M.gl+z-.1,8,darkMat); fh.rotation.x=Math.PI/2; }
     if(n===2||n===4) G.bm.visible=false; box(G.gp,sp*2.4,sp*(n===4?2.2:1.2),.5,0,0,-.05,mat); }
-  if(I.aa&&!shCast(I)) { cyl(tur,.03,.03,.3,M.tw*.25,M.th+.12,-M.tl*.2,6,darkMat); const a=cyl(tur,.022,.022,.85,M.tw*.25,M.th+.3,-M.tl*.2+.3,6,darkMat); a.rotation.x=Math.PI/2.15; t.aaMuz=mgMuzzle(tur,M.tw*.25,M.th+.33,-M.tl*.2+.72); } // ametralladora antiaérea sobre su soporte
+  if(I.aa&&!shCast(I)) mgMount(tur,M.tw*.25,M.th+.38,-M.tl*.2,{post:.3,...MG_AA,seat:['commander','loader']});   // ametralladora antiaérea sobre su soporte
   t.turret=tur; t.gunPivot=G.gp; t.barrel=G.barrel; t.muzzle=G.muzzle; t.coax=G.coax; t.barrelMesh=G.bm;
   if(I.case) collider(root,I.case.w,I.case.h,I.case.l,0,deck+I.case.h/2,I.case.z,t,'turret'); else collider(tur,M.tw,M.th,M.tl,0,M.th/2,0,t,'turret');
   collider(root,M.W-.1,deck-.25,L,0,(deck+.25)/2,0,t,'hull');
@@ -268,9 +268,7 @@ function shermanTurret(tur,G,M,I,mat,gy){
   { const c=rbox(tur,.05,.5,.6,M.tw*.46,M.th*.42,M.tl*.2,mat,.02); c.rotation.y=-.25; }
   // .50 en el aro: cajón, tubo y caja de munición
   { const ax=M.tw*.22, az=I.tur==='t23'?-M.tl*.42:-M.tl*.2;                                                          // en la T23 la .50 va atrás
-    cyl(tur,.03,.03,.38,ax,ty+.18,az,6,darkMat); box(tur,.1,.12,.32,ax,ty+.42,az+.05,darkMat);
-    const b=cyl(tur,.03,.03,.95,ax,ty+.44,az+.65,6,darkMat); b.rotation.x=Math.PI/2; box(tur,.12,.14,.24,ax+.14,ty+.38,az,_shGreenBox);
-    if(shTurMG.t) shTurMG.t.aaMuz=mgMuzzle(tur,ax,ty+.44,az+1.14); }
+    mgMount(tur,ax,ty+.44,az,{post:.38,cal:12.7,...MG_AA,seat:['commander','loader']}); }
 }
 const _shHalf=new THREE.CylinderGeometry(.3,.3,.05,12,1,false,0,Math.PI), _shGreenBox=new THREE.MeshLambertMaterial({color:0x4a5236});
 
@@ -443,11 +441,9 @@ function is2Hull(root,M,I,mat,iw2,deck,gz,zf,zr,L){
 function is2Turret(tur,G,M,I,mat,gy){ const hw=M.tw/2, hl=M.tl/2, th=M.th;
   rbox(G.gp,1.05,.66,.34,0,0,.1,mat,.1); const sl=cyl(G.gp,.17,.21,.72,0,0,.58,12,mat); sl.rotation.x=Math.PI/2; // mantelete ancho y funda del D-25T
   cyl(G.gp,.035,.035,.1,-.32,.12,.28,8,darkMat).rotation.x=Math.PI/2; cyl(G.gp,.04,.04,.1,.32,.0,.28,8,darkMat).rotation.x=Math.PI/2;   // mira y coaxial
-  const ax=hw*.38, az=-hl*.25; cyl(tur,.33,.33,.06,ax,th+.01,az,16,darkMat); cyl(tur,.04,.04,.36,ax,th+.2,az,6,darkMat);   // aro y pivote de la DShK
-  box(tur,.13,.15,.55,ax,th+.42,az+.08,darkMat); const db=cyl(tur,.03,.03,.95,ax,th+.44,az+.8,6,darkMat); db.rotation.x=Math.PI/2;
-  cyl(tur,.05,.05,.1,ax,th+.44,az+1.25,8,darkMat).rotation.x=Math.PI/2; rbox(tur,.16,.2,.25,ax+.16,th+.36,az,_shGreenBox,.03);
-  if(shTurMG.t) shTurMG.t.aaMuz=mgMuzzle(tur,ax,th+.44,az+1.3);                                                               // la DShK también tira
-  { const b=new THREE.Mesh(new THREE.SphereGeometry(.12,10,8),mat); b.position.set(0,th*.45,-hl+.02); tur.add(b); cyl(tur,.025,.025,.3,0,th*.45,-hl-.12,6,darkMat).rotation.x=Math.PI/2; } // ametralladora trasera
+  const ax=hw*.38, az=-hl*.25; cyl(tur,.33,.33,.06,ax,th+.01,az,16,darkMat);   // aro de la DShK
+  mgMount(tur,ax,th+.44,az,{post:.36,cal:12.7,...MG_AA,seat:['loader','commander']});                                       // DShK en el aro del cargador
+  mgMount(tur,0,th*.45,-hl+.02,{face:Math.PI,ball:.12,mat,yaw:[-.35,.35],pitch:[-.15,.2],seat:['commander','gunner']});     // ametralladora trasera
   for(const sx of [-1,1]){ rail(tur,sx*(hw*.93+.04),th*.55,-hl*.55,hl*.1,3); const pp=cyl(tur,.06,.06,.04,sx*(hw*.92+.02),th*.38,-hl*.3,8,mat); pp.rotation.z=Math.PI/2; }
   box(tur,.12,.07,.1,-hw*.1,th+.06,hl*.3,darkMat); }
 const DET={panther:{gear:pantherGear,hull:pantherHull,tur:pantherTurret},t34:{gear:t34Gear,hull:t34Hull,tur:t34Turret},is2:{gear:is2Gear,hull:is2Hull,tur:is2Turret}};
@@ -485,7 +481,7 @@ function nahuelHull(root,M,I,mat,iw2,deck,gz,zf,zr,L){
     box(h,.13,.07,.1,0,.08,.08,darkMat); for(const dx of [-.22,.22]) cyl(h,.03,.03,.1,dx,.04,-.27,6,darkMat).rotation.z=Math.PI/2;   // periscopio y bisagras
     const q=glacisPt(I,deck,gz,zf,.04,.12); cyl(root,.13,.13,.12,sx*(hw-.18),q.y,q.z,12,darkMat).rotation.x=Math.PI/2;                  // faros grandes sin protector
     const ln=new THREE.Mesh(_shLens,_shHead); ln.position.set(sx*(hw-.18),q.y,q.z+.065); root.add(ln); }
-  { const p=glacisPt(I,deck,gz,zf,.55,.05); for(const dx of [.12,.24]){ const m=cyl(root,.03,.03,.22,iw2*.3+dx,p.y,p.z,6,darkMat); m.rotation.x=Math.PI/2-.3; } }  // ametralladoras fijas del ayudante
+  { const p=glacisPt(I,deck,gz,zf,.55,.05); for(const dx of [.12,.24]) mgMount(root,iw2*.3+dx,p.y,p.z,{tilt:.08,yaw:[0,0],pitch:[0,0],len:.3,box:false,seat:['mg1','codriver','driver']}); }  // dos Madsen fijas del ayudante (tiran derecho)
   for(const sx of [-1,1]){ const q=glacisPt(I,deck,gz,zf,.98,.04), k=new THREE.Mesh(_tgShackle,darkMat); k.scale.setScalar(.75); k.position.set(sx*iw2*.38,q.y-.08,q.z+.04); k.rotation.y=Math.PI/2; root.add(k);
     const r=new THREE.Mesh(_tgShackle,darkMat); r.scale.setScalar(.75); r.position.set(sx*iw2*.38,.62,zr-.03); r.rotation.y=Math.PI/2; root.add(r); }   // 4 ganchos de remolque
   for(const sx of [-1,1]){ const gx=sx*(hw+.005);                                                                        // rejilla del radiador al costado (bajo la torre)
@@ -624,7 +620,7 @@ function usHull(root,M,I,mat,iw2,deck,gz,zf,zr,L){ const u=I.us, hw=M.W/2, ft=hw
   if(u==='m26'||u==='m24'){ const b=cyl(root,.08,.09,.18,iw2*.3,deck-gz*.35,zf-gz*.45+.12,8,mat); b.rotation.x=Math.PI/2.4; }
 }
 function usTurret(tur,G,M,I,mat,gy){ const u=I.us, hw=M.tw/2, hl=M.tl/2, th=M.th;
-  const fifty=(x,z,y=th)=>{ cyl(tur,.03,.03,.32,x,y+.16,z,6,darkMat); box(tur,.1,.13,.35,x,y+.36,z+.05,darkMat); const b=cyl(tur,.025,.025,1.0,x,y+.38,z+.6,6,darkMat); b.rotation.x=Math.PI/2; rbox(tur,.16,.2,.25,x+.15,y+.3,z,_shGreenBox,.03); };
+  const fifty=(x,z,y=th)=>mgMount(tur,x,y+.4,z,{post:.34,cal:12.7,...MG_AA,seat:['commander','loader']});
   if(u==='m10'){ for(const sx of [-1,1]){ const w=prism(tur,[[-.32,.4],[.32,.4],[.32,-.4],[-.32,-.4]],.62,.25,sx*(hw*.55),.05,-hl-.42,mat); }   // contrapesos de la torre del M10
     rbox(G.gp,.75,.5,.3,0,0,.1,mat,.05); fifty(-hw*.6,-hl*.6); return; }
   if(u==='m36'){ rbox(tur,M.tw*.75,th*.7,.6,0,th*.38,-hl-.25,mat,.06); rbox(G.gp,.8,.55,.3,0,0,.1,mat,.07); fifty(hw*.55,-hl*.8,th*.8); return; }   // torre redonda abierta con cesto
@@ -681,7 +677,7 @@ function ruTurret(tur,G,M,I,mat,gy){ const u=I.ru, hw=M.tw/2, hl=M.tl/2, th=M.th
   if(u==='kv1'){ rbox(G.gp,.75,.55,.3,0,0,.1,mat,.06); const sl=cyl(G.gp,.11,.13,.4,0,0,.42,10,mat); sl.rotation.x=Math.PI/2;
     for(const sx of [-1,1]) for(const [y,z] of [[.3,.5],[.3,-.5],[.7,0]]) cyl(tur,.04,.04,.03,sx*(hw+.01),th*y,hl*z*.7,6,darkMat).rotation.z=Math.PI/2;   // bulones de las chapas extra
     cyl(tur,.28,.28,.06,0,th+.02,-hl*.25,12,mat); box(tur,.12,.07,.1,hw*.4,th+.05,hl*.2,darkMat);
-    { const b=new THREE.Mesh(new THREE.SphereGeometry(.11,10,8),mat); b.position.set(0,th*.5,-hl+.01); tur.add(b); cyl(tur,.025,.025,.3,0,th*.5,-hl-.12,6,darkMat).rotation.x=Math.PI/2; } return; }
+    mgMount(tur,0,th*.5,-hl+.01,{face:Math.PI,ball:.11,mat,yaw:[-.35,.35],pitch:[-.15,.2],seat:['commander','loader','gunner']}); return; }   // ametralladora trasera de la torre
   if(u==='kv2'){ rbox(G.gp,1.0,.85,.36,0,0,.12,mat,.08); const sl=cyl(G.gp,.18,.2,.45,0,0,.42,12,mat); sl.rotation.x=Math.PI/2;
     { const d=rbox(tur,.8,1.0,.06,0,th*.45,-hl-.02,mat,.03); }                                                   // puerta trasera para cargar los proyectiles de 152 mm
     for(const sx of [-1,1]) rivetsRow(tur,sx*(hw+.005),th*.85,-hl*.8,hl*.7,8);
@@ -825,7 +821,7 @@ function jpTurret(tur,G,M,I,mat,gy){ const u=I.jp, hw=M.tw/2, hl=M.tl/2, th=M.th
   // antena en herradura alrededor de la torre (Chi-Ha, Chi-He)
   if(u==='chiha'||u==='chihe'){ const g=new THREE.TorusGeometry(hw+.22,.015,4,24,Math.PI*1.3), a=new THREE.Mesh(g,darkMat); a.rotation.x=Math.PI/2; a.rotation.z=Math.PI*.85; a.position.set(0,th*.75,-hl*.1); tur.add(a);
     for(const ang of [.3,1.6,2.9]) cyl(tur,.012,.012,.25,Math.cos(Math.PI*.85+ang)*(hw+.15),th*.65,-hl*.1-Math.sin(Math.PI*.85+ang)*(hw+.15),4,darkMat); }
-  { const b=new THREE.Mesh(new THREE.SphereGeometry(.09,8,6),mat); b.position.set(hw*.5,th*.5,-hl+.02); tur.add(b); cyl(tur,.02,.02,.3,hw*.5,th*.5,-hl-.12,6,darkMat).rotation.x=Math.PI/2; }   // ametralladora trasera de la torre
+  mgMount(tur,hw*.5,th*.5,-hl+.02,{face:Math.PI,ball:.09,mat,yaw:[-.4,.4],pitch:[-.15,.25],seat:['commander','loader','gunner']});   // ametralladora trasera de la torre
   if(u==='hago'){ rbox(G.gp,.35,.28,.16,0,0,.05,mat,.05); return; }
   if(u==='chinu'){ rbox(G.gp,.75,.55,.3,0,0,.1,mat,.05); rbox(tur,.9,th*.65,.06,0,th*.45,-hl-.02,mat,.03); box(tur,.12,.07,.1,hw*.35,th+.05,hl*.3,darkMat); return; }   // Chi-Nu: puerta trasera grande
   rbox(G.gp,.5,.38,.22,0,0,.08,mat,.05); }
@@ -886,17 +882,31 @@ DET.cn={gear:cnGear,hull:cnHull,tur:cnTurret};
    mgMuzzle: boca de una ametralladora montada (antiaérea, .50, DShK) para que dispare con la coaxial (realismo.js, extraMG). */
 const _bmgBall=new THREE.SphereGeometry(.11,10,8), shTurMG={t:null};
 function mgMuzzle(parent,x,y,z){ const o=new THREE.Object3D(); o.position.set(x,y,z); parent.add(o); return o; }
+// Ametralladora montada con su propio giro (pedido de Sebastián: todas funcionan y cada una gira lo que su montaje permite; ametralladoras.js
+// las apunta y las dispara). base fija (o.face = hacia dónde mira en reposo, o.tilt) → yg (gira, límites o.yaw) → pg (sube/baja, o.pitch) → caño.
+// o.seat = tripulantes que la pueden usar; o.ball = rótula de ese radio; o.post = soporte; o.cal ≥ 11 = pesada.
+function mgMount(parent,x,y,z,o={}){ const t=shTurMG.t, k=(o.cal||7.62)>=11?1.45:1, L=o.len||(k>1?1.0:.7);
+  const base=new THREE.Group(); base.position.set(x,y,z); base.rotation.set(o.tilt||0,o.face||0,0,'YXZ'); parent.add(base);
+  if(o.post) cyl(base,.03,.035,o.post,0,-o.post/2-.06,0,6,darkMat);
+  const yg=new THREE.Group(); base.add(yg); const pg=new THREE.Group(); yg.add(pg);
+  if(o.ball){ const b=new THREE.Mesh(_bmgBall,o.mat||darkMat); b.scale.set(o.ball/.11,o.ball/.11,o.ball/.11*.75); b.castShadow=true; pg.add(b); }
+  else { box(pg,.07*k,.09*k,.34*k,0,0,-.02,darkMat); if(o.box!==false) box(pg,.1*k,.12*k,.17*k,.09*k,-.03,0,_shGreenBox); }
+  const c=cyl(pg,.017*k,.017*k,L,0,.01,L/2+.12,6,darkMat); c.rotation.x=Math.PI/2;
+  if(k>1){ const j=cyl(pg,.03,.03,L*.4,0,.01,.14+L*.2,8,darkMat); j.rotation.x=Math.PI/2; }
+  if(o.shield) box(pg,.42,.28,.02,0,.05,.22,o.mat||darkMat);
+  const muz=new THREE.Object3D(); muz.position.set(0,.01,L+.14); pg.add(muz);
+  const M={base,yg,pg,muz,yaw:o.yaw||[0,0],pitch:o.pitch||[-.12,.2],seat:o.seat||['commander'],cal:o.cal||7.62,belt:250,belts:o.belts??3,heat:0,lock:false,rel:0,y:0,p:0,can:false,err:9};
+  if(t&&!t.T.static) (t.mgs=t.mgs||[]).push(M); return M; }
+const MG_AA={yaw:[-Math.PI,Math.PI],pitch:[-.15,1.15]};
 function placeBowMG(t,root,I,mat,deck,zf){
   root.updateMatrixWorld(true);
   const big=root.children.filter(o=>{ if(!o.isMesh||!o.visible||Array.isArray(o.material)||o.material===darkMat||!o.geometry) return false;
     if(!o.geometry.boundingSphere) o.geometry.computeBoundingSphere(); return o.geometry.boundingSphere.radius>1; });
   const y=deck-Math.max(.15,((I.sideH??.6)-.1)*.4), rc=new THREE.Raycaster(new THREE.Vector3(I.bmg,y,zf+4),new THREE.Vector3(0,0,-1),0,10);
   const h=rc.intersectObjects(big,false)[0]; if(!h) return;
-  const g=new THREE.Group(); g.position.copy(h.point); root.add(g);
-  const n=h.face.normal.clone().transformDirection(h.object.matrixWorld); g.position.addScaledVector(n,-.03);
-  const b=new THREE.Mesh(_bmgBall,mat); b.scale.set(1,1,.75); g.add(b); b.castShadow=true;
-  const c=cyl(g,.022,.022,.42,0,.01,.28,6,darkMat); c.rotation.x=Math.PI/2; cyl(g,.035,.035,.08,0,.01,.1,8,darkMat).rotation.x=Math.PI/2;
-  t.bowMG=g; t.bowMuz=mgMuzzle(g,0,.01,.5); }
+  const n=h.face.normal.clone().transformDirection(h.object.matrixWorld), p=h.point.clone().addScaledVector(n,-.03);
+  const M=mgMount(root,p.x,p.y,p.z,{ball:.11,mat,yaw:[-.42,.42],pitch:[-.2,.26],len:.42,seat:['mg1','codriver']});   // rótula: ±24° de costado, −11°/+15°
+  t.bowMG=M.pg; }
 
 // ---- TAM y TAM 2C-A2 (m.w2.det='tam', I.tam = 'tam'|'2c'); datos de Tank Encyclopedia y del programa de Elbit ----
 // Casco del Marder: glacis muy inclinado (75°) y largo con el motor adelante a la derecha y el conductor a la izquierda, costados inclinados
@@ -941,7 +951,7 @@ function tamTurret(tur,G,M,I,mat,gy){ if(I.tam==='vctp') return vctpTurret(tur,G
   rbox(tur,.3,.32,.32,hw*.42,th+.14,-hl*.05,mat,.04);
   cyl(tur,.36,.38,.2,hw*.42,th+.08,-hl*.42,16,mat); for(let k=0;k<8;k++){ const a=k/8*Math.PI*2; const e=box(tur,.1,.07,.05,hw*.42+Math.sin(a)*.37,th+.13,-hl*.42+Math.cos(a)*.37,darkMat); e.rotation.y=a; }
   cyl(tur,.3,.3,.06,-hw*.4,th+.03,-hl*.3,14,mat); box(tur,.12,.08,.1,-hw*.4,th+.08,-hl*.05,darkMat);
-  { cyl(tur,.03,.03,.3,hw*.42+.32,th+.33,-hl*.42,6,darkMat); box(tur,.09,.12,.34,hw*.42+.32,th+.5,-hl*.42+.05,darkMat); const m=cyl(tur,.02,.02,.95,hw*.42+.32,th+.52,-hl*.42+.6,6,darkMat); m.rotation.x=Math.PI/2; }   // MAG en la cúpula
+  mgMount(tur,hw*.42+.32,th+.5,-hl*.42,{post:.3,...MG_AA,seat:['commander']});   // MAG en la cúpula
   // lanzagranadas Wegmann: 4 por lado en las caras delanteras
   for(const sx of [-1,1]) for(let k=0;k<4;k++){ const l=cyl(tur,.05,.05,.32,sx*(hw*.78+.04),th*.45+(k%2)*.12,hl*.32+(k>>1)*.16,8,darkMat); l.rotation.z=sx*1.1; l.rotation.x=-.5; }
   // atrás: antenas y, en el 2C, canasto, mira panorámica COAPS en su mástil y estación meteorológica
@@ -959,7 +969,7 @@ function vctpHull(root,M,I,mat,iw2,deck,gz,zf,zr,L){ const hw=M.W/2;
   for(const sx of [-1,1]){ for(let k=0;k<4;k++){ const l=cyl(root,.05,.05,.3,sx*(hw-.12),deck+.12+(k%2)*.1,zf-gz-.6-(k>>1)*.14,8,darkMat); l.rotation.z=sx*1.0; l.rotation.x=-.4; }
     for(let k=0;k<2;k++){ const b=new THREE.Mesh(new THREE.SphereGeometry(.09,8,6),mat); b.position.set(sx*(hw-.2),deck-.25,-.6-k*1.1); root.add(b); } }   // troneras de bola
   { const d=rbox(root,.8,.85,.06,0,deck-.6,zr+.02,mat,.03); cyl(root,.04,.04,.06,.3,deck-.6,zr-.02,6,darkMat).rotation.x=Math.PI/2; }   // puerta trasera
-  { const r=cyl(root,.2,.22,.18,0,deck+.09,zr+.7,12,mat), g=rbox(root,.28,.22,.4,0,deck+.3,zr+.75,mat,.03); const b=cyl(root,.022,.022,.8,0,deck+.32,zr+1.2,6,darkMat); b.rotation.x=Math.PI/2; }   // MAG a control remoto atrás
+  { cyl(root,.2,.22,.18,0,deck+.09,zr+.7,12,mat); mgMount(root,0,deck+.32,zr+.75,{face:Math.PI,post:.12,yaw:[-Math.PI,Math.PI],pitch:[-.2,.9],shield:1,mat,seat:['gunner','commander']}); }   // MAG a control remoto atrás (gira entera)
   for(let k=0;k<4;k++){ const h=rbox(root,.6,.05,.55,(k%2?-1:1)*iw2*.22,deck+.03,zr+1.6+(k>>1)*.7,mat,.02); } }                             // escotillas de la infantería
 function vctpTurret(tur,G,M,I,mat,gy){ const hw=M.tw/2, hl=M.tl/2, th=M.th;
   rbox(G.gp,.42,.32,.3,0,0,.08,mat,.05); { const r=cyl(G.barrel,M.gr*1.8,M.gr*1.8,.5,0,0,.4,10,darkMat); r.rotation.x=Math.PI/2; const fh=cyl(G.barrel,M.gr*1.5,M.gr*1.2,.18,0,0,M.gl-.05,8,darkMat); fh.rotation.x=Math.PI/2; }   // cuna y apagallamas del 20 mm
@@ -1004,7 +1014,7 @@ function t55Turret(tur,G,M,I,mat,gy){ const hw=M.tw/2, hl=M.tl/2, th=M.th, am=I.
   // cúpula del jefe (izquierda) con el OU-3 y escotilla del cargador (derecha) con la DShK
   cyl(tur,.32,.34,.18,-hw*.38,th*.9,-hl*.15,14,mat); box(tur,.14,.14,.14,-hw*.38,th*.9+.17,hl*.08,darkMat);
   cyl(tur,.3,.3,.06,hw*.38,th*.92,-hl*.2,14,mat);
-  { cyl(tur,.03,.03,.3,hw*.38,th+.2,-hl*.2,6,darkMat); box(tur,.12,.16,.5,hw*.38,th+.42,-hl*.15,darkMat); const b=cyl(tur,.03,.03,1.1,hw*.38,th+.45,hl*.35,6,darkMat); b.rotation.x=Math.PI/2; }
+  mgMount(tur,hw*.38,th+.45,-hl*.2,{post:.32,cal:12.7,...MG_AA,seat:['loader','commander']});                                           // DShK del cargador
   for(const sx of [-1,1]) for(let k=0;k<3;k++) box(tur,.05,.08,.04,sx*hw*.75,th*.55,-hl*.3+k*.25,darkMat);                                       // agarraderas
   { const sn=cyl(tur,.08,.08,1.2,hw*.6,th*.5,-hl*.95,8,mat); sn.rotation.x=Math.PI/2; sn.rotation.z=.2; }                                               // tubo del snorkel atrás
   cyl(tur,.012,.012,2,-hw*.55,th+.9,-hl*.6,4,darkMat); }
@@ -1039,7 +1049,7 @@ function skTurret(tur,G,M,I,mat,gy){ const hw=M.tw/2, hl=M.tl/2, th=M.th, pat=I.
   cyl(up,.28,.3,.2,-uw*.27,uh*.75,ul*.02,14,mat); for(let k=0;k<6;k++){ const a=k/6*Math.PI*2; const e=box(up,.09,.06,.05,-uw*.27+Math.sin(a)*.29,uh*.82,ul*.02+Math.cos(a)*.29,darkMat); e.rotation.y=a; }   // cúpula del jefe
   cyl(up,.24,.24,.06,uw*.25,uh*.68,-ul*.2,12,mat);
   for(const sx of [-1,1]) for(let k=0;k<3;k++){ const c=cyl(up,.045,.045,.26,sx*(uw*.5+.04),uh*.1+k*.1,ul*.05,8,darkMat); c.rotation.z=sx*1.2; }        // lanzahumos
-  cyl(up,.03,.03,.3,-uw*.27,uh*.95,-ul*.05,6,darkMat); { const m=cyl(up,.02,.02,.9,-uw*.27,uh*1.08,ul*.2,6,darkMat); m.rotation.x=Math.PI/2; }       // MAG del jefe
+  mgMount(up,-uw*.27,uh*1.08,-ul*.05,{post:.3,...MG_AA,seat:['commander']});       // MAG del jefe
   cyl(up,.012,.012,1.8,uw*.35,uh+.9,-ul*.55,4,darkMat);
   // el collar que gira (fijo en altura)
   cyl(tur,hw*.95,hw,th,0,th/2,0,18,mat).scale.z=.9; }
