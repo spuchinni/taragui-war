@@ -486,7 +486,7 @@ function nahuelHull(root,M,I,mat,iw2,deck,gz,zf,zr,L){
   // manijas: fila sobre el borde de arriba del frente y a lo largo de los costados inclinados
   { const p=glacisPt(I,deck,gz,zf,.04,.03); for(const x of [-.55,-.38,.38,.55]){ const hd=box(root,.14,.05,.04,x*iw2,p.y+.02,p.z,darkMat); hd.rotation.x=p.a; } }
   for(const sx of [-1,1]) for(let k=0;k<4;k++){ const hd=box(root,.04,.05,.16,sx*(hw-.13),deck-.18,zf-gz-.6-k*.75,darkMat); hd.rotation.z=sx*.25; }
-  { const p=glacisPt(I,deck,gz,zf,.55,.05); for(const dx of [.12,.24]) mgMount(root,iw2*.3+dx,p.y,p.z,{tilt:.08,yaw:[0,0],pitch:[0,0],len:.3,box:false,seat:['mg1','codriver','driver']}); }  // dos Madsen fijas del ayudante (tiran derecho)
+  { const p=glacisPt(I,deck,gz,zf,.55,.05); for(const dx of [.12,.24]) mgMount(root,iw2*.3+dx,p.y,p.z,{yaw:[0,0],pitch:[-.08,.1],len:.3,box:false,seat:['mg1','codriver','driver']}); }  // dos Madsen fijas del ayudante (tiran derecho)
   for(const sx of [-1,1]){ const q=glacisPt(I,deck,gz,zf,.98,.04), k=new THREE.Mesh(_tgShackle,darkMat); k.scale.setScalar(.75); k.position.set(sx*iw2*.38,q.y-.08,q.z+.04); k.rotation.y=Math.PI/2; root.add(k);
     const r=new THREE.Mesh(_tgShackle,darkMat); r.scale.setScalar(.75); r.position.set(sx*iw2*.38,.62,zr-.03); r.rotation.y=Math.PI/2; root.add(r); }   // 4 ganchos de remolque
   for(const sx of [-1,1]){ const gx=sx*(hw+.005);                                                                        // rejilla del radiador al costado (bajo la torre)
@@ -904,7 +904,7 @@ function mgMount(parent,x,y,z,o={}){ const t=shTurMG.t, k=(o.cal||7.62)>=11?1.45
   const muz=new THREE.Object3D(); muz.position.set(0,.01,L+.14); pg.add(muz);
   const M={base,yg,pg,muz,yaw:o.yaw||[0,0],pitch:o.pitch||[-.12,.2],seat:o.seat||['commander'],cal:o.cal||7.62,belt:250,belts:o.belts??3,heat:0,lock:false,rel:0,y:0,p:0,can:false,err:9};
   if(t&&!t.T.static) (t.mgs=t.mgs||[]).push(M); return M; }
-const MG_AA={yaw:[-Math.PI,Math.PI],pitch:[-.15,1.15]};
+const MG_AA={yaw:[-Math.PI,Math.PI],pitch:[-.35,1.15]};
 function placeBowMG(t,root,I,mat,deck,zf){
   root.updateMatrixWorld(true);
   const big=root.children.filter(o=>{ if(!o.isMesh||!o.visible||Array.isArray(o.material)||o.material===darkMat||!o.geometry) return false;
