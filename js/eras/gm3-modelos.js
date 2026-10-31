@@ -471,7 +471,9 @@ function genTurret(tur,M,I,mat){ const hw=M.tw/2, hl=M.tl/2, th=M.th;
 // protector, otro sobre la torre; rejilla del radiador al costado y pico, hacha y pala atrás. Torre fundida redondeada, frente de 80 mm a 30°,
 // escotilla partida del comandante sin periscopios; el Krupp 1909 L/30 con los cilindros de retroceso arriba y abajo tapados por el mantelete.
 function nahuelGear(root,I,x,s,tw,zf,zr,mat){ shermanGear(root,I,x,s,tw,zf,zr,mat);
-  for(const z of [zr+1.1,zf-1.35]) dWheel(root,x,I.trF-.06,z,.09,mat,{rim:.7}); }                                    // los dos rodillos de retorno sueltos
+  for(const z of [zr+1.1,zf-1.35]) dWheel(root,x,I.trF-.06,z,.09,mat,{rim:.7});                                     // los dos rodillos de retorno sueltos
+  const sx=x+s*(tw/2+.06), y0=.48, y1=Math.min(I.trF,I.trR)-.12;                                                          // soportes altos de los bogies, como en el modelo
+  for(const z of [-1.52,0,1.42]){ rbox(root,.1,y1-y0,.36,sx,(y0+y1)/2,z,darkMat,.03); box(root,.14,.06,.62,sx,y1,z,darkMat); for(const dz of [-.22,.22]){ const b=box(root,.06,.36,.06,sx,y0+.12,z+dz,darkMat); b.rotation.x=dz>0?-.5:.5; } } }
 function nahuelHull(root,M,I,mat,iw2,deck,gz,zf,zr,L){
   const hw=M.W/2, ft=hw-I.trW/2, low=(I.lowF??.35)+.3;
   { const p=glacisPt(I,deck,gz,zf,.995,0); for(let i=0;i<12;i++){ const r=cyl(root,.03,.03,.04,-iw2*.45+i*iw2*.082,low-.12,zf+.01,6,darkMat); r.rotation.x=Math.PI/2; }   // remaches de la placa de abajo
@@ -489,6 +491,8 @@ function nahuelHull(root,M,I,mat,iw2,deck,gz,zf,zr,L){
     const r=new THREE.Mesh(_tgShackle,darkMat); r.scale.setScalar(.75); r.position.set(sx*iw2*.38,.62,zr-.03); r.rotation.y=Math.PI/2; root.add(r); }   // 4 ganchos de remolque
   for(const sx of [-1,1]){ const gx=sx*(hw+.005);                                                                        // rejilla del radiador al costado (bajo la torre)
     box(root,.03,.42,1.25,gx,deck-.32,-.15,darkMat); for(let i=0;i<6;i++) box(root,.05,.04,1.2,gx,deck-.5+i*.07,-.15,mat); }
+  for(const sx of [-1,1]){ const h=rbox(root,iw2*.4,.05,1.0,sx*iw2*.23,deck+.03,zr+1.0,mat,.02);                        // dos tapas grandes del motor atrás, con sus manijas en cruz
+    box(h,iw2*.3,.04,.05,0,.04,0,darkMat); box(h,.05,.04,.8,0,.04,0,darkMat); }
   { const sx=-1, X=sx*(hw+.03), y=deck-.3;                                                                                // pico, hacha y pala atrás a la izquierda
     box(root,.05,.05,1.05,X,y+.12,zr+1.2,_wdMat); box(root,.04,.38,.06,X,y+.12,zr+.7,darkMat);                            // pico
     box(root,.05,.05,.85,X,y-.08,zr+1.0,_wdMat); box(root,.04,.16,.12,X,y-.08,zr+.6,darkMat);                             // hacha
