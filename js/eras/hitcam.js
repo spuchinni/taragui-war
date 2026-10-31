@@ -11,7 +11,7 @@ const hcGhost=new THREE.MeshBasicMaterial({color:0x7f93ab,transparent:true,opaci
 const hcEdge=new THREE.LineBasicMaterial({color:0xdde6f2,transparent:true,opacity:.6});
 const hcCol={ok:0xd8dee8,dmg:0xf2b33a,dead:0xe0402a}, hcM={}; for(const k in hcCol) hcM[k]=new THREE.MeshBasicMaterial({color:hcCol[k]});
 const hcShellM=new THREE.MeshBasicMaterial({color:0xff7a1a}), hcSpallM=new THREE.MeshBasicMaterial({color:0xffc04a,transparent:true,opacity:.85});
-const hcBox=document.createElement('div'); hcBox.id='hcBox'; hcBox.innerHTML='<b></b><small></small>'; document.body.appendChild(hcBox);
+const hcBox=document.createElement('div'); hcBox.id='hcBox'; hcBox.innerHTML='<canvas></canvas><b></b><small></small>'; document.body.appendChild(hcBox);
 // cilindro de A a B (para el proyectil y las esquirlas)
 function hcBeam(a,b,r,mat){ const L=a.distanceTo(b), m=new THREE.Mesh(new THREE.CylinderGeometry(r,r,1,6),mat); m.position.copy(a).add(b).multiplyScalar(.5);
   m.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),b.clone().sub(a).normalize()); m.scale.y=Math.max(.01,L); m.userData.L=L; return m; }
@@ -60,7 +60,11 @@ function hitcamUpd(dt){ if(!HC.on) return; HC.t+=dt; const T=HC.t;
 function hitcamDraw(){ const r=hcBox.getBoundingClientRect(); if(r.width<10) return;
   hcCam.aspect=r.width/r.height; hcCam.updateProjectionMatrix();
   const y=innerHeight-r.bottom; renderer.setScissorTest(true); renderer.setScissor(r.left,y,r.width,r.height); renderer.setViewport(r.left,y,r.width,r.height);
-  _hcRender(hcScene,hcCam); renderer.setScissorTest(false); renderer.setViewport(0,0,innerWidth,innerHeight); }
+  _hcRender(hcScene,hcCam); renderer.setScissorTest(false); renderer.setViewport(0,0,innerWidth,innerHeight);
+  // copia del recuadro a un lienzo propio que queda encima de la mira (el velo negro de #scope tapaba la cámara de impacto)
+  const cv=hcBox.querySelector('canvas'), pr=renderer.getPixelRatio(), w=Math.round(r.width*pr), h=Math.round(r.height*pr);
+  if(cv.width!==w||cv.height!==h){ cv.width=w; cv.height=h; }
+  try{ cv.getContext('2d').drawImage(renderer.domElement,Math.round(r.left*pr),Math.round(r.top*pr),w,h,0,0,w,h); }catch(e){} }
 const _hcRender=renderer.render.bind(renderer);
 renderer.render=function(sc,cam){ _hcRender(sc,cam); if(HC.on&&sc===scene&&renderer.getRenderTarget()===null) hitcamDraw(); };
 // quién disparó (hitMark recibe el resultado del impacto)

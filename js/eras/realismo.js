@@ -329,3 +329,16 @@ function applyEngSnd(C,S,now){ C.F.type=S.q[0]; C.F.frequency.setTargetAtTime(S.
       if(V.key!==t.T.eng){ V.key=t.T.eng; applyEngSnd(V,S,now); V.lfo.frequency.value=S.tr[1]; }
       const r=clamp(Math.abs(t.speed)/Math.max(1,t.T.maxF||10),0,1);
       V.d.s.playbackRate.setTargetAtTime((.7+r*.5)*S.rr,now,.1); V.i.s.playbackRate.setTargetAtTime(.86*S.rr,now,.1); } }; }
+
+/* ---------- Todas las ametralladoras tiran (pedido de Sebastián) ----------
+   Con la coaxial tiran también: la de casco (t.bowMG/t.bowMuz, gm3-modelos.js) si la torre apunta hacia adelante (±15°, el arco de su rótula)
+   y el ametrallador está vivo; y la antiaérea de la torre (t.aaMuz: .50, DShK, MG) si el comandante está vivo. Cada una con su cinta:
+   se usa el mismo disparo del núcleo (fireMG) cambiando la boca y la dirección, y se devuelven calor y cinta de la coaxial. */
+const _mgv1=new THREE.Vector3(), _mgv2=new THREE.Vector3();
+{ const _fm=fireMG; fireMG=function(t){ _fm(t); if(t.dead||t.mgLock||!t.barrel) return;
+    const L=[]; if(t.bowMuz&&(manned(t,'mg1')||manned(t,'codriver'))) L.push([t.bowMuz,t.bowMG,.26]);
+    if(t.aaMuz&&manned(t,'commander')) L.push([t.aaMuz,t.aaMuz,.6]);
+    if(!L.length) return; const sc=t.coax, sb=t.barrel, keep={h:t.mgHeat,l:t.mgLock,b:t.mgBelt,bs:t.mgBelts,r:t.mgRel};
+    const bd=sb.getWorldDirection(_mgv1).clone();
+    try{ for(const [muz,dirObj,arc] of L){ const d=dirObj.getWorldDirection(_mgv2); if(d.angleTo(bd)>arc) continue; t.coax=muz; t.barrel=dirObj; _fm(t); } }
+    finally{ t.coax=sc; t.barrel=sb; t.mgHeat=keep.h; t.mgLock=keep.l; t.mgBelt=keep.b; t.mgBelts=keep.bs; t.mgRel=keep.r; } }; }
