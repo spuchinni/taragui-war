@@ -132,7 +132,7 @@ Object.assign(VEH,{
     maxF:kmh2(40),maxR:2.6,turn:.68,trav:.7,reload:4.0,pen:70,hp:130,crewReal:5,seats:['driver','commander','gunner','loader','mg1'],
     armor:{hull:{front:139,side:58,rear:40,top:20},turret:{front:92,side:57,rear:55,top:20}},camo:['#6b6a48','#575638','#3d3c28'],camoMode:'flat',mgc:7.65,
     m:{ww1:'w2',L:6.23,W:2.63,H:2.95,tz:-.15,tw:1.8,th:.95,tl:2.3,gl:2.25,gr:.05,
-      w2:{trW:.42,trH:.95,trF:.9,trR:.95,deck:1.95,glacis:1.35,lowF:.55,slope:.1,sideH:.75,nW:6,wR:.27,tur:'cast',ins:'ar',bmg:.38,coax:0,mant:'none',det:'nahuel'}}},
+      w2:{trW:.42,trH:.95,trF:.9,trR:.95,deck:1.95,glacis:1.35,lowF:.55,slope:.24,sideH:.75,nW:6,wR:.27,tur:'cast',ins:'ar',bmg:.38,coax:0,mant:'none',det:'nahuel'}}},
   // ---- Cañones antitanque (solo los usa la IA) ----
   pak40:{nation:'de',era:3,static:1,uses:1,br:3,cls:'cañón',label:'7,5 cm Pak 40',desc:'El antitanque alemán estándar desde 1942: perfora a cualquier T-34 o Sherman.',
     maxF:0,maxR:0,turn:.25,trav:.4,reload:4,pen:135,hp:50,arc:.5,crewReal:4,seats:['gunner','loader','commander','driver'],

@@ -479,8 +479,11 @@ function nahuelHull(root,M,I,mat,iw2,deck,gz,zf,zr,L){
   for(const sx of [-1,1]){                                                                                              // escotillas del conductor y del ayudante, con periscopio
     const p=glacisPt(I,deck,gz,zf,.13,.05), h=rbox(root,.62,.1,.55,sx*iw2*.25,p.y,p.z,mat,.03); h.rotation.x=p.a;
     box(h,.13,.07,.1,0,.08,.08,darkMat); for(const dx of [-.22,.22]) cyl(h,.03,.03,.1,dx,.04,-.27,6,darkMat).rotation.z=Math.PI/2;   // periscopio y bisagras
-    const q=glacisPt(I,deck,gz,zf,.04,.12); cyl(root,.13,.13,.12,sx*(hw-.18),q.y,q.z,12,darkMat).rotation.x=Math.PI/2;                  // faros grandes sin protector
-    const ln=new THREE.Mesh(_shLens,_shHead); ln.position.set(sx*(hw-.18),q.y,q.z+.065); root.add(ln); }
+    const q=glacisPt(I,deck,gz,zf,.12,.16), hb=rbox(root,.32,.3,.3,sx*(iw2/2-.1),q.y,q.z,mat,.05);                                    // faros grandes en su carcasa cuadrada
+    box(hb,.24,.22,.03,0,0,.155,darkMat); const ln=new THREE.Mesh(_shLens,_shHead); ln.scale.setScalar(.9); ln.position.set(0,0,.17); hb.add(ln); }
+  // manijas: fila sobre el borde de arriba del frente y a lo largo de los costados inclinados
+  { const p=glacisPt(I,deck,gz,zf,.04,.03); for(const x of [-.55,-.38,.38,.55]){ const hd=box(root,.14,.05,.04,x*iw2,p.y+.02,p.z,darkMat); hd.rotation.x=p.a; } }
+  for(const sx of [-1,1]) for(let k=0;k<4;k++){ const hd=box(root,.04,.05,.16,sx*(hw-.13),deck-.18,zf-gz-.6-k*.75,darkMat); hd.rotation.z=sx*.25; }
   { const p=glacisPt(I,deck,gz,zf,.55,.05); for(const dx of [.12,.24]) mgMount(root,iw2*.3+dx,p.y,p.z,{tilt:.08,yaw:[0,0],pitch:[0,0],len:.3,box:false,seat:['mg1','codriver','driver']}); }  // dos Madsen fijas del ayudante (tiran derecho)
   for(const sx of [-1,1]){ const q=glacisPt(I,deck,gz,zf,.98,.04), k=new THREE.Mesh(_tgShackle,darkMat); k.scale.setScalar(.75); k.position.set(sx*iw2*.38,q.y-.08,q.z+.04); k.rotation.y=Math.PI/2; root.add(k);
     const r=new THREE.Mesh(_tgShackle,darkMat); r.scale.setScalar(.75); r.position.set(sx*iw2*.38,.62,zr-.03); r.rotation.y=Math.PI/2; root.add(r); }   // 4 ganchos de remolque
