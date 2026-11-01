@@ -490,4 +490,10 @@ Object.assign(AMMO_DEF,{
 const W2_AA=['wirbelwind','ostwind','zsu37','m16mgmc','crusaderaa','tase'];
 W2_KEYS.push(...W2_AA);
 for(const k of W2_AA){ FC[k]={crew:VEH[k].seats.length,autoL:1}; OPTIC[k]=[2,4]; }
+// Aumento real de cada mira (Tank Encyclopedia y manuales de época): TZF alemanas 2,5× (Panther/Tiger I tardío 2,5/5×, Tiger II 3/6×), Sfl.ZF de los cazacarros 5×,
+// soviéticas TMFD 2,5× y TSh 4×, M70 yanqui 3× y M71 de 5×/4×, británicas No. 30/33 1,9× y No. 50/43 3×
+Object.assign(OPTIC,{pz3j:[2.5],pz4f2:[2.5],pz4h:[2.5],stug3g:[5],panther:[2.5,5],tiger1:[2.5,5],tiger2:[3,6],jagdpanther:[5],pz38t:[2.5],
+  t70:[2.5],t34:[2.5],kv1:[2.5],kv2:[2.5],bt7:[2.5],t3485:[4],is2:[4],su100:[4],
+  m3stuart:[3],m4a1:[3],m10:[3],m4a3e8:[5],m26:[4],m18:[3],m36:[3],m24:[5],
+  matilda2:[1.9],crusader3:[1.9],valentine:[1.9],cromwell:[3],churchill7:[3],firefly:[3],comet:[3],achilles:[3]});
 COST['antiaéreo']=140;

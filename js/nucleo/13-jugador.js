@@ -14,7 +14,8 @@ function saveSettings(){ try{ localStorage.setItem('tw_settings',JSON.stringify(
 let player=null, playerCrew=null, crews=[], camYaw=0, camPitch=.12, sens=1.2, scoped=false, scopeOn=false, mouseDown=false, rightDown=false, shake=0, vig=0, lastAim=null, camDist=14, playerDeadT=0, specIdx=0;
 const keys={};
 function aimPoint(){
-  const o=camera.position.clone(), d=camera.getWorldDirection(new THREE.Vector3());
+  // con la mira la cámara va pegada al cañón: el blanco lo marca el mouse (camYaw/camPitch), no hacia dónde mira la cámara
+  const o=camera.position.clone(), d=scoped?new THREE.Vector3(Math.sin(camYaw)*Math.cos(camPitch),Math.sin(camPitch),Math.cos(camYaw)*Math.cos(camPitch)):camera.getWorldDirection(new THREE.Vector3());
   ray.set(o,d); ray.far=600;
   const h=ray.intersectObjects(colliders.filter(c=>c.userData.tank!==player).concat(houseMeshes),false); ray.far=Infinity;
   let best=h.length?h[0].distance:600;
@@ -53,10 +54,13 @@ function updatePlayer(dt){
   const dir=new THREE.Vector3(Math.sin(camYaw)*Math.cos(camPitch),Math.sin(camPitch),Math.cos(camYaw)*Math.cos(camPitch));
   if(scoped){
     t.root.updateMatrixWorld(true);
-    const tp=t.turret.getWorldPosition(new THREE.Vector3()); tp.y+=t.T.m.th+.4;
-    camera.position.copy(tp); camera.lookAt(tp.clone().add(dir));
-    // clic derecho: zoom (el mayor aumento de la mira; si tiene uno solo, el doble)
-    const mags=t.T.optic||[8], mag=rightDown?(mags.length>1?Math.max(...mags):mags[0]*2):mags[Math.min(t.magIdx||0,mags.length-1)], tf=2*Math.atan(Math.tan(32.5*Math.PI/180)/mag)*180/Math.PI;
+    // Mira del artillero real (pedido de Sebastián): va montada con el cañón, así que se ve hacia donde apunta el tubo (menos la
+    // sobreelevación de la alza, t.se) y sigue a la torre con su retraso; el mouse marca adonde querés llevarlo (miras.js)
+    const tp=t.gunPivot.getWorldPosition(new THREE.Vector3()); tp.y+=.35;
+    const gd=t.barrel.getWorldDirection(new THREE.Vector3()), gy=Math.atan2(gd.x,gd.z), gpch=Math.asin(clamp(gd.y,-1,1))-(t.se||0);
+    camera.position.copy(tp); camera.lookAt(tp.clone().add(new THREE.Vector3(Math.sin(gy)*Math.cos(gpch),Math.sin(gpch),Math.cos(gy)*Math.cos(gpch))));
+    // aumento real: 1× = lo que ocupa la pantalla vista a distancia normal (~34° de alto); clic derecho: el mayor aumento (si tiene uno solo, ×1,5)
+    const mags=t.T.optic||[8], mag=rightDown?(mags.length>1?Math.max(...mags):mags[0]*1.5):mags[Math.min(t.magIdx||0,mags.length-1)], tf=2*Math.atan(Math.tan(17*Math.PI/180)/mag)*180/Math.PI;
     camera.fov+=(tf-camera.fov)*Math.min(1,dt*12);
   } else { chaseCam(t,dt,dir); camera.fov+=((rightDown?30:65)-camera.fov)*Math.min(1,dt*12); } // clic derecho: zoom de la vista del comandante
   if(shake>0){shake-=dt;camera.position.x+=rand(-1,1)*shake*.25;camera.position.y+=rand(-1,1)*shake*.25;}
@@ -267,15 +271,15 @@ function drawOverlay(){
   // Mira del artillero como se ve en la nieve de Bastogne (pedido de Sebastián): trazos negros nítidos con un halo claro,
   // así contrastan igual sobre pasto, barro, desierto o de noche
   const halo=(f)=>{ oc.lineWidth=4; oc.strokeStyle='rgba(235,238,240,.55)'; f(); oc.stroke(); oc.lineWidth=1.6; oc.strokeStyle='rgba(15,15,15,.95)'; f(); oc.stroke(); };
-  if(scoped){ oc.fillStyle='rgba(235,238,240,.6)'; oc.beginPath(); oc.arc(cx,cy,3.4,0,7); oc.fill(); oc.fillStyle='rgba(15,15,15,.95)'; oc.beginPath(); oc.arc(cx,cy,2,0,7); oc.fill(); }
+  if(scoped&&typeof drawReticle!=='function'){ oc.fillStyle='rgba(235,238,240,.6)'; oc.beginPath(); oc.arc(cx,cy,3.4,0,7); oc.fill(); oc.fillStyle='rgba(15,15,15,.95)'; oc.beginPath(); oc.arc(cx,cy,2,0,7); oc.fill(); }
   else { // Mira central estilo War Thunder: anillo fino con borde oscuro y punto central
     oc.lineWidth=3.5; oc.strokeStyle='rgba(0,0,0,.45)'; oc.beginPath(); oc.arc(cx,cy,9,0,7); oc.stroke();
     oc.lineWidth=1.5; oc.strokeStyle='rgba(255,255,255,.92)'; oc.beginPath(); oc.arc(cx,cy,9,0,7); oc.stroke();
     oc.fillStyle='rgba(0,0,0,.5)'; oc.beginPath(); oc.arc(cx,cy,2.4,0,7); oc.fill();
     oc.fillStyle='rgba(255,255,255,.95)'; oc.beginPath(); oc.arc(cx,cy,1.4,0,7); oc.fill(); }
-  if(scoped) halo(()=>{ oc.beginPath(); oc.moveTo(cx-200,cy);oc.lineTo(cx-14,cy);oc.moveTo(cx+14,cy);oc.lineTo(cx+200,cy);oc.moveTo(cx,cy+14);oc.lineTo(cx,cy+160); });
+  if(scoped&&typeof drawReticle!=='function') halo(()=>{ oc.beginPath(); oc.moveTo(cx-200,cy);oc.lineTo(cx-14,cy);oc.moveTo(cx+14,cy);oc.lineTo(cx+200,cy);oc.moveTo(cx,cy+14);oc.lineTo(cx,cy+160); });
   const manual=realMode&&!hasFcs(player);
-  if(scoped&&manual){ // escala de alzas: marcas para 100 a 600 m
+  if(scoped&&manual&&typeof drawReticle!=='function'){ // escala de alzas: marcas para 100 a 600 m
     const v=ammoOf(player).v, z0=ballisticPitch(200,0,v), ppr=innerHeight/(2*Math.tan(camera.fov*Math.PI/360));
     oc.font='600 13px "Saira Condensed",sans-serif'; oc.textAlign='left';
     for(let d=100;d<=600;d+=100){ const y=cy+Math.tan(ballisticPitch(d,0,v)-z0)*ppr, w=d%200===0?16:9;
@@ -283,7 +287,7 @@ function drawOverlay(){
       if(d%200===0){ oc.lineWidth=3; oc.strokeStyle='rgba(235,238,240,.6)'; oc.strokeText(String(d/100),cx+w+4,y+4); oc.fillStyle='rgba(15,15,15,.95)'; oc.fillText(String(d/100),cx+w+4,y+4); } }
     oc.textAlign='center';
   }
-  if(manual&&player.reloadT>0){ oc.strokeStyle='#ffc65c';oc.lineWidth=3;oc.beginPath();oc.arc(cx,cy,20,-Math.PI/2,-Math.PI/2+Math.PI*2*(1-player.reloadT/(player.reloadMax*reloadFactor(player))));oc.stroke(); }
+  if(manual&&player.reloadT>0&&!(scoped&&typeof drawReticle==='function')){ oc.strokeStyle='#ffc65c';oc.lineWidth=3;oc.beginPath();oc.arc(cx,cy,20,-Math.PI/2,-Math.PI/2+Math.PI*2*(1-player.reloadT/(player.reloadMax*reloadFactor(player))));oc.stroke(); }
   const ip=manual?null:project(predictImpact(player));
   if(ip){
     const ready=player.reloadT<=0, onTarget=Math.hypot(ip.x-cx,ip.y-cy)<10;

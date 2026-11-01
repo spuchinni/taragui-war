@@ -336,6 +336,7 @@ function aimAt(t,point,dt,eY=0,eP=0){
   const dx=point.x-gp.x, dz=point.z-gp.z, d=Math.max(5,Math.hypot(dx,dz));
   const v=ammoOf(t).v, manual=t.isPlayer&&realMode&&!hasFcs(t);
   const wy=Math.atan2(dx,dz)+eY, wp=(manual?Math.atan2(point.y-gp.y,d)+ballisticPitch(200,0,v):ballisticPitch(d,point.y-gp.y,v))+eP;
+  t.se=wp-eP-Math.atan2(point.y-gp.y,d);   // sobreelevación de la alza: la mira del artillero mira el tubo menos esto
   const dir=new THREE.Vector3(Math.sin(wy)*Math.cos(wp),Math.sin(wp),Math.cos(wy)*Math.cos(wp));
   qInv.copy(t.root.quaternion).invert(); dir.applyQuaternion(qInv);
   // cuánto baja y sube el cañón según el tanque (T.depr / T.elevMax en grados, realismo.js); los antiaéreos suben casi vertical (T.elev)
