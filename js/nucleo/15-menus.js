@@ -196,7 +196,8 @@ function renderSettings(){
   document.querySelectorAll('.kb').forEach(b=>b.onclick=()=>{ bindCapture=bindCapture===b.dataset.k?null:b.dataset.k; renderSettings(); });
   $('resetB').onclick=()=>{ binds={...DEF_BINDS}; bindCapture=null; saveSettings(); renderSettings(); };
   $('guideB').onclick=guide;
-  $('back').onclick=()=>{ bindCapture=null; menuScreen='home'; mainMenu(); };
+  $('back').onclick=()=>{ bindCapture=null; if(state==='paused'){ pausePanel(); return; } menuScreen='home'; mainMenu(); };
+  if(state==='paused'){ $('introB').style.display='none'; $('back').textContent='Volver al menú'; }   // abierto desde la partida
   const ab=$('ammoSlots'); if(ab) ab._sig=null; // refrescar las teclas mostradas en la barra de munición
 }
 // Si el navegador bloquea el bloqueo del puntero (por ejemplo, dentro de una vista previa), se juega con el mouse libre:
@@ -221,12 +222,14 @@ document.addEventListener('pointerlockchange',()=>{
   if(document.pointerLockElement===renderer.domElement){
     if(state==='paused'){ state='play'; $('overlay').style.display='none'; }
   } else if(state==='play'&&player&&!player.dead&&!artyPick){
-    state='paused'; mouseDown=false; rightDown=false; if(engGain) engGain.gain.value=0;
-    $('overlay').style.display='flex';
-    $('panel').innerHTML=`<h1>Pausa</h1><p>La batalla te espera.</p><button class="go" id="resume">Volver al combate</button><button class="go alt" id="quit">Abandonar</button>`;
-    $('resume').onclick=()=>lock(); $('quit').onclick=()=>{clearBattle();mainMenu();};
+    pauseOpen();
   }
 });
+// Menú de Esc en la partida (pedido de Sebastián): NO pausa, la batalla sigue y tu tanque queda quieto; desde acá se cambian los ajustes
+function pauseOpen(){ if(state!=='play') return; state='paused'; mouseDown=false; rightDown=false; releaseAll(); if(engGain) engGain.gain.value=0; pausePanel(); }
+function pausePanel(){ $('overlay').style.display='flex';
+  $('panel').innerHTML=`<h1>Menú</h1><p>La batalla sigue mientras tanto: tu tanque queda quieto y te pueden pegar.</p><button class="go" id="resume">Volver al combate</button><button class="go alt" id="pSet">⚙ Ajustes</button><button class="go alt" id="quit">Abandonar</button>`;
+  $('resume').onclick=()=>lock(); $('pSet').onclick=()=>renderSettings(); $('quit').onclick=()=>{clearBattle();mainMenu();}; }
 renderer.domElement.addEventListener('click',()=>{ if(state==='play'&&!document.pointerLockElement&&!freeAim) lock(); });
 document.addEventListener('mousemove',e=>{
   mx=e.clientX; my=e.clientY;
@@ -270,6 +273,7 @@ document.addEventListener('keydown',e=>{
     bindCapture=null; renderSettings(); return; }
   keys[e.code]=true;
   if(artyPick&&e.code==='Escape'){ artyMap(false); return; }
+  if(e.code==='Escape'&&freeAim&&!e.repeat){ if(state==='play'&&player&&!player.dead){ pauseOpen(); return; } if(state==='paused'){ lock(); return; } }   // con el mouse libre no hay bloqueo del puntero que suelte Esc
   if(e.code===binds.ping&&state==='play'&&player&&!player.dead&&!e.repeat){ doPing(); return; }
   if(net.guest&&state==='play'&&player&&!player.dead&&lastAim&&(e.code===binds.arty||e.code===binds.air)&&!e.repeat){ supKey(e.code===binds.arty?'arty':'air'); return; }
   if(net.guest&&state==='play'&&player&&!player.dead&&lastAim&&[binds.arty,binds.air,binds.nuke].includes(e.code)&&!e.repeat){ hostSend({t:'sup',k:e.code===binds.arty?'arty':e.code===binds.air?'air':'nuke',p:[lastAim.x,lastAim.y,lastAim.z]}); return; }
@@ -322,7 +326,7 @@ function loop(ts){
 function frame(dt){
   if(Q().retro){ retroT-=dt; if(retroT<=0){ retroT=1.5; retroTextures(true); } }
   if(state==='intro'&&typeof introFrame==='function'){ introFrame(dt); return; }
-  const sim=['play','deploy','spectate','end'].includes(state)||(net.on&&(state==='paused'||state==='brief'));
+  const sim=['play','deploy','spectate','end','paused'].includes(state)||(net.on&&state==='brief');   // el menú de Esc no pausa
   camera.up.set(0,1,0); boardMode=false; infAmbTick(dt);
   if(sim){
     now+=dt; mgMsgT-=dt; for(const c of crews){c.artyCD=Math.max(0,c.artyCD-dt);c.airCD=Math.max(0,c.airCD-dt);}
@@ -349,7 +353,7 @@ function frame(dt){
     }
     gone.forEach(removeTank);
     if(!net.guest) updateBotCrews(dt);
-    if(state==='play'&&player){ edgeTurn(dt); updatePlayer(dt); }
+    if((state==='play'||state==='paused')&&player){ if(state==='play') edgeTurn(dt); updatePlayer(dt); }   // con el menú abierto el tanque queda quieto pero la cámara lo sigue
     else if(state==='end'&&nukeView) nukeCam(dt);
     else if(state==='spectate'||state==='end'){ if(!spectatorCam(dt)) orbitCam(dt); }
     else orbitCam(dt);

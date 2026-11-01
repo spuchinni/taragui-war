@@ -47,7 +47,7 @@ function updateShells(dt){
         if(hit.object.userData.tank) hitTank(s.owner,hit,dir,(s.A.kind==='ke'?s.A.pen*Math.max(.5,1-s.travel/3000):s.A.pen)*(s.owner.penK||1),'shell',s.A);
         else { if(hit.object.userData.ground&&typeof groundHit==='function') groundHit(hit.point,s.A);
           if((s.A.kind==='he'||s.A.kind==='hesh')&&s.A.sc<1){explode(hit.point,'ground');heSplash(hit.point,s.owner,s.A);} else if(s.A.kind==='he'||s.A.kind==='hesh'){blast(hit.point,.35);heSplash(hit.point,s.owner,s.A);} else {explode(hit.point,'ground');boom(distVol(hit.point,.25),.5,500);}
-          const b=bldOf(hit); if(b){ const big=s.A.kind==='he'||s.A.kind==='hesh'; markBuilding(hit,b,big?rand(1.1,1.7)*(s.A.sc<1?.7:1):s.A.kind==='heat'?rand(.6,.85):rand(.4,.6),big||s.A.kind==='heat'?'big':'ke'); damageBuilding(b,(15+s.owner.T.m.gr*250)*({ke:.6,heat:1,hesh:2.2,he:2.2})[s.A.kind]*(s.A.sc||1)); } }
+          const b=bldOf(hit); if(b){ const big=s.A.kind==='he'||s.A.kind==='hesh'; markBuilding(hit,b,big?rand(1.1,1.7)*(s.A.sc<1?.7:1):s.A.kind==='heat'?rand(.6,.85):rand(.4,.6),big||s.A.kind==='heat'?'big':'ke'); damageBuilding(b,(15+s.owner.T.m.gr*250)*({ke:.6,heat:1,hesh:2.2,he:2.2})[s.A.kind]*(s.A.sc||1)*.5); /* un cañonazo abre un boquete, no voltea la casa */ } }
         done=true; break; }
       const gh=hAtY(s.p.x,s.p.z,s.p.y);
       if(s.p.y<gh&&s.fx){ s.p.y=gh; explode(s.p,'ground'); if(typeof groundHit==='function') groundHit(s.p,s.A); boom(distVol(s.p,.25),.5,500); done=true; }

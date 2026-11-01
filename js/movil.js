@@ -37,9 +37,7 @@ if(MOVIL){
   // tocar una tecla = mandar el mismo evento que el teclado (así sirve igual online y en el tutorial)
   const tapKey=a=>{ const c=binds[a]; if(!c) return; document.dispatchEvent(new KeyboardEvent('keydown',{code:c,bubbles:true})); setTimeout(()=>document.dispatchEvent(new KeyboardEvent('keyup',{code:c,bubbles:true})),60); };
   const SLOT={a0:'ammo1',a1:'ammo2',a2:'ammo3',auto:'ammoAuto',arty:'arty',air:'air',nuke:'nuke',rep:'repair',crew:'crewSwap',smk:'smoke',ext:'ext',th:'thermal',tr:'troops'};
-  function pauseMenu(){ if(state!=='play') return; releaseAll(); stickOff(); state='paused'; if(engGain) engGain.gain.value=0; $('overlay').style.display='flex';
-    $('panel').innerHTML=`<h1>Pausa</h1><p>La batalla te espera.</p><button class="go" id="resume">Volver al combate</button><button class="go alt" id="quit">Abandonar</button>`;
-    $('resume').onclick=()=>lock(); $('quit').onclick=()=>{clearBattle();mainMenu();}; }
+  function pauseMenu(){ if(state!=='play') return; stickOff(); pauseOpen(); }
   function press(b,on){ const t=b.dataset.t; if(t==='zoom'){ if(on) rightDown=!rightDown; b.classList.toggle('on',rightDown); return; } b.classList.toggle('on',on);
     if(t==='fire') mouseDown=on; else if(t==='mg') setKey('mg',on);
     else if(!on) return; else if(t==='scope'){ if(player&&!player.dead) scopeOn=!scopeOn; }

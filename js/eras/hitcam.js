@@ -20,7 +20,7 @@ function hitcamShow(t,hit,dir,res){
   if(!t||!t.root||!dir) return; hcClear(); t.root.updateMatrixWorld(true);
   const g=new THREE.Group(); HC.g=g; hcScene.add(g);
   const ud=[]; t.root.traverse(o=>{ ud.push(o.userData); o.userData={col:!!o.userData.tank,mark:!!o.userData.mark}; });   // userData del tanque se apunta a sí mismo: no se puede copiar
-  const c=t.root.clone(true); { let i=0; t.root.traverse(o=>{ o.userData=ud[i++]; }); } c.position.set(0,0,0); g.add(c); let ne=0;
+  const c=t.root.clone(true); c.traverse(o=>o.layers.set(0)); /* la copia con todo el detalle aunque el tanque esté lejos (rendimiento.js) */ { let i=0; t.root.traverse(o=>{ o.userData=ud[i++]; }); } c.position.set(0,0,0); g.add(c); let ne=0;
   // casco en rayos X: transparente con los bordes marcados
   c.traverse(o=>{ if(!o.isMesh) return; if(o.userData.col){ o.visible=false; return; } o.userData.hcOrig=o.material; o.material=hcGhost; o.castShadow=false;
     const gm=o.geometry; if(!gm.boundingSphere) gm.computeBoundingSphere(); if(ne<90&&gm.boundingSphere.radius>.18&&!o.userData.mark){ const e=new THREE.LineSegments(new THREE.EdgesGeometry(gm,32),hcEdge); o.add(e); HC.edges.push(e); ne++; } });
