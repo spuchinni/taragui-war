@@ -81,3 +81,23 @@ function drawReticle(t,manual){ const cx=innerWidth/2, cy=innerHeight/2, ppr=inn
   if(t.gunLim){ T(cx,cy-30,t.gunLim<0?'El cañón no baja más':'El cañón no sube más'); }
   if(manual&&t.reloadT>0){ oc.strokeStyle='#ffc65c'; oc.lineWidth=3; oc.beginPath(); oc.arc(cx,cy,R*.97,-Math.PI/2,-Math.PI/2+Math.PI*2*(1-t.reloadT/(t.reloadMax*reloadFactor(t)))); oc.stroke(); } }
 
+
+// ---- Cartel de baja en el centro (pedido de Sebastián): de lejos no se distinguía si el tanque quedó destruido o sigue vivo.
+// Grande y claro unos 2,4 s: "TANQUE DESTRUIDO" + el vehículo. Local: envolviendo destroy (el que mató es el jugador);
+// invitados online: llega la nota "Tanque destruido" del anfitrión (showAward) y se muestra igual.
+(function(){
+  let lastKB=0;
+  function killBanner(sub,crush){ let el=document.getElementById('killB');
+    if(!el){ el=document.createElement('div'); el.id='killB'; el.className='hud';
+      el.style.cssText='position:fixed;left:50%;top:34%;transform:translate(-50%,-50%) scale(1);text-align:center;pointer-events:none;z-index:7;opacity:0;transition:opacity .25s,transform .25s;font-family:"Saira Condensed",sans-serif;text-shadow:0 0 6px #000,0 2px 3px #000';
+      document.body.appendChild(el); }
+    el.innerHTML=`<div style="font:800 46px 'Saira Condensed',sans-serif;letter-spacing:3px;color:#ff5a3c">${crush||'TANQUE DESTRUIDO'}</div>${sub?`<div style="font:600 21px 'Saira Condensed',sans-serif;color:#f2e6c8">${sub}</div>`:''}`;
+    el.style.opacity=1; el.style.transform='translate(-50%,-50%) scale(1.08)'; setTimeout(()=>el.style.transform='translate(-50%,-50%) scale(1)',120);
+    clearTimeout(el._t); el._t=setTimeout(()=>el.style.opacity=0,2400); lastKB=performance.now(); }
+  window.killBanner=killBanner;
+  const _d=destroy;
+  destroy=function(t,by){ const was=t&&!t.dead; const r=_d.apply(this,arguments);
+    if(was&&by&&by.isPlayer&&t.team!==by.team) killBanner(`${t.T.label}${t.name&&!t.crew?.gun?' · '+t.name:''}`,t.T.static?(t.crushed||Math.abs(by.speed||0)>1?'CAÑÓN APLASTADO':'CAÑÓN DESTRUIDO'):t.T.cls==='semioruga'||t.T.support?'VEHÍCULO DESTRUIDO':''); return r; };
+  const _sa=showAward;
+  showAward=function(name){ const r=_sa.apply(this,arguments); if(name==='Tanque destruido'&&performance.now()-lastKB>600) killBanner('',false); return r; };
+})();
