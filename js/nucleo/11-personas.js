@@ -487,7 +487,15 @@ function vAbandonLook(C){ const u=C.g.userData, d=u.door; if(d){ d.visible=true;
 function vWreckLook(C){ const u=C.g.userData; (u.mats||[u.m]).forEach(m=>m.color.setHex(0x1e1c1a)); (u.riders||[]).forEach(r=>r.g.visible=false); C.g.scale.y=.75; C.burn=now+20; }
 function abandonCar(C){ if(C.state!==0&&C.state!==1) return; C.state=2; C.v=0; vAbandonLook(C); const u=C.g.userData;
   const n=u.V&&u.V.mil?0:u.riders&&u.riders.length?u.riders.length:1+(Math.random()<.5?1:0)+(u.V&&u.V.k==='bus'?3:0); for(let i=0;i<n;i++){ const P=makePerson('civ',-1,C.x+Math.cos(C.h)*2.4,C.z-Math.sin(C.h)*2.4); P.flee=true; P.goal=null; } }
-function wreckCar(C,by,occupied){ if(C.state===3) return; C.state=3; C.v=0; vWreckLook(C);
+// carros con caballo y bicicletas no tienen motor ni combustible: se rompen, se vuelcan y el conductor sale corriendo (sin fuego ni humo)
+const _woodBits=new THREE.MeshLambertMaterial({color:0x6b4a2c});
+function wreckNoMotor(C){ const u=C.g.userData, cart=u.V.k==='cart', y=heightAt(C.x,C.z);
+  (u.riders||[]).forEach(r=>r.g.visible=false); for(let i=0;i<(u.riders&&u.riders.length||1);i++){ const P=makePerson('civ',-1,C.x+rand(-1.5,1.5),C.z+rand(-1.5,1.5)); P.flee=true; P.goal=null; }
+  C.lay=1; if(cart){ debris(new THREE.Vector3(C.x,y+.8,C.z),10,_woodBits,4,1.2); (u.mats||[u.m]).forEach(m=>m.color.multiplyScalar(.8)); }   // volcado (C.lay lo acuesta en updateTraffic)
+  C.burn=0; }
+function wreckCar(C,by,occupied){ if(C.state===3) return; const u=C.g.userData, noMotor=u.V&&(u.V.k==='cart'||u.V.k==='bike');
+  if(noMotor){ C.state=3; C.v=0; wreckNoMotor(C); if(occupied&&by&&by.crew&&!by.inf) award(by.crew,'Civil abatido',-50,-60); return; }
+  C.state=3; C.v=0; vWreckLook(C);
   for(let i=0;i<5;i++) puff(new THREE.Vector3(C.x+rand(-1.5,1.5),heightAt(C.x,C.z)+rand(.5,2),C.z+rand(-1.5,1.5)),0xff8a30,rand(2,3.5),.6,1,1,true);
   if(occupied&&by&&by.crew&&!by.inf) award(by.crew,'Civil abatido',-50,-60); }
 function carsBlast(p,r,by){ if(net.guest) return; for(const C of traffic){ if(C.state===3) continue; const d=Math.hypot(C.x-p.x,C.z-p.z); if(d<r+2.2) wreckCar(C,by,C.state<2); else if(d<r*4+20) abandonCar(C); } }
