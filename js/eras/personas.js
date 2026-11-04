@@ -51,6 +51,14 @@
     cloche:(()=>{ const g=new THREE.SphereGeometry(.13,10,6,0,Math.PI*2,0,1.6); g.scale(1,.9,1.02); return g; })(), clocheB:new THREE.CylinderGeometry(.155,.16,.012,14),
     pilotka:(()=>{ const g=new THREE.BoxGeometry(.11,.07,.24); g.translate(0,.11,0); return g; })(),
     neckFlap:(()=>{ const g=new THREE.CylinderGeometry(.13,.15,.12,10,1,true,Math.PI*.55,Math.PI*.9); g.translate(0,-.03,0); return g; })(),
+    kepi:(()=>{ const g=new THREE.CylinderGeometry(.105,.115,.1,12); g.translate(0,.1,0); return g; })(), kepiTop:(()=>{ const g=new THREE.CylinderGeometry(.108,.108,.012,12); g.translate(0,.155,0); return g; })(),
+    badge:B(.035,.04,.012), cross:B(.012,.05,.008), crossH:B(.034,.012,.008), nurseCap:B(.17,.06,.13), toque:new THREE.CylinderGeometry(.11,.1,.2,12), toqueB:new THREE.CylinderGeometry(.122,.122,.06,12),
+    hardHat:(()=>{ const g=new THREE.SphereGeometry(.14,10,6,0,Math.PI*2,0,1.5); g.scale(1,.85,1.08); return g; })(), hardBrim:(()=>{ const g=new THREE.CylinderGeometry(.165,.165,.012,14); g.scale(1,1,1.15); return g; })(),
+    fireComb:B(.02,.06,.22), veil:(()=>{ const g=new THREE.SphereGeometry(.15,10,8,0,Math.PI*2,0,2.2); g.scale(1,1.1,1.05); return g; })(), veilBack:B(.24,.3,.04),
+    steth:(()=>{ const g=new THREE.TorusGeometry(.075,.008,4,12,Math.PI); g.rotateZ(Math.PI); return g; })(), band:(r=.2)=>{ const g=new THREE.CylinderGeometry(r,r,.03,12,1,true); g.scale(1,1,.64); return g; },
+    baton:new THREE.CylinderGeometry(.018,.018,.32,6), holster:B(.06,.14,.05), mailBag:B(.3,.24,.09), docBag:B(.26,.16,.12),
+    fork:(()=>{ const L=[new THREE.CylinderGeometry(.015,.015,1.3,5).translate(0,.15,0)]; for(const x of [-.05,0,.05]) L.push(new THREE.CylinderGeometry(.006,.004,.22,4).translate(x,-.6,0)); L.push(B(.13,.02,.02,0,-.48,0)); return THREE.BufferGeometryUtils.mergeBufferGeometries(L.map(g=>g.index?g.toNonIndexed():g)); })(),
+    basket:(()=>{ const g=new THREE.CylinderGeometry(.14,.11,.13,10); return g; })(),
     crewCap:(()=>{ const g=new THREE.BoxGeometry(.12,.08,.25); g.translate(0,.1,0); return g; })()
   };
   const pick=a=>a[(Math.random()*a.length)|0], rnd=Math.random;
@@ -90,6 +98,16 @@
       if(style==='suit'){ top=bot=pick([0x2e2e30,0x3a342c,0x2a3040,0x4a4238,0x55504a]); shirtC=0xe8e4d8; }
       else if(style==='worker'){ top=pick([0xe8e0d0,0xb8c4cc,0xc8b898,0x8a9aaa]); bot=pick([0x4a3b2a,0x3a3a3a,0x5a5040,0x2e3442]); sleeve=rnd()<.5?'rolled':'long'; }
       else { top=pick([0xd8ccb0,0x8a7a5a,0x6a7a8a]); bot=pick([0x3a4a6a,0x4a3b2a,0x5a5040]); } }
+    // ---- oficios (médicos, enfermeras, policías, curas, monjas, bomberos, carteros, panaderos, granjeros, obreros, vendedoras) ----
+    let job=null;
+    if(civ&&!child&&(o.job||rnd()<(o.jobP??.35))){ job=o.job||pick(female?['enfermera','enfermera','monja','medico','vendedora','policia']:['policia','policia','medico','cura','bombero','cartero','panadero','granjero',...(old?['granjero']:['obrero','obrero'])]);
+      if(female&&job==='policia'&&era<=3) job='vendedora';                       // en esa época casi no había mujeres policías de calle
+      style='job'; sleeve='long'; footG=PG.shoe; foot=0x1e1c1a; legLow=null;
+      const J={medico:[0xf2f2ee,0x3a3a40],enfermera:[0xf2f2ee,0xf2f2ee],monja:[0x1a1a1e,0x1a1a1e],policia:era<=3?[0x1e2638,0x1e2638]:[0x8aa8c8,0x1e2638],cura:[0x161618,0x161618],
+        bombero:era<=3?[0x1e2638,0x1e2638]:[0x4a4230,0x4a4230],cartero:era<=3?[0x3a4250,0x3a4250]:[0x6a8aaa,0x2e3442],panadero:[0xf0ece2,0xd8d2c4],
+        granjero:[pick([0xd8ccb0,0x8a7a5a,0xb8c4cc]),pick([0x3a4a6a,0x4a3b2a])],obrero:[pick([0x5a6a7a,0x8a9aaa]),0x2e3442],vendedora:[pick([0x8a3a3a,0x3a4a6a,0x6a5a3a]),pick([0x2a2a2e,0x3a3428])]}[job];
+      top=J[0]; bot=J[1]; if(female&&['enfermera','monja','vendedora'].includes(job)) legLow=job==='monja'?0x1a1a1e:0xd8d0c0;
+      if(['bombero','granjero','obrero'].includes(job)){ footG=PG.boot; foot=0x2a2622; } if(job==='granjero'||job==='panadero') sleeve='rolled'; }
     // ---- cuerpo ----
     const hip=new THREE.Group(); hip.position.y=female?.86:.88; g.add(hip);
     const torso=new THREE.Mesh(female?X.torsoF:X.torsoM,pMat(top)); torso.position.y=.3; hip.add(torso);
@@ -115,7 +133,19 @@
     // ---- cabeza: pelo y sombreros ----
     const hat=(geo,col,y=.03,z=0,rx=0)=>add(head,geo,col,0,y,z,rx);
     if(civ){
-      if(child&&female){ add(head,PG.hairL,hairH,0,.02,-.012); for(const sx of [-1,1]) add(head,X.braid,hairH,sx*.08,-.02,-.06,.25,0,sx*.15); if(rnd()<.5) add(head,X.bow,pick([0xb33a3a,0xeeeeee,0x3a4a8a]),0,.1,-.08); }
+      if(job){ const J=job, bunH=()=>{ add(head,PG.hairS,hairH,0,.015,0); add(head,X.bun,hairH,0,.035,-.11); }, kepi=c=>{ add(head,PG.hairS,hairH,0,.012,0); hat(X.kepi,c,0); hat(X.kepiTop,c,0); hat(PG.visor,0x111111,.045,.1); add(head,X.badge,0xc8a040,0,.1,.112); };
+        if(J==='medico'){ if(female) bunH(); else add(head,PG.hairS,hairH,0,.012,0); }
+        else if(J==='enfermera'){ bunH(); hat(X.nurseCap,0xf4f4f0,.1,-.01); add(head,X.cross,0xc02020,0,.1,.06); add(head,X.crossH,0xc02020,0,.1,.06); }
+        else if(J==='monja'){ add(head,PG.scarf,0xf0f0ec,0,.0,-.004,0,0,0,[1.02,1.02,1.02]); add(head,X.veil,0x1a1a1e,0,.02,-.03); add(head,X.veilBack,0x1a1a1e,0,-.12,-.12,.15); }
+        else if(J==='policia'){ if(era<=3) kepi(0x1e2638); else { add(head,PG.hairS,hairH,0,.012,0); hat(PG.cap,0x1e2638,.03); hat(PG.visor,0x111111,.035,.1); add(head,X.badge,0xc8a040,0,.09,.11); } }
+        else if(J==='cartero') kepi(era<=3?0x3a4250:0x2e3442);
+        else if(J==='cura'){ add(head,PG.hairS,hairH,0,.012,0); if(old&&rnd()<.6){ hat(X.strawC,0x161618,.08,0,0); hat(X.straw,0x161618,.06); } }
+        else if(J==='bombero'){ if(era<=3){ hat(X.hardHat,0xb08a3a,.04); hat(X.hardBrim,0xa07a2a,.03); hat(X.fireComb,0xc89a40,.14); } else { hat(X.hardHat,pick([0xc02020,0xe8c020]),.04); hat(X.hardBrim,0x2a2a2a,.03,-.02); } }
+        else if(J==='panadero'){ add(head,PG.hairS,hairH,0,.012,0); hat(X.toque,0xf6f6f2,.17); hat(X.toqueB,0xf0f0ea,.08); }
+        else if(J==='granjero'){ add(head,PG.hairS,hairH,0,.012,0); if(old&&!warm&&rnd()<.4) add(head,X.beret,0x1e1e22,0,.075,0,0,0,.2); else { hat(X.strawC,0xc8b070,.1); hat(X.straw,0xd0b878,.065); } }
+        else if(J==='obrero'){ add(head,PG.hairS,hairH,0,.012,0); hat(X.hardHat,pick([0xe8c020,0xf0f0ea,0xe86a1a]),.04); hat(X.hardBrim,0xe8c020,.03); }
+        else if(J==='vendedora') add(head,PG.scarf,pick([0x8a2a2a,0x3a4a6a,0xd8d0b8,0x5a6a3a]),0,.01,-.008); }
+      else if(child&&female){ add(head,PG.hairL,hairH,0,.02,-.012); for(const sx of [-1,1]) add(head,X.braid,hairH,sx*.08,-.02,-.06,.25,0,sx*.15); if(rnd()<.5) add(head,X.bow,pick([0xb33a3a,0xeeeeee,0x3a4a8a]),0,.1,-.08); }
       else if(child){ add(head,PG.hairS,hairH,0,.012,0); if(rnd()<.5){ hat(X.flatCap,pick([0x4a4238,0x3a3a3a,0x5a5040]),.045); hat(X.capPeak,0x3a3a3a,.04,.1); } }
       else if(female&&old){ const r=rnd(); if(r<.4) add(head,PG.scarf,pick([0x8a2a2a,0x3a4a6a,0xd8d0b8,0x5a6a3a,0x6a4a6a,0xb8a070]),0,.01,-.008);
         else { add(head,PG.hairS,hairH,0,.015,0); add(head,X.bun,hairH,0,.035,-.11); if(r>.75&&era>=2){ hat(X.cloche,pick([0x3a2a2a,0x2a3040,0x5a4a3a,0x6a2a3a]),.03); hat(X.clocheB,0x2a2622,.02); } } }
@@ -166,7 +196,27 @@
       const bk=K.boots;
       for(const L of [LL,LR]){ if(bk==='jack') add(L,PG.jboot,bootMat.color.getHex()); else if(bk==='leg') add(L,PG.gaiter,0xb8a87a); else if(bk==='anklet') add(L,new THREE.CylinderGeometry(.06,.058,.12,8),dark(camo,1.1),0,-.76,0); else add(L,PG.gaiter,dark(camo,.9)); } }
     else { // civiles
-      if(style==='suit'){ add(torso,X.tunic(.16,.18,1.12),top,0,-.25,0); add(torso,X.collarW,shirtC,0,.29,.06); add(torso,X.tie,pick([0x6a1a1a,0x1a1a2a,0x3a2a1a,0x2a4a3a]),0,.17,front+.004);
+      if(job){ const J=job, brass=0xc8a040;
+        if(J==='medico'){ add(torso,X.tunic(.17,.52,1.38),0xf2f2ee,0,-.22,0); for(const sx of [-1,1]) add(torso,X.lapel,0xe0e0dc,sx*.05,.17,front+.003,0,0,sx*.4);
+          add(torso,X.collarW,0xd8e0e8,0,.29,.06); if(!female) add(torso,X.tie,pick([0x2a3a5a,0x5a2a2a]),0,.17,front+.004); add(torso,X.steth,0x2a2a2e,0,.2,front+.012,0,0,0,[1,1.5,1]);
+          add(torso,X.pocket,0xe8e8e4,-.085,.1,front); add(torso,X.button,0x2a4a8a,-.085,.15,front+.012); add(torso,X.docBag,0x1a1614,.22,-.38,0,0,Math.PI/2,0); }
+        else if(J==='enfermera'){ add(torso,old?X.skirtL:X.skirtS,0xf2f2ee,0,-.27,0); add(torso,X.cross,0xc02020,-.07,.12,front+.004); add(torso,X.crossH,0xc02020,-.07,.12,front+.004); add(torso,PG.belt,0xe8e8e4,0,-.27,0); }
+        else if(J==='monja'){ add(torso,X.tunic(.165,.8,1.5),0x1a1a1e,0,-.22,0); add(torso,X.collarW,0xf0f0ec,0,.29,.04,0,0,0,[1.6,1,1.4]); add(torso,X.cross,0xb8b8b8,0,.08,front+.006); add(torso,X.crossH,0xb8b8b8,0,.1,front+.006); add(torso,PG.belt,0x111111,0,-.27,0); }
+        else if(J==='cura'){ add(torso,X.tunic(.165,.8,1.45),0x161618,0,-.22,0); add(torso,X.collarW,0x161618,0,.29,.04); add(torso,X.badge,0xf4f4f0,0,.3,.075,0,0,0,[.8,.6,1]); for(let i=0;i<9;i++) add(torso,X.button,0x0e0e10,0,.24-i*.06,front+.005); }
+        else if(J==='policia'){ if(era<=3){ add(torso,X.tunic(.16,.22),top,0,-.25,0); for(let i=0;i<4;i++) for(const sx of [-1,1]) add(torso,X.button,brass,sx*.045,.2-i*.1,front+.006);
+            add(torso,new THREE.CylinderGeometry(.065,.07,.06,10),top,0,.32,0); add(torso,PG.belt,era<=2?0xe8e4d8:0x111111,0,-.27,0); add(torso,X.baton,0x111111,.17,-.42,.02); }
+          else { for(const sx of [-1,1]){ add(torso,X.pocket,dark(top,.92),sx*.085,.12,front); add(torso,X.flap,dark(top,.85),sx*.085,.175,front+.004); } add(torso,X.tie,0x1e2638,0,.17,front+.004);
+            add(torso,X.badge,brass,-.085,.21,front+.01); add(torso,PG.belt,0x111111,0,-.27,0); add(torso,X.holster,0x111111,.17,-.34,.02); add(torso,X.baton,0x111111,-.17,-.42,.02); add(torso,PG.collar,top,0,.29,0); } }
+        else if(J==='bombero'){ add(torso,X.tunic(.17,.42,1.3),top,0,-.24,0); add(torso,X.vestShell,top,0,.01,0,0,0,0,[1.05,1,1.08]);
+          if(era<=3){ for(let i=0;i<5;i++) add(torso,X.button,brass,0,.2-i*.09,front+.012); add(torso,PG.belt,0x111111,0,-.27,0,0,0,0,[1.08,1.6,1.08]); }
+          else for(const y of [-.12,-.5]) add(torso,X.band(.215+(y<-.3?.05:0)),0xe8d040,0,y,0); }
+        else if(J==='cartero'){ add(torso,X.tunic(.16,.2),top,0,-.25,0); for(let i=0;i<4;i++) add(torso,X.button,brass,0,.2-i*.1,front+.006); add(torso,PG.belt,0x2a2622,0,-.27,0);
+          add(torso,X.strap,0x4a3220,0,.0,front+.014,0,0,.75); add(torso,X.strap,0x4a3220,0,.0,-front-.014,0,0,-.75); add(torso,X.mailBag,0x5a3a22,-.2,-.33,.02,0,Math.PI/2,0); }
+        else if(J==='panadero'){ add(torso,X.apron,0xf8f8f4,0,-.05,front+.01,0,0,0,[1.1,1.4,1]); add(torso,PG.collar,top,0,.29,0); }
+        else if(J==='granjero'){ add(torso,X.bib,bot,0,-.12,front+.006); for(const sx of [-1,1]) add(torso,X.strap,bot,sx*.075,.05,front+.01); add(torso,PG.collar,top,0,.29,0); add(armR,X.fork,0x6a4e30,0,-.5,.03); }
+        else if(J==='obrero'){ add(torso,X.vestShell,0xe86a1a,0,0,0,0,0,0,[1.03,1,1.05]); for(const y of [-.05,.12]) add(torso,X.band(.205),0xd8d8c8,0,y,0); add(torso,PG.belt,0x3a2a1e,0,-.27,0); add(torso,X.holster,0x5a3a22,.17,-.34,.02); }
+        else if(J==='vendedora'){ add(torso,X.skirtL,bot,0,-.27,0); add(torso,X.apron,0xe8e0d0,0,-.27,.17,-.08,0,0,[1,.85,1]); add(armL,X.basket,0x8a6a3a,0,-.6,.1); } }
+      else if(style==='suit'){ add(torso,X.tunic(.16,.18,1.12),top,0,-.25,0); add(torso,X.collarW,shirtC,0,.29,.06); add(torso,X.tie,pick([0x6a1a1a,0x1a1a2a,0x3a2a1a,0x2a4a3a]),0,.17,front+.004);
         for(const sx of [-1,1]) add(torso,X.lapel,dark(top,.85),sx*.05,.17,front+.002,0,0,sx*.4); }
       else if(style==='worker'){ if(rnd()<.5) add(torso,X.vestShell,pick([0x2a2622,0x3a342c,0x4a4238]),0,0,0); else for(const sx of [-1,1]) add(torso,X.strap,0x3a2a1e,sx*.075,0,front+.01); add(torso,PG.collar,top,0,.29,0); }
       else if(style==='farmer'){ add(torso,X.bib,bot,0,-.12,front+.006); for(const sx of [-1,1]) add(torso,X.strap,bot,sx*.075,.05,front+.01); add(torso,PG.collar,top,0,.29,0); }
@@ -174,8 +224,8 @@
       else if(style==='girl'){ add(torso,X.skirtS,top,0,-.27,0); add(torso,PG.collar,0xeeeeee,0,.29,0); }
       else if(style==='boy'){ for(const sx of [-1,1]) add(torso,X.strap,0x3a2a1e,sx*.075,0,front+.01); }
       else if(style==='dress') add(torso,PG.skirt,top,0,-.21,0);
-      if(old&&!child&&(cold?rnd()<.6:rnd()<.25)&&style!=='farmer'){ const cc=pick([0x3a3a3a,0x4a4038,0x5a4a38,0x2a2e3a,0x6a5e4a]); add(torso,X.tunic(.18,female?.6:.55,1.4),cc,0,-.2,0); add(torso,X.vestShell,cc,0,.01,0,0,0,0,[1.06,1,1.08]); }
-      if(!child&&rnd()<.3) add(torso,PG.bag,pick([0x5a3a22,0x2a2a2a,0x8a2a2a,0xc8b090]),female?-.2:-.24,-.22,0); }
+      if(!job&&old&&!child&&(cold?rnd()<.6:rnd()<.25)&&style!=='farmer'){ const cc=pick([0x3a3a3a,0x4a4038,0x5a4a38,0x2a2e3a,0x6a5e4a]); add(torso,X.tunic(.18,female?.6:.55,1.4),cc,0,-.2,0); add(torso,X.vestShell,cc,0,.01,0,0,0,0,[1.06,1,1.08]); }
+      if(!job&&!child&&rnd()<.3) add(torso,PG.bag,pick([0x5a3a22,0x2a2a2a,0x8a2a2a,0xc8b090]),female?-.2:-.24,-.22,0); }
     // ---- arma ----
     let wep=null;
     if(kind==='rifle'||kind==='eng'){ wep=rifleMesh(1); wep.position.set(.1,.36,.3); }
@@ -188,6 +238,6 @@
     if(female) g.scale.setScalar(.95);
     for(const pt of [torso,head,LL,LR,armL,armR]) bakePart(pt);
     g.traverse(m=>{ if(m.isMesh) m.castShadow=true; });
-    return {g,female,child,parts:{hip,torso,head,legL:LL,legR:LR,armL,armR,wep}};
+    return {g,female,child,job,parts:{hip,torso,head,legL:LL,legR:LR,armL,armR,wep}};
   };
 })();

@@ -33,7 +33,7 @@ function oobCheck(t,dt){
   if(out&&!t.a10){ t.oobT=(t.oobT??OOB_T)-dt; if(bannerT>0){ bannerT=0; $('banner').style.opacity=0; }
     el.innerHTML=`¡FUERA DEL CAMPO DE BATALLA!<small>Volvé dentro de la línea roja en <b>${Math.max(0,Math.ceil(t.oobT))}</b> s o ${W.era<=2?'te cae encima la artillería':'te ataca un A-10'}</small>`; el.style.opacity=1;
     if(t.oobT<=0){ t.a10=true; if(net.guest) hostSend({t:'oob'}); else a10Strike(t); } }
-  else { if(!out) t.oobT=null; el.style.opacity=t.a10&&!t.dead&&state==='play'?1:0; if(t.a10&&!t.dead){ const A=a10s.find(a=>a.t===t); el.innerHTML=W.era<=2?`¡ARTILLERÍA SOBRE TU POSICIÓN!<small>Te pasaste del límite</small>`:`¡A-10 EN CAMINO!<small>Te pasaste del límite${A?` · a ${Math.round(A.g.position.distanceTo(t.pos))} m`:''}</small>`; } }
+  else { if(!out) t.oobT=null; el.style.opacity=t.a10&&!t.dead&&state==='play'?1:0; if(t.a10&&!t.dead){ const A=a10s.find(a=>a.t===t); el.innerHTML=W.era<=2?`¡ARTILLERÍA SOBRE TU POSICIÓN!<small>${t.a10Why||'Te pasaste del límite'}</small>`:`¡A-10 EN CAMINO!<small>${t.a10Why||'Te pasaste del límite'}${A?` · a ${Math.round(A.g.position.distanceTo(t.pos))} m`:''}</small>`; } }
 }
 function makeA10(){
   const g=new THREE.Group(), m=new THREE.MeshLambertMaterial({color:0x4d5459,fog:false}), d=new THREE.MeshLambertMaterial({color:0x33393d,fog:false});
@@ -67,7 +67,7 @@ function a10Crack(p){
 // Primera Guerra: en vez del A-10, una andanada de artillería sobre el tanque que se fue del campo
 function oobArty(t){ const by={team:1-t.team,name:'Artillería',T:{label:'fuego de barrera'},inf:false};
   for(let i=0;i<9;i++) arty.push({t:now+3+i*.35,p:t.pos.clone().add(new THREE.Vector3(rand(-6,6),0,rand(-6,6))),by});
-  markZone(t.pos.clone(),9,0xff4a32,now+6.5); feed(`${t.name} quedó bajo fuego de barrera (fuera del campo de batalla)`,'var(--enemy)'); }
+  markZone(t.pos.clone(),9,0xff4a32,now+6.5); feed(`${t.name} quedó bajo fuego de barrera (${t.a10Why?'mató civiles':'fuera del campo de batalla'})`,'var(--enemy)'); }
 function a10Strike(t){
   if(W.era<=2){ oobArty(t); return; }
   if(!t||t.dead) return;
@@ -78,7 +78,7 @@ function a10Strike(t){
   g.position.copy(start); scene.add(g);
   a10s.push({g,t,dir,v:120,alt,phase:0,fired:0,snd:movingLoop('flyover',3.6,{rate:1.35,start:2,ref:160,lp:5000}),life:22});
   if(t.isPlayer) radio('¡Avión enemigo!',2);
-  if(!net.guest) feed(`Un A-10 va por ${t.name} (fuera del campo de batalla)`,'var(--enemy)');
+  if(!net.guest) feed(`Un A-10 va por ${t.name} (${t.a10Why?'mató civiles':'fuera del campo de batalla'})`,'var(--enemy)');
 }
 function updateA10(dt){
   for(let i=a10s.length-1;i>=0;i--){ const A=a10s[i], P=A.g.position, T=A.t, tp=T.pos;

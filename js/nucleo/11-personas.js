@@ -148,7 +148,7 @@ function makePerson(kind,team,x,z){
     const b=new THREE.Mesh(IGEO.dogB,fur); b.position.y=.5; g.add(b); const h=new THREE.Mesh(IGEO.dogH,fur); h.position.set(0,.68,.48); g.add(h);
     P.parts.legs=[[-.1,.3],[.1,.3],[-.1,-.28],[.1,-.28]].map(([lx,lz])=>{ const l=new THREE.Mesh(IGEO.dogL,fur); l.position.set(lx,.38,lz); g.add(l); return l; });
     P.parts.body=b; P.parts.head=h; }
-  else { const pm=personMesh({kind,team,g}); P.parts=pm.parts; P.armed=!civ; P.female=pm.female; }
+  else { const pm=personMesh({kind,team,g}); P.parts=pm.parts; P.armed=!civ; P.female=pm.female; P.job=pm.job; }
   g.traverse(o=>{if(o.isMesh)o.castShadow=true;});
   g.position.set(x,heightAt(x,z),z); scene.add(g);
   P.id=++infSeq; infantry.push(P); return P;
