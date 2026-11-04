@@ -63,7 +63,11 @@ function buildWW1Map(key){
   const bx=C.bx, bz=C.bz, EX=bx+70, EZ=bz+70, res=C.res||.8, nx=Math.round(EX*2/res)+1, nz=Math.round(EZ*2/res)+1;
   const G={ex:EX,ez:EZ,r:res,nx,nz,a:new Float32Array(nx*nz),td:new Float32Array(nx*nz)}; W.HG=G;
   const ridge=C.ridge||2.5;
-  const hills=C.hills||[], base=(x,z)=>hills.reduce((a,H)=>a+H.h*Math.exp(-((x-H.x)**2+(z-H.z)**2)/(H.r*H.r)),0)+ridge*(.5+.5*Math.tanh(z/80))+2.2*Math.sin(x*.021+C.seed)*Math.cos(z*.017)+1.0*Math.sin(x*.047+1.3)*Math.sin(z*.039+C.seed*.1)+.35*Math.sin(x*.13)*Math.cos(z*.11);
+  // costa (Saipán, Okinawa): pasado `at` el terreno baja en una playa de ancho `w` hasta `d` metros bajo el nivel del mar (agua.js)
+  const CO=C.coast, coastU=CO?((x,z)=>CO.side==='-z'?-z:CO.side==='+z'?z:CO.side==='-x'?-x:x):null, coastAt=CO?CO.f*bz:0;
+  const coastK=(x,z)=>{ if(!CO) return 0; const t=clamp((coastU(x,z)+12*Math.sin((CO.side[1]==='z'?x:z)*.013+C.seed)-coastAt)/CO.w,0,1); return t*t*(3-2*t); };
+  const hills=C.hills||[], base0=(x,z)=>hills.reduce((a,H)=>a+H.h*Math.exp(-((x-H.x)**2+(z-H.z)**2)/(H.r*H.r)),0)+ridge*(.5+.5*Math.tanh(z/80))+2.2*Math.sin(x*.021+C.seed)*Math.cos(z*.017)+1.0*Math.sin(x*.047+1.3)*Math.sin(z*.039+C.seed*.1)+.35*Math.sin(x*.13)*Math.cos(z*.11);
+  const base=CO?(x,z)=>{ const k=coastK(x,z); return (base0(x,z)+6)*(1-k)-(CO.d||7)*k; }:base0;   // +6: tierra adentro nada queda bajo el nivel del mar (ni las trincheras)
   // ---- trazado: trincheras (en zigzag, con traviesas), comunicaciones y alambradas ----
   const segs=[], belts=[], posts=[];
   const addLine=(pts,w,d,kind)=>{ for(let i=0;i<pts.length-1;i++) segs.push({ax:pts[i][0],az:pts[i][1],bx:pts[i+1][0],bz:pts[i+1][1],w,d,kind}); };
@@ -104,7 +108,7 @@ function buildWW1Map(key){
     const X0=Ct.xs[0]-st, X1=Ct.xs[Ct.xs.length-1]+st, Z0=Ct.zs[0]-st, Z1=Ct.zs[Ct.zs.length-1]+st;
     for(const x of Ct.xs) roadSegs.push({ax:x,az:Z0,bx:x,bz:Z1,city:1,w:st}); for(const z of Ct.zs) roadSegs.push({ax:X0,az:z,bx:X1,bz:z,city:1,w:st});
     for(const A of Ct.av||[]) roadSegs.push({ax:A[0],az:A[1],bx:A[2],bz:A[3],city:1,w:A[4]||22}); }
-  W.roadSegs=roadSegs; W.cfgC=C;                                                    // calles.js: faroles, postes del telégrafo, bocas de incendio
+  W.roadSegs=roadSegs; W.cfgC=C; W.water=CO?0:undefined;                                                    // calles.js: faroles, postes del telégrafo, bocas de incendio
   // ---- embudos de obuses (más en la tierra de nadie) ----
   const crs=[]; for(let i=0;i<C.craters;i++){ let x=rr(-bx-50,bx+50), z=rr(-bz-50,bz+50); if(R()<.55) z=rr(-C.front-10,C.front+10);
     if(Math.abs(z)>(C.spawnZ||bz)-40&&Math.abs(x)<(C.big?160:90)) continue; const r=rr(C.crR[0],C.crR[1])*(R()<.12?1.6:1); crs.push({x,z,r,d:r*rr(.28,.42)}); }
@@ -162,6 +166,8 @@ function buildWW1Map(key){
   const cv=document.createElement('canvas'), S2=2048; cv.width=cv.height=S2; const ctx=cv.getContext('2d');
   const px=x=>(MX-x)/(2*MX)*S2, py=z=>(MZ-z)/(2*MZ)*S2, pm=S2/(2*MX);
   paintWW1Ground(ctx,S2,C,R,{px,py,pm,segs,crs,roadSegs,belts,MX,MZ});
+  if(CO){ const st=6; for(let x=-MX;x<MX;x+=st) for(let z=-MZ;z<MZ;z+=st){ const k=coastK(x,z); if(k<=0&&coastU(x,z)<coastAt-40) continue; const h=ww1Sample(W,x,z);
+      const c=h<-.4?null:h<.5?'rgba(196,184,140,.95)':h<1.6?'rgba(214,200,156,.9)':k>0||coastU(x,z)>coastAt-25?'rgba(200,186,140,.55)':null; if(!c) continue; ctx.fillStyle=c; ctx.fillRect(px(x+st),py(z+st),st*pm+1,st*pm+1); } }
   const tex=new THREE.CanvasTexture(cv); tex.anisotropy=ANISO; tex.wrapS=tex.wrapT=THREE.ClampToEdgeWrapping;
   const mat=groundDetail(new THREE.MeshLambertMaterial({map:tex}));
   for(const [g,gl] of terrGeos){ const terr=new THREE.Mesh(g,mat); terr.receiveShadow=true; terr.userData.ground=true; worldGroup.add(terr);
@@ -321,12 +327,15 @@ function ww1Outer(){
   const C=W.cfg, MX=W.bx+30, MZ=W.bz+30, E=Math.max(900,W.bx+700), n=Math.round(E*2/16), g=new THREE.PlaneGeometry(E*2,E*2,n,n); g.rotateX(-Math.PI/2);
   const pos=g.attributes.position, uv=g.attributes.uv, mir=(v,L)=>{ v=((v+L)%(4*L)+4*L)%(4*L)-L; return v>L?2*L-v:v; };
   for(let i=0;i<pos.count;i++){ const x=pos.getX(i), z=pos.getZ(i), inside=Math.abs(x)<MX-9&&Math.abs(z)<MZ-9, mx=mir(x,MX), mz=mir(z,MZ);
-    pos.setY(i,ww1Sample(W,mx,mz)-(inside?4:.05)); uv.setXY(i,(MX-mx)/(2*MX),(mz+MZ)/(2*MZ)); }
+    let y=ww1Sample(W,mx,mz)-(inside?4:.05);
+    if(C.coast){ const CO=C.coast, u=CO.side==='-z'?-z:CO.side==='+z'?z:CO.side==='-x'?-x:x; if(u>CO.f*W.bz+CO.w*.6&&!inside) y=-(CO.d||7)-2; }   // del lado de la costa, mar abierto (sin el espejo)
+    pos.setY(i,y); uv.setXY(i,(MX-mx)/(2*MX),(mz+MZ)/(2*MZ)); }
   g.computeVertexNormals();
   const terr=worldGroup.children.find(o=>o.isMesh&&o.geometry.type==='PlaneGeometry'&&o.material.map);
   const m=new THREE.Mesh(g,new THREE.MeshLambertMaterial({map:terr?terr.material.map:null,color:0xe8e4dc})); m.receiveShadow=true; worldGroup.add(m);
   // árboles sueltos y tocones a lo lejos
   const R=mulberry(C.seed+7), list=[]; for(let i=0;i<160;i++){ const a=R()*Math.PI*2, r=MX+20+R()*260, x=Math.cos(a)*r, z=Math.sin(a)*r*.9; if(Math.abs(x)<MX+10&&Math.abs(z)<MZ+10) continue;
+    if(C.coast){ const CO=C.coast, u=CO.side==='-z'?-z:CO.side==='+z'?z:CO.side==='-x'?-x:x; if(u>CO.f*W.bz-20) continue; }
     list.push({x,z,sp:R()<.5?'muerto':R()<.5?'roble':'tocon',s:.8+R()*.4}); }
   const keep=trees.slice(), sets=Object.assign({},treeSets); buildTrees(list); trees=keep; for(const k in sets){ if(treeSets[k]) treeSets[k+'_far']=treeSets[k]; treeSets[k]=sets[k]; }
 }

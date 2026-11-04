@@ -71,7 +71,7 @@ Object.assign(WW1_CFG,{
            extra:y=>{ const m=_lmM(0xc2b89e); box(worldGroup,63,4.6,11.5,-168,y+17.3,-84,m); box(worldGroup,10,3.5,4,-168,y+21.3,-84,_lmM(0x4a5a50)); }},   // Puerta de Brandeburgo
           {x:-462,z:-160,w:66,d:66,h:39,wall:0x8a8780,roof:0x77746e,pad:8,extra:y=>{ const m=_lmM(0x8a8780); for(const [dx,dz] of [[-27,-27],[27,-27],[-27,27],[27,27]]){ cyl(worldGroup,8,8,6,-462+dx,y+42,-160+dz,12,m); box(worldGroup,1.2,1.2,9,-462+dx,y+46,-160+dz+4,darkMat); } }}]},   // torre antiaérea del Zoo
     zones:[{id:'A',x:-110,z:-10,r:18,label:'Tiergarten'},{id:'B',x:10,z:40,r:18,label:'Reichstag'},{id:'C',x:-40,z:-20,r:18,label:'Puerta de Brandeburgo'}]},
-  okinawa:{seed:1945.6,era:3,label:'Okinawa: la línea Shuri (1945)',desc:'Mayo de 1945: los marines y el ejército de EE. UU. atacan la línea Shuri bajo la lluvia. Crestas de coral llenas de cuevas y búnkeres, aldeas de tejas rojas, palmeras y pinos, y barro. Los Chi-Ha japoneses esperan enterrados en las laderas.',
+  okinawa:{coast:{side:'-x',f:.8,w:80,d:8},seed:1945.6,era:3,label:'Okinawa: la línea Shuri (1945)',desc:'Mayo de 1945: los marines y el ejército de EE. UU. atacan la línea Shuri bajo la lluvia. Crestas de coral llenas de cuevas y búnkeres, aldeas de tejas rojas, palmeras y pinos, y barro. Los Chi-Ha japoneses esperan enterrados en las laderas.',
     bx:175,bz:155,sky:0xb6c0c2,fog:[110,400],ground:['#6b6a3c','#5e5c34','#7a6e46','#4f5030'],grass:.6,craters:220,crR:[1,3.4],front:58,tw:[1.4,1.4],td:1.4,wire:[0,1],trenchSides:[1],churn:.5,deadTrees:6,bunkers:6,
     hills:[{x:-95,z:25,r:36,h:10},{x:85,z:30,r:28,h:11},{x:0,z:85,r:55,h:8},{x:-20,z:-65,r:30,h:3},{x:150,z:80,r:30,h:7},{x:-150,z:90,r:30,h:6}],
     village:{x:5,z:5,n:22,ruin:.45,r:26,name:'Maeda',walls:[0xc9c1a8,0xb9af98,0xd2c8b0],roofs:[0xa04a34,0xb2583a,0x8e4430]},hamlet:{x:-60,z:-45,n:6,ruin:.3,r:12,walls:[0xc9c1a8,0xb9af98],roofs:[0xa04a34,0xb2583a]},
@@ -91,7 +91,7 @@ Object.assign(WW1_CFG,{
     village:{x:5,z:10,n:16,ruin:.25,r:22,name:'Kasserine',...W2_TUN},hamlet:{x:95,z:-30,n:6,ruin:.2,r:12,...W2_TUN},
     woods:[{x:-70,z:40,r:24,n:70,dead:0,sp:['olivo']},{x:60,z:55,r:20,n:50,dead:0,sp:['olivo']},{x:-110,z:-30,r:22,n:40,dead:0,sp:['espinillo']},{x:120,z:5,r:20,n:35,dead:0,sp:['espinillo']}],
     zones:[{id:'A',x:-95,z:15,r:19,label:'Djebel Chambi'},{id:'B',x:5,z:10,r:19,label:'Kasserine'},{id:'C',x:95,z:-30,r:18,label:'Cruce de Thala'}]},
-  saipan:{seed:1944.6,era:3,label:'Saipán (Marianas, 1944)',desc:'Noche del 16 al 17 de junio de 1944: el 9.º Regimiento de Tanques japonés lanza el ataque de tanques más grande del Pacífico contra la cabeza de playa de los marines. Cañaverales, palmeras, el pueblo de Charan Kanoa y el ingenio azucarero, con el monte Tapochau atrás.',
+  saipan:{coast:{side:'-z',f:.76,w:90,d:8},seed:1944.6,era:3,label:'Saipán (Marianas, 1944)',desc:'Noche del 16 al 17 de junio de 1944: el 9.º Regimiento de Tanques japonés lanza el ataque de tanques más grande del Pacífico contra la cabeza de playa de los marines. Cañaverales, palmeras, el pueblo de Charan Kanoa y el ingenio azucarero, con el monte Tapochau atrás.',
     bx:175,bz:155,sky:0xb8c6cc,fog:[120,440],ground:['#7c8a46','#6f7e3e','#8a9450','#a69a6a'],grass:.85,craters:200,crR:[1,3.2],front:58,noTrench:1,churn:.3,deadTrees:6,bunkers:5,
     hills:[{x:20,z:160,r:60,h:12},{x:-140,z:60,r:34,h:5},{x:130,z:70,r:30,h:6}],
     village:{x:-5,z:-5,n:20,ruin:.4,r:26,name:'Charan Kanoa',church:1,...W2_SAI},hamlet:{x:100,z:40,n:7,ruin:.35,r:14,...W2_SAI},
