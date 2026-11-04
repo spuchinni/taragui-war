@@ -32,7 +32,8 @@
   // densidad 0–1 de la celda (se calcula una vez): suelo verde = mucho, barro y arena = casi nada; nunca en calles, trincheras, agua ni edificios
   function cellInfo(i,j){ const key=i*100003+j; let m=GF.mask.get(key); if(m!==undefined) return m;
     const x=(i+.5)*CS, z=(j+.5)*CS, p=pixel(x,z); m=0;
-    if(p&&Math.abs(x)<W.bx+40&&Math.abs(z)<W.bz+40){ const g=p[1]-(p[0]+p[2])/2, lum=(p[0]+p[1]+p[2])/3; let d=clamp(g/24,0,1)*(lum<40?.3:1);
+    if(p&&Math.abs(x)<W.bx+40&&Math.abs(z)<W.bz+40){ const g=p[1]-Math.max(p[0],p[2]), lum=(p[0]+p[1]+p[2])/3; let d=clamp(g/18,0,1)*(lum<40?.3:1);
+      if(d<.06&&p[0]>p[1]&&p[1]>p[2]+12&&lum>110) d=.06;                                  // arena y tierra seca: alguna mata suelta
       if(d>.04){ const h=heightAt(x,z); if(W.water!=null&&h<W.water+.3) d=0;
         else if(W.trench&&W.trench(x,z)) d=0;
         else if(W.roadSegs&&W.roadSegs.some(S=>!S.city&&Math.abs(S.ax-x)<60&&segD(x,z,S)<3.6)) d=0;

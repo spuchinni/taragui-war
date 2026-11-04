@@ -112,7 +112,7 @@ function spawnRefugees(){
   for(let i=0;i<nP;i++){ const B=buildings[(Math.random()*buildings.length)|0]; const x=B.x+rand(-1,1)*(B.w/2+3), z=B.z+rand(-1,1)*(B.d/2+3); if(!freeInf(x,z)) continue;
     const P=makePerson(Math.random()<.12?'dog':'civ',-1,x,z); P.flee=true; P.refugee=true; P.goal={x:edge(x),z:z+rand(-60,60),door:true};
     if(P.kind!=='civ') continue; refCarry(P);
-    if(Math.random()<.35&&freeInf(x+.8,z)){ const C=makePerson('civ',-1,x+.8,z); C.g.scale.setScalar(rand(.55,.68)); C.child=true; C.flee=true; C.refugee=true; C.goal={...P.goal,x:P.goal.x+.8}; } }
+    if(Math.random()<.35&&freeInf(x+.8,z)){ window._kidNext=1; const C=makePerson('civ',-1,x+.8,z); C.g.scale.setScalar(rand(.55,.68)); C.child=true; C.flee=true; C.refugee=true; C.goal={...P.goal,x:P.goal.x+.8}; } }
   for(let i=0;i<nV;i++){ const B=buildings[(Math.random()*buildings.length)|0], ti=REF_VEH[i%REF_VEH.length]; if(ti<0) continue;
     const ci=(ti<<4)|((Math.random()*16)|0), g=carMesh(ci), V=VTYPES[ti]; scene.add(g); const x=B.x+B.w/2+4, z=B.z;
     traffic.push({id:++carSeq,g,S:null,dir:1,k:0,v:0,vmax:rand(V.v[0],V.v[1])*.8,state:5,ci,x,z,h:0,len:g.userData.len,V,ref:{x:edge(x)*1.02,z:z+rand(-40,40)}}); }
