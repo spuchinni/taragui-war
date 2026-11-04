@@ -47,7 +47,7 @@ function hgMaps(){ const box=$('hgModal'); if(!box) return; const cur=mapSel();
     return r; }; }
 
 // ---- espectador: director automático cuando nadie toca nada ----
-const dir={last:performance.now(),on:false,ph:0,t:0};
+const dir={last:performance.now(),on:false,ph:0,t:0}; window.specDir=dir;
 for(const ev of ['keydown','mousedown','wheel','touchstart']) document.addEventListener(ev,()=>{ dir.last=performance.now(); if(dir.on) dirOff(); },{passive:true,capture:true});
 function dirOff(){ dir.on=false; chaseK=1; }
 // el tanque más metido en la pelea: el que disparó hace menos tiempo (o el más cercano a un enemigo)
