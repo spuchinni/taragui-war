@@ -27,3 +27,16 @@ function mgUpdate(t,dt){ const L=t.mgs; if(!L||t.dead) return; const P=mgAim(t);
         t.coax=M.muz; t.barrel=M.pg; t.mgHeat=M.heat; t.mgLock=M.lock; t.mgBelt=M.belt; t.mgBelts=M.belts; t.mgRel=M.rel; t.mgN=M.n=(M.n??(L.indexOf(M)+1));   // cada una con su contador de trazadoras (antes era uno solo y las trazadoras salían todas de la misma)
         _fm(t); M.heat=t.mgHeat; M.lock=t.mgLock; M.belt=t.mgBelt; M.belts=t.mgBelts; M.rel=t.mgRel; M.n=t.mgN; } }
     finally{ t.coax=sc; t.barrel=sb; t.mgHeat=keep.h; t.mgLock=keep.l; t.mgBelt=keep.b; t.mgBelts=keep.bs; t.mgRel=keep.r; t.mgN=keep.n; } }; }
+
+// Barra de arriba de la munición (pedido de Sebastián): solo las cintas de las ametralladoras (la munición del cañón ya está
+// en las casillas de abajo). Una caja por cada ametralladora del tanque: la coaxial (la de siempre, #mgN) y una por montaje
+// de `t.mgs`, con las cintas que le quedan y la cinta puesta.
+{ const _uab=updateAmmoBar;
+  updateAmmoBar=function(t){ const r=_uab.apply(this,arguments); const box=document.querySelector('#ammobar .wt-wpn'); if(!box||!t) return r;
+    const L=(t.mgs||[]).filter(M=>M&&M.muz); let ex=box.querySelectorAll('.w.mgx');
+    if(ex.length!==L.length||box._t!==t){ ex.forEach(e=>e.remove()); box._t=t;
+      L.forEach((M,i)=>{ const s=document.createElement('span'); s.className='w mgx'; s.innerHTML=`<small style="font-size:10px;opacity:.7">${M.cal>=11?'12,7':'MG'}</small><svg viewBox="0 0 40 10"><rect x="0" y="4" width="24" height="2"/><rect x="22" y="2" width="16" height="6"/></svg><b>-</b><i class="bar"><i></i></i>`; box.appendChild(s); });
+      ex=box.querySelectorAll('.w.mgx'); }
+    L.forEach((M,i)=>{ const s=ex[i]; if(!s) return; const b=s.querySelector('b'), v=String(M.belts??'∞'); if(b.textContent!==v) b.textContent=v;
+      const w=(M.rel>0?0:Math.round((M.belt??250)/250*100))+'%', bar=s.querySelector('.bar i'); if(bar._w!==w){ bar._w=w; bar.style.width=w; } });
+    return r; }; }
