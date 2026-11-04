@@ -104,6 +104,7 @@ function buildWW1Map(key){
     const X0=Ct.xs[0]-st, X1=Ct.xs[Ct.xs.length-1]+st, Z0=Ct.zs[0]-st, Z1=Ct.zs[Ct.zs.length-1]+st;
     for(const x of Ct.xs) roadSegs.push({ax:x,az:Z0,bx:x,bz:Z1,city:1,w:st}); for(const z of Ct.zs) roadSegs.push({ax:X0,az:z,bx:X1,bz:z,city:1,w:st});
     for(const A of Ct.av||[]) roadSegs.push({ax:A[0],az:A[1],bx:A[2],bz:A[3],city:1,w:A[4]||22}); }
+  W.roadSegs=roadSegs; W.cfgC=C;                                                    // calles.js: faroles, postes del telégrafo, bocas de incendio
   // ---- embudos de obuses (más en la tierra de nadie) ----
   const crs=[]; for(let i=0;i<C.craters;i++){ let x=rr(-bx-50,bx+50), z=rr(-bz-50,bz+50); if(R()<.55) z=rr(-C.front-10,C.front+10);
     if(Math.abs(z)>(C.spawnZ||bz)-40&&Math.abs(x)<(C.big?160:90)) continue; const r=rr(C.crR[0],C.crR[1])*(R()<.12?1.6:1); crs.push({x,z,r,d:r*rr(.28,.42)}); }
