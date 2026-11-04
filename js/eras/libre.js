@@ -55,7 +55,7 @@
     const g=Math.max(heightAt(F.pos.x,F.pos.z),W.water!=null?W.water:-1e9)+1.4; if(F.pos.y<g) F.pos.y=g; F.pos.y=Math.min(F.pos.y,600);
     camera.position.copy(F.pos); const cp=Math.cos(F.pitch); camera.lookAt(F.pos.x+Math.sin(F.yaw)*cp,F.pos.y+Math.sin(F.pitch),F.pos.z+Math.cos(F.yaw)*cp);
     camera.fov=65; camera.updateProjectionMatrix();
-    const st=document.getElementById('specT'); if(st) st.innerHTML=`Cámara libre · W A S D para moverte, Q/E para bajar y subir, Mayús rápido, arrastrá el mouse para mirar · velocidad ${Math.round(F.speed*fast)} m/s · L para salir`; }
+    const st=document.getElementById('specT'); if(st) st.innerHTML=MOVIL?`Cámara libre · ${Math.round(F.speed*fast)} m/s`:`WASD moverse · Q/E bajar/subir · Mayús rápido · arrastrar mira · ${Math.round(F.speed*fast)} m/s`; }
   const _sc=spectatorCam;
   spectatorCam=function(dt){ if(state==='spectate'&&F.on){ freeStep(dt); return true; } if(state==='spectate'&&AUTO&&window.specDir&&specDir.last>0&&performance.now()-specDir.last<6000) specDir.last=0; return _sc.apply(this,arguments); };
   // mostrar la barra solo mirando una partida; en automático, al terminar arranca otra partida en otro mapa
