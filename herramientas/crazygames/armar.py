@@ -8,7 +8,7 @@ Saca lo que el juego no usa (v1, video de la intro, herramientas, .git) y contro
 import os, sys, shutil, zipfile, json
 RAIZ=os.path.abspath(os.path.join(os.path.dirname(__file__),'..','..'))
 DIST=os.path.join(RAIZ,'dist'); DEST=os.path.join(DIST,'crazygames'); ZIP=os.path.join(DIST,'taragui-war-crazygames.zip')
-LLEVAR=['index.html','manifest.json','version.json','css','js','img','snd','voz']
+LLEVAR=['index.html','manifest.json','version.json','css','js','img','snd','voz','modelos']
 premio='--premio' in sys.argv
 if os.path.isdir(DEST): shutil.rmtree(DEST)
 os.makedirs(DEST)

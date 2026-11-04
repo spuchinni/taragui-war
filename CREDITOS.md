@@ -43,3 +43,7 @@ Generadas con **TTSMaker** (es, en-gb, en-us, de, ru; 14 frases por idioma). ⚠
 
 ## Datos históricos
 Medidas y datos de los tanques: Tank Encyclopedia y manuales de época (los datos no tienen derechos; no se copian textos ni imágenes).
+
+
+## Modelos 3D de personas
+- **Ultimate Modular Men Pack** y **Ultimate Modular Women Pack**, de Quaternius (https://quaternius.com) — licencia **CC0 1.0** (dominio público). Convertidos para el juego en `modelos/gente.json` (civiles detallados).
