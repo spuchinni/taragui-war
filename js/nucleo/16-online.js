@@ -264,7 +264,7 @@ function guestSnap(m){
   for(const [id,t] of netTanks) if(!seen.has(id)){ removeTank(t); netTanks.delete(id); }
   if(Array.isArray(m.inf)){ const iseen=new Set();
     for(const r of m.inf){ const [id,kc,team,x,z,h,dead,spd,pose,shot]=r; if(!isFinite(x)||!isFinite(z)) continue; iseen.add(id); let P=netInf.get(id);
-      if(!P){ if(dead) continue; const kind=CODE_KIND[kc]||'rifle'; P=makePerson(kind,kind==='civ'||kind==='dog'?-1:((team?1:0)^net.swap),x,z); P.id=id; netInf.set(id,P); }
+      if(!P){ if(dead) continue; const kind=CODE_KIND[kc]||'rifle'; P=makePerson(kind,kind==='civ'?-1:kind==='dog'?(team<=-10?team:-1):((team?1:0)^net.swap),x,z); P.id=id; netInf.set(id,P); }
       P.tgt={x,z,h,spd:+spd||0,pose:pose|0}; if(dead&&!P.dead){ P.dead=true; P.deadT=0; infDeathFx(P,dead===2?'blast':dead===3?'crush':'shot'); }
       if(Array.isArray(shot)&&!P.dead){ const o=infEye(P), a=new THREE.Vector3(+shot[0],+shot[1],+shot[2]); tracer(o,a,P.team===0?0xffd080:0xff9a70); infAmbNote(o); boom(distVol(o,.06),.05,3000); } }
     for(const [id,P] of netInf) if(!iseen.has(id)){ removeInf(P); netInf.delete(id); } }
