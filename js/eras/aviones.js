@@ -107,20 +107,71 @@
     for(const sd of [-1,1]){ decal(g,usStar,4.2,2.1,sd*15,.6,.6,-Math.PI/2,0,sd>0?Math.PI:0); decal(g,usStar,2.8,1.4,sd*1.47,.1,-8.5,0,sd*Math.PI/2); }
     return done(g); };
 
-  // ---------------- Ju 88 A-4 ----------------
+  // ---------------- Ju 88 A-4 (14,36 × 20,08 m) ----------------
+  // camuflaje astillado RLM 70/71 arriba (textura hecha por código) y RLM 65 abajo
+  const splinter=(()=>{ const c=document.createElement('canvas'); c.width=c.height=256; const x=c.getContext('2d'); x.fillStyle='#3a4733'; x.fillRect(0,0,256,256); x.fillStyle='#2b3527';
+    const R=mulberry0(88); for(let i=0;i<9;i++){ x.beginPath(); let px=R()*256, py=R()*256; x.moveTo(px,py); for(let k=0;k<4;k++){ px+=(R()-.5)*180; py+=(R()-.5)*180; x.lineTo(px,py); } x.closePath(); x.fill(); }
+    const t=new THREE.CanvasTexture(c); t.wrapS=t.wrapT=THREE.RepeatWrapping; t.repeat.set(.18,.18); return t; })();
   function makeJu88(){
-    const g=new THREE.Group(), m=mat(0x3c4836), u=mat(0x7f97a8), k=mat(0x222222), gl=glassM();
-    M(g,fus([[-7.2,.25],[-5,.55],[-1,.82],[2.4,.9],[4.6,.86]],.9,1.05),m);
-    M(g,new THREE.SphereGeometry(.92,14,10,0,Math.PI*2,0,Math.PI/2),gl,0,.0,4.6).rotation.x=Math.PI/2;                 // ojo de escarabajo
-    M(g,new THREE.BoxGeometry(.7,.55,2.6),u,0,-.92,2.6); M(g,new THREE.BoxGeometry(.6,.4,.7),gl,0,-.92,3.95);            // góndola Bola
-    M(g,new THREE.BoxGeometry(1.1,.45,1.8),gl,0,.9,3.2);
-    M(g,fin([[-5.3,.6],[-6.3,2.6],[-7.3,2.9],[-7.7,2.4],[-7.6,.5]],.2),m);
-    M(g,plan([[-3.2,-6.1],[3.2,-6.4],[3,-7.6],[-3,-7.6]],.16),m,0,.45,0);
-    wing(g,m,{x0:.6,span:20,cr:3.8,ct:1.6,zle:2.2,sweep:.6,th:.38,y:-.25,dih:.08,tipR:.6});
-    for(const sd of [-1,1]){ const x=sd*2.85, y=-.15; M(g,fus([[-3,.25],[-1,.6],[1.4,.74],[2.4,.78]],1,1,14),m,x,y,1.4); M(g,cylZ(.8,.8,.5,16),k,x,y,3.95); prop(g,x,y,4.3,1.7,3,k);
-      decal(g,balken,1.6,1.6,sd*6.5,-.05+.55,.6,-Math.PI/2); decal(g,balken,1.3,1.3,sd*.83,.05,-3.4,0,sd*Math.PI/2); }
+    const g=new THREE.Group(), m=mat(0xffffff,{map:splinter}), u=mat(0x8aa4b8), k=mat(0x1e1e1e), gl=glassM({opacity:.5}), fr=mat(0x2b3527), yel=mat(0xd8b830);
+    M(g,fus([[-7.25,.18],[-6.4,.36],[-4,.66],[-1.2,.84],[1.6,.88],[2.6,.86]],.88,1.08,16),m);
+    // cabina "ojo de escarabajo": cúpula vidriada que avanza hasta la trompa, con marcos
+    const dome=M(g,new THREE.SphereGeometry(1,16,12),gl,0,.2,3.0); dome.scale.set(.86,1.0,1.75);
+    for(const a of [-.9,-.45,0,.45,.9]){ const r=M(g,new THREE.TorusGeometry(1,.02,4,24,Math.PI),fr,0,.2,3.0); r.scale.set(.87,1.01,1.76); r.rotation.set(0,Math.PI/2,a); }
+    for(const z of [2.2,3.4,4.2]){ const rr=Math.sqrt(Math.max(0,1-((z-3)/1.75)**2)); const t2=M(g,new THREE.TorusGeometry(rr,.02,4,24),fr,0,.2,z); t2.scale.set(.87,1.01,1); }
+    M(g,fus([[-.2,.3],[.4,.52],[1.4,.56],[2.0,.45]],1,.8,10),gl,0,.98,0.9);                                       // puesto del artillero de atrás
+    M(g,cylZ(.025,.025,.9,5),k,0,1.05,-.3).rotation.x=-.25;
+    // góndola ventral "Bola" corrida a la derecha, con vidrio atrás y la MG
+    M(g,fus([[-.6,.18],[.2,.42],[2.4,.46],[3.1,.3]],1.05,1,10),u,.22,-.78,1.4); M(g,new THREE.SphereGeometry(.4,10,8),gl,.22,-.8,.9).scale.set(1.05,1,1.2); M(g,cylZ(.022,.022,.8,5),k,.22,-.82,.3);
+    // alas con puntas redondas, frenos de picada abajo, alerones
+    wing(g,m,{x0:.5,span:20.08,cr:3.75,ct:1.7,zle:2.1,sweep:.5,th:.42,y:-.32,dih:.09,tipR:.7});
+    for(const sd of [-1,1]){ M(g,new THREE.BoxGeometry(2.6,.05,.25),k,sd*6.2,-.68,.95); }
+    // motores Jumo 211 con radiador anular (frente redondo, anillo y cuernos de escape)
+    for(const sd of [-1,1]){ const x=sd*2.85, y=-.16;
+      M(g,fus([[-3.6,.18],[-1.6,.52],[1.2,.72],[2.7,.8],[3.25,.82]],1,1.05,16),m,x,y,0); M(g,new THREE.TorusGeometry(.72,.12,8,20),k,x,y,3.3);
+      M(g,new THREE.CircleGeometry(.62,18),mat(0x2a2a2a),x,y,3.35); M(g,new THREE.TorusGeometry(.74,.04,4,20),yel,x,y,3.42);
+      for(const sx of [-1,1]) for(let i=0;i<3;i++) M(g,new THREE.BoxGeometry(.1,.06,.18),mat(0x4a2e22),x+sx*.78,y+.15-i*.18,2.4-i*.3);
+      prop(g,x,y,3.55,1.65,3,k); M(g,new THREE.ConeGeometry(.2,.45,10),yel,x,y,3.72).rotation.x=Math.PI/2;
+      M(g,fus([[-1.3,.1],[-.6,.36],[.4,.4],[1.0,.28]],1,1,8),u,x,y-.62,.6);                                         // carenado del tren
+      decal(g,balken,1.7,1.7,sd*7.3,-.32+7.3*.09+.23,.4,-Math.PI/2); decal(g,balken,1.2,1.2,sd*.75,.05,-3.6,0,sd*Math.PI/2); }
+    // cola: deriva alta con la punta redonda, timón y estabilizador con puntas redondas
+    M(g,fin([[-5.2,.55],[-6.3,2.2],[-6.8,3.05],[-7.3,3.1],[-7.7,2.7],[-7.8,.4]],.18),m);
+    M(g,plan([[-3.3,-6.0],[-3.6,-6.6],[-3.3,-7.25],[3.3,-7.25],[3.6,-6.6],[3.3,-6.0]],.15),m,0,.35,0);
+    M(g,new THREE.CylinderGeometry(.85,.85,.6,16,1,true),yel,0,0,-3.9).rotation.x=Math.PI/2;                       // franja amarilla del frente oriental
+    M(g,new THREE.CylinderGeometry(.01,.01,1.2,4),k,0,1.35,.2);                                                       // mástil de la antena
     return done(g); }
   window.makeJu88=makeJu88;
+
+  // ---------------- P-47D-25 Thunderbolt (11,0 × 12,42 m) ----------------
+  function makeP47(){
+    const nm=Math.random()<.45, g=new THREE.Group(), m=mat(nm?0xb8bdc2:0x4f5236), u=mat(nm?0xa8aeb4:0x8a8e8a), k=mat(0x1c1c1c), gl=glassM({opacity:.45}), fr=mat(nm?0x9aa0a6:0x3e402a),
+      cowlC=mat([0xc02020,0xe8c020,0x2a4aa0,0xf0f0f0][(Math.random()*4)|0]), wht=mat(0xf0f0ec), blk=mat(0x111111);
+    // fuselaje gordo y ovalado (el turbocompresor va abajo, atrás): la sección baja más que sube
+    const f=M(g,fus([[-6.4,.12],[-5.6,.32],[-3.2,.62],[-.8,.8],[1.6,.84],[3.4,.82],[4.2,.8]],.82,1.12,18),m); f.position.y=-.08;
+    M(g,cylZ(.8,.8,.75,20),cowlC,0,-.08,4.55); M(g,new THREE.TorusGeometry(.72,.07,6,20),cowlC,0,-.08,4.95);           // capó con el anillo de color
+    M(g,new THREE.CircleGeometry(.68,20),k,0,-.08,4.94); for(let i=0;i<9;i++){ const a=i/9*Math.PI*2; M(g,cylZ(.07,.07,.3,6),mat(0x5a5a5a),Math.cos(a)*.48,-.08+Math.sin(a)*.48,4.82); }
+    M(g,new THREE.SphereGeometry(.42,12,8),k,0,-.82,4.2).scale.set(1.2,.55,1.6);                                     // toma de aire del mentón
+    // burbuja y parabrisas, lomo bajo detrás
+    const cb=M(g,new THREE.SphereGeometry(.5,14,10,0,Math.PI*2,0,Math.PI/2),gl,0,.64,1.25); cb.scale.set(.85,1.0,2.0);
+    M(g,new THREE.BoxGeometry(.7,.3,.5),gl,0,.74,2.15).rotation.x=-.45; M(g,new THREE.TorusGeometry(.42,.025,4,16,Math.PI),fr,0,.66,2.0);
+    // alas elípticas con 4 ametralladoras .50 en cada una, cohetes HVAR y bombas
+    const ell=[]; for(let i=0;i<=12;i++){ const x=i/12*5.85, c=2.75*Math.sqrt(Math.max(.02,1-(x/6.1)**2)); ell.push([x,.95-(2.75-c)*.3]); } for(let i=12;i>=0;i--){ const x=i/12*5.85, c=2.75*Math.sqrt(Math.max(.02,1-(x/6.1)**2)); ell.push([x,.95-(2.75-c)*.3-c]); }
+    for(const sd of [-1,1]){ const w=M(g,plan(ell,.34),m,sd*.35,-.55,0); w.scale.x=sd; w.rotation.z=sd*.07;
+      for(let i=0;i<4;i++){ const x=sd*(2.35+i*.32); M(g,cylZ(.025,.025,.9,5),k,x,-.48+Math.abs(x)*.07,1.25); }
+      for(let i=0;i<3;i++){ const x=sd*(3.9+i*.5); M(g,cylZ(.06,.06,1.6,6),mat(0x6a6e5a),x,-.88+Math.abs(x)*.07,.2); M(g,new THREE.BoxGeometry(.03,.14,1.2),k,x,-.76+Math.abs(x)*.07,.3); }
+      M(g,cylZ(.19,.19,1.5,10),mat(0x44473a),sd*2.0,-.98,.5); M(g,new THREE.ConeGeometry(.19,.4,10),mat(0x44473a),sd*2.0,-.98,1.45).rotation.x=Math.PI/2;
+      // franjas de invasión (blanco y negro) sobre el ala
+      for(let b=0;b<5;b++) M(g,new THREE.BoxGeometry(.02,.36,.26),b%2?blk:wht,sd*(3.0+b*.26),-.55+(3.0+b*.26)*.07,-.55).rotation.y=Math.PI/2;
+      decal(g,usStar,2.4,1.2,sd*4.6,-.55+4.6*.07+.19,-.4,-Math.PI/2,0,sd>0?Math.PI:0); decal(g,usStar,1.4,.7,sd*.71,-.05,-1.6,0,sd*Math.PI/2); }
+    for(let b=0;b<5;b++){ const r=M(g,new THREE.CylinderGeometry(.5-b*.012,.5-b*.012,.16,16,1,true),b%2?blk:wht,0,-.12,-3.9-b*.16); r.rotation.x=Math.PI/2; r.scale.set(1.25,1.5,1); }
+    M(g,cylZ(.3,.3,2.1,12),mat(0x8a8e8a),0,-.98,.6); M(g,new THREE.ConeGeometry(.3,.6,12),mat(0x8a8e8a),0,-.98,1.95).rotation.x=Math.PI/2;      // tanque ventral
+    // cola: deriva con aleta dorsal, estabilizador elíptico
+    M(g,fin([[-3.2,.5],[-5.4,1.3],[-6.0,2.05],[-6.45,2.0],[-6.6,1.5],[-6.5,.2]],.16),m);
+    const st=[]; for(let i=0;i<=8;i++){ const x=i/8*2.35, c=1.35*Math.sqrt(Math.max(.03,1-(x/2.45)**2)); st.push([x,-5.25-(1.35-c)*.25]); } for(let i=8;i>=0;i--){ const x=i/8*2.35, c=1.35*Math.sqrt(Math.max(.03,1-(x/2.45)**2)); st.push([x,-5.25-(1.35-c)*.25-c]); }
+    for(const sd of [-1,1]){ const s=M(g,plan(st,.12),m,0,.15,0); s.scale.x=sd; }
+    prop(g,0,-.08,5.15,1.9,4,k); M(g,new THREE.ConeGeometry(.24,.5,12),cowlC,0,-.08,5.3).rotation.x=Math.PI/2;
+    return done(g); }
+  window.makeP47=makeP47;
 
   // el bombardeo pedido: cambia el avión genérico por uno de la época y del bando (deja la caja de impacto de refuerzos.js)
   const _ap=airPass;

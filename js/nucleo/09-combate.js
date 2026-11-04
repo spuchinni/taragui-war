@@ -339,11 +339,11 @@ function destroy(t,by,rack){
   killAwards(t,by);
   tickets[t.team]-=TICKET_KILL;
   t.crew.respawnT=7;
-  feed(by?`${by.inf?(by.team===0?allyLabel():NATIONS[foeNation].label)+', '+by.name.toLowerCase():by.name} (${by.T.label}) ✕ ${t.name} (${t.T.label})`:`${t.name} (${t.T.label}) ${t.a10K?'fue fusilado por un A-10 (fuera del campo de batalla)':t.drowned?'se hundió: la tripulación se ahogó':'se incendió'}`, by&&by.isPlayer?'var(--amber)':(t.team===0?'var(--enemy)':'var(--ally)'));
+  feed(by?`${by.inf?(by.team===0?allyLabel():NATIONS[foeNation].label)+', '+by.name.toLowerCase():by.name} (${by.T.label}) ✕ ${t.name} (${t.T.label})`:`${t.name} (${t.T.label}) ${t.a10K?`fue fusilado por un ${strikeName()} (${t.a10Why?'mató civiles':'fuera del campo de batalla'})`:t.drowned?'se hundió: la tripulación se ahogó':'se incendió'}`, by&&by.isPlayer?'var(--amber)':(t.team===0?'var(--enemy)':'var(--ally)'));
   if(!sfx('expl',t.pos,1.1,{rate:rand(.72,.85)})) boom(distVol(t.pos,.9),1.6,600);
   if(by&&by.isPlayer&&t.team!==by.team) radio('¡Blanco destruido!',2);
   for(let i=0;i<6;i++) puff(t.pos.clone().add(new THREE.Vector3(rand(-2,2),rand(1,3),rand(-2,2))),0xff8a30,rand(3,6),.5,1,1,true);
-  if(t.isPlayer){ playerDeadT=3.5; banner(t.a10K?'Fusilado por el A-10':t.drowned?'Tanque hundido':'Vehículo destruido',canSpawn(playerCrew)?'Vas a poder elegir el siguiente':'No te quedan vehículos o puntos para reaparecer',3.5); }
+  if(t.isPlayer){ playerDeadT=3.5; banner(t.a10K?'Fusilado por el '+strikeName():t.drowned?'Tanque hundido':'Vehículo destruido',canSpawn(playerCrew)?'Vas a poder elegir el siguiente':'No te quedan vehículos o puntos para reaparecer',3.5); }
   updateHud(); checkEnd();
 }
 

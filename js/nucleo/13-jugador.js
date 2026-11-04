@@ -261,9 +261,9 @@ function drawOverlay(){
       const rel=wrap(Math.atan2(A.g.position.x-camera.position.x,A.g.position.z-camera.position.z)-camYaw), ang=-Math.PI/2-rel, R=Math.min(innerWidth,innerHeight)*.3, cx=innerWidth/2, cy=innerHeight/2;
       const x=cx+Math.cos(ang)*R, y=cy+Math.sin(ang)*R, bl=.55+.45*Math.sin(now*10);
       oc.fillStyle=`rgba(255,74,50,${bl})`; oc.beginPath(); oc.moveTo(x+Math.cos(ang)*22,y+Math.sin(ang)*22); oc.lineTo(x+Math.cos(ang+2.4)*14,y+Math.sin(ang+2.4)*14); oc.lineTo(x+Math.cos(ang-2.4)*14,y+Math.sin(ang-2.4)*14); oc.fill();
-      oc.font='700 16px "Saira Condensed",sans-serif'; oc.fillText(`A-10 ${dist} m`,x-Math.cos(ang)*22,y-Math.sin(ang)*22+5); continue; }
+      oc.font='700 16px "Saira Condensed",sans-serif'; oc.fillText(`${strikeName()} ${dist} m`,x-Math.cos(ang)*22,y-Math.sin(ang)*22+5); continue; }
     oc.strokeStyle='#ff4a32'; oc.lineWidth=2; oc.beginPath(); oc.moveTo(s.x,s.y-11); oc.lineTo(s.x+11,s.y); oc.lineTo(s.x,s.y+11); oc.lineTo(s.x-11,s.y); oc.closePath(); oc.stroke();
-    oc.fillStyle='#ff4a32'; oc.font='700 15px "Saira Condensed",sans-serif'; oc.fillText(`A-10 ${Math.round(A.g.position.distanceTo(camera.position))} m`,s.x,s.y-16); }
+    oc.fillStyle='#ff4a32'; oc.font='700 15px "Saira Condensed",sans-serif'; oc.fillText(`${strikeName()} ${Math.round(A.g.position.distanceTo(camera.position))} m`,s.x,s.y-16); }
   drawPings();
   if(state==='play'&&player&&!player.dead) drawHitDirs(1/60);
   if(state!=='play'||!player||player.dead) return;

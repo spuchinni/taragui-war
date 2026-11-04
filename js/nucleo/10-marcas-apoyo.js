@@ -27,13 +27,14 @@ function drawPings(){
 }
 /* ---------- Fuera del campo de batalla: aviso, cuenta regresiva y A-10 ---------- */
 const OOB_T=10, a10s=[];
+const strikeName=()=>(W.era||5)>=5?'A-10':'P-47';   // en la 2ª Guerra (y la posguerra) ataca un P-47 Thunderbolt
 function oobCheck(t,dt){
   let el=$('oob'); if(!el){ el=document.createElement('div'); el.id='oob'; el.className='hud'; document.body.appendChild(el); }
   const out=!t.dead&&!tut&&state==='play'&&outOfBounds(t.pos);
   if(out&&!t.a10){ t.oobT=(t.oobT??OOB_T)-dt; if(bannerT>0){ bannerT=0; $('banner').style.opacity=0; }
-    el.innerHTML=`¡FUERA DEL CAMPO DE BATALLA!<small>Volvé dentro de la línea roja en <b>${Math.max(0,Math.ceil(t.oobT))}</b> s o ${W.era<=2?'te cae encima la artillería':'te ataca un A-10'}</small>`; el.style.opacity=1;
+    el.innerHTML=`¡FUERA DEL CAMPO DE BATALLA!<small>Volvé dentro de la línea roja en <b>${Math.max(0,Math.ceil(t.oobT))}</b> s o ${W.era<=2?'te cae encima la artillería':'te ataca un '+strikeName()}</small>`; el.style.opacity=1;
     if(t.oobT<=0){ t.a10=true; if(net.guest) hostSend({t:'oob'}); else a10Strike(t); } }
-  else { if(!out) t.oobT=null; el.style.opacity=t.a10&&!t.dead&&state==='play'?1:0; if(t.a10&&!t.dead){ const A=a10s.find(a=>a.t===t); el.innerHTML=W.era<=2?`¡ARTILLERÍA SOBRE TU POSICIÓN!<small>${t.a10Why||'Te pasaste del límite'}</small>`:`¡A-10 EN CAMINO!<small>${t.a10Why||'Te pasaste del límite'}${A?` · a ${Math.round(A.g.position.distanceTo(t.pos))} m`:''}</small>`; } }
+  else { if(!out) t.oobT=null; el.style.opacity=t.a10&&!t.dead&&state==='play'?1:0; if(t.a10&&!t.dead){ const A=a10s.find(a=>a.t===t); el.innerHTML=W.era<=2?`¡ARTILLERÍA SOBRE TU POSICIÓN!<small>${t.a10Why||'Te pasaste del límite'}</small>`:`¡${strikeName()} EN CAMINO!<small>${t.a10Why||'Te pasaste del límite'}${A?` · a ${Math.round(A.g.position.distanceTo(t.pos))} m`:''}</small>`; } }
 }
 function makeA10(){
   const g=new THREE.Group(), m=new THREE.MeshLambertMaterial({color:0x4d5459,fog:false}), d=new THREE.MeshLambertMaterial({color:0x33393d,fog:false});
@@ -45,12 +46,12 @@ function makeA10(){
 }
 // Cañón GAU-8: si no hay grabación real cargada, se sintetiza el "BRRRT" (30 mm a ~65 disparos por segundo)
 function gau8Sound(pos,dur){
-  if(!AC) return; if(SFX.gau8&&SFX.gau8.length){ const d=pos.distanceTo(camera.position), v=clamp(1.25-d/1800,.3,1.15); setTimeout(()=>sfx('gau8',null,v,{near:true}),d/343*1000); return; }
+  if(!AC) return; const p47=(W.era||5)<5; if(!p47&&SFX.gau8&&SFX.gau8.length){ const d=pos.distanceTo(camera.position), v=clamp(1.25-d/1800,.3,1.15); setTimeout(()=>sfx('gau8',null,v,{near:true}),d/343*1000); return; }
   const d=pos.distanceTo(camera.position), t0=AC.currentTime+d/343, v=clamp(1.15-d/1600,.12,1)*.55;
-  const lfo=AC.createOscillator(); lfo.type='square'; lfo.frequency.value=65;
-  const n=AC.createBufferSource(); n.buffer=noiseBuf; n.loop=true; const bp=AC.createBiquadFilter(); bp.type='lowpass'; bp.frequency.value=1300;
+  const lfo=AC.createOscillator(); lfo.type='square'; lfo.frequency.value=p47?105:65;
+  const n=AC.createBufferSource(); n.buffer=noiseBuf; n.loop=true; const bp=AC.createBiquadFilter(); bp.type='lowpass'; bp.frequency.value=p47?2600:1300;
   const am=AC.createGain(); am.gain.value=.5; const lg=AC.createGain(); lg.gain.value=.5; lfo.connect(lg).connect(am.gain);
-  const o=AC.createOscillator(); o.type='sawtooth'; o.frequency.value=65; const og=AC.createGain(); og.gain.value=.35;
+  const o=AC.createOscillator(); o.type='sawtooth'; o.frequency.value=p47?105:65; const og=AC.createGain(); og.gain.value=.35;
   const out=AC.createGain(); out.gain.setValueAtTime(.0001,t0); out.gain.exponentialRampToValueAtTime(v,t0+.06); out.gain.setValueAtTime(v,t0+dur); out.gain.exponentialRampToValueAtTime(.0001,t0+dur+.5);
   n.connect(bp).connect(am).connect(out); o.connect(og).connect(out); out.connect(master);
   [lfo,n,o].forEach(x=>{ x.start(t0); x.stop(t0+dur+.6); });
@@ -74,11 +75,11 @@ function a10Strike(t){
   if(net.host) netAll({t:'a10',id:t.id});
   // viene de frente a donde mira el jugador (así lo ve venir); los demás, desde el centro del mapa
   const dir=t===player?new THREE.Vector3(-Math.sin(camYaw),0,-Math.cos(camYaw)):t.pos.clone().setY(0); if(dir.lengthSq()<1) dir.set(1,0,0); dir.normalize();
-  const g=makeA10(); g.scale.setScalar(1.5); const alt=heightAt(t.pos.x,t.pos.z), start=t.pos.clone().addScaledVector(dir,-1300); start.y=alt+110;
+  const g=(W.era||5)<5&&typeof makeP47==='function'?makeP47():makeA10(); g.scale.setScalar(1.5); const alt=heightAt(t.pos.x,t.pos.z), start=t.pos.clone().addScaledVector(dir,-1300); start.y=alt+110;
   g.position.copy(start); scene.add(g);
   a10s.push({g,t,dir,v:120,alt,phase:0,fired:0,snd:movingLoop('flyover',3.6,{rate:1.35,start:2,ref:160,lp:5000}),life:22});
   if(t.isPlayer) radio('¡Avión enemigo!',2);
-  if(!net.guest) feed(`Un A-10 va por ${t.name} (${t.a10Why?'mató civiles':'fuera del campo de batalla'})`,'var(--enemy)');
+  if(!net.guest) feed(`Un ${strikeName()} va por ${t.name} (${t.a10Why?'mató civiles':'fuera del campo de batalla'})`,'var(--enemy)');
 }
 function updateA10(dt){
   for(let i=a10s.length-1;i>=0;i--){ const A=a10s[i], P=A.g.position, T=A.t, tp=T.pos;

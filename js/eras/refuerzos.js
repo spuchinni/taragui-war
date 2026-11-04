@@ -72,8 +72,11 @@ const canopyGeo=new THREE.SphereGeometry(3.2,12,6,0,Math.PI*2,0,Math.PI/2.2), ca
 function dropChute(T){ const p=T.g.position.clone().addScaledVector(T.dir,-6); p.y-=2; const g=new THREE.Group(); g.position.copy(p); scene.add(g);
   const kind=T.left===4?'at':T.left===2?'hmg':'rifle', man=personMesh({kind,team:T.team,nat:teamNation(T.team)}); man.parts.legL.rotation.x=.2; man.parts.legR.rotation.x=-.1; man.parts.armL.rotation.x=man.parts.armR.rotation.x=-2.8; g.add(man.g);
   const c=new THREE.Mesh(canopyGeo,canopyMat[T.team===0?0:1]); c.position.y=6.2; c.scale.y=.6; g.add(c);
-  for(const [x,z] of [[2.8,0],[-2.8,0],[0,2.8],[0,-2.8]]) rod(g,[0,1.6,0],[x,6.2,z],darkMat,1.2);
-  chutes.push({g,kind,team:T.team,Z:T.Z,vy:-14,open:0,ph:rand(0,6)}); T.left--; }
+  const can=[c]; for(const [x,z] of [[2.8,0],[-2.8,0],[0,2.8],[0,-2.8]]) can.push(rod(g,[0,1.6,0],[x,6.2,z],darkMat,1.2));
+  chutes.push({g,kind,team:T.team,Z:T.Z,vy:-14,open:0,ph:rand(0,6),man,can}); T.left--; }
+// Un paracaidista alcanzado en el aire (civiles.js: tiros y explosiones): el paracaídas se rasga y cae como peso muerto
+function chuteHit(C,by){ if(C.dead) return; C.dead=true; C.by=by||null; C.can.forEach((o,i)=>{ if(i) o.visible=false; else { o.scale.set(.5,.35,.3); o.rotation.z=1.2; o.position.y=3; } });
+  C.man.parts.armL.rotation.x=C.man.parts.armR.rotation.x=-.4; C.man.parts.hip.rotation.x=.6; if(by&&by.isPlayer) hitMsg('Baja: paracaidista','var(--amber)'); }
 // Daño a un avión (bombardero o transporte): con muchos impactos se incendia y cae
 function wplaneHit(P,dmg,by){ if(net.guest||P.down) return; P.hp-=dmg; puff(P.g.position.clone(),0x4a4440,2.5,1.2,0,.7);
   if(P.hp<=0){ P.down=true; P.vy=0; P.killer=by||null; const team=P.team??(P.by&&P.by.team); feed(`${by&&by.name?by.name:'El antiaéreo'} derribó un avión ${team===0?'aliado':'enemigo'}`,team===0?'var(--enemy)':'var(--ally)');
@@ -142,9 +145,9 @@ function updRefuerzos(dt){
     const rel=T.g.position.clone().sub(new THREE.Vector3(T.Z.x,T.g.position.y,T.Z.z)), along=rel.dot(T.dir);
     if(T.left>0&&along>-T.Z.r*1.2){ T.dropT-=dt; if(T.dropT<=0){ T.dropT=.45; dropChute(T); } }
     if(T.life<=0){ if(T.snd) T.snd.stop(); scene.remove(T.g); unhit(T); transports.splice(i,1); } }
-  for(let i=chutes.length-1;i>=0;i--){ const C=chutes[i]; C.vy=Math.min(-4.5,C.vy+dt*12); C.ph+=dt; C.g.position.y+=C.vy*dt; C.g.position.x+=Math.sin(C.ph*.7)*dt*1.2; C.g.rotation.z=Math.sin(C.ph)*.08;
+  for(let i=chutes.length-1;i>=0;i--){ const C=chutes[i]; if(C.dead){ C.vy-=9.8*dt; C.g.rotation.x+=dt*.8; } else C.vy=Math.min(-4.5,C.vy+dt*12); C.ph+=dt; C.g.position.y+=C.vy*dt; C.g.position.x+=Math.sin(C.ph*.7)*dt*1.2; C.g.rotation.z=Math.sin(C.ph)*.08;
     const q=C.g.position, gh=heightAt(q.x,q.z); if(q.y>gh+.2) continue;
-    scene.remove(C.g); chutes.splice(i,1); const P=makePerson(C.kind,C.team,q.x,q.z); P.noEmb=now+90; const a=rand(0,6.28), r=rand(0,C.Z.r*.6); P.goal={x:C.Z.x+Math.cos(a)*r,z:C.Z.z+Math.sin(a)*r}; }
+    scene.remove(C.g); chutes.splice(i,1); const P=makePerson(C.kind,C.team,q.x,q.z); if(C.dead){ killInf(P,C.by,C.vy<-14?'blast':'shot'); continue; } P.noEmb=now+90; const a=rand(0,6.28), r=rand(0,C.Z.r*.6); P.goal={x:C.Z.x+Math.cos(a)*r,z:C.Z.z+Math.sin(a)*r}; }
   updateRefugeeCars(dt);
   // el ametralladorista se queda en el nido y gira el arma; si cae, el fusilero toma su lugar
   for(const Z of zones||[]){ const F=Z.fort; if(!F||!F.mount) continue; let M=F.mg;
