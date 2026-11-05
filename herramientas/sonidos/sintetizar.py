@@ -17,6 +17,14 @@ def band(x,lo=0,hi=None,slope=0):
     if hi: g*=1/(1+(f/hi)**4)
     if slope: g*=(np.maximum(f,20)/1000)**(slope/6.02)
     return np.fft.irfft(X*g,n)
+def sweep_band(x,fc,bw):
+    """Pasabanda con centro fc(t) y ancho bw(t) (arreglos del largo de x), por STFT con ventanas solapadas."""
+    N=2048; H=256; w=np.hanning(N); out=np.zeros(len(x)+N); norm_=np.zeros(len(x)+N); f=np.fft.rfftfreq(N,1/SR)
+    xp=np.concatenate([x,np.zeros(N)])
+    for i in range(0,len(x),H):
+        c=fc[min(i,len(fc)-1)]; b=bw[min(i,len(bw)-1)]; g=np.exp(-.5*((f-c)/b)**2)
+        out[i:i+N]+=np.fft.irfft(np.fft.rfft(xp[i:i+N]*w)*g,N)*w; norm_[i:i+N]+=w*w
+    return (out/np.maximum(norm_,1e-6))[:len(x)]
 def env(n,a,d,sus=0.0):
     """Ataque a s, caída exponencial con constante d s."""
     tt=np.arange(n)/SR; e=np.minimum(1,tt/max(a,1e-4))*np.exp(-np.maximum(0,tt-a)/d)
@@ -90,29 +98,32 @@ def ric(f0,f1,seed):
 def ric_0(): save('ric_0',ric(3400,1300,3))
 @snd
 def ric_1(): save('ric_1',ric(2800,900,4))
-def thump(f,seed):
-    T=t(.97); g=np.random.default_rng(seed)
-    x=np.sin(2*np.pi*f*T*np.exp(-T*1.5))*np.exp(-T/.18)*1.2+band(noise(.97),40,700)*env(len(T),.003,.12)
-    return fade(norm(reverb(x,1.0,.35)[:len(T)]))
+def thump(src,seed):            # cañón lejano: la grabación CC0 de qubodup filtrada como si viniera de varios km
+    x=read(src); x=band(x,25,520); T=np.arange(len(x))/SR; x=x[:int(1.4*SR)]
+    x=reverb(x,1.6,.45)[:int(1.6*SR)]; return fade(norm(x),.004,.4)
 @snd
-def thump_0(): save('thump_0',thump(62,5))
+def thump_0(): save('thump_0',thump('cannon_0',5))
 @snd
-def thump_1(): save('thump_1',thump(78,6))
-def whistle(sec,f0,f1,seed,end=.2):
-    T=t(sec); f=f0*(f1/f0)**((T/T[-1])**1.4); a=np.minimum(1,(T/T[-1])**1.6+.08)
-    x=tone(f*(1+.004*np.sin(2*np.pi*7*T)),T)*.7+tone(f*2.01,T)*.12+band(noise(sec),300,4000)*.25
-    x*=a; x[-int(end*SR):]*=np.linspace(1,0,int(end*SR))**.5
-    return fade(norm(x)*.9,.05,.02)
+def thump_1(): save('thump_1',thump('cannon_1',6))
+def whistle(sec,f0,f1,seed,end=.12,q=.12,tonal=.08):
+    """Proyectil o bomba que llega: ruido de aire en una banda que baja (Doppler) y crece hasta el impacto; apenas un hilo de tono."""
+    T=t(sec); u=T/T[-1]; fc=f0*(f1/f0)**(u**1.3); g=np.random.default_rng(seed)
+    air=sweep_band(g.standard_normal(len(T)),fc,fc*q)*2.2+sweep_band(g.standard_normal(len(T)),fc*.5,fc*.35)*.9   # silbido de aire + soplido grave
+    rip=band(g.standard_normal(len(T)),150,1200)*(.25+.75*np.abs(np.sin(2*np.pi*np.cumsum(9+20*u)/SR)))*.35         # rasgado (turbulencia)
+    x=norm(air)+rip*u**2+tone(fc,T)*tonal
+    x*=np.minimum(1,u**2.2*1.1+.03)*(1+.08*np.sin(2*np.pi*13*T))
+    E=int(end*SR); x[-E:]*=np.linspace(1,0,E)
+    return fade(norm(x)*.9,.08,.01)
 @snd
-def shellin_0(): save('shellin_0',whistle(1.98,1900,700,8))
+def shellin_0(): save('shellin_0',whistle(1.6,1500,520,8,.12,.28,.05))
 @snd
-def shellin_1(): save('shellin_1',whistle(1.98,1600,560,9))
+def shellin_1(): save('shellin_1',whistle(1.6,1300,460,9,.12,.28,.05))
 @snd
-def shellin_2(): save('shellin_2',whistle(1.98,2200,820,10))
+def shellin_2(): save('shellin_2',whistle(1.6,1700,600,10,.12,.28,.05))
 @snd
-def shellin_3(): save('shellin_3',whistle(1.98,1400,480,11))
+def shellin_3(): save('shellin_3',whistle(1.6,1150,420,11,.12,.28,.05))
 @snd
-def bombw_0(): save('bombw_0',whistle(2.1,1250,330,12,.1))
+def bombw_0(): save('bombw_0',whistle(2.1,1100,360,12,.08,.18,.12))
 @snd
 def nukew_0():           # la onda que llega: viento que crece y retumba
     T=t(6); x=band(noise(6),20,900,-4)*np.minimum(1,T/2.5)**1.5*(1+.3*np.sin(2*np.pi*.6*T))
