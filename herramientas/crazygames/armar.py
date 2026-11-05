@@ -19,12 +19,12 @@ for x in LLEVAR:
 # la plataforma: el juego sabe que corre en CrazyGames (crazy.js carga el SDK, saca el inicio de sesión y la portada)
 with open(os.path.join(DEST,'js','plataforma.js'),'w',encoding='utf-8') as f:
     f.write("window.PLATAFORMA={id:'crazygames',premio:%s};\n"%('true' if premio else 'false'))
-# nombre: en CrazyGames el juego se llama TaraWar ("Taragüí" es una marca de yerba): el fondo del menú sin el logo viejo
-FONDO=os.path.join(RAIZ,'herramientas','crazygames','portadas','fondo-tarawar.jpg')
+# en CrazyGames el juego arranca en inglés: la portada con "Steel Front" y el título en inglés
+FONDO=os.path.join(RAIZ,'img','portada-en.jpg')   # la ilustración con "Steel Front"
 if os.path.exists(FONDO): shutil.copy2(FONDO,os.path.join(DEST,'img','portada-nueva.jpg'))
-ih=os.path.join(DEST,'index.html'); h=open(ih,encoding='utf-8').read().replace('Taragüí War: Frente de Acero','TaraWar: Steel Front').replace('content="Taragüí War"','content="TaraWar"')
+ih=os.path.join(DEST,'index.html'); h=open(ih,encoding='utf-8').read().replace('TaraWar: Frente de Acero','TaraWar: Steel Front')
 open(ih,'w',encoding='utf-8').write(h)
-mf=os.path.join(DEST,'manifest.json'); m=open(mf,encoding='utf-8').read().replace('Taragüí War: Frente de Acero','TaraWar: Steel Front').replace('"Taragüí War"','"TaraWar"')
+mf=os.path.join(DEST,'manifest.json'); m=open(mf,encoding='utf-8').read().replace('TaraWar: Frente de Acero','TaraWar: Steel Front')
 open(mf,'w',encoding='utf-8').write(m)
 # conteo y tamaños
 n=0; tot=0

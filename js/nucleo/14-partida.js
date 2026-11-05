@@ -362,7 +362,7 @@ function mainMenu(){
     document.body.classList.add('home');
     $('panel').innerHTML=`${gear}<button class="acctB" id="acctB" hidden></button><div class="homeArt"></div><div class="homeShade"></div>
       <div class="homeBar"><button class="hb main" id="playB">Jugar ahora</button><button class="hb" id="campB">Campaña</button><button class="hb" id="vehB">Vehículos</button><button class="hb" id="tutB">Tutorial</button><button class="hb" id="optB">Opciones</button></div>
-      <div class="homeCopy"><button class="introL" id="introL">▶ Ver la intro</button> · Taragüí War · Frente de Acero · necesita teclado y mouse</div>`;
+      <div class="homeCopy"><button class="introL" id="introL">▶ Ver la intro</button> · TaraWar · Frente de Acero · necesita teclado y mouse</div>`;
     $('introL').onclick=go(()=>introStart());
     const toPlay=()=>{menuScreen='hangar';if(playMode==='tut')playMode='battle';mainMenu();};
     $('playB').onclick=toPlay;

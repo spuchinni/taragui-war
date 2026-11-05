@@ -120,7 +120,7 @@ I18N.add({
 "Bombardeo": "Bombing",
 "{} del equipo en espera: {} s": "Team {} on cooldown: {} s",
 "Clic en el mapa: dónde cae · {}: donde apuntás · Esc: cancelar": "Click on the map: where it lands · {}: where you aim · Esc: cancel",
-"Taragüí War: Frente de Acero": "TaraWar: Steel Front",
+"TaraWar: Frente de Acero": "TaraWar: Steel Front",
 "Conductor": "Driver",
 "Ayudante": "Co-driver",
 "Artillero": "Gunner",
@@ -381,7 +381,7 @@ I18N.add({
 "Tutorial": "Tutorial",
 "Opciones": "Options",
 "▶ Ver la intro": "▶ Watch the intro",
-"· Taragüí War · Frente de Acero · necesita teclado y mouse": "· TaraWar · Steel Front · requires keyboard and mouse",
+"· TaraWar · Frente de Acero · necesita teclado y mouse": "· TaraWar · Steel Front · requires keyboard and mouse",
 "Puerto Argentino": "Stanley",
 "Monte Tumbledown": "Mount Tumbledown",
 "Sonido no cargado:": "Sound not loaded:",
@@ -730,7 +730,7 @@ I18N.add({
 "carga hueca": "shaped charge",
 "Batalla": "Battle",
 "🟢 Hay alguien jugando online: {}": "🟢 Someone is playing online: {}",
-"Taragüí War: hay alguien jugando": "TaraWar: someone is playing",
+"TaraWar: hay alguien jugando": "TaraWar: someone is playing",
 "Unirme": "Join",
 "🟢 Hay alguien jugando": "🟢 Someone is playing",
 "No podés entrar": "You can't join",
@@ -850,7 +850,7 @@ I18N.add({
 "Editar acciones": "Edit Actions",
 "al final y activala.": "at the end and turn it on.",
 "arriba a la derecha.": "at the top right.",
-"Cerrá Safari y abrí el juego desde el ícono nuevo de Taragüí War: se ve a pantalla completa y acostado, como una app.": "Close Safari and open the game from the new Taragüí War icon: it shows fullscreen and sideways, like an app.",
+"Cerrá Safari y abrí el juego desde el ícono nuevo de TaraWar: se ve a pantalla completa y acostado, como una app.": "Close Safari and open the game from the new TaraWar icon: it shows fullscreen and sideways, like an app.",
 "Jugar a pantalla completa en el iPhone": "Play fullscreen on iPhone",
 "Apple no deja poner una página en pantalla completa dentro del navegador. Hay que": "Apple doesn't allow a page to go fullscreen inside the browser. You need to",
 "instalar el juego en la pantalla de inicio": "install the game on the home screen",
@@ -1607,10 +1607,10 @@ I18N.add({
 "Cañones, explosión, motor y torre: qubodup (CC0) · ametralladora, sirena y paso de avión: Pixabay (licencia de contenido de Pixabay) · el resto, hechos por código para el juego": "Cannons, explosion, engine and turret: qubodup (CC0) · machine gun, siren and aircraft flyby: Pixabay (Pixabay Content License) · the rest, made in code for the game",
 "© colaboradores de OpenStreetMap (ODbL) · relieve: Terrarium (Mapzen)": "© OpenStreetMap contributors (ODbL) · elevation: Terrarium (Mapzen)",
 "Tank Encyclopedia y manuales de época": "Tank Encyclopedia and period manuals",
-"Hechos por código para Taragüí War": "Made in code for TaraWar",
-"Taragüí War: Frente de Acero · todos los derechos reservados.": "TaraWar: Steel Front · all rights reserved.",
+"Hechos por código para TaraWar": "Made in code for TaraWar",
+"TaraWar: Frente de Acero · todos los derechos reservados.": "TaraWar: Steel Front · all rights reserved.",
 "© colaboradores de OpenStreetMap": "© OpenStreetMap contributors",
-"Taragüí War": "TaraWar"
+"TaraWar": "TaraWar"
 });
 I18N.words({
 "Perforante sólido": "Solid AP",
@@ -1688,5 +1688,5 @@ I18N.words({
 "sur": "south",
 "este": "east",
 "oeste": "west",
-"Taragüí War": "TaraWar"
+"TaraWar": "TaraWar"
 });

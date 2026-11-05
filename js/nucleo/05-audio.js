@@ -11,7 +11,7 @@ const _sndCache={};
 function sndFetch(p){ return _sndCache[p]||(_sndCache[p]=fetch(p).then(r=>{ if(!r.ok) throw new Error(p+' '+r.status); return r.arrayBuffer(); })); }
 function sndPaths(){ const L=[]; for(const [k,n] of Object.entries(SND_FILES)) for(let i=0;i<n;i++) L.push(`snd/${k}_${i}.mp3`);
   for(const lang of VO_LANGS) for(let i=0;i<(VO_CNT[lang]||VO_N);i++) L.push(`voz/${lang}/${String(i).padStart(2,'0')}.mp3`); return L; }
-function prefetchAudio(){ if(location.protocol==='file:'){ console.warn('Taragüí War: abrí el juego desde un servidor (GitHub Pages o Live Server); con file:// el navegador bloquea la carga de sonidos.'); return; }
+function prefetchAudio(){ if(location.protocol==='file:'){ console.warn('TaraWar: abrí el juego desde un servidor (GitHub Pages o Live Server); con file:// el navegador bloquea la carga de sonidos.'); return; }
   sndPaths().forEach(p=>sndFetch(p).catch(e=>console.warn('Sonido no cargado:',e.message))); }
 addEventListener('load',()=>setTimeout(prefetchAudio,300));
 let engNodes=null; // piezas del motor sintético (realismo.js las ajusta según el motor de cada tanque)

@@ -39,7 +39,7 @@ function introUI(){
   el=document.createElement('div'); el.id='introUI';
   el.innerHTML=`<div class="iBar t"></div><div class="iBar b"></div><div class="iFade" id="iFade"></div>
     <div class="iTxt" id="iTxt"><div class="iEra" id="iEra"></div><div class="iSub" id="iSub"></div></div>
-    <div class="iLogo" id="iLogo"><img src="img/logo.jpg" alt="Taragüí War: Frente de Acero"></div>
+    <div class="iLogo" id="iLogo"><img src="img/logo.jpg" alt="TaraWar: Frente de Acero"></div>
     <div class="iStart" id="iStart"><span>Hacé clic para empezar</span></div>
     <button class="iSkip" id="iSkip">Saltar intro ⏭</button>`;
   document.body.appendChild(el);
@@ -66,7 +66,7 @@ function coverStart(){
   const ui=introUI(); ui.hidden=false; document.body.classList.add('intro');
   ui.querySelectorAll('.iBar,.iFade,.iTxt,.iLogo,#iSkip,#iStart').forEach(e=>e.hidden=true);
   let c=$('iCover'); if(c) c.remove();
-  c=document.createElement('div'); c.id='iCover'; c.className='ready'; c.innerHTML=`<div class="cvArt"><img class="cvBg" src="img/portada-nueva.jpg" alt="Taragüí War: Frente de Acero"></div><div class="cvGo">Hacé clic para empezar</div>`;
+  c=document.createElement('div'); c.id='iCover'; c.className='ready'; c.innerHTML=`<div class="cvArt"><img class="cvBg" src="img/portada-nueva.jpg" alt="TaraWar: Frente de Acero"></div><div class="cvGo">Hacé clic para empezar</div>`;
   ui.appendChild(c); const bt=$('boot'); if(bt) bt.remove();
   c.onclick=()=>{ initAudio(); if(AC.state==='suspended') AC.resume(); introEnd(); };
 }

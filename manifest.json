@@ -1,6 +1,6 @@
 {
-  "name": "Taragüí War: Frente de Acero",
-  "short_name": "Taragüí War",
+  "name": "TaraWar: Frente de Acero",
+  "short_name": "TaraWar",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",

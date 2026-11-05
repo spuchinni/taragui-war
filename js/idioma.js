@@ -58,6 +58,16 @@
       else for(const n of m.addedNodes) walk(n); } });
   function start(){ walk(document.body); mo.observe(document.body,{subtree:true,childList:true,characterData:true,attributes:true,attributeFilter:ATTR}); }
   if(document.body) start(); else document.addEventListener('DOMContentLoaded',start);
+  // la ilustración de la portada tiene el subtítulo dibujado: en inglés va img/portada-en.jpg ("Steel Front")
+  const ART=/portada-nueva\.jpg/;
+  function swapArt(root){ if(root.querySelectorAll) for(const im of root.querySelectorAll('img')) if(ART.test(im.getAttribute('src')||'')) im.src=im.getAttribute('src').replace(ART,'portada-en.jpg');
+    if(root.style&&ART.test(root.style.backgroundImage||'')) root.style.backgroundImage=root.style.backgroundImage.replace(ART,'portada-en.jpg'); }
+  function swapCss(){ for(const sh of document.styleSheets){ let R; try{ R=sh.cssRules; }catch(e){ continue; }
+      for(const r of R||[]) if(r.style&&ART.test(r.style.backgroundImage||r.style.background||'')){ r.style.backgroundImage=(r.style.backgroundImage||'').replace(/portada-nueva\.jpg/g,'portada-en.jpg'); } } }
+  const boot=()=>{ swapCss(); swapArt(document.body); const b=document.getElementById('boot'); if(b) swapArt(b); };
+  if(document.readyState!=='loading') boot(); else document.addEventListener('DOMContentLoaded',boot);
+  window.addEventListener('load',swapCss);
+  new MutationObserver(l=>{ for(const m of l) for(const n of m.addedNodes) if(n.nodeType===1){ swapArt(n); if(n.matches&&n.matches('img')&&ART.test(n.getAttribute('src')||'')) n.src=n.getAttribute('src').replace(ART,'portada-en.jpg'); } }).observe(document.documentElement,{childList:true,subtree:true});
   // título de la pestaña
   const td=Object.getOwnPropertyDescriptor(Document.prototype,'title');
   if(td&&td.set) Object.defineProperty(document,'title',{get(){ return td.get.call(this); },set(v){ td.set.call(this,tr(v)); },configurable:true});

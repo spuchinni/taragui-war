@@ -1,7 +1,7 @@
 /* ---------- Aviso de "hay alguien jugando" (pedido de Sebastián) ----------
    Con el juego abierto (en el menú, el hangar o jugando con bots), cada 30 s mira en Firestore las salas vivas (salas.js).
    Si aparece una partida nueva o entra alguien a una, avisa: cartel arriba a la izquierda con "Unirme", un sonidito,
-   el número en la pestaña "(1) Taragüí War" y, si la pestaña está de fondo y el navegador lo permite, una notificación de Windows/Android.
+   el número en la pestaña "(1) TaraWar" y, si la pestaña está de fondo y el navegador lo permite, una notificación de Windows/Android.
    Se apaga en Ajustes. Las salas no guardan nombres (reglas de Firestore), así que dice el mapa, la época y cuántos juegan. */
 const AVISO_CADA=30e3, AVISO_TITULO=document.title;
 const aviso={on:true,timer:0,visto:{},vivas:[],div:null};
@@ -23,7 +23,7 @@ async function avisoMirar(){
   else if(state!=='play') avisoCartel(s,txt);
   avisoSonido();
   if(document.hidden&&'Notification' in window&&Notification.permission==='granted'){
-    try{ const N=new Notification('Taragüí War: hay alguien jugando',{body:txt,icon:'img/icono-192.png',tag:'tw-sala'}); N.onclick=()=>{ window.focus(); N.close(); }; }catch(e){} }
+    try{ const N=new Notification('TaraWar: hay alguien jugando',{body:txt,icon:'img/icono-192.png',tag:'tw-sala'}); N.onclick=()=>{ window.focus(); N.close(); }; }catch(e){} }
 }
 function avisoCartel(s,txt){
   if(!aviso.div){ aviso.div=document.createElement('div'); aviso.div.id='aviso'; document.body.appendChild(aviso.div); }
