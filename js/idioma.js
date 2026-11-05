@@ -22,6 +22,7 @@
   const WD=[];
   function split(core){
     let mm=core.match(/^([·•,.:;()\-–—+✔✖▲▼]+\s*)([\s\S]+)$/); if(mm){ const t=tr(mm[2]); if(t!==mm[2]) return mm[1]+t; }      // "· Soldado"
+    mm=core.match(/^([\s\S]+?)(\s*[:.;,…]+)$/); if(mm){ const t=tr(mm[1]); if(t!==mm[1]) return t+mm[2]; }                     // "Motor 3D:"
     mm=core.match(/^([\s\S]+?)(\s*[:,.;)]?\s*[+\-]?[\d.,]+\s*(%|s|m|km\/h|PI|XP)?[.)]?)$/); if(mm&&/[A-Za-zÁÉÍÓÚáéíóúñÑ]/.test(mm[1])){ const t=tr(mm[1]); if(t!==mm[1]) return t+mm[2]; }   // "Aliados 400"
     for(const sep of [' · ',' — ',', ',' / ']){ if(!core.includes(sep)) continue; const a=core.split(sep); let ch=false;
       const b=a.map(x=>{ const y=tr(x); if(y!==x) ch=true; return y; }); if(ch) return b.join(sep); }

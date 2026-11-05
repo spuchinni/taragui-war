@@ -1,16 +1,16 @@
 /* ---------- Audio ---------- */
-// Grabaciones CC0 de Freesound (recortadas y comprimidas): qubodup (cañones de tanque, explosión, ralentí de motor y torreta, dominio público),
-// greatmganga (tanque T-26 en marcha), JovianSounds (estática y corte de radio). Pixabay/freesound_community: ametralladora .50,
-// sirena antiaérea, paso de avión; PWLPL (avioneta a hélice), TommyLynn (disparos lejanos de mortero), qubodup (estampido sónico).
-// EpicWizard (impacto metálico), cedarstudios (rebote). La intro usa la misma grabación de tanques disparando, filtrada.
+// Grabaciones CC0 de Freesound (recortadas y comprimidas): qubodup (cañones de tanque, explosión, ralentí de motor y torreta, estampido sónico,
+// dominio público). Pixabay/freesound_community: ametralladora .50, sirena antiaérea, paso de avión. El resto (marcha del tanque, radio,
+// avionetas, morteros, golpes de metal, rebotes, silbidos, bombas, nuke, GAU-8, ambiente y la intro) está hecho por código:
+// herramientas/sonidos/sintetizar.py (ver CREDITOS.md).
 const SND_FILES={"shellin":4,"bombw":1,"nukew":1,"nukeb":1,"plane":1,"infamb":1,"gau8":1,"cannon":2,"expl":1,"metal":2,"ric":2,"intro":1,"idle":1,"drive":1,"turret":1,"static":1,"squelch":1,"mgburst":1,"mgshot":1,"thump":2,"siren":1,"flyover":1,"prop":1,"sboom":1}; // archivos en snd/<nombre>_<n>.mp3
 // Voces de radio (TTSMaker) por idioma, 14 frases en el mismo orden en cada uno.
-const VO_LANGS=["es", "en-gb", "en-us", "de", "ru"], VO_N=14; // archivos en voz/<idioma>/00.mp3 … 13.mp3
+const VO_LANGS=["es", "en-gb", "en-us", "de", "ru"], VO_N=14, VO_CNT={ru:11};   // ru: faltan las 3 últimas frases // archivos en voz/<idioma>/00.mp3 … 13.mp3
 // Los sonidos se bajan en segundo plano apenas carga la página (no traban el menú) y quedan en caché del navegador.
 const _sndCache={};
 function sndFetch(p){ return _sndCache[p]||(_sndCache[p]=fetch(p).then(r=>{ if(!r.ok) throw new Error(p+' '+r.status); return r.arrayBuffer(); })); }
 function sndPaths(){ const L=[]; for(const [k,n] of Object.entries(SND_FILES)) for(let i=0;i<n;i++) L.push(`snd/${k}_${i}.mp3`);
-  for(const lang of VO_LANGS) for(let i=0;i<VO_N;i++) L.push(`voz/${lang}/${String(i).padStart(2,'0')}.mp3`); return L; }
+  for(const lang of VO_LANGS) for(let i=0;i<(VO_CNT[lang]||VO_N);i++) L.push(`voz/${lang}/${String(i).padStart(2,'0')}.mp3`); return L; }
 function prefetchAudio(){ if(location.protocol==='file:'){ console.warn('Taragüí War: abrí el juego desde un servidor (GitHub Pages o Live Server); con file:// el navegador bloquea la carga de sonidos.'); return; }
   sndPaths().forEach(p=>sndFetch(p).catch(e=>console.warn('Sonido no cargado:',e.message))); }
 addEventListener('load',()=>setTimeout(prefetchAudio,300));
@@ -50,7 +50,7 @@ function initAudio(){
   engNodes={lfo,g2,nzg,nzf}; [eng,eng2,nz,lfo,trkSrc].forEach(n=>n.start());
   for(const [k,n] of Object.entries(SND_FILES)){ SFX[k]=[]; for(let i=0;i<n;i++) sndFetch(`snd/${k}_${i}.mp3`).then(ab=>
     AC.decodeAudioData(ab,buf=>{ SFX[k].push(buf); if(k==='intro'&&musMode==='hangar'){ musMode=null; syncIntro(); } if(['idle','drive','turret','mgburst'].includes(k)) startLoops(); },()=>{})).catch(()=>{}); }
-  for(const lang of VO_LANGS){ VO[lang]=[]; for(let i=0;i<VO_N;i++) sndFetch(`voz/${lang}/${String(i).padStart(2,'0')}.mp3`).then(ab=>
+  for(const lang of VO_LANGS){ VO[lang]=[]; for(let i=0;i<(VO_CNT[lang]||VO_N);i++) sndFetch(`voz/${lang}/${String(i).padStart(2,'0')}.mp3`).then(ab=>
     AC.decodeAudioData(ab,buf=>{ VO[lang][i]=buf; },()=>{})).catch(()=>{}); }
 }
 // Motor: las RPM suben dentro de cada marcha y caen al cambiar, como una caja de cambios real.
