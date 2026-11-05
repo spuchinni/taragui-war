@@ -7,7 +7,7 @@ Saca lo que el juego no usa (v1, video de la intro, herramientas, .git) y contro
 250 MB en total, 1500 archivos y 50 MB de descarga inicial (20 MB para la portada de celulares)."""
 import os, sys, shutil, zipfile, json
 RAIZ=os.path.abspath(os.path.join(os.path.dirname(__file__),'..','..'))
-DIST=os.path.join(RAIZ,'dist'); DEST=os.path.join(DIST,'crazygames'); ZIP=os.path.join(DIST,'taragui-war-crazygames.zip')
+DIST=os.path.join(RAIZ,'dist'); DEST=os.path.join(DIST,'crazygames'); ZIP=os.path.join(DIST,'tarawar-crazygames.zip')
 LLEVAR=['index.html','manifest.json','version.json','css','js','img','snd','voz','modelos']
 premio='--premio' in sys.argv
 if os.path.isdir(DEST): shutil.rmtree(DEST)
@@ -19,6 +19,13 @@ for x in LLEVAR:
 # la plataforma: el juego sabe que corre en CrazyGames (crazy.js carga el SDK, saca el inicio de sesión y la portada)
 with open(os.path.join(DEST,'js','plataforma.js'),'w',encoding='utf-8') as f:
     f.write("window.PLATAFORMA={id:'crazygames',premio:%s};\n"%('true' if premio else 'false'))
+# nombre: en CrazyGames el juego se llama TaraWar ("Taragüí" es una marca de yerba): el fondo del menú sin el logo viejo
+FONDO=os.path.join(RAIZ,'herramientas','crazygames','portadas','fondo-tarawar.jpg')
+if os.path.exists(FONDO): shutil.copy2(FONDO,os.path.join(DEST,'img','portada-nueva.jpg'))
+ih=os.path.join(DEST,'index.html'); h=open(ih,encoding='utf-8').read().replace('Taragüí War: Frente de Acero','TaraWar: Steel Front').replace('content="Taragüí War"','content="TaraWar"')
+open(ih,'w',encoding='utf-8').write(h)
+mf=os.path.join(DEST,'manifest.json'); m=open(mf,encoding='utf-8').read().replace('Taragüí War: Frente de Acero','TaraWar: Steel Front').replace('"Taragüí War"','"TaraWar"')
+open(mf,'w',encoding='utf-8').write(m)
 # conteo y tamaños
 n=0; tot=0
 for d,_,fs in os.walk(DEST):

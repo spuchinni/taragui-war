@@ -4,7 +4,7 @@
    `python herramientas/crazygames/armar.py` → `dist/taragui-war-crazygames.zip`
 2. Crear la cuenta de desarrollador en https://developer.crazygames.com y ir a **Submit game**.
 3. Tipo **HTML5**, subir el zip. Completar:
-   - Nombre: Taragüí War: Frente de Acero
+   - Nombre: TaraWar: Steel Front ("Taragüí" es una marca de yerba: en CrazyGames va TaraWar)
    - Descripción y controles (W/S/A/D manejar, mouse apuntar, clic izquierdo cañón, clic derecho zoom, Mayús mira del artillero, Espacio ametralladora, F artillería, G bombardeo).
    - Orientación: horizontal. Marcar que funciona en celular.
    - Portadas: 1920×1080, 800×470 y 800×1200 (se pueden sacar de `img/portada-nueva.jpg`), y un video corto del juego.

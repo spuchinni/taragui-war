@@ -120,7 +120,7 @@ I18N.add({
 "Bombardeo": "Bombing",
 "{} del equipo en espera: {} s": "Team {} on cooldown: {} s",
 "Clic en el mapa: dónde cae · {}: donde apuntás · Esc: cancelar": "Click on the map: where it lands · {}: where you aim · Esc: cancel",
-"Taragüí War: Frente de Acero": "Taragüí War: Steel Front",
+"Taragüí War: Frente de Acero": "TaraWar: Steel Front",
 "Conductor": "Driver",
 "Ayudante": "Co-driver",
 "Artillero": "Gunner",
@@ -381,7 +381,7 @@ I18N.add({
 "Tutorial": "Tutorial",
 "Opciones": "Options",
 "▶ Ver la intro": "▶ Watch the intro",
-"· Taragüí War · Frente de Acero · necesita teclado y mouse": "· Taragüí War · Steel Front · requires keyboard and mouse",
+"· Taragüí War · Frente de Acero · necesita teclado y mouse": "· TaraWar · Steel Front · requires keyboard and mouse",
 "Puerto Argentino": "Stanley",
 "Monte Tumbledown": "Mount Tumbledown",
 "Sonido no cargado:": "Sound not loaded:",
@@ -730,7 +730,7 @@ I18N.add({
 "carga hueca": "shaped charge",
 "Batalla": "Battle",
 "🟢 Hay alguien jugando online: {}": "🟢 Someone is playing online: {}",
-"Taragüí War: hay alguien jugando": "Taragüí War: someone is playing",
+"Taragüí War: hay alguien jugando": "TaraWar: someone is playing",
 "Unirme": "Join",
 "🟢 Hay alguien jugando": "🟢 Someone is playing",
 "No podés entrar": "You can't join",
@@ -1607,9 +1607,10 @@ I18N.add({
 "Cañones, explosión, motor y torre: qubodup (CC0) · ametralladora, sirena y paso de avión: Pixabay (licencia de contenido de Pixabay) · el resto, hechos por código para el juego": "Cannons, explosion, engine and turret: qubodup (CC0) · machine gun, siren and aircraft flyby: Pixabay (Pixabay Content License) · the rest, made in code for the game",
 "© colaboradores de OpenStreetMap (ODbL) · relieve: Terrarium (Mapzen)": "© OpenStreetMap contributors (ODbL) · elevation: Terrarium (Mapzen)",
 "Tank Encyclopedia y manuales de época": "Tank Encyclopedia and period manuals",
-"Hechos por código para Taragüí War": "Made in code for Taragüí War",
-"Taragüí War: Frente de Acero · todos los derechos reservados.": "Taragüí War: Steel Front · all rights reserved.",
-"© colaboradores de OpenStreetMap": "© OpenStreetMap contributors"
+"Hechos por código para Taragüí War": "Made in code for TaraWar",
+"Taragüí War: Frente de Acero · todos los derechos reservados.": "TaraWar: Steel Front · all rights reserved.",
+"© colaboradores de OpenStreetMap": "© OpenStreetMap contributors",
+"Taragüí War": "TaraWar"
 });
 I18N.words({
 "Perforante sólido": "Solid AP",
@@ -1686,5 +1687,6 @@ I18N.words({
 "norte": "north",
 "sur": "south",
 "este": "east",
-"oeste": "west"
+"oeste": "west",
+"Taragüí War": "TaraWar"
 });
