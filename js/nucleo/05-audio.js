@@ -3,7 +3,7 @@
 // dominio público). Pixabay/freesound_community: ametralladora .50, sirena antiaérea, paso de avión. El resto (marcha del tanque, radio,
 // avionetas, morteros, golpes de metal, rebotes, silbidos, bombas, nuke, GAU-8, ambiente y la intro) está hecho por código:
 // herramientas/sonidos/sintetizar.py (ver CREDITOS.md).
-const SND_FILES={"shellin":4,"bombw":1,"nukew":1,"nukeb":1,"plane":1,"infamb":1,"gau8":1,"cannon":2,"expl":1,"metal":2,"ric":2,"intro":1,"idle":1,"drive":1,"turret":1,"static":1,"squelch":1,"mgburst":1,"mgshot":1,"thump":2,"siren":1,"flyover":1,"prop":1,"sboom":1}; // archivos en snd/<nombre>_<n>.mp3
+const SND_FILES={"shellin":4,"bombw":1,"nukew":1,"nukeb":1,"plane":1,"infamb":1,"gau8":1,"cannon":2,"expl":1,"metal":2,"ric":4,"intro":1,"idle":1,"drive":1,"turret":1,"static":1,"squelch":1,"mgburst":1,"mgshot":1,"thump":2,"siren":1,"flyover":1,"prop":1,"sboom":1}; // archivos en snd/<nombre>_<n>.mp3
 // Voces de radio (TTSMaker) por idioma, 14 frases en el mismo orden en cada uno.
 const VO_LANGS=["es", "en-gb", "en-us", "de", "ru"], VO_N=14, VO_CNT={ru:11};   // ru: faltan las 3 últimas frases // archivos en voz/<idioma>/00.mp3 … 13.mp3
 // Los sonidos se bajan en segundo plano apenas carga la página (no traban el menú) y quedan en caché del navegador.

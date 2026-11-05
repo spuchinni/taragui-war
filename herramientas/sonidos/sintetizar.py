@@ -57,7 +57,7 @@ def save(name,x,sr=SR,kbps=80):
     level(name,sr,kbps); print(name,f'{len(x)/SR:.2f} s',f'{mean_db(os.path.join(SND,name+".mp3")):.1f} dB')
 
 # volumen medio (dB) de las grabaciones que reemplazan, para que el juego suene parejo sin tocar los volúmenes del código
-TARGET={'static_0':-16.6,'squelch_0':-26.8,'metal_0':-21.2,'metal_1':-21.9,'ric_0':-21,'ric_1':-21,'thump_0':-25.7,'thump_1':-25.7,'shellin_0':-12,'shellin_1':-12,'shellin_2':-12,'shellin_3':-12,
+TARGET={'static_0':-16.6,'squelch_0':-26.8,'metal_0':-21.2,'metal_1':-21.9,'ric_0':-21,'ric_1':-21,'ric_2':-21,'ric_3':-21,'thump_0':-25.7,'thump_1':-25.7,'shellin_0':-12,'shellin_1':-12,'shellin_2':-12,'shellin_3':-12,
   'bombw_0':-17.8,'nukew_0':-6.5,'nukeb_0':-3.7,'prop_0':-18.3,'plane_0':-13,'drive_0':-12.2,'gau8_0':-10.9,'infamb_0':-34.3,'intro_0':-19.8}
 def mean_db(path):
     o=subprocess.run(['ffmpeg','-i',path,'-af','volumedetect','-f','null','-'],capture_output=True,text=True).stderr
@@ -125,6 +125,10 @@ def ric(f0,seed,src,zing=.35,whoosh=.8,sec=.9):
 def ric_0(): save('ric_0',ric(900,3,'cannon_0'))
 @snd
 def ric_1(): save('ric_1',ric(1150,4,'cannon_1',.25,.9,1.0))
+@snd
+def ric_2(): save('ric_2',ric(1300,7,'cannon_0',0,1.0,.8))
+@snd
+def ric_3(): save('ric_3',ric(800,8,'cannon_1',.6,.4,.9))
 def thump(src,seed):            # cañón lejano: la grabación CC0 de qubodup filtrada como si viniera de varios km
     x=read(src); x=band(x,25,520); T=np.arange(len(x))/SR; x=x[:int(1.4*SR)]
     x=reverb(x,1.6,.45)[:int(1.6*SR)]; return fade(norm(x),.004,.4)
