@@ -111,7 +111,7 @@
     const put=(list,ims,r,f)=>list.forEach((o,i)=>{ const P={kind:'street',ims,i,x:o.x,z:o.z,y:heightAt(o.x,o.z)-.05,a:o.a,r,t:0}; if(f) f(P,o); addProp(P); o.P=P; });
     put(lamps,[L1,L2],.3,P=>{ if(war&&inTown(P.x,P.z)&&!C.city&&R()<(era<=1?.45:.25)) fell(P); else if(war&&C.city&&R()<.18) fell(P,.9); });
     put(flat,[T1,T2],.3,(P,o)=>{ if(o.down) fell(P,.97); });
-    put(hyd,[H1],.25); put(cols,[C1,C2],.75,P=>{ if(war&&R()<.12) fell(P,1); }); put(benches,[B1,B2],.8,P=>{ if(war&&R()<.15) fell(P,.5); });
+    put(hyd,[H1],.25,P=>{ P.hyd=true; }); put(cols,[C1,C2],.75,P=>{ if(war&&R()<.12) fell(P,1); }); put(benches,[B1,B2],.8,P=>{ if(war&&R()<.15) fell(P,.5); });
     // cables con comba entre postes en pie (dos en la 1ª Guerra, cuatro después)
     const pts=[], wiresN=era<=1?[0,3]:[0,1,2,3];
     for(const run of poles) for(let i=0;i<run.length-1;i++){ const A=run[i], B=run[i+1]; if(A.down||B.down||Math.hypot(B.x-A.x,B.z-A.z)>60) continue; const i0=pts.length/3;
@@ -142,4 +142,31 @@
   // de noche (sin oscurecimiento: épocas 4–5) las luminarias se prenden
   const _cu=cullUpdate;
   cullUpdate=function(){ _cu.apply(this,arguments); const on=typeof WX!=='undefined'&&WX&&WX.night&&(W.era||5)>=4; LENS.emissive.setHex(on?0xfff2c8:0x000000); LENS.emissiveIntensity=on?1.4:0; };
+  // Hidrante volteado (pedido de Sebastián): chorro de agua hacia arriba unos 45 s y charco que crece. Un solo sistema de
+  // partículas (Points) compartido por todos los chorros.
+  const GN=900, gPos=new Float32Array(GN*3), gVel=new Float32Array(GN*3), gOwn=new Int16Array(GN).fill(-1), geysers=[];
+  const gGeo=new THREE.BufferGeometry(); gGeo.setAttribute('position',new THREE.BufferAttribute(gPos,3));
+  const dropTex=(()=>{ const c=document.createElement('canvas'); c.width=c.height=32; const x=c.getContext('2d'), g=x.createRadialGradient(16,16,0,16,16,16);
+    g.addColorStop(0,'rgba(255,255,255,1)'); g.addColorStop(.45,'rgba(235,245,255,.7)'); g.addColorStop(1,'rgba(235,245,255,0)'); x.fillStyle=g; x.fillRect(0,0,32,32); return new THREE.CanvasTexture(c); })();
+  const gMat=new THREE.PointsMaterial({color:0xdbe8f0,size:.5,map:dropTex,transparent:true,opacity:.8,depthWrite:false});
+  const gPts=new THREE.Points(gGeo,gMat); gPts.frustumCulled=false; gPts.renderOrder=3;
+  const puddleM=new THREE.MeshLambertMaterial({color:0x5a6a72,transparent:true,opacity:.55,depthWrite:false}), puddleG=new THREE.CircleGeometry(1,20).rotateX(-Math.PI/2);
+  for(let i=0;i<GN;i++) gPos[i*3+1]=-1e4;
+  function geyser(P){ if(geysers.length>=6) return; const y=heightAt(P.x,P.z); const pd=new THREE.Mesh(puddleG,puddleM); pd.position.set(P.x,y+.04,P.z); pd.scale.setScalar(.3); worldGroup.add(pd);
+    if(!gPts.parent) worldGroup.add(gPts); geysers.push({x:P.x,z:P.z,y:y+.55,t:0,life:rand(38,50),pd,acc:0}); }
+  const _kp=knockProp;
+  knockProp=function(P){ const was=P.fallen; const r=_kp.apply(this,arguments); try{ if(P.hyd&&!was&&P.fallen) geyser(P); }catch(e){} return r; };
+  let gi=0;
+  function geyserStep(dt){ dt=Math.min(.1,dt||0); if(!geysers.length) return;
+    for(let k=geysers.length-1;k>=0;k--){ const G=geysers[k]; G.t+=dt; const f=G.t<G.life-8?1:Math.max(0,(G.life-G.t)/8);
+      G.pd.scale.setScalar(Math.min(7,.3+G.t*.35)); if(G.t>G.life+60){ worldGroup.remove(G.pd); geysers.splice(k,1); continue; }
+      G.acc+=dt*340*f; while(G.acc>=1){ G.acc--; const i=gi=(gi+1)%GN, a=Math.random()*6.28, s=rand(0,.9);
+        gPos[i*3]=G.x+rand(-.06,.06); gPos[i*3+1]=G.y; gPos[i*3+2]=G.z+rand(-.06,.06); gVel[i*3]=Math.cos(a)*s; gVel[i*3+1]=rand(9,12.5)*(.6+.4*f); gVel[i*3+2]=Math.sin(a)*s; gOwn[i]=k; } }
+    for(let i=0;i<GN;i++){ if(gPos[i*3+1]<-1e3) continue; gVel[i*3+1]-=9.8*dt; gPos[i*3]+=gVel[i*3]*dt; gPos[i*3+1]+=gVel[i*3+1]*dt; gPos[i*3+2]+=gVel[i*3+2]*dt;
+      if(gVel[i*3+1]<0&&gPos[i*3+1]<heightAt(gPos[i*3],gPos[i*3+2])) gPos[i*3+1]=-1e4; }
+    gGeo.attributes.position.needsUpdate=true; }
+  const _bw2=buildWorld;
+  buildWorld=function(){ geysers.length=0; for(let i=0;i<GN;i++) gPos[i*3+1]=-1e4; if(gPts.parent) gPts.parent.remove(gPts); return _bw2.apply(this,arguments); };
+  const _up=updateProps; updateProps=function(dt){ _up.apply(this,arguments); try{ geyserStep(dt); }catch(e){} };
+  window.hydGeyser=geyser;
 })();

@@ -40,7 +40,12 @@
   document.addEventListener('keyup',e=>{ F.keys[e.code]=false; });
   // mouse: arrastrar para mirar; rueda = velocidad
   document.addEventListener('mousedown',e=>{ if(state==='spectate'&&F.on&&e.target===renderer.domElement){ F.drag={x:e.clientX,y:e.clientY}; e.stopPropagation(); } },true);
-  document.addEventListener('mousemove',e=>{ if(!F.drag) return; F.yaw-=(e.clientX-F.drag.x)*.0045; F.pitch=clamp(F.pitch-(e.clientY-F.drag.y)*.0045,-1.45,1.45); F.drag={x:e.clientX,y:e.clientY}; });
+  // PC (pedido de Sebastián): con la cámara libre se mira moviendo el mouse sobre la pantalla, sin hacer clic; cerca del borde
+  // izquierdo/derecho sigue girando sola. Sobre los botones y la lista no mira (así se pueden usar).
+  F.mx=null;
+  document.addEventListener('mousemove',e=>{ if(F.drag){ F.yaw-=(e.clientX-F.drag.x)*.0045; F.pitch=clamp(F.pitch-(e.clientY-F.drag.y)*.0045,-1.45,1.45); F.drag={x:e.clientX,y:e.clientY}; return; }
+    if(state==='spectate'&&F.on&&!isMob()&&e.target===renderer.domElement){ F.yaw-=(e.movementX||0)*.0032; F.pitch=clamp(F.pitch-(e.movementY||0)*.0032,-1.45,1.45); F.mx=e.clientX; } else F.mx=null; });
+  document.addEventListener('mouseout',e=>{ if(!e.relatedTarget) F.mx=null; });
   document.addEventListener('mouseup',()=>{ F.drag=null; });
   renderer.domElement.addEventListener('wheel',e=>{ if(state!=='spectate'||!F.on) return; e.preventDefault(); e.stopPropagation(); F.speed=clamp(F.speed*(e.deltaY<0?1.15:.87),3,120); },{passive:false,capture:true});
   // ---- celular ----
@@ -69,7 +74,8 @@
       else if(F.look&&t.identifier===F.look.id){ const dx=t.clientX-F.look.x, dy=t.clientY-F.look.y; F.look.x=t.clientX; F.look.y=t.clientY;
         if(F.on){ F.yaw-=dx*.006; F.pitch=clamp(F.pitch-dy*.006,-1.45,1.45); } else if(aerial) aer.yaw-=dx*.006; } } },{passive:true});
   cv.addEventListener('touchend',e=>{ for(const t of e.changedTouches){ if(F.joy&&t.identifier===F.joy.id){ F.joy=null; joy.style.display='none'; } if(F.look&&t.identifier===F.look.id) F.look=null; } if(e.touches.length<2) pinch=null; },{passive:true});
-  function freeStep(dt){ const k=F.keys, fast=k.ShiftLeft||k.ShiftRight||F.fast?3:1, v=F.speed*fast*dt;
+  function freeStep(dt){ if(F.mx!=null&&!F.drag){ const E=60; if(F.mx<E) F.yaw+=dt*1.4*(1-F.mx/E); else if(F.mx>innerWidth-E) F.yaw-=dt*1.4*(1-(innerWidth-F.mx)/E); }
+    const k=F.keys, fast=k.ShiftLeft||k.ShiftRight||F.fast?3:1, v=F.speed*fast*dt;
     const fx=Math.sin(F.yaw), fz=Math.cos(F.yaw), rx=Math.cos(F.yaw), rz=-Math.sin(F.yaw);
     let f=(k.KeyW||k.ArrowUp?1:0)-(k.KeyS||k.ArrowDown?1:0)-(F.joy?F.joy.dy:0), s=(k.KeyD||k.ArrowRight?1:0)-(k.KeyA||k.ArrowLeft?1:0)+(F.joy?F.joy.dx:0), u=(k.KeyE||k.Space?1:0)-(k.KeyQ||k.ControlLeft||k.KeyC?1:0);
     F.pos.x+=(fx*f-rx*s)*v; F.pos.z+=(fz*f-rz*s)*v; F.pos.y+=u*v+(f*Math.sin(F.pitch)*v);
@@ -77,7 +83,7 @@
     const g=Math.max(heightAt(F.pos.x,F.pos.z),W.water!=null?W.water:-1e9)+1.4; if(F.pos.y<g) F.pos.y=g; F.pos.y=Math.min(F.pos.y,600);
     camera.position.copy(F.pos); const cp=Math.cos(F.pitch); camera.lookAt(F.pos.x+Math.sin(F.yaw)*cp,F.pos.y+Math.sin(F.pitch),F.pos.z+Math.cos(F.yaw)*cp);
     camera.fov=65; camera.updateProjectionMatrix();
-    const st=document.getElementById('specT'); if(st) st.innerHTML=isMob()?`Palanca a la izquierda para moverte · arrastrá a la derecha para mirar · ▲ ▼ subir y bajar`:`WASD moverse · Q/E bajar/subir · Mayús rápido · arrastrar mira · ${Math.round(F.speed*fast)} m/s`; }
+    const st=document.getElementById('specT'); if(st) st.innerHTML=isMob()?`Palanca a la izquierda para moverte · arrastrá a la derecha para mirar · ▲ ▼ subir y bajar`:`Mové el mouse para mirar · WASD moverse · Q/E bajar/subir · Mayús rápido · rueda velocidad · ${Math.round(F.speed*fast)} m/s`; }
   const _sc=spectatorCam;
   spectatorCam=function(dt){ if(state==='spectate'&&F.on){ freeStep(dt); return true; } if(state==='spectate'&&U.t){ unitCam(U.t,dt); return U.t; } if(state==='spectate'&&AUTO&&window.specDir&&specDir.last>0&&performance.now()-specDir.last<6000) specDir.last=0;
     const r=_sc.apply(this,arguments);

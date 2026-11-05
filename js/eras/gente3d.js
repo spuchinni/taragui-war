@@ -61,7 +61,7 @@
   // null = esa persona sigue con la ropa de época hecha por código (en las épocas viejas el paquete casi no tiene ropa que sirva)
   const G3_ERA={old:{m:['m_Suit','m_Farmer',null,null,null],f:['f_Formal',null,null,null]},
     new:{m:['m_Casual','m_Casual2','m_Suit','m_Worker','m_Farmer','m_Adventurer','m_Casual','m_Casual2'],f:['f_Casual','f_Casual','f_Formal','f_Suit','f_Worker','f_Adventurer','f_Soldier']}};
-  const JOB={granjero:'m_Farmer',obrero:'m_Worker',policia:'m_Swat'};
+  const JOB={granjero:'m_Farmer',obrero:'m_Worker'};   // el policía SWAT tenía la cara tapada: los policías van hechos por código
   function pickChar(P){ const era=W_era(), set=era<=4?G3_ERA.old:G3_ERA.new, sx=P.female?'f':'m';
     if(P.job){ const j=JOB[P.job]; if(j&&!P.female&&(era>=5||j==='m_Farmer')&&G3.data.chars[j]) return j; return null; }   // los demás oficios tienen su ropa hecha por código
     let L=set[sx].filter(n=>n===null||G3.data.chars[n]); if(sx==='m'&&era>=5&&typeof facadeStyle==='function'&&facadeStyle()===1&&G3.data.chars.m_Beach) L=L.concat(['m_Beach']);
