@@ -33,7 +33,7 @@
   bar.addEventListener('mousedown',e=>e.stopPropagation(),true);
   // teclado
   document.addEventListener('keydown',e=>{ if(state!=='spectate') return;
-    if(e.code==='KeyL'){ setFree(!F.on); return; } if(e.code==='KeyP'){ setAuto(!AUTO); return; }
+    if(e.code==='KeyL'){ if(window.superUser&&superUser.on) setFree(!F.on); return; } if(e.code==='KeyP'){ setAuto(!AUTO); return; }
     if(F.on){ F.keys[e.code]=true; if(['Space','ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.code)) e.preventDefault(); }
     else if(AUTO&&['ArrowLeft','ArrowRight','Space'].includes(e.code)) setAuto(false);
     setTimeout(paint,0); },true);
@@ -116,7 +116,7 @@
   for(const ev of ['mousedown','touchstart','wheel']) pnl.addEventListener(ev,e=>e.stopPropagation(),{capture:true,passive:true});
   $b('fcList').onclick=e=>{ e.stopPropagation(); U.open=!(U.open??!isMob()); try{ localStorage.setItem('tw2_unidades',U.open?'1':'0'); }catch(e){} listHTML(true); };
   let lastSig='';
-  function listHTML(force){ if(U.open==null) U.open=!isMob(); if(isMob()){ pnl.style.top='8px'; pnl.style.maxHeight='calc(100vh - 112px)'; pnl.style.width='230px'; } pnl.style.display=state==='spectate'&&U.open?'flex':'none'; if(pnl.style.display==='none') return;
+  function listHTML(force){ if(U.open==null) U.open=!isMob(); if(isMob()){ pnl.style.top='8px'; pnl.style.maxHeight='calc(100vh - 112px)'; pnl.style.width='230px'; } pnl.style.display=state==='spectate'&&U.open&&SU.on?'flex':'none'; if(pnl.style.display==='none') return;
     const L=tanks.slice().sort((a,b)=>a.team-b.team||(a.T.static?1:0)-(b.T.static?1:0));
     const sig=L.map(t=>uid(t)+(t.dead?'d':'')+(U.t===t?'s':'')+Math.round(t.hp/Math.max(1,t.T.hp)*10)).join(',');
     if(!force&&sig===lastSig) return; lastSig=sig;
@@ -160,7 +160,7 @@
     camera.fov=fov; camera.updateProjectionMatrix();
     const st=document.getElementById('specT'); if(st) st.innerHTML=`<span style="color:${t.team===0?'var(--ally)':'var(--enemy)'}">${t.name||''}</span>, ${t.T.label} (${natL(t)})${t.dead?' · destruido':''} · ${isMob()?'arrastrá para mirar, pellizcá para acercar':'arrastrá para mirar, rueda para acercar'}`;
     info(t); }
-  document.addEventListener('keydown',e=>{ if(state!=='spectate') return; if(e.code==='KeyU'){ U.open=!(U.open??!isMob()); listHTML(true); }
+  document.addEventListener('keydown',e=>{ if(state!=='spectate') return; if(e.code==='KeyU'&&SU.on){ U.open=!(U.open??!isMob()); listHTML(true); }
     if(U.t&&!F.on&&['Digit1','Digit2','Digit3','Digit4'].includes(e.code)) setView(['chase','gun','cmd','orbit'][+e.code.slice(5)-1]); });
   // ◀ ▶ y la vista aérea dejan de seguir la unidad elegida; ◀ ▶ pasan a la siguiente de la lista si había una elegida
   const step=d=>{ const L=tanks.filter(t=>!t.dead).sort((a,b)=>a.team-b.team); if(!L.length) return; const i=L.indexOf(U.t); follow(L[((i<0?0:i+d)%L.length+L.length)%L.length]); };
@@ -169,4 +169,41 @@
   for(const id of ['fcAer','fcFree','fcAuto']){ const b=$b(id), f=b.onclick; b.onclick=e=>{ follow(null); f(e); }; }
   setInterval(()=>{ if(U.t&&(!tanks.includes(U.t)||state!=='spectate')){ if(U.t.root) U.t.root.visible=true; U.t=null; if(state!=='spectate') info(null); } listHTML(false); },500);
   paintV();
+  // ---- Superusuario para probar (pedido de Sebastián: "yo voy a ser como un super usuario para testear; los demás solo ven la
+  // partida"). Solo con su cuenta (se compara el hash del mail; el aparato lo recuerda en tw2_super) o `?super=1` en localhost.
+  // Los demás ven ◀ ▶, Aérea y Automático. Él además tiene: cámara libre, lista de unidades, clic en el minimapa = ir ahí con la
+  // cámara libre, ⏩ velocidad ×1/×2/×4/×8 (V; se simula varias veces por cuadro sin dibujar) y ⏭ mapa siguiente (N; recorre
+  // en orden los mapas de la época, sin esperar a que termine la batalla).
+  const SU={on:false,spd:1,skip:false}; window.superUser=SU;
+  const SU_H='d00b6ca80289605a41d2f27bdc6392c3c8e232d7f335a92fe17a7f6c92e07019';
+  try{ if(localStorage.getItem('tw2_super')==='1') SU.on=true; }catch(e){}
+  if(/^(localhost|127\.0\.0\.1)$/.test(location.hostname)&&/[?&]super=1/.test(location.search)) SU.on=true;
+  let suMail='';
+  setInterval(async()=>{ const u=typeof nube!=='undefined'&&nube.user; const m=u&&u.emailVerified?String(u.email||'').toLowerCase():''; if(m===suMail) return; suMail=m;
+    if(!m||!crypto.subtle) return; const h=[...new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(m)))].map(b=>b.toString(16).padStart(2,'0')).join('');
+    if(h===SU_H){ SU.on=true; try{ localStorage.setItem('tw2_super','1'); }catch(e){} } },2000);
+  bar.insertAdjacentHTML('beforeend',mk('fcSpd','⏩ ×1','Velocidad de la batalla (V)')+mk('fcMap','⏭ Mapa','Pasar al mapa siguiente (N)'));
+  const st2=document.createElement('style'); st2.textContent='body.spec.su #mm{pointer-events:auto;cursor:crosshair}'; document.head.appendChild(st2);
+  const SU_ONLY=['fcFree','fcList','fcSpd','fcMap'];
+  function suPaint(){ document.body.classList.toggle('su',SU.on&&state==='spectate'); for(const id of SU_ONLY) $b(id).style.display=SU.on?'':'none';
+    if(!SU.on&&F.on) F.on=false;
+    const b=$b('fcSpd'); b.textContent='⏩ ×'+SU.spd; b.style.background=SU.spd>1?'rgba(200,150,40,.85)':'rgba(16,20,26,.78)'; b.style.color=SU.spd>1?'#1a1408':'#f2e6c8';
+    const L=typeof eraMaps==='function'?eraMaps(curEra):[], i=L.indexOf(builtKey), nk=L[(i+1)%Math.max(1,L.length)];
+    $b('fcMap').title=nk&&WORLDS[nk]?`Mapa siguiente: ${WORLDS[nk].label} (${(i+1)%L.length+1} de ${L.length}) · N`:'Mapa siguiente (N)'; }
+  function cycleSpd(){ SU.spd=SU.spd>=8?1:SU.spd*2; suPaint(); }
+  function nextMap(){ const L=eraMaps(curEra); if(!L.length) return; const k=L[(L.indexOf(builtKey)+1)%L.length]; follow(null); F.on=false;
+    try{ clearBattle(); startBattle(true,k); setTimeout(()=>{ const b=document.getElementById('briefGo'); if(b) b.click(); },400); }catch(e){ console.warn('mapa siguiente',e); } }
+  $b('fcSpd').onclick=e=>{ e.stopPropagation(); cycleSpd(); };
+  $b('fcMap').onclick=e=>{ e.stopPropagation(); nextMap(); };
+  document.addEventListener('keydown',e=>{ if(!SU.on||!['spectate','end','summary'].includes(state)) return; if(e.code==='KeyN'){ e.stopPropagation(); nextMap(); } else if(e.code==='KeyV'&&state==='spectate') cycleSpd(); },true);
+  // clic o toque en el minimapa: la cámara libre va a ese lugar (40 m de alto, mirando hacia el punto)
+  mm.addEventListener('pointerdown',e=>{ if(state!=='spectate'||!SU.on||artyPick) return; e.preventDefault(); e.stopPropagation();
+    const p=mmWorld(e); follow(null); setFree(true); F.pitch=-.55; const d=55; F.pos.set(p.x-Math.sin(F.yaw)*d,Math.max(heightAt(p.x,p.z),W.water??-1e9)+38,p.z-Math.cos(F.yaw)*d); paint(); });
+  // velocidad: se corre la simulación varias veces por cuadro y se dibuja solo la última
+  const _rr=renderer.render.bind(renderer); renderer.render=function(){ if(SU.skip) return; return _rr.apply(null,arguments); };
+  const _fr=frame; frame=function(dt){ const k=state==='spectate'&&SU.on?SU.spd:1;
+    if(k>1){ SU.skip=true; try{ for(let i=1;i<k&&state==='spectate';i++) _fr(dt); } finally{ SU.skip=false; } }
+    return _fr.apply(this,arguments); };
+  setInterval(()=>{ if(state==='spectate') suPaint(); else if(SU.spd>1&&state==='menu') SU.spd=1; document.body.classList.toggle('su',SU.on&&state==='spectate'); },500);
+  suPaint();
 })();
