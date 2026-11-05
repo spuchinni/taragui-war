@@ -246,7 +246,7 @@ I18N.add({
 "Último derribo": "Last kill",
 "Victoria": "Victory",
 "Derrota": "Defeat",
-"Moverse": "Moving",
+"Moverse": "Move",
 "{} y {} aceleran y frenan; {} y {} giran. Recorré unos 40 metros.": "{} and {} accelerate and brake; {} and {} turn. Drive about 40 meters.",
 "Mirar y apuntar": "Looking and aiming",
 "Mové el mouse para mirar. Apretá {} para entrar a la mira del artillero y quedate unos segundos (la rueda cambia el aumento, clic derecho pone y saca el zoom; {} de nuevo para salir).": "Move the mouse to look. Press {} to enter the gunner sight and stay a few seconds (the wheel changes magnification, right click toggles zoom; {} again to leave).",
@@ -1610,7 +1610,20 @@ I18N.add({
 "Hechos por código para TaraWar": "Made in code for TaraWar",
 "TaraWar: Frente de Acero · todos los derechos reservados.": "TaraWar: Steel Front · all rights reserved.",
 "© colaboradores de OpenStreetMap": "© OpenStreetMap contributors",
-"TaraWar": "TaraWar"
+"TaraWar": "TaraWar",
+"🕹 Usá la palanca de la izquierda para moverte": "🕹 Use the left stick to move",
+"Arrastrá a la derecha para apuntar · tocá 🔥 para disparar": "Drag on the right to aim · tap 🔥 to fire",
+"Apuntá con el mouse ·": "Aim with the mouse ·",
+"clic": "click",
+"para disparar": "to fire",
+"Destruí un tanque enemigo": "Destroy an enemy tank",
+"Seguí la flecha roja · pegale de costado": "Follow the red arrow · hit it from the side",
+"Capturá el punto {}": "Capture point {}",
+"Entrá al círculo y quedate adentro": "Drive into the circle and stay inside",
+"¡Muy bien! Ya sabés jugar": "Well done! You know how to play",
+"Capturá los puntos y destruí a los enemigos para ganar": "Capture the points and destroy the enemies to win",
+"Enemigo": "Enemy",
+"Punto {}": "Point {}"
 });
 I18N.words({
 "Perforante sólido": "Solid AP",
