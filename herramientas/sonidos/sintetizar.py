@@ -108,25 +108,23 @@ def metal(f0,seed,src='cannon_0'):
 def metal_0(): save('metal_0',metal(430,1,'cannon_0'))
 @snd
 def metal_1(): save('metal_1',metal(560,2,'cannon_1'))
-def ric(f0,f1,seed,sec=.95):
-    """Rebote: golpe metálico corto y el proyectil que se va dando vueltas ("piuuu"): tono que baja como un Doppler
-    que se aleja, modulado por el giro (25–50 Hz), con aire alrededor y cada vez más lejos (más bajo y más opaco)."""
+def ric(f0,seed,src,zing=.35,whoosh=.8,sec=.9):
+    """Rebote: el mismo golpe de chapa que `metal` pero más liviano y agudo (le pega de refilón) y el proyectil que
+    sale zumbando: aire que pasa y se aleja (ruido en banda que baja), con un "tiiin" metálico corto encima."""
     g=np.random.default_rng(seed); T=t(sec); n=len(T)
-    k=1-np.exp(-T/.18); f=f0+(f1-f0)*k                                            # baja rápido y después se queda
-    spin=g.uniform(28,46); am=.55+.45*np.abs(np.sin(np.pi*spin*T+g.uniform(0,3)))
-    whine=(tone(f,T)+.35*tone(f*2.01,T)+.2*tone(f*.5,T))*am
-    air=sweep_band(noise(sec),f*1.05,np.full(n,f0*.12))*3*am
-    dist=np.minimum(1,T/.012)*np.exp(-T/.33)                                      # se aleja
-    w=whine*.55+air*.6
-    w=np.concatenate([np.zeros(int(.012*SR)),w])[:n]*np.concatenate([np.zeros(int(.012*SR)),dist])[:n]
-    w=sweep_band(w,np.linspace(9000,2200,n),np.linspace(6000,2500,n))             # el aire se come los agudos de lejos
-    T2=T[:int(.3*SR)]; clank=modes(T2,1200,9000,30,g,.25,-.2)+band(noise(.3)[:len(T2)],1500,11000)*np.exp(-T2/.003)*3
-    x=w.copy(); x[:len(T2)]+=norm(clank,1)*.8
-    x=reverb(x,.9,.22)[:n]; return fade(norm(x),.001,.12)
+    hit=band(noise(sec),1500,12000)*np.exp(-T/.003)*2.5
+    body=modes(T,f0*.9,f0*10,40,g,.45,-.3)
+    rec=read(src); rec=band(rec[:n] if len(rec)>=n else np.pad(rec,(0,n-len(rec))),400,6000)*np.exp(-T/.025)
+    clang=hit+norm(body,1)+norm(rec,1)*.6
+    d=int(.02*SR); k=np.clip((T-.02)/(sec-.02),0,1)
+    fc=2600*(1-k)**1.3+500; wh=sweep_band(noise(sec),fc,fc*.35)*np.minimum(1,np.maximum(0,T-.02)/.03)*np.exp(-np.maximum(0,T-.02)/.22)
+    zg=tone(f0*2.3*(1-.25*k),T)*np.exp(-np.maximum(0,T-.01)/.09)*(T>.01)
+    x=norm(clang,1)+norm(wh,1)*whoosh+zg*zing+crackle(T,g,8,.02,.25)*.2
+    x=reverb(x,.8,.2)[:n]; return fade(norm(x),.001,.12)
 @snd
-def ric_0(): save('ric_0',ric(3000,1350,3))
+def ric_0(): save('ric_0',ric(900,3,'cannon_0'))
 @snd
-def ric_1(): save('ric_1',ric(2400,1050,4,1.05))
+def ric_1(): save('ric_1',ric(1150,4,'cannon_1',.25,.9,1.0))
 def thump(src,seed):            # cañón lejano: la grabación CC0 de qubodup filtrada como si viniera de varios km
     x=read(src); x=band(x,25,520); T=np.arange(len(x))/SR; x=x[:int(1.4*SR)]
     x=reverb(x,1.6,.45)[:int(1.6*SR)]; return fade(norm(x),.004,.4)
