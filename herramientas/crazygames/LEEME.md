@@ -13,6 +13,7 @@
    `python herramientas/crazygames/armar.py --premio` (activa el botón "📺 Mirá un anuncio" del resumen) y subir la versión nueva.
 
 ## Qué cambia en el juego dentro de CrazyGames (js/crazy.js)
+- Arranca **en inglés** (requisito de CrazyGames; js/idioma.js). Se puede pasar a español desde Ajustes o el botón 🌐 del menú.
 - Carga el SDK v3 y avisa cuándo empieza y termina la batalla (gameplayStart/Stop).
 - Anuncio entre partidas al terminar cada batalla, con el sonido pausado (el SDK no deja más de uno cada 3 minutos).
 - Sin inicio de sesión con Google o mail (CrazyGames no lo permite): el progreso queda en el navegador.
