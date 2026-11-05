@@ -26,6 +26,36 @@ ih=os.path.join(DEST,'index.html'); h=open(ih,encoding='utf-8').read().replace('
 open(ih,'w',encoding='utf-8').write(h)
 mf=os.path.join(DEST,'manifest.json'); m=open(mf,encoding='utf-8').read().replace('TaraWar: Frente de Acero','TaraWar: Steel Front')
 open(mf,'w',encoding='utf-8').write(m)
+# Menos archivos (pedido de Sebastián: el formulario de CrazyGames cortaba la subida con ~190 archivos):
+#  · todos los scripts del juego en uno solo (js/tarawar.js), en el mismo orden que en index.html;
+#  · todos los sonidos y voces en audio.json (base64) y sndFetch los saca de ahí.
+import re, base64
+h=open(ih,encoding='utf-8').read(); tags=re.findall(r'<script src="(js/[^"?]+)(?:\?v=[^"]*)?"></script>',h)
+AUDIO_HOOK='''
+;(function(){ let P=null; const get=()=>P||(P=fetch('audio.json').then(r=>r.json()));
+  const b64=s=>{ const bin=atob(s), u=new Uint8Array(bin.length); for(let i=0;i<bin.length;i++) u[i]=bin.charCodeAt(i); return u.buffer; };
+  sndFetch=function(p){ return _sndCache[p]||(_sndCache[p]=get().then(A=>{ if(!(p in A)) throw new Error(p+' no está'); return b64(A[p]); })); }; })();
+'''
+parts=[]
+for t in tags:
+    parts.append('\n/* ---- '+t+' ---- */\n'+open(os.path.join(DEST,t),encoding='utf-8').read()+'\n;')
+    if t.endswith('05-audio.js'): parts.append(AUDIO_HOOK)
+    os.remove(os.path.join(DEST,t))
+open(os.path.join(DEST,'js','tarawar.js'),'w',encoding='utf-8').write(''.join(parts))
+# el script único va donde estaba el último (después de three.js y Firebase)
+ms=list(re.finditer(r'<script src="js/[^"]+"></script>\n?',h)); last=ms[-1]
+out=h[:last.start()]+'<script src="js/tarawar.js"></script>\n'+h[last.end():]
+out=re.sub(r'<script src="js/[^"]+"></script>\n?','',out[:out.rfind('<script src="js/tarawar.js">')])+out[out.rfind('<script src="js/tarawar.js">'):]
+open(ih,'w',encoding='utf-8').write(out)
+for d in ['js/nucleo','js/eras']:
+    q=os.path.join(DEST,d)
+    if os.path.isdir(q) and not any(os.scandir(q)): os.rmdir(q)
+A={}
+for d in ['snd','voz']:
+    for root,_,fs in os.walk(os.path.join(DEST,d)):
+        for a in fs: q=os.path.join(root,a); A[os.path.relpath(q,DEST).replace(os.sep,'/')]=base64.b64encode(open(q,'rb').read()).decode()
+    shutil.rmtree(os.path.join(DEST,d))
+json.dump(A,open(os.path.join(DEST,'audio.json'),'w'))
 # conteo y tamaños
 n=0; tot=0
 for d,_,fs in os.walk(DEST):
