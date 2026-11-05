@@ -5,3 +5,4 @@ herramientas/osm/cache/
 herramientas/osm/prev/
 herramientas/suelo/prev.png
 dist/
+__pycache__/
