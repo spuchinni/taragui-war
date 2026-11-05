@@ -10,7 +10,7 @@ function cgCall(f){ try{ if(CG.ready) f(CG.sdk); }catch(e){ console.warn('crazyg
 if(CG.on){
   document.body.classList.add('crazy');
   const s=document.createElement('script'); s.src='https://sdk.crazygames.com/crazygames-sdk-v3.js';
-  s.onload=async()=>{ try{ await window.CrazyGames.SDK.init(); CG.sdk=window.CrazyGames.SDK; CG.ready=CG.sdk.environment!=='disabled'; cgCall(S=>S.game.loadingStart());
+  s.onload=async()=>{ try{ await window.CrazyGames.SDK.init(); CG.sdk=window.CrazyGames.SDK; CG.ready=CG.sdk.environment!=='disabled'; cgCall(S=>S.game.loadingStart()); cgSync(); cgMute();
       if(state!=='intro') cgCall(S=>S.game.loadingStop()); }catch(e){ console.warn('crazygames init',e); } };
   s.onerror=()=>console.warn('crazygames: no se pudo cargar el SDK (bloqueador de anuncios): el juego sigue igual');
   document.head.appendChild(s);
@@ -19,9 +19,22 @@ if(CG.on){
   // sin inicio de sesión externo
   { const _nc=nubeChip; nubeChip=function(){ _nc.apply(this,arguments); const b=$('acctB'); if(b) b.hidden=true; }; }
   // gameplayStart / gameplayStop cuando se entra o se sale de la batalla
-  { const _fr=frame; frame=function(dt){ _fr(dt); const p=state==='play'&&!CG.adOn;
+  { const _fr=frame; frame=function(dt){ _fr(dt); if(typeof master!=='undefined'&&master) master.gain.value=CG.mute?0:volMaster; const p=state==='play'&&!CG.adOn;
       if(p!==CG.playing){ CG.playing=p; cgCall(S=>p?S.game.gameplayStart():S.game.gameplayStop()); } }; }
 }
+// Progreso con el Data Module del SDK (CrazyGames lo pide para guardar: queda asociado a la cuenta de CrazyGames y entre
+// dispositivos). Se guardan el progreso y unas pocas preferencias; gana el progreso con más batallas (progBat) y la primera
+// vez se copia lo que ya había en el navegador. https://docs.crazygames.com/sdk/html5-v3/data
+const CG_KEYS=['tw2_progress','tw2_lang','tw2_arranque','tw2_coach','tw-name','tw2_settings'];
+function cgData(){ try{ return CG.ready&&CG.sdk&&CG.sdk.data?CG.sdk.data:null; }catch(e){ return null; } }
+function cgSync(){ const D=cgData(); if(!D) return;
+  try{ const rem=D.getItem('tw2_progress'), loc=localStorage.getItem('tw2_progress'); let R=null,L=null; try{ R=JSON.parse(rem||'null'); }catch(e){} try{ L=JSON.parse(loc||'null'); }catch(e){}
+    if(R&&progBat(R)>progBat(L)){ localStorage.setItem('tw2_progress',rem); for(const k of CG_KEYS.slice(1)){ const v=D.getItem(k); if(v!=null) localStorage.setItem(k,v); } loadProg(); if(state==='menu') mainMenu(); }
+    else for(const k of CG_KEYS){ const v=localStorage.getItem(k); if(v!=null) D.setItem(k,v); } }catch(e){ console.warn('crazygames data',e); } }
+if(CG.on){ const _sp=saveProg; saveProg=function(){ const r=_sp.apply(this,arguments); const D=cgData(); if(D) try{ for(const k of CG_KEYS){ const v=localStorage.getItem(k); if(v!=null) D.setItem(k,v); } }catch(e){} return r; }; }
+// silencio pedido desde CrazyGames (botón de sonido del sitio): settings.muteAudio y su aviso de cambios
+function cgMute(){ cgCall(S=>{ const G=S.game; if(!G||!G.settings) return; CG.mute=!!G.settings.muteAudio;
+  if(G.addSettingsChangeListener) G.addSettingsChangeListener(st=>{ CG.mute=!!(st&&st.muteAudio); }); }); }
 // sonido apagado y juego quieto mientras corre un anuncio
 function cgAd(kind,onOk,onFail){
   if(!CG.ready||CG.noAds){ if(onFail) onFail({code:'adsDisabled'}); return; }
