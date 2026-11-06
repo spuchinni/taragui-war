@@ -20,10 +20,10 @@ const S=JSON.parse(process.argv[2]||'{}');
    const ally=crews.find(c=>c.team===0&&!c.isPlayer), foe=crews.find(c=>c.team===1);
    const H=(a,b)=>Math.atan2(b.x-a.x,b.z-a.z);
    const L=S.tanks; window._cv={L:[]};
-   for(const d of L){ const c=d.nat?newCrew('Cover',d.team,d.nat,false):(d.team?foe:ally); if(d.cam) c.cams={[d.key]:d.cam}; const t=makeTank(c,d.key,d.x,d.z,0); t.hp=1e9; t.immuneT=1e9; if(d.ty!=null) t.turretYaw=d.ty; window._cv.L.push([t,d]); }
+   for(const d of L){ const c=d.nat?newCrew('Cover',d.team,d.nat,false):(d.team?foe:ally); if(d.cam) c.cams={[d.key]:d.cam}; const t=makeTank(c,d.key,d.x,d.z,0); t.hp=1e9; t.immuneT=0; if(d.ty!=null) t.turretYaw=d.ty; window._cv.L.push([t,d]); }
    for(const [t,d] of window._cv.L){ const o=window._cv.L.find(([u,e])=>e.key===d.at); d.h=d.h!=null?d.h:(o?H(d,o[1]):0); }
    const P=S.cam;
-   chaseCam=function(){ for(const [t,d] of window._cv.L){ t.pos.set(d.x,heightAt(d.x,d.z),d.z); t.heading=d.h; t.speed=0; t.goal=null; t.path=null; placeOnGround(t,1); if(d.ty!=null) t.turretYaw=d.ty;
+   chaseCam=function(){ for(const [t,d] of window._cv.L){ t.pos.set(d.x,heightAt(d.x,d.z),d.z); t.heading=d.h; t.speed=0; t.goal=null; t.path=null; placeOnGround(t,1); t.immuneT=0; t.hp=1e9; if(d.ty!=null) t.turretYaw=d.ty;
        const o=window._cv.L.find(([u,e])=>e.key===d.at); if(o){ t.target=o[0]; } }
      player.pos.set(P.x+400,heightAt(P.x+400,P.z),P.z);
      const y=heightAt(P.x,P.z)+P.y; camera.position.set(P.x,y,P.z); camera.lookAt(P.lx,heightAt(P.lx,P.lz)+P.ly,P.lz); };
