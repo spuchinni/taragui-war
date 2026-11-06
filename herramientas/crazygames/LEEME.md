@@ -32,3 +32,8 @@ Probar en la PC: abrir el juego con `?plataforma=crazygames&premio=1` en localho
   el giro por el borde es solo de costado y recién después de mover el mouse, HUD simple mientras dura el entrenador
   (`body.novato`) y los dos bandos salen a ~350 m (antes ~1 km: más de un minuto sin ver a nadie).
 - Portadas nuevas con el juego de verdad en `portadas-juego/`.
+
+## Revisión contra los requisitos (6/11/2026, antes del segundo envío) — en js/crazy.js
+- **Sin pantalla completa propia** (CrazyGames la prohíbe): se esconde `#fsBtn` y la opción de Ajustes, se saca la acción de la tecla P y `enterFS`/`toggleFS` no hacen nada.
+- **PEGI 12**: sin sangre (`bloodMat` invisible) ni desmembramientos (blast/crush → caída normal); civiles y animales no mueren, se asustan y huyen; sin "Civil abatido".
+- **Idioma por el locale del SDK** (`user.systemInfo.locale`, si no, inglés): `idioma.js` arranca con el idioma del navegador y `cgLocale` corrige con el del SDK (recarga una vez y guarda `tw2_lang`). En localhost el SDK dice `en-US`, así que siempre pasa a inglés.

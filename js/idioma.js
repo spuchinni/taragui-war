@@ -6,12 +6,15 @@
 // El diccionario está en js/idioma-en.js: claves en español → inglés. Una clave con {} es un molde: "Recarga {} s" atrapa
 // "Recarga 3.4 s"; cada parte atrapada se traduce también (así "Blanco: {}" traduce el nombre si está en el diccionario).
 // En la salida, {} toma las partes en orden y {0} {1}… por número (para cambiar el orden en inglés).
-// Idioma: tw2_lang (Ajustes → Idioma), ?lang=en|es; si no hay: en CrazyGames inglés, en la web según el navegador.
+// Idioma: tw2_lang (Ajustes → Idioma), ?lang=en|es; si no hay: según el navegador (en CrazyGames, el locale del SDK; si no, inglés).
 // I18N.miss junta lo que se mostró sin traducir (para ir completando el diccionario).
 (function(){
   let L=null; try{ L=localStorage.getItem('tw2_lang'); }catch(e){}
   const q=location.search.match(/[?&]lang=(es|en)\b/); if(q) L=q[1];
-  if(L!=='es'&&L!=='en') L=window.PLATAFORMA&&PLATAFORMA.id!=='web'?'en':(/^es\b/i.test(navigator.language||'es')?'es':'en');
+  // sin elección guardada: el idioma del navegador; si no se sabe, inglés en CrazyGames y español en la web.
+  // En CrazyGames, crazy.js después compara con el locale del SDK (requisito: usar systemInfo.locale y caer en inglés).
+  const AUTO=L!=='es'&&L!=='en';
+  if(AUTO){ const nl=navigator.language||(window.PLATAFORMA&&PLATAFORMA.id!=='web'?'en':'es'); L=/^es\b/i.test(nl)?'es':'en'; }
   const D=new Map(), P=[], cache=new Map(), miss=new Set();
   // gen: sube cada vez que llega diccionario; si la página ya se recorrió (en el paquete de CrazyGames idioma.js corre al final del body,
   // antes que idioma-en.js), se vuelve a recorrer en el próximo cuadro: si no, los textos fijos del HUD quedaban en español.
@@ -40,7 +43,7 @@
     if(r==null&&WD.length){ let w=core; for(const [re,v] of WD) w=w.replace(re,v); if(w!==core) r=w; }   // glosario de términos sueltos
     if(r==null){ r=core; if(ES_HINT.test(core)&&miss.size<3000) miss.add(core); }
     r=m[1]+r+m[3]; if(cache.size>8000) cache.clear(); cache.set(s,r); return r; }
-  const I18N={lang:L,miss,t:tr,
+  const I18N={lang:L,auto:AUTO,miss,t:tr,
     add(o){ if(L!=='en') return; for(const k in o){ const v=o[k]; if(k.includes('{}')) addPat(k,v); else D.set(norm(k),v); } P.sort((a,b)=>b.lit-a.lit); cache.clear(); again(); },
     words(o){ if(L!=='en') return; for(const k in o) WD.push([new RegExp('(^|[^A-Za-zÁÉÍÓÚáéíóúñÑ])'+esc(k)+'(?=$|[^A-Za-zÁÉÍÓÚáéíóúñÑ])','g'),'$1'+o[k]]); WD.sort((a,b)=>b[0].source.length-a[0].source.length); cache.clear(); again(); },
     set(l){ try{ localStorage.setItem('tw2_lang',l); }catch(e){} location.reload(); } };

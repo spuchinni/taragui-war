@@ -10,7 +10,7 @@ function cgCall(f){ try{ if(CG.ready) f(CG.sdk); }catch(e){ console.warn('crazyg
 if(CG.on){
   document.body.classList.add('crazy');
   const s=document.createElement('script'); s.src='https://sdk.crazygames.com/crazygames-sdk-v3.js';
-  s.onload=async()=>{ try{ await window.CrazyGames.SDK.init(); CG.sdk=window.CrazyGames.SDK; CG.ready=CG.sdk.environment!=='disabled'; cgCall(S=>S.game.loadingStart()); cgSync(); cgMute();
+  s.onload=async()=>{ try{ await window.CrazyGames.SDK.init(); CG.sdk=window.CrazyGames.SDK; CG.ready=CG.sdk.environment!=='disabled'; cgCall(S=>S.game.loadingStart()); cgSync(); cgMute(); cgLocale();
       if(state!=='intro') cgCall(S=>S.game.loadingStop()); }catch(e){ console.warn('crazygames init',e); } };
   s.onerror=()=>console.warn('crazygames: no se pudo cargar el SDK (bloqueador de anuncios): el juego sigue igual');
   document.head.appendChild(s);
@@ -21,7 +21,26 @@ if(CG.on){
   // gameplayStart / gameplayStop cuando se entra o se sale de la batalla
   { const _fr=frame; frame=function(dt){ _fr(dt); if(typeof master!=='undefined'&&master) master.gain.value=CG.mute?0:volMaster; const p=state==='play'&&!CG.adOn;
       if(p!==CG.playing){ CG.playing=p; cgCall(S=>p?S.game.gameplayStart():S.game.gameplayStop()); } }; }
+  // Sin pantalla completa propia (requisito de CrazyGames: el sitio la da y un botón propio interfiere con los anuncios):
+  // se esconde el botón y la opción de Ajustes, se saca la acción de la tecla P y enterFS/toggleFS no hacen nada.
+  { const st=document.createElement('style'); st.textContent='body.crazy #fsBtn{display:none!important} body.crazy label.chk:has(#fsC){display:none}';
+    document.head.appendChild(st); enterFS=function(){}; toggleFS=function(){}; fsAuto=false;
+    const i=ACTIONS.findIndex(a=>a[0]==='fullscreen'); if(i>=0) ACTIONS.splice(i,1); }
+  // PEGI 12 (público de 13 años en adelante): sin sangre ni desmembramientos, los soldados caen y nada más,
+  // y los civiles y los animales no mueren: se asustan y se van corriendo. Sin puntos ni castigo por "Civil abatido".
+  { bloodMat.visible=false;
+    const _df=infDeathFx; infDeathFx=function(P,how){ return _df.call(this,P,how==='blast'||how==='crush'?'shot':how); };
+    const _ki=killInf; killInf=function(P,by,how){
+      if(P&&isCiv(P)&&!P.dead){ P.flee=true; P.cower=0; P.supT=now+rand(3,6);
+        const o=by&&by.pos?by.pos:P.pos, dx=P.pos.x-o.x, dz=P.pos.z-o.z, d=Math.hypot(dx,dz)||1, a=d<.01?rand(0,6.28):0;
+        P.goal=d<.01?{x:P.pos.x+Math.cos(a)*12,z:P.pos.z+Math.sin(a)*12}:{x:P.pos.x+dx/d*12,z:P.pos.z+dz/d*12}; return; }
+      return _ki.apply(this,arguments); };
+    const _aw=award; award=function(c,name){ if(typeof name==='string'&&name.startsWith('Civil abatido')) return; return _aw.apply(this,arguments); }; }
 }
+// Idioma según el locale del SDK (requisito de CrazyGames). Solo si el jugador no eligió idioma y todavía no está jugando:
+// I18N.set guarda la elección y recarga una sola vez (casi siempre coincide con el idioma del navegador y no hace falta).
+function cgLocale(){ cgCall(S=>{ if(!window.I18N||!I18N.auto) return; const si=S.user&&S.user.systemInfo, loc=si&&si.locale; if(!loc) return;
+  const want=/^es\b/i.test(loc)?'es':'en'; if(want!==I18N.lang&&(state==='intro'||state==='menu')) I18N.set(want); }); }
 // Progreso con el Data Module del SDK (CrazyGames lo pide para guardar: queda asociado a la cuenta de CrazyGames y entre
 // dispositivos). Se guardan el progreso y unas pocas preferencias; gana el progreso con más batallas (progBat) y la primera
 // vez se copia lo que ya había en el navegador. https://docs.crazygames.com/sdk/html5-v3/data
