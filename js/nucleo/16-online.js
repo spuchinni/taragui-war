@@ -306,7 +306,7 @@ function guestData(d){
       if(player&&player.id===d.id&&!player.dead){ playerCrew.tank=player; if(state==='deploy'){ state='play'; $('overlay').style.display='none'; document.body.classList.remove('deploy'); } break; } // el anfitrión nuevo le devolvió su tanque
       if(player&&player.dead){ removeTank(player); } { const dup=netTanks.get(d.id); if(dup){ removeTank(dup); netTanks.delete(d.id); } }
       player=makeTank(playerCrew,d.key,+d.x,+d.z,+d.h,d.id); playerCrew.tank=player;
-      camYaw=player.heading; camPitch=.1; camDist=14; state='play'; syncIntro(); setTimeout(()=>radio('¡Tripulación lista! ¡Adelante!',2),600);
+      camYaw=player.heading; camPitch=.02; camDist=14; state='play'; syncIntro(); setTimeout(()=>radio('¡Tripulación lista! ¡Adelante!',2),600);
       $('overlay').style.display='none'; document.body.classList.remove('deploy');
       banner(player.T.label,`Desplegado en ${String(d.label||'').toLowerCase()}`,2.5); updateHud(); break; }
     case 'no': renderDeploy(); break;

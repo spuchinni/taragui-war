@@ -385,3 +385,6 @@ body.movil .homeCopy button.iosTip{font:inherit;color:#ffd27a;background:rgba(0,
 
 #hcBox canvas{position:absolute;inset:0;width:100%;height:100%;display:block} #hcBox b,#hcBox small{z-index:1}
 body.movil #specBar button{font-size:13px!important;padding:6px 9px!important;white-space:nowrap}
+/* Primera partida (entrenador de arranque.js): HUD simple */
+body.novato #ammobar .wt-wpn,body.novato #ammobar .ab-info,body.novato #status .wt-tele,body.novato #status .wt-state,
+body.novato #ammoSlots .gap,body.novato #ammoSlots .gap~.as{display:none!important}

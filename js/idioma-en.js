@@ -1623,7 +1623,11 @@ I18N.add({
 "¡Muy bien! Ya sabés jugar": "Well done! You know how to play",
 "Capturá los puntos y destruí a los enemigos para ganar": "Capture the points and destroy the enemies to win",
 "Enemigo": "Enemy",
-"Punto {}": "Point {}"
+"Punto {}": "Point {}",
+"ESTAB": "STAB",
+"TRANS": "GEAR",
+"cargando": "reloading",
+"térmica": "thermal"
 });
 I18N.words({
 "Perforante sólido": "Solid AP",
@@ -1701,5 +1705,9 @@ I18N.words({
 "sur": "south",
 "este": "east",
 "oeste": "west",
-"TaraWar": "TaraWar"
+"TaraWar": "TaraWar",
+"Sgto.": "Sgt.",
+"Tte.": "Lt.",
+"Cabo": "Cpl.",
+"Sdo.": "Pvt."
 });

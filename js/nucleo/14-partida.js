@@ -157,7 +157,7 @@ function doDeploy(){
   if(net.guest){ hostSend({t:'sp',key:selKey,i:selSp}); $('panel').innerHTML='<h1>Desplegando…</h1><p>Esperando al anfitrión.</p>'; return; }
   const pts=spawnPoints(0); const p=pts[Math.min(selSp,pts.length-1)];
   player=spawnCrew(c,selKey,p);
-  camYaw=player.heading; camPitch=.1; camDist=14; state='play';
+  camYaw=player.heading; camPitch=.02; camDist=14; state='play';
   $('overlay').style.display='none'; document.body.classList.remove('deploy');
   banner(player.T.label,`Desplegado en ${p.label.toLowerCase()}`,2.5); syncIntro(); setTimeout(()=>radio('¡Tripulación lista! ¡Adelante!',2),600);
   updateHud();
@@ -246,7 +246,7 @@ function startTutorial(key){
     const p={label:'',x:sp.x+ux*dist-uz*side,z:sp.z+uz*dist+ux*side};
     const t=spawnCrew(c,k,p); t.dummy=true; t.immuneT=0; t.heading=Math.atan2(ux,uz)+Math.PI/2*(i===1?1:-1); tut.d.push(t); });
   player=spawnCrew(playerCrew,key,sp); tut.start=player.pos.clone(); tut.steps=buildTutSteps(player);
-  camYaw=player.heading; camPitch=.1; camDist=14; state='play'; $('overlay').style.display='none'; document.body.classList.remove('deploy','menu','home'); document.body.classList.add('tut');
+  camYaw=player.heading; camPitch=.02; camDist=14; state='play'; $('overlay').style.display='none'; document.body.classList.remove('deploy','menu','home'); document.body.classList.add('tut');
   showTut(); lock(); updateHud(); banner(player.T.label,`Tutorial · nivel ${player.lv}`,2.5);
 }
 function showTut(){ const S=tut.steps[tut.step]; if(S.enter) S.enter(tut); $('tutbox').innerHTML=`<b>Tutorial · paso ${tut.step+1} de ${tut.steps.length}: ${S.t}</b>${S.x}`; }

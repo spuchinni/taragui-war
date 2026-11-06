@@ -13,6 +13,10 @@
   const q=location.search.match(/[?&]lang=(es|en)\b/); if(q) L=q[1];
   if(L!=='es'&&L!=='en') L=window.PLATAFORMA&&PLATAFORMA.id!=='web'?'en':(/^es\b/i.test(navigator.language||'es')?'es':'en');
   const D=new Map(), P=[], cache=new Map(), miss=new Set();
+  // gen: sube cada vez que llega diccionario; si la página ya se recorrió (en el paquete de CrazyGames idioma.js corre al final del body,
+  // antes que idioma-en.js), se vuelve a recorrer en el próximo cuadro: si no, los textos fijos del HUD quedaban en español.
+  let gen=0, started=false, againQ=false;
+  function again(){ gen++; if(!started||againQ) return; againQ=true; setTimeout(()=>{ againQ=false; walk(document.body); },0); }
   const norm=s=>s.replace(/\s+/g,' ').trim();
   const esc=s=>s.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
   const ES_HINT=/[áéíóúñ¿¡]|\b(el|la|los|las|de|del|que|con|para|por|una?|tu|tus|sin|más|está|hay|punto|tanque|cañón)\b/i;
@@ -37,8 +41,8 @@
     if(r==null){ r=core; if(ES_HINT.test(core)&&miss.size<3000) miss.add(core); }
     r=m[1]+r+m[3]; if(cache.size>8000) cache.clear(); cache.set(s,r); return r; }
   const I18N={lang:L,miss,t:tr,
-    add(o){ if(L!=='en') return; for(const k in o){ const v=o[k]; if(k.includes('{}')) addPat(k,v); else D.set(norm(k),v); } P.sort((a,b)=>b.lit-a.lit); cache.clear(); },
-    words(o){ if(L!=='en') return; for(const k in o) WD.push([new RegExp('(^|[^A-Za-zÁÉÍÓÚáéíóúñÑ])'+esc(k)+'(?=$|[^A-Za-zÁÉÍÓÚáéíóúñÑ])','g'),'$1'+o[k]]); WD.sort((a,b)=>b[0].source.length-a[0].source.length); cache.clear(); },
+    add(o){ if(L!=='en') return; for(const k in o){ const v=o[k]; if(k.includes('{}')) addPat(k,v); else D.set(norm(k),v); } P.sort((a,b)=>b.lit-a.lit); cache.clear(); again(); },
+    words(o){ if(L!=='en') return; for(const k in o) WD.push([new RegExp('(^|[^A-Za-zÁÉÍÓÚáéíóúñÑ])'+esc(k)+'(?=$|[^A-Za-zÁÉÍÓÚáéíóúñÑ])','g'),'$1'+o[k]]); WD.sort((a,b)=>b[0].source.length-a[0].source.length); cache.clear(); again(); },
     set(l){ try{ localStorage.setItem('tw2_lang',l); }catch(e){} location.reload(); } };
   window.I18N=I18N; window.LANG=L; window.tr=tr;
   if(L!=='en') return;
@@ -46,9 +50,9 @@
   // ---- página ----
   const SKIP={SCRIPT:1,STYLE:1,TEXTAREA:1,CODE:1};
   const ATTR=['title','placeholder','aria-label'];
-  function tNode(n){ if(n.__tr===n.data) return; const p=n.parentNode; if(!p||SKIP[p.nodeName]||(p.closest&&p.closest('[data-notr]'))) return;
+  function tNode(n){ if(n.__tr===n.data&&n.__g===gen) return; n.__g=gen; const p=n.parentNode; if(!p||SKIP[p.nodeName]||(p.closest&&p.closest('[data-notr]'))) return;
     const o=n.data, r=tr(o); n.__tr=r; if(r!==o) n.data=r; }
-  function tAttr(el){ for(const a of ATTR){ const v=el.getAttribute&&el.getAttribute(a); if(v&&el['__a'+a]!==v){ const r=tr(v); el['__a'+a]=r; if(r!==v) el.setAttribute(a,r); } } }
+  function tAttr(el){ for(const a of ATTR){ const v=el.getAttribute&&el.getAttribute(a); if(v&&(el['__a'+a]!==v||el['__g'+a]!==gen)){ el['__g'+a]=gen; const r=tr(v); el['__a'+a]=r; if(r!==v) el.setAttribute(a,r); } } }
   function walk(root){ if(root.nodeType===3){ tNode(root); return; } if(root.nodeType!==1||SKIP[root.nodeName]) return; tAttr(root);
     const w=document.createTreeWalker(root,NodeFilter.SHOW_TEXT|NodeFilter.SHOW_ELEMENT); let n;
     while((n=w.nextNode())){ if(n.nodeType===3) tNode(n); else tAttr(n); } }
@@ -56,7 +60,7 @@
       if(m.type==='characterData') tNode(m.target);
       else if(m.type==='attributes') tAttr(m.target);
       else for(const n of m.addedNodes) walk(n); } });
-  function start(){ walk(document.body); mo.observe(document.body,{subtree:true,childList:true,characterData:true,attributes:true,attributeFilter:ATTR}); }
+  function start(){ started=true; walk(document.body); mo.observe(document.body,{subtree:true,childList:true,characterData:true,attributes:true,attributeFilter:ATTR}); }
   if(document.body) start(); else document.addEventListener('DOMContentLoaded',start);
   // la ilustración de la portada tiene el subtítulo dibujado: en inglés va img/portada-en.jpg ("Steel Front")
   const ART=/portada-nueva\.jpg/;

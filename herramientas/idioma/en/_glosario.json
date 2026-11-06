@@ -74,5 +74,9 @@
 "sur": "south",
 "este": "east",
 "oeste": "west",
-"TaraWar": "TaraWar"
+"TaraWar": "TaraWar",
+"Sgto.": "Sgt.",
+"Tte.": "Lt.",
+"Cabo": "Cpl.",
+"Sdo.": "Pvt."
 }

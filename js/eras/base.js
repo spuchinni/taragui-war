@@ -118,7 +118,7 @@ function startRange(key){
   const T=vehTreeE(foeNation,e); tut.foeL=T.length?T:NATIONS[foeNation].lineup.slice();
   RANGE_D.forEach((_,i)=>rangeTarget(i));
   player=spawnCrew(playerCrew,key,sp); tut.start=player.pos.clone();
-  camYaw=player.heading; camPitch=.1; camDist=14; state='play'; $('overlay').style.display='none'; document.body.classList.remove('deploy','menu','home'); document.body.classList.add('tut');
+  camYaw=player.heading; camPitch=.02; camDist=14; state='play'; $('overlay').style.display='none'; document.body.classList.remove('deploy','menu','home'); document.body.classList.add('tut');
   rangeBox(); lock(); updateHud(); banner(player.T.label,'Campo de tiro · Esc → Abandonar para volver',3);
 }
 function rangeTarget(i){ const [dist,side]=RANGE_D[i], [ux,uz]=tut.u, sp=tut.sp, L=tut.foeL, k=L[Math.min(L.length-1,Math.round(i*(L.length-1)/(RANGE_D.length-1)))];

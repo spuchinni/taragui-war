@@ -231,9 +231,13 @@ function pausePanel(){ $('overlay').style.display='flex';
   $('panel').innerHTML=`<h1>Menú</h1><p>La batalla sigue mientras tanto: tu tanque queda quieto y te pueden pegar.</p><button class="go" id="resume">Volver al combate</button><button class="go alt" id="pSet">⚙ Ajustes</button><button class="go alt" id="quit">Abandonar</button>`;
   $('resume').onclick=()=>lock(); $('pSet').onclick=()=>renderSettings(); $('quit').onclick=()=>{clearBattle();mainMenu();}; }
 renderer.domElement.addEventListener('click',()=>{ if(state==='play'&&!document.pointerLockElement&&!freeAim) lock(); });
+let lockJump=0; document.addEventListener('pointerlockchange',()=>{ lockJump=3; });
 document.addEventListener('mousemove',e=>{
-  mx=e.clientX; my=e.clientY;
+  mx=e.clientX; my=e.clientY; if(state==='play'&&(e.movementX||e.movementY)) edgeArm=player;
   if(state!=='play'||artyPick||!(document.pointerLockElement||freeAim)) return;
+  // al trabar el puntero Chrome a veces manda un primer movimiento enorme (la cámara saltaba al cielo o al suelo): se ignora
+  if(lockJump>0){ lockJump--; if(Math.abs(e.movementX)>120||Math.abs(e.movementY)>120) return; }
+  if(Math.abs(e.movementX)>400||Math.abs(e.movementY)>400) return;
   const s=.0022*sens*(scoped?Math.max(.08,camera.fov/65):1);
   camYaw=wrap(camYaw-e.movementX*s); camPitch=clamp(camPitch-e.movementY*s,-.45,camMaxP());
 });
@@ -247,11 +251,13 @@ document.addEventListener('mousedown',e=>{
 document.addEventListener('mouseup',e=>{if(e.button===0)mouseDown=false;});
 document.addEventListener('contextmenu',e=>e.preventDefault());
 document.addEventListener('mouseleave',()=>{ mx=-1; });
+// Giro por el borde: solo de costado (arriba/abajo alcanza con mover el mouse) y recién cuando el jugador movió el mouse en esta vida:
+// al entrar desde "Jugar ahora" el puntero quedaba abajo de todo, sobre el botón, y la cámara bajaba (o subía al cielo) sola.
+let edgeArm=null;
 function edgeTurn(dt){
-  if(!freeAim||state!=='play'||mx<0) return;
+  if(!freeAim||state!=='play'||mx<0||edgeArm!==player) return;
   const z=.07, ex=mx/innerWidth, ey=my/innerHeight, k=sens*1.8*(scoped?Math.max(.08,camera.fov/65):1);
   if(ex<z) camYaw=wrap(camYaw+(z-ex)/z*k*dt); else if(ex>1-z) camYaw=wrap(camYaw-(ex-1+z)/z*k*dt);
-  if(ey<z) camPitch=clamp(camPitch+(z-ey)/z*k*.5*dt,-.45,camMaxP()); else if(ey>1-z) camPitch=clamp(camPitch-(ey-1+z)/z*k*.5*dt,-.45,camMaxP());
 }
 // ---------- Tabla de jugadores (mantener Tab) ----------
 let tabOn=false, tabT=0;

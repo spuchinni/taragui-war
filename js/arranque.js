@@ -16,13 +16,24 @@
   function quickStart(){
     try{ initAudio(); if(AC&&AC.state==='suspended') AC.resume(); }catch(e){}
     if(typeof netName!=='undefined'&&!netName){ netName=(window.LANG==='en'?'Player':'Jugador')+(1000+((Math.random()*9000)|0)); LS('tw-name',netName); }
-    LS('tw2_arranque','1'); C.auto=true; C.on=!LS('tw2_coach')||FORCE; C.step=0;
+    LS('tw2_arranque','1'); C.auto=true; C.on=!LS('tw2_coach')||FORCE; C.step=0; C.closeNext=true;
     const era=typeof curEra!=='undefined'?curEra:3, map=era===3&&WORLDS.alamein?'alamein':null;   // desierto abierto: se ve todo
     startBattle(false,map); try{ applyWeather('dia'); }catch(e){}           // la primera, de día y despejado
     const tick=setInterval(()=>{ if(state==='brief'&&$('briefGo')){ $('briefGo').click(); }
       else if(state==='deploy'&&typeof doDeploy==='function'){ try{ doDeploy(); }catch(e){} }
       else if(state==='play'){ clearInterval(tick); C.auto=false; } },250);
     setTimeout(()=>clearInterval(tick),20000); }
+  // ---- primera batalla corta: los dos bandos salen cerca del punto del medio ----
+  // En El Alamein las bases quedan a ~1 km una de otra y el primer enemigo tardaba más de un minuto en aparecer.
+  // Solo en la batalla de "Jugar ahora": cada base se acerca a CLOSE m del punto más central (≈350 m entre bandos),
+  // también al reaparecer. Las demás batallas no cambian.
+  const CLOSE=170;
+  const _sb=startBattle; startBattle=function(){ C.close=!!C.closeNext; C.closeNext=false; return _sb.apply(this,arguments); };
+  const _sc=spawnCrew; spawnCrew=function(crew,key,sp){
+    if(C.close&&sp&&zones&&zones.length){ let Z=zones[0]; for(const z of zones) if(Math.hypot(z.x,z.z)<Math.hypot(Z.x,Z.z)) Z=z;
+      const dx=sp.x-Z.x, dz=sp.z-Z.z, d=Math.hypot(dx,dz);
+      if(d>CLOSE){ const k=CLOSE/d; sp={...sp,x:Z.x+dx*k,z:Z.z+dz*k}; } }
+    return _sc.call(this,crew,key,sp); };
   const _mm=mainMenu;
   mainMenu=function(){ const r=_mm.apply(this,arguments); const b=document.getElementById('playB'); if(b&&newbie()) b.onclick=quickStart; return r; };
   // ---- seguimiento de lo que hace el jugador ----
@@ -64,6 +75,9 @@
     if(cv.width!==innerWidth||cv.height!==innerHeight){ cv.width=innerWidth; cv.height=innerHeight; }
     g.clearRect(0,0,cv.width,cv.height);
     const live=C.on&&state==='play'&&typeof player!=='undefined'&&player&&!player.dead&&!scoped;
+    // HUD simple mientras dura el entrenador (pedido de Sebastián tras el rechazo de CrazyGames: el primer minuto tenía demasiados datos):
+    // sin cintas de ametralladora, telemetría, línea de estado ni apoyos; quedan munición, tripulación, minimapa y tickets.
+    document.body.classList.toggle('novato',!!(C.on&&(state==='play'||state==='paused')));
     if(!live){ card.style.display='none'; return; }
     const now=performance.now()/1000;
     if(!C.start||C.start.ref!==player){ C.start={ref:player,x:player.pos.x,z:player.pos.z}; if(C.step<1) C.step=0; C.t0=now; C.kills0=(playerCrew&&playerCrew.kills)||0; }
@@ -74,8 +88,9 @@
     else if(C.step===2&&((playerCrew&&playerCrew.kills>C.kills0)||now-C.t0>100||!nearestEnemy())){ C.step=3; C.t0=now; }
     else if(C.step===3&&(zones.some(Z=>Z.owner===1&&Math.hypot(Z.x-player.pos.x,Z.z-player.pos.z)<Z.r+5)||now-C.t0>120)){ C.step=4; C.t0=now; }
     else if(C.step===4&&now-C.t0>5){ C.on=false; LS('tw2_coach','1'); card.style.display='none'; return; }
+    if(C.step<=1&&typeof bannerT!=='undefined'&&bannerT>0){ card.style.display='none'; return; }   // primero el cartel del centro ("Desplegado en…"): se pisaban
     const h=cardHTML(); if(h!==last){ card.innerHTML=h; last=h; } card.style.display='block';
-    card.style.top=C.step<=1?(isMob()?'40%':'58%'):(isMob()?'64px':'72px');
+    card.style.top=C.step<=1?(isMob()?'40%':'14%'):(isMob()?'64px':'72px');   // en la PC arriba: en el 58 % tapaba el tanque
     const T=target(); if(T) arrow(T,now); }
   requestAnimationFrame(loop);
   // probar: ?coach=1 prende el entrenador también en cualquier batalla
