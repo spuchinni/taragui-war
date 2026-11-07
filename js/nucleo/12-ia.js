@@ -208,8 +208,11 @@ function updateZones(dt){
       el.style.outlineColor=Z.owner===1?'var(--ally)':Z.owner===-1?'var(--enemy)':'var(--paper)';}
   }
   tickT+=dt; if(tickT>=1){tickT=0; spIncome(); const o0=zones.filter(Z=>Z.owner===1).length, o1=zones.filter(Z=>Z.owner===-1).length;
-    // Sangrado de tickets estilo War Thunder: pierde el equipo con menos zonas; cuanto mayor la diferencia, más rápido.
-    const dif=Math.abs(o0-o1), big=W.bx>400, rate=(dif===0||(big&&now<150)||(typeof curObj!=='undefined'&&curObj)?0:dif===1?1.2:dif===2?2.6:4.5)*(big?.3:1); // mapas grandes: más lento y nada los primeros 2,5 min (todavía se están acercando) bleed=o0>o1?-1:o1>o0?1:0;
+    // Desgaste de la barra (pedido de Sebastián): nunca se recupera. Empatados en puntos capturados (0-0, 1-1, 2-2) no se gasta
+    // ninguna; si no, se gasta la del que tiene menos, más rápido cuantos más puntos tenga el otro: 1-0 ×1, 2-1 ×2, 2-0 y 3-2 ×3,
+    // 3-1 ×4, 3-0 ×5. DRAIN_K = tickets por segundo de cada ×1 (con 400 tickets: 2-1 dura ~8 min y 3-0 ~3 min); primeras.js lo
+    // cambia en la primera batalla.
+    const dif=Math.abs(o0-o1), lead=Math.max(o0,o1), rate=dif===0||(typeof curObj!=='undefined'&&curObj)?0:(lead+dif-1)*(window.DRAIN_K??.42);
     if(o0>o1) tickets[1]-=rate; else if(o1>o0) tickets[0]-=rate; if(typeof objTick==='function') objTick(); checkEnd();}
   { const a=$('tkA'),e=$('tkE'); if(a&&e){ a.classList.toggle('bleed',bleed===1); e.classList.toggle('bleed',bleed===-1); } }
   $('tkA').textContent=Math.max(0,Math.ceil(tickets[0])); $('tkE').textContent=Math.max(0,Math.ceil(tickets[1]));
