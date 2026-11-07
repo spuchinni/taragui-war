@@ -19,9 +19,14 @@ for x in LLEVAR:
 # la plataforma: el juego sabe que corre en CrazyGames (crazy.js carga el SDK, saca el inicio de sesión y la portada)
 with open(os.path.join(DEST,'js','plataforma.js'),'w',encoding='utf-8') as f:
     f.write("window.PLATAFORMA={id:'crazygames',premio:%s};\n"%('true' if premio else 'false'))
-# en CrazyGames el juego arranca en inglés: la portada con "Steel Front" y el título en inglés
-FONDO=os.path.join(RAIZ,'img','portada-en.jpg')   # la ilustración con "Steel Front"
-if os.path.exists(FONDO): shutil.copy2(FONDO,os.path.join(DEST,'img','portada-nueva.jpg'))
+# en CrazyGames el juego arranca en inglés y el título va en inglés.
+# Fondo del menú y de la carga: la portada de CrazyGames hecha con el juego (la misma que la miniatura del sitio), en los dos
+# idiomas (idioma.js cambia portada-nueva por portada-en en inglés). Antes iba la ilustración con el hongo nuclear y aviones modernos.
+FONDO=os.path.join(RAIZ,'herramientas','crazygames','portadas-juego','portada-1920x1080.jpg')
+if not os.path.exists(FONDO): FONDO=os.path.join(RAIZ,'img','portada-en.jpg')
+for n in ('portada-nueva.jpg','portada-en.jpg'): shutil.copy2(FONDO,os.path.join(DEST,'img',n))
+# la portada es 16:9 con el logo arriba: alineada arriba para que en pantallas anchas no se corte el logo
+with open(os.path.join(DEST,'css','juego.css'),'a',encoding='utf-8') as f: f.write('\n.homeArt{background-position:center top}\n')
 ih=os.path.join(DEST,'index.html'); h=open(ih,encoding='utf-8').read().replace('TaraWar: Frente de Acero','TaraWar: Steel Front')
 open(ih,'w',encoding='utf-8').write(h)
 mf=os.path.join(DEST,'manifest.json'); m=open(mf,encoding='utf-8').read().replace('TaraWar: Frente de Acero','TaraWar: Steel Front')
