@@ -65,7 +65,7 @@ function startBattle(spectator=false,forceMap=null,special=null,noBrief=false){ 
   net.seed=(Math.random()*1e9)|0; withSeed(net.on?net.seed:0,()=>{clearBattle(); assignSpawns(allyNation);}); applyWeather(noBrief||special&&!special.mission?'dia':special&&special.wx?special.wx:pickWeather()); $('feed').innerHTML='';
   const guests=net.host?net.conns.filter(c=>c.ready):[], gA=guests.filter(c=>sideOf(c)===0), gB=guests.filter(c=>sideOf(c)===1);
   // Aliados: cada tripulación de la IA sale de una nación al azar de tu bando (puede no ser la tuya). En el modo especial y en las misiones, todos de la misma.
-  const used=new Set(), allyCrews=[], nA=special&&special.nAlly!=null?special.nAlly:4, nE=special&&special.nFoe!=null?special.nFoe:5;
+  const used=new Set(), allyCrews=[], nA=special&&special.nAlly!=null?special.nAlly:(window.TEAM_N?TEAM_N[0]:4), nE=special&&special.nFoe!=null?special.nFoe:(window.TEAM_N?TEAM_N[1]:5);   // TEAM_N: primeras.js (menos tanques en las primeras batallas)
   const vsN=net.host&&net.mode==='vs'?Math.max(5,1+gA.length,gB.length):0; // Versus: los dos bandos con la misma cantidad de tanques
   const allyPool=friends.filter(k=>k!==foeNation).concat(side>=0?[allyNation]:[]);
   for(let i=0;i<(spectator?5:vsN?vsN-1-gA.length:Math.max(special&&special.mission?0:1,nA-gA.length));i++){ const nat=special?allyNation:pick(allyPool.length?allyPool:[allyNation]);

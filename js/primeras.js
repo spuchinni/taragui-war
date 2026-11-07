@@ -12,6 +12,10 @@
 //    la reparación y los apoyos y desde ahí todo funciona normal. Las batallas 2 y 3 son más cortas (barras de 150 y 250).
 //  · Cada explicación nueva detiene la partida hasta que el jugador la lee y aprieta "Seguir" (antes tapaba el tanque y la acción seguía).
 //  · Premio de la 1ª batalla: 1.000 de plata (antes ~4.400, casi medio tanque) y una caja misteriosa que regala el tanque con el que jugaste.
+//  · Pedido de Sebastián ("demasiado cargado"): menos tanques (1ª: 2 aliados y 3 enemigos; 2ª: 3 y 4), sin infantería suelta ni
+//    refuerzos en la 1ª y la 2ª (la 3ª la presenta con su cartel), sin humo, morteros, artillería ni bombardeo de nadie hasta la 4ª.
+//  · El primer enemigo que aparece: pausa, zoom sobre él y "apuntá con el mouse y clic para disparar". En la 1ª un tiro lo destruye.
+//  · El primer punto que captura tu equipo: pausa, zoom sobre el punto y explicación de la fortificación (ametralladora, antitanque, antiaéreo).
 //  · En CrazyGames, un jugador nuevo arranca con Estados Unidos y un M4A1 Sherman (2ª Guerra; la portada y los videos
 //    muestran el Sherman). En GitHub Pages sigue Argentina.
 // Textos en los dos idiomas acá mismo (data-notr: el traductor no los toca).
@@ -46,6 +50,10 @@
       font:600 20px 'Saira Condensed',system-ui,sans-serif;line-height:1.35;box-shadow:0 12px 40px rgba(0,0,0,.6)}
     #pLesson h2{margin:0 0 10px;font:800 30px 'Saira Condensed',system-ui,sans-serif;color:#ffd24a;letter-spacing:.02em}
     #pLesson p{margin:.45em 0} #pLesson b{color:#ffd24a} #pLesson kbd{display:inline-block;min-width:1.5em;padding:0 .35em;border:1px solid #ffd24a;border-radius:4px;background:#2a2c30;color:#ffd24a;font-weight:800}
+    #pLesson.low{align-items:flex-end;padding-bottom:4vh;background:rgba(0,0,0,.12)}
+    #pLesson .mk{position:absolute;transform:translate(-50%,-50%);width:86px;height:86px;border:4px solid currentColor;border-radius:50%;pointer-events:none;animation:mkP 1s ease-in-out infinite alternate;box-shadow:0 0 0 3px rgba(0,0,0,.45)}
+    #pLesson .mk span{position:absolute;left:50%;top:100%;transform:translateX(-50%);margin-top:6px;white-space:nowrap;font:800 20px 'Saira Condensed',system-ui,sans-serif;text-shadow:0 2px 4px #000,0 0 2px #000}
+    @keyframes mkP{from{transform:translate(-50%,-50%) scale(.9)}to{transform:translate(-50%,-50%) scale(1.1)}}
     #pLesson .pause{font-size:14px;opacity:.7;letter-spacing:.1em;margin-bottom:6px} #pLesson button{margin-top:16px;font-size:22px;min-width:200px}
     #pGift{position:fixed;inset:0;z-index:40;display:none;flex-direction:column;align-items:center;justify-content:center;background:radial-gradient(ellipse at center,rgba(40,34,18,.97),rgba(0,0,0,.98));
       color:#fff;font:600 20px 'Saira Condensed',system-ui,sans-serif;text-align:center;padding:16px}
@@ -77,15 +85,26 @@
   let hintT=0;
   // explicación que detiene la partida hasta que el jugador aprieta Seguir (state 'lesson': no corre la simulación)
   const les=document.createElement('div'); les.id='pLesson'; les.setAttribute('data-notr',''); document.body.appendChild(les);
-  function lesson(title,html){ if(state!=='play') return false;
+  // opt.zoom: {p (THREE.Vector3), r (radio a encuadrar)} acerca la cámara · opt.marks: [{p,txt,col}] círculos que titilan · opt.low: cartel abajo
+  function lesson(title,html,opt){ if(state!=='play') return false; opt=opt||{};
     state='lesson'; try{ mouseDown=false; rightDown=false; releaseAll(); if(engGain) engGain.gain.value=0; }catch(e){}
     if(document.pointerLockElement) document.exitPointerLock();
     hint.style.display='none'; hintT=0;
-    les.innerHTML=`<div class="card"><div class="pause">${EN()?'⏸ GAME PAUSED':'⏸ PARTIDA EN PAUSA'}</div><h2>${title}</h2>${html}<button class="go" id="pLesOk">${EN()?'Continue':'Seguir'}</button></div>`;
+    let fov0=null;
+    if(opt.cam) try{ fov0=camera.fov; camera.position.copy(opt.cam.pos); camera.lookAt(opt.cam.look); camera.fov=55; camera.updateProjectionMatrix(); camera.updateMatrixWorld(); }catch(e){}   // vista desde arriba (punto capturado)
+    else if(opt.zoom) try{ fov0=camera.fov; const d=Math.max(1,camera.position.distanceTo(opt.zoom.p)); camera.lookAt(opt.zoom.p);
+      camera.fov=Math.max(6,Math.min(fov0,2*Math.atan((opt.zoom.r||8)/d)*180/Math.PI)); camera.updateProjectionMatrix(); if(opt.low) camera.rotateX(-Math.atan(.5*Math.tan(camera.fov*Math.PI/360))); camera.updateMatrixWorld(); }catch(e){}   // con el cartel abajo, el blanco queda arriba
+    les.className=opt.low?'low':'';
+    let mk='', mi=0; for(const M of opt.marks||[]) try{ const v=M.p.clone().project(camera); if(v.z>1||Math.abs(v.x)>1.1||Math.abs(v.y)>1.1) continue;
+      mk+=`<div class="mk" style="left:${((v.x+1)/2*100).toFixed(2)}%;top:${((1-v.y)/2*100).toFixed(2)}%;color:${M.col||'#ffd24a'}"><span style="${(mi++)%2?'top:auto;bottom:100%;margin:0 0 6px':''}">${M.txt||''}</span></div>`; }catch(e){}
+    les.innerHTML=mk+`<div class="card"><div class="pause">${EN()?'⏸ GAME PAUSED':'⏸ PARTIDA EN PAUSA'}</div><h2>${title}</h2>${html}<button class="go" id="pLesOk">${EN()?'Continue':'Seguir'}</button></div>`;
     les.style.display='flex';
-    const go=()=>{ document.removeEventListener('keydown',kd,true); les.style.display='none'; if(state==='lesson'){ state='play'; try{ releaseAll(); }catch(e){} lock(); } };
+    const go=()=>{ document.removeEventListener('keydown',kd,true); les.style.display='none'; if(fov0!=null){ camera.fov=fov0; camera.updateProjectionMatrix(); }
+      if(state==='lesson'){ state='play'; try{ releaseAll(); }catch(e){} lock(); } };
     const kd=e=>{ if(e.code==='Enter'||e.code==='Space'||e.code==='NumpadEnter'){ e.preventDefault(); e.stopPropagation(); go(); } };
     document.addEventListener('keydown',kd,true); les.querySelector('#pLesOk').onclick=go; return true; }
+  const LSg=k=>{ try{ return localStorage.getItem(k); }catch(e){ return null; } }, LSs=k=>{ try{ localStorage.setItem(k,'1'); }catch(e){} };
+  const mob=()=>typeof MOVIL!=='undefined'&&!!MOVIL;
   const K=a=>`<kbd>${(typeof keyName==='function'?keyName(binds[a]):'')||'?'}</kbd>`;
   function showHint(html,secs,where){ hint.innerHTML=html; hint.style.top=where==='low'?'auto':(where||'38%'); hint.style.bottom=where==='low'?'190px':'auto'; hint.style.display='block'; hintT=secs; }
 
@@ -95,8 +114,10 @@
   const _sc=spawnCrew; spawnCrew=function(){ const n=tanks.length, r=_sc.apply(this,arguments); if(B&&B.first) for(let i=n;i<tanks.length;i++) setSk(tanks[i],tanks[i].team===0?.98:.18); return r; };
 
   // ---- al empezar cada batalla ----
-  let B=null;   // estado de la batalla actual
-  const _sb=startBattle; startBattle=function(){ B=null; const r=_sb.apply(this,arguments);
+  let B=null, preLvl=4;   // estado de la batalla actual · nivel de la batalla que está arrancando (antes de que exista B)
+  const curLvl=()=>tut||net.on?4:B?B.lvl:preLvl;
+  const _sb=startBattle; startBattle=function(){ B=null; preLvl=lvlNow(); window.TEAM_N=tut||net.on?null:preLvl===1?[2,3]:preLvl===2?[3,4]:null;
+    let r; try{ r=_sb.apply(this,arguments); } finally{ window.TEAM_N=null; }
     HUD_LVL=lvlNow(); for(const n of [1,2,3]) document.body.classList.toggle('hud'+n,HUD_LVL===n); document.body.classList.remove('tkOn');
     B={lvl:HUD_LVL,first:!!C.first,t0:null,shown:false,said:{},max:400,teach:HUD_LVL===4&&!tut&&!net.on&&battles()===3};
     if(B.first){ tickets[0]=tickets[1]=100; DRAIN_K=0; aces(); } else DRAIN_K=.42;
@@ -131,8 +152,33 @@
         :`<p>Abajo a la izquierda ves tu <b>tanque y su tripulación</b>. Lo que recibe un impacto se pone rojo y, si cae un tripulante, otro toma su lugar.</p><p>Por ahora tu tanque está <b>protegido</b>. En la próxima batalla ya puede recibir daño y vas a aprender a repararlo.</p>`)) B.said.l3=1;
     if(B.lvl===4&&B.teach&&!B.said.l4&&t>4){ const air=RULE().sup&&RULE().sup.air;
       if(lesson(EN()?'Now your tank can take damage':'Ahora tu tanque puede recibir daño',EN()
-        ?`<p>${K('repair')} <b>Repair</b>: the tank stops and the crew fixes tracks, engine and gun, and puts out fires. Do it behind cover.</p><p>${K('arty')} <b>Artillery</b>${air?` · ${K('air')} <b>Air strike</b>`:''}: they cost the <b>points</b> you earn in battle (the number on the button). Press the key and click on the map where it should land.</p>`
-        :`<p>${K('repair')} <b>Reparar</b>: el tanque se queda quieto y la tripulación arregla orugas, motor y cañón y apaga el fuego. Hacelo a cubierto.</p><p>${K('arty')} <b>Artillería</b>${air?` · ${K('air')} <b>Bombardeo</b>`:''}: se pagan con los <b>puntos</b> que ganás en la batalla (el número en el botón). Apretá la tecla y hacé clic en el mapa donde querés que caiga.</p>`)) B.said.l4=1; }
+        ?`<p>${K('repair')} <b>Repair</b>: the tank stops and the crew fixes tracks, engine and gun, and puts out fires. Do it behind cover.</p><p>${K('arty')} <b>Artillery</b>${air?` · ${K('air')} <b>Air strike</b>`:''}: they cost the <b>points</b> you earn in battle (the number on the button). Press the key and click on the map where it should land.</p><p>${K('smoke')} <b>Smoke</b>: throws smoke grenades to hide your tank.</p>`
+        :`<p>${K('repair')} <b>Reparar</b>: el tanque se queda quieto y la tripulación arregla orugas, motor y cañón y apaga el fuego. Hacelo a cubierto.</p><p>${K('arty')} <b>Artillería</b>${air?` · ${K('air')} <b>Bombardeo</b>`:''}: se pagan con los <b>puntos</b> que ganás en la batalla (el número en el botón). Apretá la tecla y hacé clic en el mapa donde querés que caiga.</p><p>${K('smoke')} <b>Humo</b>: tira granadas de humo para esconder tu tanque.</p>`)) B.said.l4=1; }
+    if(B.lvl<4&&player&&!player.dead&&!LSg('tw2_lFoe')){ const e=tanks.find(o=>!o.dead&&o.team!==player.team&&!(o.T&&o.T.static)&&o.visP&&o.pos.distanceTo(player.pos)<380);
+      if(e){ const p=e.pos.clone(); p.y+=(e.topH||2.4)*.55;
+        if(lesson(EN()?'An enemy tank!':'¡Un tanque enemigo!',(EN()
+            ?`<p>Enemies are marked in <b style="color:#ff6a50">red</b>.</p><p>${mob()?'Drag on the right side of the screen to <b>aim</b> and tap <b>🔥</b> to <b>fire</b>.':'Aim with the <b>mouse</b> and <b>left click</b> to <b>fire</b>.'}</p>${B.first?'<p>In this battle <b>one hit</b> destroys them.</p>':''}`
+            :`<p>Los enemigos se marcan en <b style="color:#ff6a50">rojo</b>.</p><p>${mob()?'Arrastrá en la parte derecha de la pantalla para <b>apuntar</b> y tocá <b>🔥</b> para <b>disparar</b>.':'<b>Apuntá</b> con el <b>mouse</b> y hacé <b>clic izquierdo</b> para <b>disparar</b>.'}</p>${B.first?'<p>En esta batalla lo destruís de <b>un solo tiro</b>.</p>':''}`),
+          {low:1,zoom:{p,r:9},marks:[{p,txt:EN()?'ENEMY':'ENEMIGO',col:'#ff4a36'}]})) LSs('tw2_lFoe'); } }
+    if(B.lvl<4&&!LSg('tw2_lCap')){ const Z=zones.find(z=>z.owner===1);
+      if(!Z) B.capT=null; else if(B.capT==null) B.capT=now; else if(now-B.capT>1.5){ const F=Z.fort&&Z.fort.team===0?Z.fort:null, zp=new THREE.Vector3(Z.x,heightAt(Z.x,Z.z)+1,Z.z), marks=[];
+        const up=(o,h)=>o&&o.pos?o.pos.clone().setY(o.pos.y+h):null;
+        if(F){ const m=new THREE.Vector3(F.nx,heightAt(F.nx,F.nz)+1,F.nz); marks.push({p:m,txt:EN()?'Machine gun':'Ametralladora'});
+          if(F.gun&&!F.gun.dead) marks.push({p:up(F.gun,1.2),txt:EN()?'Anti-tank gun':'Antitanque'});
+          if(F.aa&&!F.aa.dead) marks.push({p:up(F.aa,1.5),txt:EN()?'Anti-aircraft gun':'Antiaéreo'}); }
+        const parts=F?(EN()?['a <b>machine-gun nest</b>',F.gun?'an <b>anti-tank gun</b>':'',F.aa?'an <b>anti-aircraft gun</b>':'']:['un <b>nido de ametralladora</b>',F.gun?'un <b>cañón antitanque</b>':'',F.aa?'un <b>antiaéreo</b>':'']).filter(Boolean):[];
+        const list=parts.length>1?parts.slice(0,-1).join(', ')+(EN()?' and ':' y ')+parts[parts.length-1]:parts[0]||'';
+        if(lesson(EN()?`Point ${Z.id} is yours!`:`¡El punto ${Z.id} es tuyo!`,(EN()
+            ?`${F?`<p>When your team captures a point, it <b>fortifies</b> it: ${list} defend it on their own.</p>`:''}<p>While your team holds <b>more points</b> than the enemy, <b>their bar drains</b>. Defend it!</p>`
+            :`${F?`<p>Cuando tu equipo captura un punto, lo <b>fortifica</b>: ${list} lo defienden solos.</p>`:''}<p>Mientras tu equipo tenga <b>más puntos</b> que el enemigo, <b>su barra se gasta</b>. ¡Defendelo!</p>`),
+          {low:1,cam:(()=>{ let dx=player.pos.x-Z.x, dz=player.pos.z-Z.z; const L=Math.hypot(dx,dz)||1, r=Math.max(18,Z.r||25); dx/=L; dz/=L;
+            return {pos:new THREE.Vector3(Z.x+dx*r*1.5,zp.y+r*.9,Z.z+dz*r*1.5),look:zp.clone().setY(zp.y-r*.25)}; })(),marks})) LSs('tw2_lCap'); } }
+    if(B.lvl===3&&!B.said.inf&&t>40&&player&&!player.dead){ let s=null,sd=260; for(const P of infantry){ if(P.dead||isCiv(P)) continue; const d=P.pos.distanceTo(player.pos); if(d<sd){ sd=d; s=P; } }
+      const p=s?s.pos.clone().setY(s.pos.y+1.2):null;
+      if(lesson(EN()?'New: infantry':'Nuevo: la infantería',EN()
+          ?'<p>From now on <b>soldiers</b> from both sides fight too. They leave from their base, and when a team captures a point, <b>reinforcements</b> arrive by half-track or by parachute.</p><p>Soldiers also capture points. Use <b>high explosive</b> shells and the <b>machine gun</b> against them.</p>'
+          :'<p>Desde ahora también pelean <b>soldados</b> de los dos bandos. Salen de su base y, cuando un equipo captura un punto, le llegan <b>refuerzos</b> en semioruga o en paracaídas.</p><p>Los soldados también capturan puntos. Contra ellos usá la munición <b>explosiva</b> y la <b>ametralladora</b>.</p>',
+        p?{low:1,zoom:{p,r:5},marks:[{p,txt:s.team===0?(EN()?'Ally':'Aliado'):(EN()?'Enemy':'Enemigo'),col:s.team===0?'#7ce07c':'#ff4a36'}]}:{})) B.said.inf=1; }
     if(!B.first) return;
     if(tickets[0]<FLOOR_FIRST) tickets[0]=FLOOR_FIRST;   // la 1ª se gana sí o sí
     // 1ª batalla: las barras aparecen a los 30 s con la explicación y desde ahí se gastan
@@ -155,9 +201,19 @@
   // ---- sin artillería ni bombardeo hasta que se expliquen (4ª batalla) ----
   const offMsg=()=>hitMsg(EN()?'Artillery and air strikes unlock in battle 4':'La artillería y el bombardeo se habilitan en la 4ª batalla','var(--paper)');
   { const _k=supKey; supKey=function(){ if(protOn()){ offMsg(); return; } return _k.apply(this,arguments); }; }
-  { const _a=callArtillery; callArtillery=function(by){ if(by&&by.isPlayer&&protOn()){ offMsg(); return false; } return _a.apply(this,arguments); }; }
-  { const _a=callAirstrike; callAirstrike=function(by){ if(by&&by.isPlayer&&protOn()){ offMsg(); return false; } return _a.apply(this,arguments); }; }
-  { const _a=callNuke; callNuke=function(by){ if(by&&by.isPlayer&&protOn()){ offMsg(); return false; } return _a.apply(this,arguments); }; }
+  // nadie (ni los bots aliados ni los enemigos) usa artillería, bombardeo, humo ni morteros hasta la 4ª
+  { const _a=callArtillery; callArtillery=function(by){ if(protOn()){ if(by&&by.isPlayer) offMsg(); return false; } return _a.apply(this,arguments); }; }
+  { const _a=callAirstrike; callAirstrike=function(by){ if(protOn()){ if(by&&by.isPlayer) offMsg(); return false; } return _a.apply(this,arguments); }; }
+  { const _a=callNuke; callNuke=function(by){ if(protOn()){ if(by&&by.isPlayer) offMsg(); return false; } return _a.apply(this,arguments); }; }
+  { const _a=deploySmoke; deploySmoke=function(t){ if(curLvl()<4) return; return _a.apply(this,arguments); }; }
+  { const _a=makePerson; makePerson=function(kind){ if(kind==='mortar'&&curLvl()<4){ const a=[...arguments]; a[0]='rifle'; return _a.apply(this,a); } return _a.apply(this,arguments); }; }
+  // 1ª y 2ª: sin escuadras de infantería ni refuerzos (en la 3ª se presentan); los soldados del nido del punto sí
+  { const _a=spawnSquad; spawnSquad=function(){ if(curLvl()<=2) return; return _a.apply(this,arguments); }; }
+  if(typeof sendReinforcements==='function'){ const _a=sendReinforcements; sendReinforcements=function(){ if(curLvl()<=2) return; return _a.apply(this,arguments); }; }
+  // 1ª: un tiro tuyo destruye al enemigo
+  { const _a=hitTank; hitTank=function(by,hit,dir,pen,kind){ const r=_a.apply(this,arguments);
+      try{ const t=hit&&hit.object&&hit.object.userData.tank; if(B&&B.first&&by&&by.isPlayer&&kind==='shell'&&t&&!t.dead&&t.team!==by.team&&!(t.immuneT>0)) destroy(t,by,false); }catch(e){ console.warn('primeras: un tiro',e); }
+      return r; }; }
   // ---- premio de la 1ª batalla: 1.000 de plata (un tanque cuesta ~10.000) y la caja misteriosa ----
   { const _br=battleReward; battleReward=function(){ const r=_br.apply(this,arguments); if(B&&B.first&&!tut) r.yp=Math.min(r.yp,1000); return r; }; }
   const gift=document.createElement('div'); gift.id='pGift'; gift.setAttribute('data-notr',''); document.body.appendChild(gift);
