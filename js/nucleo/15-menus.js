@@ -298,7 +298,8 @@ document.addEventListener('keydown',e=>{
   if(state==='spectate'){ if(e.code==='ArrowRight'){specIdx++;aerial=false;} if(e.code==='ArrowLeft'){specIdx--;aerial=false;} if(e.code==='Space'){aerial=!aerial;e.preventDefault();}
     if(e.code==='Escape'&&!playerCrew){clearBattle();mainMenu();} }
   if(state==='play'&&player&&!player.dead&&lastAim){
-    if((e.code===binds.arty||e.code===binds.air)&&!e.repeat) supKey(e.code===binds.arty?'arty':'air'); }
+    if((e.code===binds.arty||e.code===binds.air)&&!e.repeat) supKey(e.code===binds.arty?'arty':'air');
+    if(e.code===binds.inf&&!e.repeat) supKey('inf'); }
   if(state==='play'&&(e.code===binds.mg||e.code==='Space'||e.code==='Tab')) e.preventDefault();
   if(e.code==='Tab'){ e.preventDefault(); if(!e.repeat) tabBoard(true); }
   if(state==='play'&&e.code===binds.aerial) goSpectate();
@@ -335,7 +336,7 @@ function frame(dt){
   const sim=['play','deploy','spectate','end','paused'].includes(state)||(net.on&&state==='brief');   // el menú de Esc no pausa
   camera.up.set(0,1,0); boardMode=false; infAmbTick(dt);
   if(sim){
-    now+=dt; mgMsgT-=dt; for(const c of crews){c.artyCD=Math.max(0,c.artyCD-dt);c.airCD=Math.max(0,c.airCD-dt);}
+    now+=dt; mgMsgT-=dt; for(const c of crews){c.artyCD=Math.max(0,c.artyCD-dt);c.airCD=Math.max(0,c.airCD-dt);if(c.infCD) c.infCD=Math.max(0,c.infCD-dt);}
     if(tabOn){ tabT-=dt; if(tabT<=0){ tabT=.5; if(!battleOn()) tabBoard(false); else renderTab(); } }
     const gone=[];
     for(const t of tanks){
@@ -402,18 +403,24 @@ try{ const S=JSON.parse(localStorage.getItem('tw_settings')||'null'); if(S){ if(
 let artyPick=false, artyHover=null;
 // tecla de apoyo: abre el mapa si el apoyo está listo; si ya está abierto con ese apoyo, tira donde apunta la mira
 function supKey(k){ const c=playerCrew; if(!c) return;
+  if(k==='inf'){ if(!infOK()){ hitMsg(net.guest?'No disponible en online (por ahora)':'En esta época no hay refuerzos de infantería','var(--paper)'); return; }
+    if((c.infCD||0)>0){ hitMsg(`Infantería en espera: ${Math.ceil(c.infCD)} s`,'var(--paper)'); return; }
+    if(c.sp<INF_COST){ hitMsg(`Te faltan puntos: la infantería cuesta ${INF_COST}`,'var(--paper)'); return; }
+    if(artyPick==='inf') artyFire(lastAim); else artyMap('inf'); return; }
   if(k==='air'&&!RULE().sup.air){ hitMsg('En esta época todavía no hay aviones de ataque a tierra','var(--paper)'); return; }
   const cd=k==='arty'?c.artyCD:c.airCD;
   if(cd>0&&!net.guest){ hitMsg(`${k==='arty'?'Artillería':'Bombardeo'} del equipo en espera: ${Math.ceil(cd)} s`,'var(--paper)'); return; }
   if(artyPick===k) artyFire(lastAim); else artyMap(k); }
 function artyMap(on){ artyPick=on; artyHover=null; document.body.classList.toggle('artyPick',!!on);
-  if(on){ if(document.pointerLockElement) document.exitPointerLock(); const K=keyName(on==='air'?binds.air:binds.arty);
-    banner(on==='air'?'Bombardeo':'Artillería',`Clic en el mapa: dónde cae · ${K}: donde apuntás · Esc: cancelar`,3); }
+  if(on){ if(document.pointerLockElement) document.exitPointerLock(); const K=keyName(on==='air'?binds.air:on==='inf'?binds.inf:binds.arty);
+    if(on==='inf') banner('Pedir infantería',`Clic en el mapa: a qué punto va · ${K}: el punto más cerca de donde apuntás · Esc: cancelar`,3);
+    else banner(on==='air'?'Bombardeo':'Artillería',`Clic en el mapa: dónde cae · ${K}: donde apuntás · Esc: cancelar`,3); }
   else if(state==='play'&&!freeAim&&!document.pointerLockElement) lock(); }
 function mmWorld(e){ const r=mm.getBoundingClientRect(), S=400, k=S/(Math.max(W.bx,W.bz)*2+20), px=(e.clientX-r.left)/r.width*S, py=(e.clientY-r.top)/r.height*S;
   const x=(S/2-px)/k, z=(S/2-py)/k; return new THREE.Vector3(x,heightAt(x,z),z); }
 function artyFire(p){ const k=artyPick||'arty'; artyMap(false); if(!player||player.dead||!p) return;
   if(net.guest){ hostSend({t:'sup',k,p:[p.x,p.y,p.z]}); return; }
+  if(k==='inf'){ callInfantry(player,p); return; }
   if(k==='air'){ if(callAirstrike(player,p)) teamSup[0].air=Math.max(teamSup[0].air,TEAM_AIR_CD*.6); }
   else if(callArtillery(player,p)) teamSup[0].arty=Math.max(teamSup[0].arty,TEAM_ARTY_CD*.6); }
 mm.addEventListener('mousemove',e=>{ if(artyPick) artyHover=mmWorld(e); });

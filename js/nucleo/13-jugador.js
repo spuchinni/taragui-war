@@ -2,7 +2,7 @@
 // ---------- Ajustes: sensibilidad y teclas personalizables (se guardan en el navegador) ----------
 const ACTIONS=[['fwd','Avanzar','KeyW'],['back','Retroceder','KeyS'],['left','Girar a la izquierda','KeyA'],['right','Girar a la derecha','KeyD'],
   ['scope','Mira del artillero (entra y sale)','ShiftLeft'],['mg','Ametralladora','Space'],['ammo1','Munición 1','Digit1'],['ammo2','Munición 2','Digit2'],['ammo3','Munición 3','Digit3'],
-  ['ammoAuto','Munición automática','Digit4'],['arty','Artillería','KeyF'],['air','Ataque aéreo','KeyG'],['nuke','Nuke','KeyN'],['thermal','Visión térmica','KeyT'],
+  ['ammoAuto','Munición automática','Digit4'],['arty','Artillería','KeyF'],['air','Ataque aéreo','KeyG'],['inf','Pedir infantería','KeyB'],['nuke','Nuke','KeyN'],['thermal','Visión térmica','KeyT'],
   ['aerial','Vista aérea (la IA maneja)','KeyV'],['troops','Bajar la infantería','KeyE'],['fullscreen','Pantalla completa','KeyP'],['repair','Reparar','KeyR'],['crewSwap','Reemplazar tripulante (infantería)','KeyC'],['smoke','Granadas de humo','KeyX'],['ping','Marcar: enemigo / punto / atención','KeyQ'],['ext','Extintor (apagar incendio)','KeyZ']];
 const DEF_BINDS=Object.fromEntries(ACTIONS.map(a=>[a[0],a[2]]));
 let binds={...DEF_BINDS}, bindCapture=null, difficulty='normal';
@@ -166,7 +166,7 @@ function updateAmmoBar(t){
   const box=$('ammoSlots'), L=t.T.ammo, c=playerCrew;
   const slots=[...L.map((A,i)=>({id:'a'+i,key:binds['ammo'+(i+1)],ic:shellIcon(A.kind),title:`${A.n} (${KIND_ES[A.kind]})`})),
     ...(L.length>1?[{id:'auto',key:binds.ammoAuto,ic:'<span style="font-size:13px">AUTO</span>',title:'Munición automática'}]:[]),{gap:1},
-    {id:'arty',key:binds.arty,ic:'✸',title:'Artillería'},...(RULE().sup.air?[{id:'air',key:binds.air,ic:'✈',title:'Ataque aéreo'}]:[]),...(RULE().sup.nuke?[{id:'nuke',key:binds.nuke,ic:'☢',title:'Nuke'}]:[]),
+    {id:'arty',key:binds.arty,ic:'✸',title:'Artillería'},...(RULE().sup.air?[{id:'air',key:binds.air,ic:'✈',title:'Ataque aéreo'}]:[]),...(infOK()?[{id:'inf',key:binds.inf,ic:'⛑',title:'Pedir infantería'}]:[]),...(RULE().sup.nuke?[{id:'nuke',key:binds.nuke,ic:'☢',title:'Nuke'}]:[]),
     {id:'rep',key:binds.repair,ic:'🔧',title:'Reparar'},{id:'crew',key:binds.crewSwap,ic:'👤',title:'Reemplazar tripulante con infantería'},...(t.noSmk?[]:[{id:'smk',key:binds.smoke,ic:'☁',title:'Granadas de humo (nivel 2)'}]),{id:'ext',key:binds.ext,ic:'🧯',title:'Extintor'},
     ...(t.T.thermal?[{id:'th',key:binds.thermal,ic:'◐',title:'Visión térmica'}]:[]),...(t.troops?[{id:'tr',key:binds.troops,ic:'⇩',title:'Bajar infantería'}]:[])];
   const sig=t.T.label+'|'+(W.era||5)+'|'+JSON.stringify(binds);
@@ -178,6 +178,7 @@ function updateAmmoBar(t){
   set('auto',t.ammoManual==null?' sel':'','',0);
   set('arty',c.artyCD>0||c.sp<ARTY_COST?' off':'',c.artyCD>0?Math.ceil(c.artyCD):c.sp<ARTY_COST?ARTY_COST:'',c.artyCD/ARTY_CD);
   set('air',c.airCD>0||c.sp<AIR_COST?' off':'',c.airCD>0?Math.ceil(c.airCD):c.sp<AIR_COST?AIR_COST:'',c.airCD/AIR_CD);
+  set('inf',(c.infCD||0)>0||c.sp<INF_COST?' off':'',(c.infCD||0)>0?Math.ceil(c.infCD):INF_COST,(c.infCD||0)/INF_CD);
   set('nuke',nuke||c.sp<NUKE_COST?' off':'',c.sp<NUKE_COST?NUKE_COST:'',0);
   set('rep',t.repairT>0?' sel':needsRepair(t)?'':' off',t.repairT>0?Math.ceil(t.repairT):'',t.repairT>0?t.repairT/t.repairMax:0);
   const lost=t.crewM.length-crewAlive(t); set('crew',lost&&!t.boarding?'':' off',lost||'',0);

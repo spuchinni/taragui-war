@@ -50,6 +50,17 @@ function onZoneCaptured(Z,team){ if(net.guest) return; fortifyZone(Z,team);
   if(W.era===3&&now>(Z.refT||0)){ Z.refT=now+100; refPending.push({Z,team,t:now+rand(8,16)}); } }
 
 // ---- Refuerzos ----
+// Pedir infantería (pedido de Sebastián): con la tecla se abre el mapa, elegís un punto y llega un semioruga o paracaidistas,
+// igual que los refuerzos que llegan solos al capturar. Cuesta puntos (los mismos que se usan para sacar tanques) y tiene espera.
+const INF_COST=150, INF_CD=60;
+const infOK=()=>typeof W!=='undefined'&&W&&W.era===3&&!net.guest&&!!RULE().guns&&!!VEH.ht_de&&!!VEH.ht_al;
+function callInfantry(by,p){ const c=by.crew; if(!c||!infOK()||!p||!zones.length) return false;
+  if((c.infCD||0)>0||c.sp<INF_COST) return false;
+  let Z=null, best=1e18; for(const z of zones){ const d=(z.x-p.x)**2+(z.z-p.z)**2; if(d<best){ best=d; Z=z; } }
+  c.sp-=INF_COST; c.infCD=INF_CD; if(c.isPlayer) $('spT').textContent=c.sp;
+  sendReinforcements(Z,by.team);
+  if(by.isPlayer) banner('Infantería pedida',`Va al punto ${Z.id}: un semioruga o paracaidistas`,2.5);
+  return true; }
 function sendReinforcements(Z,team){ if(Math.random()<.5) paraDrop(Z,team); else halfTrack(Z,team); }
 function halfTrack(Z,team){ const nat=teamNation(team), key=axisOf(team)?'ht_de':'ht_al', B=W.sp[team][(Math.random()*W.sp[team].length)|0], c=newCrew(`Semioruga (${NATIONS[nat].label})`,team,nat,false);
   c.lineup=[key]; c.gun=true; const p=findSpawnPos(B), t=makeTank(c,key,p.x,p.z,Math.atan2(Z.x-p.x,Z.z-p.z)); c.uses[key]=1; c.spawns=1; c.tank=t; c.respawnT=1e9; crews.push(c);

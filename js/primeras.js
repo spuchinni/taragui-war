@@ -152,8 +152,8 @@
         :`<p>Abajo a la izquierda ves tu <b>tanque y su tripulación</b>. Lo que recibe un impacto se pone rojo y, si cae un tripulante, otro toma su lugar.</p><p>Por ahora tu tanque está <b>protegido</b>. En la próxima batalla ya puede recibir daño y vas a aprender a repararlo.</p>`)) B.said.l3=1;
     if(B.lvl===4&&B.teach&&!B.said.l4&&t>4){ const air=RULE().sup&&RULE().sup.air;
       if(lesson(EN()?'Now your tank can take damage':'Ahora tu tanque puede recibir daño',EN()
-        ?`<p>${K('repair')} <b>Repair</b>: the tank stops and the crew fixes tracks, engine and gun, and puts out fires. Do it behind cover.</p><p>${K('arty')} <b>Artillery</b>${air?` · ${K('air')} <b>Air strike</b>`:''}: they cost the <b>points</b> you earn in battle (the number on the button). Press the key and click on the map where it should land.</p><p>${K('smoke')} <b>Smoke</b>: throws smoke grenades to hide your tank.</p>`
-        :`<p>${K('repair')} <b>Reparar</b>: el tanque se queda quieto y la tripulación arregla orugas, motor y cañón y apaga el fuego. Hacelo a cubierto.</p><p>${K('arty')} <b>Artillería</b>${air?` · ${K('air')} <b>Bombardeo</b>`:''}: se pagan con los <b>puntos</b> que ganás en la batalla (el número en el botón). Apretá la tecla y hacé clic en el mapa donde querés que caiga.</p><p>${K('smoke')} <b>Humo</b>: tira granadas de humo para esconder tu tanque.</p>`)) B.said.l4=1; }
+        ?`<p>${K('repair')} <b>Repair</b>: the tank stops and the crew fixes tracks, engine and gun, and puts out fires. Do it behind cover.</p><p>${K('arty')} <b>Artillery</b>${air?` · ${K('air')} <b>Air strike</b>`:''}: they cost the <b>points</b> you earn in battle (the number on the button). Press the key and click on the map where it should land.</p>${infOK()?`<p>${K('inf')} <b>Call infantry</b>: ${INF_COST} points. Pick a point on the map and a half-track or paratroopers bring soldiers there to capture or defend it.</p>`:''}<p>${K('smoke')} <b>Smoke</b>: throws smoke grenades to hide your tank.</p>`
+        :`<p>${K('repair')} <b>Reparar</b>: el tanque se queda quieto y la tripulación arregla orugas, motor y cañón y apaga el fuego. Hacelo a cubierto.</p><p>${K('arty')} <b>Artillería</b>${air?` · ${K('air')} <b>Bombardeo</b>`:''}: se pagan con los <b>puntos</b> que ganás en la batalla (el número en el botón). Apretá la tecla y hacé clic en el mapa donde querés que caiga.</p>${infOK()?`<p>${K('inf')} <b>Pedir infantería</b>: ${INF_COST} puntos. Elegís un punto en el mapa y un semioruga o paracaidistas llevan soldados para capturarlo o defenderlo.</p>`:''}<p>${K('smoke')} <b>Humo</b>: tira granadas de humo para esconder tu tanque.</p>`)) B.said.l4=1; }
     if(B.lvl<4&&player&&!player.dead&&!LSg('tw2_lFoe')){ const e=tanks.find(o=>!o.dead&&o.team!==player.team&&!(o.T&&o.T.static)&&o.visP&&o.pos.distanceTo(player.pos)<380);
       if(e){ const p=e.pos.clone(); p.y+=(e.topH||2.4)*.55;
         if(lesson(EN()?'An enemy tank!':'¡Un tanque enemigo!',(EN()
@@ -192,6 +192,9 @@
   // al terminar una batalla se apaga el cartel
   const _fin=finish; finish=function(){ hint.style.display='none'; hintT=0; return _fin.apply(this,arguments); };
 
+  // ---- batallas 1 a 4 sin sala online: "¡A la batalla!" abre una sala rápida (net.on) y ahí no corren las explicaciones,
+  // la protección ni los equipos chicos; además las pausas de los carteles congelarían a los que entren. Se juega con bots. ----
+  if(typeof jugarOnline==='function'){ const _jo=jugarOnline; jugarOnline=function(){ if(!tut&&!net.on&&battles()<4){ startBattle(false); return; } return _jo.apply(this,arguments); }; }
   // ---- batallas 1 a 3: tu tanque no recibe daño (todavía no se explicó cómo repararlo) ----
   // Todo el daño pasa por immuneT (impactos, explosiones, artillería, choques): para tu tanque vale 1 mientras dure la protección.
   function protOn(){ return !!(B&&B.lvl<4&&!tut&&!net.on); }
@@ -200,7 +203,7 @@
       Object.defineProperty(t,'prot',{configurable:true,get:protOn}); }catch(e){ console.warn('primeras: protección',e); } }
   // ---- sin artillería ni bombardeo hasta que se expliquen (4ª batalla) ----
   const offMsg=()=>hitMsg(EN()?'Artillery and air strikes unlock in battle 4':'La artillería y el bombardeo se habilitan en la 4ª batalla','var(--paper)');
-  { const _k=supKey; supKey=function(){ if(protOn()){ offMsg(); return; } return _k.apply(this,arguments); }; }
+  { const _k=supKey; supKey=function(k){ if(protOn()){ if(k==='inf') hitMsg(EN()?'Calling infantry unlocks in battle 4':'Pedir infantería se habilita en la 4ª batalla','var(--paper)'); else offMsg(); return; } return _k.apply(this,arguments); }; }
   // nadie (ni los bots aliados ni los enemigos) usa artillería, bombardeo, humo ni morteros hasta la 4ª
   { const _a=callArtillery; callArtillery=function(by){ if(protOn()){ if(by&&by.isPlayer) offMsg(); return false; } return _a.apply(this,arguments); }; }
   { const _a=callAirstrike; callAirstrike=function(by){ if(protOn()){ if(by&&by.isPlayer) offMsg(); return false; } return _a.apply(this,arguments); }; }

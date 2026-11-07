@@ -36,7 +36,7 @@ if(MOVIL){
   const setKey=(a,v)=>{ keys[binds[a]]=v; };
   // tocar una tecla = mandar el mismo evento que el teclado (así sirve igual online y en el tutorial)
   const tapKey=a=>{ const c=binds[a]; if(!c) return; document.dispatchEvent(new KeyboardEvent('keydown',{code:c,bubbles:true})); setTimeout(()=>document.dispatchEvent(new KeyboardEvent('keyup',{code:c,bubbles:true})),60); };
-  const SLOT={a0:'ammo1',a1:'ammo2',a2:'ammo3',auto:'ammoAuto',arty:'arty',air:'air',nuke:'nuke',rep:'repair',crew:'crewSwap',smk:'smoke',ext:'ext',th:'thermal',tr:'troops'};
+  const SLOT={a0:'ammo1',a1:'ammo2',a2:'ammo3',auto:'ammoAuto',arty:'arty',air:'air',inf:'inf',nuke:'nuke',rep:'repair',crew:'crewSwap',smk:'smoke',ext:'ext',th:'thermal',tr:'troops'};
   function pauseMenu(){ if(state!=='play') return; stickOff(); pauseOpen(); }
   function press(b,on){ const t=b.dataset.t; if(t==='zoom'){ if(on) rightDown=!rightDown; b.classList.toggle('on',rightDown); return; } b.classList.toggle('on',on);
     if(t==='fire') mouseDown=on; else if(t==='mg') setKey('mg',on);
@@ -105,7 +105,7 @@ if(MOVIL){
     }
   // tutorial y carteles: nombran los botones de la pantalla en vez de las teclas
   const TLBL={fwd:'palanca ↑',back:'palanca ↓',left:'palanca ←',right:'palanca →',scope:'◎',mg:'⁞⁞',ammo1:'la 1.ª munición (abajo)',ammo2:'la 2.ª munición (abajo)',ammo3:'la 3.ª munición (abajo)',
-    ammoAuto:'AUTO (abajo)',arty:'✸ (abajo)',air:'✈ (abajo)',nuke:'☢ (abajo)',repair:'🔧 (abajo)',crewSwap:'👤 (abajo)',smoke:'☁ (abajo)',ext:'🧯 (abajo)',thermal:'◐ (abajo)',troops:'⇩ (abajo)',ping:'❗'};
+    ammoAuto:'AUTO (abajo)',arty:'✸ (abajo)',air:'✈ (abajo)',inf:'⛑ (abajo)',nuke:'☢ (abajo)',repair:'🔧 (abajo)',crewSwap:'👤 (abajo)',smoke:'☁ (abajo)',ext:'🧯 (abajo)',thermal:'◐ (abajo)',troops:'⇩ (abajo)',ping:'❗'};
   const _kn=keyName; keyName=function(c){ const a=Object.keys(binds).find(k=>binds[k]===c); return a&&TLBL[a]?TLBL[a]:_kn(c); };
   const TUT_TXT=[[/Mové el mouse para mirar/g,'Deslizá el dedo para mirar'],[/la rueda cambia el aumento, clic derecho pone y saca el zoom/g,'🔍 hace zoom'],[/Clic izquierdo dispara/g,'🔥 dispara'],
     [/mantené el clic/g,'mantené apretado 🔥'],[/hacé clic sobre/g,'tocá'],[/hacé clic donde/g,'tocá donde'],[/hacé clic/gi,'tocá']];

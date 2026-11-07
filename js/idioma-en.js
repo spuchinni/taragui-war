@@ -1630,7 +1630,20 @@ I18N.add({
 "térmica": "thermal",
 "y": "and",
 "Continuar: {}": "Continue: {}",
-"protegido": "protected"
+"protegido": "protected",
+"Pedir infantería": "Call infantry",
+"Infantería pedida": "Infantry called",
+"Va al punto {}: un semioruga o paracaidistas": "Heading to point {}: a half-track or paratroopers",
+"Clic en el mapa: a qué punto va · {}: el punto más cerca de donde apuntás · Esc: cancelar": "Click on the map: which point they go to · {}: the point nearest your aim · Esc: cancel",
+"Infantería en espera: {} s": "Infantry on cooldown: {} s",
+"Te faltan puntos: la infantería cuesta {}": "Not enough points: infantry costs {}",
+"En esta época no hay refuerzos de infantería": "No infantry reinforcements in this era",
+"⛑ (abajo)": "⛑ (bottom)",
+"{} fortifica el punto {}: ametralladora, antitanque y antiaéreo": "{} fortifies point {}: machine gun, anti-tank gun and anti-aircraft gun",
+"{} fortifica el punto {}: ametralladora, antitanque": "{} fortifies point {}: machine gun and anti-tank gun",
+"{} fortifica el punto {}: ametralladora y antiaéreo": "{} fortifies point {}: machine gun and anti-aircraft gun",
+", antitanque y antiaéreo": ", anti-tank gun and anti-aircraft gun",
+" y antiaéreo": " and anti-aircraft gun"
 });
 I18N.words({
 "Perforante sólido": "Solid AP",
