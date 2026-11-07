@@ -220,7 +220,7 @@ function updateHud(){
     txt('nukeT',nuke?'En curso':playerCrew.sp>=NUKE_COST?'Lista':`${NUKE_COST} pts`); col('nukeT',playerCrew.sp>=NUKE_COST&&!nuke?'var(--ally)':'');
     {const B=$('hpB'),c=hp<35?'var(--enemy)':hp<65?'var(--amber)':'var(--ally)'; if(B._bg!==c){B._bg=c; B.style.background=c;}}
     updateXray(player);
-    txt('typeT',`${player.T.label}, ${player.T.cls}`+(player.immuneT>0?` · protegido ${Math.ceil(player.immuneT)} s`:''));}
+    txt('typeT',`${player.T.label}, ${player.T.cls}`+(player.immuneT>0&&!player.prot?` · protegido ${Math.ceil(player.immuneT)} s`:''));}
 }
 const tmpV=new THREE.Vector3();
 function project(p){tmpV.copy(p).applyMatrix4(camera.matrixWorldInverse);if(tmpV.z>-1)return null;
