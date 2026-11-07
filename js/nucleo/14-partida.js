@@ -182,7 +182,7 @@ function finish(winner){
   if(lastKillCrew&&!net.guest){ award(lastKillCrew,'Último derribo',30,50); lastKillCrew=null; }
   if(net.host) netAll({t:'end',w:winner,crews:crews.map(c=>({st:c.st,tk:c.tk,name:c.name,team:c.team,uses:c.uses,kills:c.kills,assists:c.assists||0,deaths:c.deaths,caps:c.caps,score:c.score,peer:c.peer||null,h:c.isPlayer||c.peer||c.wasHuman?1:0}))});
   if(nuke&&nuke.phase>=1&&nuke.cloud){ nukeEnd(winner); return; }
-  state='end'; if(typeof objUI==='function') objUI(''); const N=NATIONS[winner===0?allyNation:foeNation].label;
+  state='end'; if(typeof objUI==='function') objUI(''); const N=winner===0?allyLabel():NATIONS[foeNation].label;
   banner(spectating?`Gana ${N}`:winner===0?'Victoria':'Derrota',spectating?'':`Gana ${N}`,99);
   setTimeout(()=>{if(state==='end') summary(winner);},2800);
 }
@@ -294,11 +294,11 @@ function summary(winner){
   $('banner').style.opacity=0; bannerT=0; $('overlay').style.display='flex';
   const top=crews.reduce((b,c)=>!b||c.score>b.score?c:b,null);
   const table=team=>{const rows=crews.filter(c=>c.team===team).sort((a,b)=>b.score-a.score), sm=k=>rows.reduce((a,c)=>a+(+c[k]||0),0);
-    return `<h2 class="tm ${team===0?'':'foe'}">${NATIONS[team===0?allyNation:foeNation].label}${team===winner?'<span class="w">GANADOR</span>':''}<span class="tk">${Math.max(0,Math.ceil(tickets[team]))} tickets</span></h2><table class="sum"><colgroup><col style="width:21%"><col><col style="width:8.5%"><col style="width:8.5%"><col style="width:8.5%"><col style="width:8.5%"><col style="width:10%"></colgroup><thead><tr><th>Jugador</th><th>Tanques</th><th class="n">Bajas</th><th class="n">Asist.</th><th class="n">Muertes</th><th class="n">Capturas</th><th class="n">Puntos</th></tr></thead><tbody>${
+    return `<h2 class="tm ${team===0?'':'foe'}">${team===0?allyLabel():NATIONS[foeNation].label}${team===winner?'<span class="w">GANADOR</span>':''}<span class="tk">${Math.max(0,Math.ceil(tickets[team]))} tickets</span></h2><table class="sum"><colgroup><col style="width:21%"><col><col style="width:8.5%"><col style="width:8.5%"><col style="width:8.5%"><col style="width:8.5%"><col style="width:10%"></colgroup><thead><tr><th>Jugador</th><th>Tanques</th><th class="n">Bajas</th><th class="n">Asist.</th><th class="n">Muertes</th><th class="n">Capturas</th><th class="n">Puntos</th></tr></thead><tbody>${
       rows.map(c=>{ const ia=net.on&&!c.isPlayer&&!c.peer&&!c.wasHuman&&!c.human, tks=Object.keys(c.uses).filter(k=>VEH[k]).map(k=>VEH[k].label).join(', ')||'Ninguno';
         return `<tr class="${c.isPlayer?'me':''}"><td title="${esc(c.name)}">${esc(c.name)}${c===top&&c.score>0?'<span class="mvp" title="Mejor de la partida">★</span>':''}${ia?'<span class="ia">BOT</span>':''}</td><td title="${esc(tks)}">${esc(tks)}</td><td class="n">${c.kills|0}</td><td class="n">${c.assists|0}</td><td class="n">${c.deaths|0}</td><td class="n">${c.caps|0}</td><td class="n pts">${(c.score|0).toLocaleString('es-AR')}</td></tr>`; }).join('')}</tbody>
       <tfoot><tr><td>Total</td><td></td><td class="n">${sm('kills')}</td><td class="n">${sm('assists')}</td><td class="n">${sm('deaths')}</td><td class="n">${sm('caps')}</td><td class="n">${sm('score').toLocaleString('es-AR')}</td></tr></tfoot></table>`;};
-  const N=NATIONS[winner===0?allyNation:foeNation].label;
+  const N=winner===0?allyLabel():NATIONS[foeNation].label;
   let rpHtml=''; const me=crews.find(c=>c.isPlayer||c.name==='Vos'||c.name==='Vos (IA)');
   const MS=curSpecial&&curSpecial.mission?missionById(curSpecial.mission):null; let mres=null, unl=[];
   if(!spectating&&(!curSpecial||MS)&&me&&PROG&&!summary._done){ summary._done=true; const n=MS?MS.ally:chosenNation, win=winner===0;

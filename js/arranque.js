@@ -95,4 +95,46 @@
   requestAnimationFrame(loop);
   // probar: ?coach=1 prende el entrenador también en cualquier batalla
   if(FORCE) C.on=true;
+
+  // ---- primera batalla de 2 minutos (pedido de Sebastián: "que solo dure dos minutos"; antes duraba ~13 min con 400 tickets) ----
+  // Reloj abajo al centro con el objetivo. Al llegar a cero gana el que tiene más puntos capturados
+  // (si empatan, gana tu equipo: es la primera partida). Después, un resumen simple (la tabla completa queda detrás de un botón).
+  // Textos en los dos idiomas acá mismo (data-notr: el traductor no los toca). ?corta=1 fuerza la batalla corta para probar.
+  const FIRST_LEN=120, EN=()=>window.LANG==='en';
+  const FORCE_SHORT=/[?&]corta=1/.test(location.search);
+  const _sb2=startBattle; startBattle=function(){ const first=C.closeNext||FORCE_SHORT; const r=_sb2.apply(this,arguments); C.first=first; C.firstT=null; return r; };
+  const clock=document.createElement('div'); clock.id='firstClock'; clock.setAttribute('data-notr','');
+  clock.style.cssText="position:fixed;left:50%;bottom:118px;transform:translateX(-50%);z-index:8;pointer-events:none;display:none;font:800 22px 'Saira Condensed',system-ui,sans-serif;color:#fff;text-shadow:0 2px 6px #000,0 0 2px #000;white-space:nowrap";
+  document.body.appendChild(clock);
+  const mmss=s=>{ s=Math.max(0,Math.ceil(s)); return Math.floor(s/60)+':'+String(s%60).padStart(2,'0'); };
+  function firstWinner(){ const o0=zones.filter(Z=>Z.owner===1).length, o1=zones.filter(Z=>Z.owner===-1).length;
+    return o1>o0?1:0; }
+  (function tick(){ requestAnimationFrame(tick);
+    const on=C.first&&['play','paused'].includes(state)&&!net.on;
+    if(!on){ clock.style.display='none'; return; }
+    if(C.firstT==null) C.firstT=now;
+    const left=FIRST_LEN-(now-C.firstT);
+    if(left<=0&&state==='play'){ clock.style.display='none'; C.first=false; C.firstEnd=true; C.on=false; LS('tw2_coach','1'); finish(firstWinner()); return; }
+    const goal=C.on?'':(EN()?' · Hold more points than the enemy to win':' · Tené más puntos capturados que el enemigo para ganar');
+    clock.textContent='⏱ '+mmss(left)+goal; clock.style.color=left<=15?'#ffd24a':'#fff'; clock.style.display='block'; })();
+  // resumen simple de la primera batalla
+  const _sum=summary; summary=function(winner){
+    const simple=C.firstEnd; C.firstEnd=false; const y0=PROG?PROG.yp||0:0;
+    const r=_sum.apply(this,arguments); if(!simple) return r;
+    try{ const P=$('panel'), me=playerCrew||crews.find(c=>c.isPlayer), win=winner===0, yp=Math.max(0,Math.round((PROG?PROG.yp||0:0)-y0));
+      const kept=[...P.children].filter(el=>!['again','menuB','cgPremio'].includes(el.id)); kept.forEach(el=>el.style.display='none');
+      const k=me?me.kills|0:0, cp=me?me.caps|0:0, n=v=>v.toLocaleString(EN()?'en-US':'es-AR');
+      const box=document.createElement('div'); box.setAttribute('data-notr',''); box.style.cssText='width:100%;max-width:640px;margin:6vh auto 18px;text-align:center';
+      const line='display:block;max-width:none;margin:.35em auto;text-align:center';
+      box.innerHTML=`<h1 style="font-size:64px;margin:.1em 0;text-align:center">${win?(EN()?'Victory!':'¡Victoria!'):(EN()?'Defeat':'Derrota')}</h1>`+
+        `<p style="${line};font-size:22px">${EN()?`You destroyed <b>${k}</b> ${k===1?'tank':'tanks'} · captured <b>${cp}</b> ${cp===1?'point':'points'}`:`Destruiste <b>${k}</b> ${k===1?'tanque':'tanques'} · capturaste <b>${cp}</b> ${cp===1?'punto':'puntos'}`}</p>`+
+        (yp?`<p style="${line};font-size:20px;color:var(--amber)">+🐆 ${n(yp)} ${EN()?'silver to buy new tanks in the hangar':'de plata para comprar tanques nuevos en el hangar'}</p>`:'')+
+        `<div id="firstBtns" style="margin-top:22px"></div><button class="go alt" id="detB" style="margin-top:14px;font-size:15px;opacity:.85">${EN()?'Show scoreboard':'Ver la tabla completa'}</button>`;
+      P.prepend(box);
+      const bt=box.querySelector('#firstBtns'), a=$('again'), m=$('menuB');
+      if(a){ a.setAttribute('data-notr',''); a.textContent=EN()?'Next battle':'Siguiente batalla'; a.style.fontSize='22px'; bt.appendChild(a); }
+      if(m){ m.textContent=EN()?'Main menu':'Menú principal'; bt.appendChild(m); }
+      $('detB').onclick=()=>{ kept.forEach(el=>el.style.display=''); box.querySelector('h1').style.display='none'; $('detB').remove(); if(a) P.appendChild(a); if(m) P.appendChild(m); };
+    }catch(e){ console.warn('resumen simple',e); }
+    return r; };
 })();

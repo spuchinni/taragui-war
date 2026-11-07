@@ -1627,7 +1627,9 @@ I18N.add({
 "ESTAB": "STAB",
 "TRANS": "GEAR",
 "cargando": "reloading",
-"térmica": "thermal"
+"térmica": "thermal",
+"y": "and",
+"Continuar: {}": "Continue: {}"
 });
 I18N.words({
 "Perforante sólido": "Solid AP",
