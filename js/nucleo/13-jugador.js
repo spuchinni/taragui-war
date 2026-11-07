@@ -237,7 +237,7 @@ function drawOverlay(){
     oc.fillStyle=t.team===0?'#8fd16a':'#ff5a3c';
     oc.beginPath(); oc.moveTo(s.x-6,s.y-8); oc.lineTo(s.x+6,s.y-8); oc.lineTo(s.x,s.y); oc.fill();
     const d=player?Math.round(t.pos.distanceTo(player.pos)):0;
-    oc.fillText(spec?`${t.name} (${t.T.label})`:t.team===1?`${t.T.label} ${d} m`:`${t.name} (${t.T.label})`,s.x,s.y-12);
+    if(!(window.HUD_LVL<=2&&!spec)) oc.fillText(spec?`${t.name} (${t.T.label})`:t.team===1?`${t.T.label} ${d} m`:`${t.name} (${t.T.label})`,s.x,s.y-12);   // primeras partidas: solo el triángulo (primeras.js)
   }
   oc.font='700 20px "Saira Condensed",sans-serif';
   // Puntos A, B, C: siempre visibles. Si el punto está en pantalla: letra y distancia encima. Si no: burbuja con la letra

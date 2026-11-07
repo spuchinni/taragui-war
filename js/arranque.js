@@ -97,8 +97,8 @@
   if(FORCE) C.on=true;
 
   // ---- primera batalla de 2 minutos (pedido de Sebastián: "que solo dure dos minutos"; antes duraba ~13 min con 400 tickets) ----
-  // Reloj abajo al centro con el objetivo. Al llegar a cero gana el que tiene más puntos capturados
-  // (si empatan, gana tu equipo: es la primera partida). Después, un resumen simple (la tabla completa queda detrás de un botón).
+  // Reloj abajo al centro con el objetivo. Al llegar a cero gana el equipo con más puntos (tickets; primeras.js los explica
+  // a los 30 s y los hace bajar) y si empatan, gana tu equipo: es la primera partida. Después, un resumen simple (la tabla completa queda detrás de un botón).
   // Textos en los dos idiomas acá mismo (data-notr: el traductor no los toca). ?corta=1 fuerza la batalla corta para probar.
   const FIRST_LEN=120, EN=()=>window.LANG==='en';
   const FORCE_SHORT=/[?&]corta=1/.test(location.search);
@@ -107,15 +107,14 @@
   clock.style.cssText="position:fixed;left:50%;bottom:118px;transform:translateX(-50%);z-index:8;pointer-events:none;display:none;font:800 22px 'Saira Condensed',system-ui,sans-serif;color:#fff;text-shadow:0 2px 6px #000,0 0 2px #000;white-space:nowrap";
   document.body.appendChild(clock);
   const mmss=s=>{ s=Math.max(0,Math.ceil(s)); return Math.floor(s/60)+':'+String(s%60).padStart(2,'0'); };
-  function firstWinner(){ const o0=zones.filter(Z=>Z.owner===1).length, o1=zones.filter(Z=>Z.owner===-1).length;
-    return o1>o0?1:0; }
+  function firstWinner(){ return tickets[1]>tickets[0]+.5?1:0; }
   (function tick(){ requestAnimationFrame(tick);
     const on=C.first&&['play','paused'].includes(state)&&!net.on;
     if(!on){ clock.style.display='none'; return; }
     if(C.firstT==null) C.firstT=now;
     const left=FIRST_LEN-(now-C.firstT);
     if(left<=0&&state==='play'){ clock.style.display='none'; C.first=false; C.firstEnd=true; C.on=false; LS('tw2_coach','1'); finish(firstWinner()); return; }
-    const goal=C.on?'':(EN()?' · Hold more points than the enemy to win':' · Tené más puntos capturados que el enemigo para ganar');
+    const goal=C.on?'':(EN()?' · Hold the points until the end to win':' · Mantené los puntos hasta el final para ganar');
     clock.textContent='⏱ '+mmss(left)+goal; clock.style.color=left<=15?'#ffd24a':'#fff'; clock.style.display='block'; })();
   // resumen simple de la primera batalla
   const _sum=summary; summary=function(winner){

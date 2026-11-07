@@ -1629,7 +1629,8 @@ I18N.add({
 "cargando": "reloading",
 "térmica": "thermal",
 "y": "and",
-"Continuar: {}": "Continue: {}"
+"Continuar: {}": "Continue: {}",
+"protegido": "protected"
 });
 I18N.words({
 "Perforante sólido": "Solid AP",
