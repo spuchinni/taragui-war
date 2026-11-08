@@ -68,7 +68,13 @@ function w2Turret(tur,M,I,mat){ const w=M.tw, l=M.tl, h=M.th, hw=w/2, hl=l/2;
     default: prism(tur,[[-hw*.75,hl],[hw*.75,hl],[hw,hl*.35],[hw,-hl*.85],[hw*.85,-hl],[-hw*.85,-hl],[-hw,-hl*.85],[-hw,hl*.35]],h,.12,0,0,0,mat); // biselada (Pz III/IV, Crusader, Stuart)
   }
   if(I.bus&&I.tur!=='cast'&&I.tur!=='none') rbox(tur,w*.72,h*.65,.5,0,h*.45,-hl-.2,mat,.05);                                    // caja de la radio / cesto
-  if(I.skirtT){ const s=prism(tur,[[-hw-.15,hl*.4],[hw+.15,hl*.4],[hw+.15,-hl-.25],[-hw-.15,-hl-.25]],h*.85,0,0,.05,0,mat); s.scale.set(1,1,1); } // Schürzen de la torre (Pz IV H)
+  if(I.skirtT){ const o=.24, sh=h*.8, y=h*.5, zb=-hl-.42, zf2=hl*.3;                                                        // Schürzen de la torre (Pz IV H): chapas finas separadas
+    for(const sx of [-1,1]){ const sd=box(tur,.025,sh,zf2-zb-.35,sx*(hw+o),y,(zf2+zb+.35)/2,mat); sd.rotation.z=-sx*.04;
+      const fr=box(tur,.025,sh,.42,sx*(hw+o*.55),y,zf2+.15,mat); fr.rotation.y=sx*.6;                                          // punta delantera doblada hacia la torre
+      const bk=box(tur,.025,sh,.42,sx*(hw+o*.55),y,zb+.15,mat); bk.rotation.y=-sx*.6;
+      for(const z of [zf2-.1,zb+.55]) box(tur,o,.05,.05,sx*(hw+o/2),y+sh*.35,z,darkMat);                                       // soportes
+      rbox(tur,.03,sh*.6,.4,sx*(hw+o+.015),y,(zf2+zb)/2+.15,mat,.01); }                                                        // puertas en la chapa
+    box(tur,(hw+o)*2-.5,sh,.025,0,y,zb-.02,mat); }
   return h*.48; }
 
 function buildW2(t,M,mat,root,lkL,lkR){ shTurMG.t=t;
@@ -92,7 +98,10 @@ function buildW2(t,M,mat,root,lkL,lkR){ shTurMG.t=t;
     const rear=I.rearDrive??['uk','ru'].includes(t.T.nation);
     sprocketT(root,x,(rear?I.trR:I.trF)*.62,rear?zr+.36:zf-.33,.26,13,mat); dWheel(root,x,(rear?I.trF:I.trR)*.62,rear?zf-.33:zr+.36,.24,mat,{rim:.75}); }
     if(I.skirt) profMesh(root,[[zf-.55,H*I.skirt+.08],[zr+.45,H*I.skirt+.08],[zr+.5,H*.28],[zf-.6,H*.28]],.05,x+s*(tw/2+.06),t.mud||mat); // faldón
-    if(I.schurz) for(let k=0;k<5;k++){ const z=zr+.8+k*(L-1.6)/5; box(root,.04,.62,(L-1.6)/5-.06,x+s*(tw/2+.16),I.deck-.2,z+(L-1.6)/10,mat); } // Schürzen (planchas sueltas)
+    if(I.schurz){ const top=I.schTop??(I.deck-.08), h=I.schH??.62, n=I.schN||6, z0=zr+.55, len=L-1.1, xo=x+s*(tw/2+.14);   // Schürzen: planchas de 5 mm colgadas de un riel
+      box(root,.05,.05,len+.1,xo-s*.03,top+.02,z0+len/2,darkMat);                                                                  // riel
+      for(let k=0;k<n;k++){ const z=z0+(k+.5)*len/n, P=box(root,.025,h,len/n-.07,xo+s*.03,top-h/2,z,mat); P.rotation.z=-s*.05; P.rotation.y=(k%2?1:-1)*.012;   // levemente abiertas y desparejas
+        for(const d of [-.3,.3]) box(root,.06,.12,.05,xo,top-.03,z+d*len/n,darkMat); } }                                             // ganchos
     if(I.chur) profMesh(root,[[zf-.35,H+.06],[zr+.35,H+.06],[zr+.1,H*.8],[zf-.1,H*.8]],tw+.08,x,mat);        // techo de la oruga envuelta
     else box(root,tw+.08,.04,L-.25,x,Math.max(I.trF,I.trR)+.04,-.04,t.mud||mat);                          // guardabarros
   }

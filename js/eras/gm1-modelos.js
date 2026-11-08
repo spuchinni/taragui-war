@@ -11,10 +11,16 @@ function ww1Paint(cols,mode){ return (x,s)=>{
     for(let i=0;i<26;i++){ const c=cols[1+(i%(cols.length-1))]; const cx=Math.random()*s, cy=Math.random()*s, P=[];
       for(let j=0;j<7;j++){ const a=j/7*Math.PI*2+rand(-.3,.3), r=rand(30,80); P.push([cx+Math.cos(a)*r,cy+Math.sin(a)*r*.7]); }
       x.fillStyle=c; x.beginPath(); P.forEach((p,k)=>k?x.lineTo(...p):x.moveTo(...p)); x.closePath(); x.fill(); x.strokeStyle='#1b1a16'; x.lineWidth=rand(3,6); x.stroke(); } }
+  else if(mode==='w2de'){ // 2ª Guerra: Dunkelgelb con franjas onduladas Olivgrün y Rotbraun (rociadas: bordes suaves)
+    for(let i=0;i<9;i++){ const c=cols[1+(i%2)], y0=Math.random()*s, a=rand(-.5,.5), w=rand(10,22);
+      x.strokeStyle=c; x.lineCap='round'; x.lineJoin='round';
+      for(const [lw,al] of [[w*1.9,.25],[w,.9]]){ x.globalAlpha=al; x.lineWidth=lw; x.beginPath();
+        for(let k=0;k<=24;k++){ const X=-20+k*(s+40)/24, Y=y0+(X-s/2)*Math.tan(a)+Math.sin(k*.9+i)*rand(8,16); k?x.lineTo(X,Y):x.moveTo(X,Y); } x.stroke(); } }
+    x.globalAlpha=1; }
   else if(mode==='de'){ // A7V: gris con manchas ocre y verdes
     for(let i=0;i<30;i++){ x.fillStyle=cols[1+(i%(cols.length-1))]; x.globalAlpha=rand(.7,.95); x.beginPath(); const cx=Math.random()*s, cy=Math.random()*s;
       for(let j=0;j<9;j++){ const a=j/9*Math.PI*2, r=rand(18,60); x.lineTo(cx+Math.cos(a)*r,cy+Math.sin(a)*r*.6); } x.fill(); } x.globalAlpha=1; }
-  else { for(let i=0;i<40;i++){ x.globalAlpha=rand(.05,.15); x.fillStyle=Math.random()<.5?cols[1]:cols[2]; x.fillRect(Math.random()*s,Math.random()*s,rand(20,90),rand(10,60)); } x.globalAlpha=1; }
+  else { for(let i=0;i<40;i++){ x.globalAlpha=rand(.03,.08); x.fillStyle=Math.random()<.5?cols[1]:cols[2]; x.fillRect(Math.random()*s,Math.random()*s,rand(20,90),rand(10,60)); } x.globalAlpha=1; }
   // remaches, óxido y barro de trinchera
   x.fillStyle='rgba(20,18,14,.55)'; for(let yy=10;yy<s;yy+=42) for(let xx=6;xx<s;xx+=14) x.fillRect(xx,yy,2.5,2.5);
   for(let i=0;i<60;i++){ x.globalAlpha=rand(.08,.25); x.fillStyle=Math.random()<.5?'#6b5638':'#3b3022'; x.beginPath(); x.ellipse(Math.random()*s,Math.random()*s,rand(4,22),rand(3,12),rand(0,3),0,7); x.fill(); }

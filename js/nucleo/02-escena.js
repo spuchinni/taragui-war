@@ -73,11 +73,11 @@ function tankDetail(mat,root,dust){
    tdH=(rl.r*(.0012+uRel.z*.004)+rl.g*uRel.x*.009+tdZ*.009)*clamp(1.-length(vViewPosition)/70.,0.,1.);
    diffuseColor.rgb*=1.+(rl.r-.5)*uRel.z*.25-rl.g*uRel.x*.12;                       // fundido manchado; borde oscuro del remache
    diffuseColor.rgb=mix(diffuseColor.rgb,diffuseColor.rgb*vec3(1.08,1.05,.98),tdZ*.8); // la pasta del zimmerit, más clara
-   diffuseColor.rgb*=1.+(m.r/.6-1.)*2.2;                                             // chapa despareja
+   diffuseColor.rgb*=1.+(m.r/.6-1.)*.8;                                              // chapa despareja (antes ×2,2: manchaba todo)
    float st=texture2D(sM,vec2((vLp.x+vLp.z)*.9,vLp.y*.3)).b*(1.-an.y);               // chorreaduras (caras verticales)
    diffuseColor.rgb*=1.-st*.55;
-   diffuseColor.rgb=mix(diffuseColor.rgb,vec3(.40,.38,.35),m.g*.8);                  // rayones y saltaduras: metal a la vista
-   float h=vWy-uRoot.y; diffuseColor.rgb=mix(diffuseColor.rgb,uDust*.9,clamp(smoothstep(1.9,.2,h)*.7+an.y*step(0.,vLn.y)*.15,0.,.75)); // polvo y barro de abajo
+   diffuseColor.rgb=mix(diffuseColor.rgb,vec3(.40,.38,.35),m.g*.55);                  // rayones y saltaduras: metal a la vista
+   float h=vWy-uRoot.y; diffuseColor.rgb=mix(diffuseColor.rgb,uDust*.9,clamp(smoothstep(1.5,.15,h)*.55+an.y*step(0.,vLn.y)*.1,0.,.6)); // polvo y barro de abajo
    if(vLn.y<-.3) diffuseColor.rgb*=.65; }                                            // panza más oscura
 `).replace('#include <roughnessmap_fragment>',`#include <roughnessmap_fragment>
  roughnessFactor=clamp(roughnessFactor-tdM.g*.4+tdZ*.2,.18,1.);`)                    // el metal pelado brilla, la pasta es mate
