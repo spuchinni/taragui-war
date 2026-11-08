@@ -35,7 +35,7 @@ open(mf,'w',encoding='utf-8').write(m)
 #  · todos los scripts del juego en uno solo (js/tarawar.js), en el mismo orden que en index.html;
 #  · todos los sonidos y voces en audio.json (base64) y sndFetch los saca de ahí.
 import re, base64
-h=open(ih,encoding='utf-8').read(); tags=re.findall(r'<script src="(js/[^"?]+)(?:\?v=[^"]*)?"></script>',h)
+h=open(ih,encoding='utf-8').read(); tags=re.findall(r'<script src="(js/(?!lib/)[^"?]+)(?:\?v=[^"]*)?"></script>',h)
 AUDIO_HOOK='''
 ;(function(){ let P=null; const get=()=>P||(P=fetch('audio.json').then(r=>r.json()));
   const b64=s=>{ const bin=atob(s), u=new Uint8Array(bin.length); for(let i=0;i<bin.length;i++) u[i]=bin.charCodeAt(i); return u.buffer; };
@@ -48,9 +48,9 @@ for t in tags:
     os.remove(os.path.join(DEST,t))
 open(os.path.join(DEST,'js','tarawar.js'),'w',encoding='utf-8').write(''.join(parts))
 # el script único va donde estaba el último (después de three.js y Firebase)
-ms=list(re.finditer(r'<script src="js/[^"]+"></script>\n?',h)); last=ms[-1]
+ms=list(re.finditer(r'<script src="js/(?!lib/)[^"]+"></script>\n?',h)); last=ms[-1]
 out=h[:last.start()]+'<script src="js/tarawar.js"></script>\n'+h[last.end():]
-out=re.sub(r'<script src="js/[^"]+"></script>\n?','',out[:out.rfind('<script src="js/tarawar.js">')])+out[out.rfind('<script src="js/tarawar.js">'):]
+out=re.sub(r'<script src="js/(?!lib/)[^"]+"></script>\n?','',out[:out.rfind('<script src="js/tarawar.js">')])+out[out.rfind('<script src="js/tarawar.js">'):]
 open(ih,'w',encoding='utf-8').write(out)
 for d in ['js/nucleo','js/eras']:
     q=os.path.join(DEST,d)

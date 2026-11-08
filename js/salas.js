@@ -29,6 +29,7 @@ function salaMsg(t){ salaPanel(`<p>${esc(t)}</p><button class="go alt" id="lbQui
 function jugarSolo(msg){ sala.busca=false; startBattle(false); if(msg) setTimeout(()=>banner('Partida sin conexión',msg,4),400); }
 async function jugarOnline(){
   if(sala.busca) return;
+  if(navigator.onLine===false){ jugarSolo('Sin conexión a internet: jugás con bots.'); return; }
   if(!nube.on){ jugarSolo('No se pudo conectar al servidor de partidas: jugás con bots.'); return; }
   sala.busca=true; salaMsg(`Buscando partidas de ${ERAS[curEra]?ERAS[curEra].n:'tu época'} con BR ${brTxt(garageBR(chosenNation))}…`);
   let L;

@@ -939,6 +939,7 @@ I18N.add({
 "Batalla online": "Online battle",
 "Partida sin conexión": "Offline battle",
 "No se pudo conectar al servidor de partidas: jugás con bots.": "Couldn't connect to the battle server: you play with bots.",
+"Sin conexión a internet: jugás con bots.": "No internet connection: you play with bots.",
 "tu época": "your era",
 "Buscando partidas de {} con BR {}…": "Looking for {} battles with BR {}…",
 "No hay partidas abiertas de tu BR: armando una. Los que busquen partida van a entrar a la tuya.": "No open battles at your BR: starting one. Players looking for a battle will join yours.",

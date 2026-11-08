@@ -6,3 +6,4 @@ V=$(date +%Y%m%d-%H%M)
 sed -i -E "s#(src|href)=\"((js|css)/[^\"?]+)(\?v=[^\"]*)?\"#\1=\"\2?v=$V\"#g; s#window\.GAME_V='[^']*'#window.GAME_V='$V'#" index.html
 printf '{"v":"%s"}\n' "$V" > version.json
 echo "Versión $V"
+python3 herramientas/offline.py   # lista para jugar sin conexión (sw.js)
