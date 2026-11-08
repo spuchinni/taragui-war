@@ -286,7 +286,13 @@ function drive0(t,throttle,steer,dt){
     // no se trepan paredes ni escalones de más de 1,2 m; la IA además evita el agua y los precipicios
     if((bot&&W.boundary&&!inPoly(p.x,p.z,W.boundary))||(!t.air&&gN-yO>1.2)||(bot&&((W.water!=null&&gN<W.water+.4)||yO-gN>2.5))){p.x=ox;p.z=oz;t.speed*=.5;} }
   for(const o of tanks){ if(o===t) continue; const dx=p.x-o.pos.x, dz=p.z-o.pos.z, dd=Math.hypot(dx,dz), m=t.R+o.R*.9;
-    if(dd<m&&dd>0.01){p.x+=dx/dd*(m-dd)*.6;p.z+=dz/dd*(m-dd)*.6; const into=-(fx*dx+fz*dz)/dd*dir; if(into>0)t.speed*=1-Math.min(.9,into*dt*8);} }
+    if(dd<m&&dd>0.01){
+      // cañones (antitanque, antiaéreo, de campaña): uno destruido o aplastado se pasa por arriba frenando un poco;
+      // uno enemigo vivo cede (el tanque lo aplasta, civiles.js); solo los propios vivos frenan del todo
+      const gun=o.T&&o.T.static&&!(t.T&&t.T.static);
+      if(gun&&(o.dead||o.crushed)){ if(Math.abs(t.speed)>.3) t.speed*=1-Math.min(.5,dt*1.4); continue; }
+      const k=gun&&o.team!==t.team?.12:.6;
+      p.x+=dx/dd*(m-dd)*k;p.z+=dz/dd*(m-dd)*k; const into=-(fx*dx+fz*dz)/dd*dir; if(into>0)t.speed*=1-Math.min(.9,into*dt*(k<.6?2:8));} }
   crushCars(t);
   propsNear(p.x,p.z,t.co+cr+3,P=>{ if(P.fallen||P.crushed||P.gone) return; for(const k of [1,-1]){ const dx=P.x-(p.x+fx*t.co*k), dz=P.z-(p.z+fz*t.co*k);
       if(dx*dx+dz*dz<(cr+P.r)**2&&Math.abs(t.speed)>.6){ knockProp(P,dx*dir||fx,dz*dir||fz); t.speed*=P.kind==='car'?.8:.95; break; } } });

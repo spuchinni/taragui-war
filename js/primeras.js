@@ -173,6 +173,20 @@
             :`${F?`<p>Cuando tu equipo captura un punto, lo <b>fortifica</b>: ${list} lo defienden solos.</p>`:''}<p>Mientras tu equipo tenga <b>más puntos</b> que el enemigo, <b>su barra se gasta</b>. ¡Defendelo!</p>`),
           {low:1,cam:(()=>{ let dx=player.pos.x-Z.x, dz=player.pos.z-Z.z; const L=Math.hypot(dx,dz)||1, r=Math.max(18,Z.r||25); dx/=L; dz/=L;
             return {pos:new THREE.Vector3(Z.x+dx*r*1.5,zp.y+r*.9,Z.z+dz*r*1.5),look:zp.clone().setY(zp.y-r*.25)}; })(),marks})) LSs('tw2_lCap'); } }
+    // ---- la mira del artillero (pedido de Sebastián: "no me enseña a usar la mira"): 2ª batalla, con un enemigo cerca.
+    // Después del cartel, un aviso hasta que la use, otro para el aumento y otro para salir. Una sola vez (tw2_lMira). ----
+    if(B.lvl===2&&!B.said.mira&&!LSg('tw2_lMira')&&t>25&&player&&!player.dead&&!scopeOn){
+      const e=tanks.find(o=>!o.dead&&o.team!==player.team&&!(o.T&&o.T.static)&&o.visP&&o.pos.distanceTo(player.pos)<450);
+      if(e&&lesson(EN()?'The gunner\'s sight':'La mira del artillero',EN()
+          ?`<p>To hit tanks that are <b>far away</b>, look through the gun sight.</p><p>${mob()?'Tap <b>◎</b> to go in and out of the sight · <b>🔍</b> zooms in more.':`${K('scope')} goes in and out of the sight · <b>right click</b> zooms in more.`}</p><p>Put the <b>center of the sight</b> on the enemy and fire. The farther it is, the higher you aim: use the marks under the center.</p>`
+          :`<p>Para pegarle a tanques que están <b>lejos</b>, mirá por la mira del cañón.</p><p>${mob()?'Tocá <b>◎</b> para entrar y salir de la mira · <b>🔍</b> acerca más.':`${K('scope')} entra y sale de la mira · <b>clic derecho</b> acerca más.`}</p><p>Poné el <b>centro de la mira</b> sobre el enemigo y disparale. Cuanto más lejos esté, más arriba apuntás: usá las marcas debajo del centro.</p>`,
+          {low:1,zoom:{p:e.pos.clone().setY(e.pos.y+(e.topH||2.4)*.55),r:9},marks:[{p:e.pos.clone().setY(e.pos.y+(e.topH||2.4)*.55),txt:EN()?'Enemy':'Enemigo',col:'#ff4a36'}]})){ B.said.mira=1; B.miraT=t; } }
+    if(B.said.mira===1&&state==='play'){
+      if(scopeOn){ B.said.mira=2; showHint(EN()?(mob()?'<b>🔍</b> zooms in more · <b>◎</b> again to leave the sight':'<b>Right click</b> zooms in more · '+K('scope')+' again to leave the sight')
+        :(mob()?'<b>🔍</b> acerca más · <b>◎</b> otra vez para salir de la mira':'<b>Clic derecho</b> acerca más · '+K('scope')+' otra vez para salir de la mira'),7); }
+      else if(t-B.miraT>40){ B.said.mira=3; LSs('tw2_lMira'); }   // no la quiso usar: no insistir más
+      else if(hintT<=0) showHint(EN()?(mob()?'Tap <b>◎</b> to look through the sight':'Press '+K('scope')+' to look through the sight'):(mob()?'Tocá <b>◎</b> para mirar por la mira':'Apretá '+K('scope')+' para mirar por la mira'),3,'low'); }
+    if(B.said.mira===2&&!scopeOn&&state==='play'){ B.said.mira=3; LSs('tw2_lMira'); }
     if(B.lvl===3&&!B.said.inf&&t>40&&player&&!player.dead){ let s=null,sd=260; for(const P of infantry){ if(P.dead||isCiv(P)) continue; const d=P.pos.distanceTo(player.pos); if(d<sd){ sd=d; s=P; } }
       const p=s?s.pos.clone().setY(s.pos.y+1.2):null;
       if(lesson(EN()?'New: infantry':'Nuevo: la infantería',EN()

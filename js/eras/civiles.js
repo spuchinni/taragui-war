@@ -41,7 +41,7 @@
     F.mount=null; if(t.crew&&t.team!==F.team) addSP(t,25,30,'Nido aplastado'); if(t.isPlayer) hitMsg('Aplastado: nido de ametralladora','var(--amber)'); }
   const _ui2=updateInfantry;
   updateInfantry=function(dt){ _ui2.apply(this,arguments); if(net.guest) return;
-    for(const t of tanks){ if(t.dead||!t.pos||isGun(t)||(t.T&&t.T.support)) continue; const sp=Math.abs(t.speed||0); if(sp<1.1) continue;
+    for(const t of tanks){ if(t.dead||!t.pos||isGun(t)||(t.T&&t.T.support)) continue; const sp=Math.abs(t.speed||0); if(sp<.5) continue;
       const fx=Math.sin(t.heading)*Math.sign(t.speed), fz=Math.cos(t.heading)*Math.sign(t.speed);
       for(const o of tanks){ if(o===t||o.dead||!isGun(o)||o.team===t.team) continue; const dx=o.pos.x-t.pos.x, dz=o.pos.z-t.pos.z, d=Math.hypot(dx,dz);
         if(d<t.R+o.R*.9+.6&&(dx*fx+dz*fz)>0) crushGun(o,t); }
