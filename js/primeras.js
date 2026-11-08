@@ -252,7 +252,7 @@
   { const _sum=summary; summary=function(winner){ const first=!!(B&&B.first&&!tut&&!B.gift), r=_sum.apply(this,arguments);
       if(first&&winner===0&&PROG&&state==='summary'){ B.gift=1; const me=crews.find(c=>c.isPlayer), k=Object.keys((me&&me.uses)||{}).find(x=>VEH[x])||(player&&player.key);
         let g=k; try{ if(g&&localStorage.getItem('tw2_elegido')===g){ const n=VEH[g].nation; g=vehTreeE(n,eraOf(g)).find(x=>!owned(x))||g; } }catch(e){}   // el tanque elegido al empezar ya es tuyo: la caja trae el siguiente de la nación (rapida.js)
-        if(g) giftBox(g); }
+        if(g){ giftBox(g); if(g!==k) try{ const G=garRef(VEH[k].nation,eraOf(k)), i=G.indexOf(k); if(i>0){ G.splice(i,1); G.unshift(k); saveProg(); } }catch(e){} } }   // el elegido sigue primero
       return r; }; }
 
   // ---- CrazyGames: un jugador nuevo arranca con Estados Unidos y un Sherman ----
