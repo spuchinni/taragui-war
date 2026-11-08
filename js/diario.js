@@ -143,12 +143,11 @@
   // botón en el menú principal y apertura sola una vez por día
   let shownDay=null;
   const _mm=mainMenu; mainMenu=function(){ const r=_mm.apply(this,arguments);
-    const bar=document.querySelector('.homeBar'); if(!bar||!PROG) return r;
-    const b=document.createElement('button'); b.className='hb dayB'; b.id='dayB'; b.setAttribute('data-notr','');
-    b.innerHTML=`📅 ${T2('Premio','Reward')}${canClaim()?'<i></i>':''}`; b.onclick=showDaily;
-    const opt=document.getElementById('optB'); if(opt) bar.insertBefore(b,opt); else bar.appendChild(b);
+    // automático (pedido de Sebastián): sin botón; al entrar al menú, si hoy no giró, se abre la ruleta y gira sola.
+    // Se puede girar de nuevo desde las 0 h (fecha local del aparato). El que nunca jugó la ve después de su 1ª batalla.
+    if(!document.querySelector('.homeBar')||!PROG) return r;
     const nb=(PROG.stats&&PROG.stats.battles)||0;
-    if(canClaim()&&nb>=1&&shownDay!==today()){ shownDay=today(); setTimeout(()=>{ if(state==='menu'&&document.body.classList.contains('home')) showDaily(); },700); }
+    if(canClaim()&&nb>=1&&shownDay!==today()){ shownDay=today(); setTimeout(()=>{ if(state==='menu'&&document.body.classList.contains('home')){ showDaily(); setTimeout(()=>{ const g=document.getElementById('dayGo'); if(g&&box.style.display==='flex') g.click(); },900); } },700); }
     return r; };
 
   // ---- mejoras de una batalla ----

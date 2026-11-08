@@ -23,7 +23,9 @@
     #novBox h2{margin:0 0 8px;font:800 30px 'Saira Condensed',system-ui,sans-serif;color:#ffd24a;text-align:center}
     #novBox h3{margin:12px 0 4px;color:#cfc6b0;font-size:16px;letter-spacing:.06em} #novBox ul{margin:0;padding-left:20px} #novBox li{margin:4px 0;line-height:1.3}
     #novBox .x{display:block;margin:14px auto 0;min-width:180px;font-size:20px}
-    .novB{position:relative} .novB i{position:absolute;top:-6px;right:-6px;width:14px;height:14px;border-radius:50%;background:#ff4a36;box-shadow:0 0 0 2px #111}
+    #introL{display:none} .homeCopy{left:0;right:0;text-align:center;bottom:calc(2px + env(safe-area-inset-bottom,0px))}
+    .homeBar{bottom:calc(26px + env(safe-area-inset-bottom,0px))!important}
+    .novB{position:relative} .novB i{position:absolute;top:-2px;right:-10px;width:10px;height:10px;border-radius:50%;background:#ff4a36;box-shadow:0 0 0 2px #111}
     .homeTag{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(122px + env(safe-area-inset-bottom,0px));z-index:5;pointer-events:none;white-space:nowrap;
       font:700 20px 'Saira Condensed',system-ui,sans-serif;letter-spacing:.06em;color:#ffd24a;text-shadow:0 2px 6px #000,0 0 2px #000}
     body.movil .homeTag{font-size:14px;bottom:calc(100px + env(safe-area-inset-bottom,0px))}`;
@@ -37,9 +39,11 @@
   window.showNov=showNov;
   const _mm=mainMenu; mainMenu=function(){ const r=_mm.apply(this,arguments);
     const bar=document.querySelector('.homeBar'); if(!bar) return r;
-    const b=document.createElement('button'); b.className='hb novB'; b.id='novB'; b.setAttribute('data-notr','');
-    b.innerHTML=`📰 ${EN()?'News':'Novedades'}${LS('tw2_nov')!==NOV[0].id?'<i></i>':''}`; b.onclick=showNov;
-    const opt=document.getElementById('optB'); if(opt) bar.insertBefore(b,opt); else bar.appendChild(b);
+    // menú liviano (pedido de Sebastián: "muy cargada"): Jugar, Campaña, Vehículos y Opciones. El Tutorial está en el garaje.
+    const tb=document.getElementById('tutB'); if(tb) tb.style.display='none';
+    // Novedades: link chico abajo, en lugar de "Ver la intro" (la intro hoy es la portada quieta y se encimaba con Opciones)
+    const cp=document.querySelector('.homeCopy'); if(cp){ const b=document.createElement('button'); b.className='introL novB'; b.id='novB'; b.setAttribute('data-notr','');
+      b.innerHTML=`📰 ${EN()?'News':'Novedades'}${LS('tw2_nov')!==NOV[0].id?'<i></i>':''}`; b.onclick=showNov; cp.prepend(b); }
     // lema: de qué se trata el juego (no tapa el tanque elegido de las primeras batallas: va más arriba)
     const t=document.createElement('div'); t.className='homeTag'; t.setAttribute('data-notr','');
     t.textContent=EN()?'Argentine armor, from the Nahuel to the TAM · made in Corrientes':'Los blindados argentinos, del Nahuel al TAM · hecho en Corrientes';
