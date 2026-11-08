@@ -251,7 +251,8 @@
     gift.querySelector('#pGiftOk').onclick=()=>{ gift.style.display='none'; }; }
   { const _sum=summary; summary=function(winner){ const first=!!(B&&B.first&&!tut&&!B.gift), r=_sum.apply(this,arguments);
       if(first&&winner===0&&PROG&&state==='summary'){ B.gift=1; const me=crews.find(c=>c.isPlayer), k=Object.keys((me&&me.uses)||{}).find(x=>VEH[x])||(player&&player.key);
-        if(k) giftBox(k); }
+        let g=k; try{ if(g&&localStorage.getItem('tw2_elegido')===g){ const n=VEH[g].nation; g=vehTreeE(n,eraOf(g)).find(x=>!owned(x))||g; } }catch(e){}   // el tanque elegido al empezar ya es tuyo: la caja trae el siguiente de la nación (rapida.js)
+        if(g) giftBox(g); }
       return r; }; }
 
   // ---- CrazyGames: un jugador nuevo arranca con Estados Unidos y un Sherman ----

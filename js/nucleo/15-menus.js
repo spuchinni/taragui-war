@@ -56,7 +56,7 @@ function hgGetHTML(k,S){
 function renderHangar(){
   if(!PROG) loadProg(); menuScreen='hangar'; document.body.classList.remove('home');
   const NN=Object.fromEntries(eraNations(curEra).map(k=>[k,NATIONS[k]])); if(!NN[chosenNation]) chosenNation=Object.keys(NN)[0];
-  const T=vehTree(chosenNation); if(!hgSel||!T.includes(hgSel)) hgSel=garageOf(chosenNation)[0]||T[0];
+  const T=vehTree(chosenNation); if(!hgSel||!(T.includes(hgSel)||garageOf(chosenNation).includes(hgSel))) hgSel=garageOf(chosenNation)[0]||T[0];   // los tanques especiales (diario.js) no están en el árbol
   hgShow(hgSel,chosenNation);
   const V=VEH[hgSel], S=hgStatus(hgSel), lv=tankLv(hgSel), xp=tankXP(hgSel);
   const eq=[`Mira ${V.optic.join('/')}×`,`Ametralladora ${String(V.mgc||MG_CAL[hgSel]||7.62).replace('.',',')} mm`,V.arc!=null?`Sin torre: ±${Math.round(V.arc*180/Math.PI)}°`:'',V.trench?`Cruza trincheras de ${String(V.trench).replace('.',',')} m`:'',V.fcs?'Telémetro':'',V.stab?'Estabilizador':'',V.thermal?'Térmica':'',V.autoL?'Cargador automático':'',V.auto?'Cañón automático':'',V.troops?`Lleva ${V.troops} soldados`:''].filter(Boolean);
@@ -123,11 +123,11 @@ function hgChallenges(){ const D=ensureDaily(), box=$('hgModal'); if(!box) retur
 function hgCamo(){ const box=$('hgModal'); if(!box) return; PROG.camoOwn=PROG.camoOwn||{base:1}; PROG.camo=PROG.camo||{}; const cur=PROG.camo[hgSel]||'base';
   const sw=k=>{ const C=CAMOS[k], cols=C.cols||NATIONS[chosenNation].camo; return `<span class="sw" style="background:${C.mode==='stripes'?`repeating-linear-gradient(20deg,${cols[0]} 0 8px,${cols[1]} 8px 13px)`:`linear-gradient(135deg,${cols[0]} 0 40%,${cols[1]} 40% 70%,${cols[2]} 70%)`}"></span>`; };
   box.innerHTML=`<div class="hgM" style="width:min(520px,94vw)"><h2>Camuflaje · ${VEH[hgSel].label}</h2><p class="s">Medallas: 🎖 ${PROG.medals||0}. Los camuflajes desbloqueados sirven para todos tus tanques.</p>
-    <div class="camG">${Object.keys(CAMOS).map(k=>{ const C=CAMOS[k], own=!!PROG.camoOwn[k]; return `<button class="camI${k===cur?' sel':''}" data-c="${k}">${sw(k)}<b>${C.n}</b><small>${k===cur?'En uso':own?'Usar':`🎖 ${C.cost} para desbloquear`}</small></button>`; }).join('')}</div>
+    <div class="camG">${Object.keys(CAMOS).map(k=>{ const C=CAMOS[k], own=!!PROG.camoOwn[k]; return `<button class="camI${k===cur?' sel':''}" data-c="${k}">${sw(k)}<b>${C.n}</b><small>${k===cur?'En uso':own?'Usar':C.daily?'📅 Premio diario':`🎖 ${C.cost} para desbloquear`}</small></button>`; }).join('')}</div>
     <button class="go alt" id="mClose" style="margin:6px 0 0">Cerrar</button></div>`;
   $('mClose').onclick=()=>{ box.innerHTML=''; };
   box.querySelectorAll('.camI').forEach(b=>b.onclick=()=>{ const k=b.dataset.c, C=CAMOS[k];
-    if(!PROG.camoOwn[k]){ if((PROG.medals||0)<C.cost){ b.querySelector('small').textContent=`Te faltan ${C.cost-(PROG.medals||0)} medallas`; return; } PROG.medals-=C.cost; PROG.camoOwn[k]=1; }
+    if(!PROG.camoOwn[k]){ if(C.daily){ b.querySelector('small').textContent='Se gana con el premio diario'; return; } if((PROG.medals||0)<C.cost){ b.querySelector('small').textContent=`Te faltan ${C.cost-(PROG.medals||0)} medallas`; return; } PROG.medals-=C.cost; PROG.camoOwn[k]=1; }
     PROG.camo[hgSel]=k; saveProg(); if(hg) hg.key=null; renderHangar(); hgCamo(); }); }
 function hgOnline(){
   const box=$('hgModal'); if(!box) return;

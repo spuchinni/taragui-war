@@ -11,7 +11,7 @@ const BR_TABLE={stuart:2.0,m113:2.7,sherman:3.3,ee9:4.0,vctp:4.3,m41u:4.3,pt76:4
 for(const k in VEH) VEH[k].br=VEH[k].br||BR_TABLE[k]||5;
 const brTxt=b=>b.toFixed(1);
 // Árbol de una nación en una época (por defecto, la elegida en el menú). Los cañones de campaña no son jugables.
-function vehTreeE(n,e){ return Object.keys(VEH).filter(k=>VEH[k].nation===n&&eraOf(k)===e&&!VEH[k].static&&!VEH[k].support).sort((a,b)=>VEH[a].br-VEH[b].br||(VEH[a].year||0)-(VEH[b].year||0)); }
+function vehTreeE(n,e){ return Object.keys(VEH).filter(k=>VEH[k].nation===n&&eraOf(k)===e&&!VEH[k].static&&!VEH[k].support&&!VEH[k].special).sort((a,b)=>VEH[a].br-VEH[b].br||(VEH[a].year||0)-(VEH[b].year||0)); }
 function vehTree(n){ return vehTreeE(n,curEra); }
 const RANK_ROMAN=['','I','II','III','IV','V'], RANK_K={1:1,2:1.7,3:2.6,4:3.6,5:4.8}, RANK_NEED=3, YP_START=2000;
 const rankOf=k=>eraOf(k);
