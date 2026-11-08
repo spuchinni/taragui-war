@@ -2,8 +2,8 @@
 // camuflaje, y días seguidos"). Va después de rapida.js y antes de inicio.js.
 //  · PROG.racha={last,n,ciclo}: un premio por día (fecha local). Si se saltea un día la racha vuelve a 1. El día 14 regala un
 //    tanque especial (SPECIALS, uno distinto por ciclo) y la racha arranca de nuevo.
-//  · Premios: plata (PROG.yp) y experiencia (PROG.pxp), calcomanías, accesorios, camuflajes exclusivos (CAMOS con daily:1, no se
-//    compran con medallas) y mejoras de una batalla (doble PI o +50 % de plata).
+//  · Premios: Yaguaretés (PROG.yp) y experiencia (PROG.pxp), calcomanías, accesorios, camuflajes exclusivos (CAMOS con daily:1, no se
+//    compran con medallas) y mejoras de una batalla (doble PI o +50 % de Yaguaretés).
 //  · Calcomanías y accesorios: PROG.cos={stk,acc (los que tenés), sel:{tanque:{stk,acc:[]}}, boost:{xp,ag}}. Se ponen solo en
 //    tu tanque (en batalla y en el garaje); los demás jugadores online no los ven. Botón "Calcomanías y accesorios" en el hangar.
 //  · Tanques especiales: copias de un tanque famoso con nombre y pintura propios (mismos números), fuera del árbol: van al garaje.
@@ -60,17 +60,17 @@
     for(const p of L){ x-=p.w; if(x<=0) return {...p.make(day),rar:p.rar}; } return {...L[0].make(day),rar:L[0].rar}; }
   // lo que muestra cada tarjeta de la ruleta
   function cardOf(r,c){ if(r.tank){ const S=specialOf(c); return {i:'🎁',t:T2('Tanque especial','Special tank'),s:S?T2(S.es,S.en):''}; }
-    if(r.yp) return {i:'🪙',t:`${r.yp.toLocaleString('es-AR')} ${T2('de plata','silver')}`,s:`+${r.xp.toLocaleString('es-AR')} XP`};
+    if(r.yp) return {i:'🐆',t:`${r.yp.toLocaleString('es-AR')} Yaguaretés`,s:`+${r.xp.toLocaleString('es-AR')} XP`};
     if(r.stk) return {i:'🏷️',t:T2('Calcomanía','Sticker'),s:T2('para tu tanque','for your tank')};
     if(r.acc) return {i:'🎒',t:T2('Accesorio','Accessory'),s:T2('para tu tanque','for your tank')};
     if(r.camo) return {i:'🎨',t:T2('Camuflaje','Camouflage'),s:T2('exclusivo','exclusive')};
     if(r.boost==='xp') return {i:'⚡',t:T2('Doble PI','Double RP'),s:T2('1 batalla','1 battle')};
-    if(r.boost==='ag') return {i:'💰',t:T2('+50 % de plata','+50% silver'),s:T2(`${r.n||1} batallas`,`${r.n||1} battles`)}; return {i:'?',t:'',s:''}; }
+    if(r.boost==='ag') return {i:'💰',t:T2('+50 % de Yaguaretés','+50% Yaguaretés'),s:T2(`${r.n||1} batallas`,`${r.n||1} battles`)}; return {i:'?',t:'',s:''}; }
   function give(r,c){ const C=cos(), K=cardOf(r,c); let msg=`${K.i} ${K.t}${K.s?' · '+K.s:''}`;
     if(r.yp){ PROG.yp=(PROG.yp||0)+r.yp; PROG.pxp=(PROG.pxp||0)+r.xp; }
-    if(r.stk){ const k=pickNew(STK,C.stk); if(k){ C.stk[k]=1; msg='🏷️ '+T2('Calcomanía','Sticker')+': '+STK[k].e+' '+T2(STK[k].es,STK[k].en); } else { PROG.yp+=800; msg='🪙 800'; } }
-    if(r.acc){ const k=pickNew(ACC,C.acc); if(k){ C.acc[k]=1; msg='🎒 '+T2(ACC[k].es,ACC[k].en)+' '+ACC[k].e; } else { PROG.yp+=800; msg='🪙 800'; } }
-    if(r.camo){ PROG.camoOwn=PROG.camoOwn||{base:1}; const k=DAILY_CAMOS.find(x=>!PROG.camoOwn[x]); if(k){ PROG.camoOwn[k]=1; msg='🎨 '+T2('Camuflaje','Camo')+': '+CAMOS[k].n; } else { PROG.yp+=1000; msg='🪙 1.000'; } }
+    if(r.stk){ const k=pickNew(STK,C.stk); if(k){ C.stk[k]=1; msg='🏷️ '+T2('Calcomanía','Sticker')+': '+STK[k].e+' '+T2(STK[k].es,STK[k].en); } else { PROG.yp+=800; msg='🐆 800'; } }
+    if(r.acc){ const k=pickNew(ACC,C.acc); if(k){ C.acc[k]=1; msg='🎒 '+T2(ACC[k].es,ACC[k].en)+' '+ACC[k].e; } else { PROG.yp+=800; msg='🐆 800'; } }
+    if(r.camo){ PROG.camoOwn=PROG.camoOwn||{base:1}; const k=DAILY_CAMOS.find(x=>!PROG.camoOwn[x]); if(k){ PROG.camoOwn[k]=1; msg='🎨 '+T2('Camuflaje','Camo')+': '+CAMOS[k].n; } else { PROG.yp+=1000; msg='🐆 1.000'; } }
     if(r.boost){ C.boost[r.boost]=(C.boost[r.boost]||0)+(r.n||1); }
     if(r.tank){ const S=specialOf(c); if(S){ msg='🎁 '+T2(S.es,S.en); const V=VEH[S.k]; PROG.unlocked[S.k]=1; PROG.owned[S.k]=1; const g=garRef(V.nation,eraOf(S.k)); const i=g.indexOf(S.k); if(i>=0) g.splice(i,1); g.unshift(S.k); if(g.length>3) g.length=3; } }
     return msg; }
@@ -156,7 +156,7 @@
   const _sb=startBattle; startBattle=function(spectator){ BST.xp=BST.ag=0;
     if(!spectator&&PROG){ const C=cos(); if(C.boost.xp>0){ C.boost.xp--; BST.xp=1; } if(C.boost.ag>0){ C.boost.ag--; BST.ag=1; } if(BST.xp||BST.ag) saveProg(); }
     const r=_sb.apply(this,arguments);
-    if(BST.xp||BST.ag) setTimeout(()=>{ try{ hitMsg((BST.xp?T2('⚡ Doble PI en esta batalla','⚡ Double RP this battle'):'')+(BST.xp&&BST.ag?' · ':'')+(BST.ag?T2('💰 +50 % de plata','💰 +50% silver'):''),'#ffd24a'); }catch(e){} },6000);
+    if(BST.xp||BST.ag) setTimeout(()=>{ try{ hitMsg((BST.xp?T2('⚡ Doble PI en esta batalla','⚡ Double RP this battle'):'')+(BST.xp&&BST.ag?' · ':'')+(BST.ag?T2('💰 +50 % de Yaguaretés','💰 +50% Yaguaretés'):''),'#ffd24a'); }catch(e){} },6000);
     return r; };
   const _br=battleReward; battleReward=function(){ const r=_br.apply(this,arguments); if(BST.xp) r.rp*=2; if(BST.ag) r.yp=Math.round(r.yp*1.5/10)*10; return r; };
 
