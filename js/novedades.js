@@ -9,12 +9,12 @@
     {id:'2026-11-08',fecha:'8/11/2026',
      es:['Elegí tu primer tanque: Sherman, T-34 o Panzer IV, y a pelear en segundos.',
          'Batallas rápidas de 5 minutos (en el garaje podés volver a la batalla grande).',
-         'Premio diario: entrá 14 días seguidos y llevate un tanque especial. Hay calcomanías, accesorios y camuflajes nuevos.',
+         'Premio diario: girá la ruleta cada día y ganá plata, calcomanías, accesorios o camuflajes. 14 días seguidos = tanque especial.',
          'Panzer IV con sus medidas reales y pintura más prolija en todos los tanques. Se puede jugar sin internet.',
          'TaraWar se enfoca en la 2ª Guerra y en los blindados argentinos: las demás épocas y países quedan guardados por ahora.'],
      en:['Pick your first tank: Sherman, T-34 or Panzer IV, and fight within seconds.',
          'Quick 5-minute battles (switch back to big battles in the garage).',
-         'Daily reward: log in 14 days in a row to win a special tank. New stickers, gear and camouflage.',
+         'Daily reward: spin the wheel every day for silver, stickers, gear or camouflage. 14 days in a row = a special tank.',
          'Panzer IV with real dimensions and cleaner paint on every tank. You can now play offline.',
          'TaraWar now focuses on World War II and Argentine armor: other eras and nations are stored for later.']}];
   const st=document.createElement('style'); st.textContent=`
