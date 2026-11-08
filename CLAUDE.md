@@ -4,6 +4,13 @@ Juego de tanques 3D en el navegador, estilo War Thunder, que Sebastián (Corrien
 Publicado en GitHub Pages: https://spuchinni.github.io/taragui-war/ (repo `spuchinni/taragui-war`, rama `main`).
 Hablar siempre en español rioplatense (vos), respuestas concretas y breves.
 
+## Foco y plan (documento de diseño del 8/11/2026)
+- Documento de diseño de Sebastián (Claude Docs): https://claude.ai/artifact/SDcd6KmAoC1HkgtiZsvWrd — **manda sobre todo lo demás**. Identidad: los blindados argentinos (del Nahuel al TAM, hecho en Corrientes) con la 2ª Guerra como puerta de entrada. Público: gente que sabe de tanques e historia militar, argentinos, y sus sobrinos y amigos. Plata: gratis con aportes (Cafecito) ahora; versión paga o Steam cuando haya público fiel. CrazyGames queda guardado.
+- Plan de 4 semanas: 1) ordenar (hecho: FOCO, Novedades, lema) · 2) pulir la entrada (Sherman, T-34, Panzer IV; sumar el Nahuel como 4ª opción en `tkPicker`; batallas rápidas; probar con amigos) · 3) capítulo Nahuel (datos con fuentes, 2–3 desafíos, historia corta) · 4) salir al mundo (itch.io, Discord, botón "Dar opinión", Reddit y grupos).
+- Reglas: ideas nuevas a la nota "Ideas TaraWar" de Sebastián y se revisan una vez por semana; si pide algo fuera del foco de la semana, avisarle antes de hacerlo; cada semana cierra con sus líneas en `js/novedades.js`; todo dato histórico se chequea con fuentes.
+- **`FOCO`** (eras.js): `eras:[3]`, `hide:['it','jp','cn','fr']`, `hideMaps:['okinawa','saipan','shanghai']`. `eraList`, `eraPlayable` y `eraNations` lo respetan (selector de épocas, naciones del hangar y del árbol, campaña, salas de otra época); `eraMaps` saca los mapas ocultos (también del mazo guardado y del mapa elegido). Nada se borró: para volver a abrir algo, se saca de `FOCO`.
+- `js/novedades.js` (después de diario.js): botón 📰 Novedades en el menú con un puntito mientras haya una sin ver (`tw2_nov`); `NOV` = lista por semana, la más nueva arriba, en los dos idiomas. También pone el lema en la portada (`.homeTag`).
+
 ## Estructura (versión 2)
 - `index.html` → juego nuevo por épocas (arranca en la 2ª Guerra; la 1ª Guerra, Entreguerras y la Guerra Fría son eventos con fecha). Carga three.js r128 desde `js/lib/three.min.js` (copia local, antes cdnjs) y los scripts de `js/` en orden.
 - `v1/` → versión anterior completa (Guerra Fría + mapas de Corrientes). No tocar salvo pedido. Guarda progreso en `tw_progress`; la v2 usa `tw2_progress`.

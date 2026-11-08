@@ -33,7 +33,7 @@ function newCrew(name,team,nation,isPlayer){
 }
 let mapBag=[];
 // Mapas de la época elegida (los de Corrientes y alrededores son de la Guerra Fría en adelante)
-const eraMaps=e=>Object.keys(WORLDS).filter(k=>(WORLDS[k].era||5)===e&&!WORLDS[k].noRandom);
+const eraMaps=e=>Object.keys(WORLDS).filter(k=>(WORLDS[k].era||5)===e&&!WORLDS[k].noRandom&&!(typeof FOCO!=='undefined'&&FOCO.hideMaps.includes(k)));
 function nextRandomMap(e=curEra){
   mapBag=mapBag.filter(k=>(WORLDS[k].era||5)===e);
   if(!mapBag.length){ mapBag=shuffle(eraMaps(e)); if(mapBag.length>1&&mapBag[mapBag.length-1]===builtKey) mapBag.unshift(mapBag.pop()); }
@@ -351,7 +351,7 @@ function mainMenu(){
   if(document.pointerLockElement) document.exitPointerLock();
   state='menu'; tut=null; bindCapture=null; document.body.classList.add('menu'); document.body.classList.remove('deploy','spec','tut','home'); if(!PROG) loadProg();
   $('banner').style.opacity=0; bannerT=0; $('overlay').style.display='flex'; syncIntro();
-  if(!PROG.eraOpen[curEra]||!eraReady(curEra)) curEra=3; applyEraNations(curEra);
+  if(!PROG.eraOpen[curEra]||!eraReady(curEra)||!eraList().includes(curEra)) curEra=3; applyEraNations(curEra);
   { const EN=eraNations(curEra); if(!EN.includes(chosenNation)) chosenNation=EN[0]; }
   const go=f=>()=>{initAudio(); if(AC.state==='suspended')AC.resume(); f();};
   const gear=`<button class="setB" id="setB" title="Ajustes" aria-label="Ajustes">⚙</button>`;

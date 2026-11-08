@@ -6,10 +6,10 @@
    - Espectador: si nadie toca los controles, la cámara hace sola de "director": acerca y aleja la vista aérea
      y cada tanto sigue de cerca al tanque que está peleando. */
 const MAPBAG_KEY='tw2_mapbag', MAPSEL_KEY='tw2_mapsel';
-try{ const m=localStorage.getItem(MAPSEL_KEY); if(m&&(m==='rand'||WORLDS[m])) chosenMap=m; }catch(e){}
+try{ const m=localStorage.getItem(MAPSEL_KEY); if(m&&(m==='rand'||(WORLDS[m]&&!FOCO.hideMaps.includes(m)))) chosenMap=m; }catch(e){}
 nextRandomMap=function(e=curEra){
   let B={}; try{ B=JSON.parse(localStorage.getItem(MAPBAG_KEY)||'{}')||{}; }catch(_){}
-  let bag=(B[e]||[]).filter(k=>WORLDS[k]&&(WORLDS[k].era||5)===e&&!WORLDS[k].noRandom);
+  let bag=(B[e]||[]).filter(k=>eraMaps(e).includes(k));   // solo los del mazo actual (no los ocultos por FOCO)
   if(!bag.length){ bag=shuffle(eraMaps(e)); if(bag.length>1&&bag[bag.length-1]===B['u'+e]) bag.unshift(bag.pop()); }   // el primero del mazo nuevo no repite el último
   const k=bag.pop(); B[e]=bag; B['u'+e]=k; try{ localStorage.setItem(MAPBAG_KEY,JSON.stringify(B)); }catch(_){}
   return k; };

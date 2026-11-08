@@ -32,8 +32,11 @@ function eventTxt(e){ const w=eventWin(e); if(!w) return ''; const last=new Date
 const RULE=()=>ERAS[(typeof W!=='undefined'&&W&&W.era)||5]; // reglas de la partida en curso (según el mapa)
 const eraOf=k=>(VEH[k]&&VEH[k].era)||5;
 const eraReady=e=>!!(ERAS[e]&&ERAS[e].ready);
-const eraPlayable=e=>eraReady(e)&&eventOn(e);   // lista y, si es un evento, dentro de su fecha
-const eraList=()=>Object.keys(ERAS).map(Number);
+// FOCO (documento de diseño del 8/11/2026, decisión de Sebastián): se muestra solo la 2ª Guerra como puerta de entrada y los
+// países del foco. Lo demás queda guardado en el código, sin borrar: épocas, países y mapas se vuelven a abrir sacándolos de acá.
+const FOCO={eras:[3],hide:['it','jp','cn','fr'],hideMaps:['okinawa','saipan','shanghai']};
+const eraPlayable=e=>FOCO.eras.includes(e)&&eraReady(e)&&eventOn(e);   // del foco, lista y, si es un evento, dentro de su fecha
+const eraList=()=>Object.keys(ERAS).map(Number).filter(e=>FOCO.eras.includes(e));
 
 /* Cada nación cambia de nombre, tripulantes, uniforme y casco según la época */
 const NAT_ERA={
@@ -50,7 +53,7 @@ function applyEraNations(e){
     N.label=O&&O.label||B.label; N.names=O&&O.names||B.names; N.uni=O&&O.uni||null; N.helm=O&&O.helm||null; }
 }
 // Naciones que tienen vehículos en una época (sin las especiales de Corrientes vs. Resistencia)
-const eraNations=e=>Object.keys(NATIONS).filter(n=>!NATIONS[n].special&&Object.keys(VEH).some(k=>VEH[k].nation===n&&eraOf(k)===e&&!VEH[k].static&&!VEH[k].support));
+const eraNations=e=>Object.keys(NATIONS).filter(n=>!NATIONS[n].special&&!FOCO.hide.includes(n)&&Object.keys(VEH).some(k=>VEH[k].nation===n&&eraOf(k)===e&&!VEH[k].static&&!VEH[k].support));
 // Bando de una nación en una época con bandos históricos (0 o 1); -1 si la época no tiene bandos
 const eraSide=(e,n)=>{ const S=ERAS[e]&&ERAS[e].sides; if(!S) return -1; return S[0].includes(n)?0:S[1].includes(n)?1:-1; };
 let curSpan=0; // largo del tanque que se está moviendo (para cruzar trincheras)

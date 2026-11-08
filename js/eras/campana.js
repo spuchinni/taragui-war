@@ -75,7 +75,7 @@ function missionResult(M,win){
 
 // Ventana de la campaña (en el hangar)
 function hgCampaign(){ const box=$('hgModal'); if(!box) return;
-  const rows=CAMPAIGN.map(ch=>`<h2 style="margin:10px 0 4px">${ERAS[ch.era].n} <small style="opacity:.7">(${ERAS[ch.era].y})${eventTxt(ch.era)?' · '+eventTxt(ch.era):''}</small></h2>`+ch.missions.map((m,i)=>{ const M={...m,era:ch.era}, open=missionOpen(m.id), done=missionDone(m.id), tank=missionTank(M);
+  const rows=CAMPAIGN.filter(ch=>eraList().includes(ch.era)).map(ch=>`<h2 style="margin:10px 0 4px">${ERAS[ch.era].n} <small style="opacity:.7">(${ERAS[ch.era].y})${eventTxt(ch.era)?' · '+eventTxt(ch.era):''}</small></h2>`+ch.missions.map((m,i)=>{ const M={...m,era:ch.era}, open=missionOpen(m.id), done=missionDone(m.id), tank=missionTank(M);
       const why=!PROG.eraOpen[ch.era]?'🔒 '+eventTxt(ch.era):!missionPrevDone(m.id)?'🔒 Cumplí la anterior':!tank?`🔒 Necesitás ${M.plu.map(k=>VEH[k].label).join(' o ')}`:'';
       return `<button class="camM${open?'':' lock'}${done?' ok':''}" data-m="${m.id}" ${open?'':'disabled'}><span class="n">${i+1}</span><b>${m.title}</b><small>${m.date} · ${NATIONS[m.ally]?(NAT_ERA[ch.era]&&NAT_ERA[ch.era][m.ally]||NATIONS[m.ally]).label:''} · ${m.plu.map(k=>VEH[k].label).join(' / ')}${why?` · ${why}`:''}</small><i>${done?'✔ Cumplida':open?'Jugar ▸':'🔒'}</i></button>`; }).join('')).join('')
     +eraList().filter(e=>!CAMPAIGN.some(c=>c.era===e)).map(e=>`<h2 style="margin:10px 0 4px;opacity:.55">${ERAS[e].n} <small>(${ERAS[e].y})</small></h2><p class="s" style="opacity:.55">Próximamente.</p>`).join('');
