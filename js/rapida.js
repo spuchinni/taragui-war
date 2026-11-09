@@ -1,7 +1,7 @@
 // Arranque nuevo y partidas rápidas (pedido de Sebastián: "a los que probaron no les gustó arrancar lento, con tanques débiles
 // y con demasiadas cosas"). Va después de primeras.js y antes de inicio.js.
 //  · Primera vez: antes de la primera batalla se elige el tanque entre los tres famosos (Sherman, T-34, Panzer IV); el elegido
-//    queda comprado y primero en el garaje (tw2_elegido).
+//    queda PRESTADO y primero en el garaje las primeras 3 batallas (tw2_elegido, PROG.loan).
 //  · Menú simple las primeras 3 batallas: "Jugar ahora" va derecho a la batalla (sin hangar) y solo están Jugar, el tanque
 //    (con "Cambiar") y Opciones. Desde la 3ª aparecen Campaña, Vehículos y Tutorial con un aviso (tw2_menuFull).
 //  · Partida rápida (por defecto, tw2_modo='rapida'): las bases salen a QUICK_R m del punto del medio y la batalla dura
@@ -42,15 +42,22 @@
   document.head.appendChild(st);
 
   // ---- 1) elegir el primer tanque ----
+  // El elegido es PRESTADO para las primeras 3 batallas (PROG.loan): al terminar la 3ª se devuelve y queda el primero de la línea (primeras.js).
+  function returnLoan(){ const L=PROG&&PROG.loan; if(!L||L.done) return;
+    try{ if(!L.was){ delete PROG.owned[L.k]; delete PROG.unlocked[L.k]; const g=garRef(L.n,3), i=g.indexOf(L.k); if(i>=0) g.splice(i,1); } }catch(e){} }
+  window.returnLoan=returnLoan;
   function giveTank(n,k){
-    try{ curEra=3; applyEraNations(3); chosenNation=n; PROG.unlocked[k]=1; PROG.owned[k]=1;
+    try{ curEra=3; applyEraNations(3); chosenNation=n;
+      if(PROG.loan&&!PROG.loan.done&&PROG.loan.k!==k) returnLoan();
+      if(!PROG.loan||PROG.loan.done||PROG.loan.k!==k) PROG.loan={k,n,was:owned(k)};
+      PROG.unlocked[k]=1; PROG.owned[k]=1;
       const g=garRef(n,3), i=g.indexOf(k); if(i>=0) g.splice(i,1); g.unshift(k); if(g.length>3) g.length=3;
       if(typeof hgSel!=='undefined') hgSel=k; saveProg(); LS('tw2_elegido',k); }catch(e){ console.warn('rapida: tanque',e); } }
   const box=document.createElement('div'); box.id='tkPick'; box.setAttribute('data-notr',''); document.body.appendChild(box);
   function picker(then,closable){
     const L=EN();
     box.innerHTML=`${closable?'<button class="x" id="tkPickX">✕</button>':''}<h2>${L?'Choose your tank':'Elegí tu tanque'}</h2>
-      <div class="sub">${L?'The most famous tanks of World War II':'Los tanques más famosos de la Segunda Guerra'}</div>
+      <div class="sub">${L?'The most famous tanks of World War II. We lend it to you for your first 3 battles.':'Los tanques más famosos de la Segunda Guerra. Te lo prestamos para tus primeras 3 batallas.'}</div>
       <div class="row">${PICK.filter(p=>VEH[p.k]).map(p=>`<button class="c" data-k="${p.k}"><img class="vmini" data-k="${p.k}" alt="">
         <b>${VEH[p.k].label}</b><i>${NATIONS[p.n]?NATIONS[p.n].label:''}</i><span>${L?p.en:p.es}</span></button>`).join('')}</div>`;
     box.style.display='flex';
@@ -80,7 +87,7 @@
       b.onclick=directBattle;
       const k=(garRef(chosenNation,3)||[])[0]; if(k&&VEH[k]){
         const t=document.createElement('div'); t.className='homeTank'; t.setAttribute('data-notr','');
-        t.innerHTML=`${L?'Your tank':'Tu tanque'}: <b>${VEH[k].label}</b><button id="tkChg">${L?'Change':'Cambiar'}</button>`;
+        t.innerHTML=`${L?'Your tank':'Tu tanque'}: <b>${VEH[k].label}</b>${PROG.loan&&!PROG.loan.done&&PROG.loan.k===k?` <small>(${L?'on loan':'prestado'})</small>`:''}<button id="tkChg">${L?'Change':'Cambiar'}</button>`;
         $('panel').appendChild(t); document.getElementById('tkChg').onclick=()=>picker(()=>mainMenu(),true); }
     } else if(!LS('tw2_menuFull')){ LS('tw2_menuFull','1');
       setTimeout(()=>{ try{ banner(L?'New!':'¡Nuevo!',L?'Campaign, Vehicles and Tutorial are now open':'Se abrieron Campaña, Vehículos y Tutorial',4); }catch(e){} },600); }

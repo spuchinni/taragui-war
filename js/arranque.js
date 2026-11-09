@@ -53,7 +53,7 @@
     if(P===3){ const Z=target(); return `<div style="color:#ffd24a">Capturá el punto ${Z?Z.id:''}</div><div style="font-size:18px;opacity:.9">Entrá al círculo y quedate adentro</div>`; }
     if(P===4) return `<div style="color:#7ce07c">¡Muy bien! Ya sabés jugar</div><div style="font-size:18px;opacity:.9">Capturá los puntos y destruí a los enemigos para ganar</div>`;
     return ''; }
-  function nearestEnemy(){ let b=null,bd=3000; for(const t of tanks) if(!t.dead&&t.team!==player.team&&!t.T.static){ const d=t.pos.distanceTo(player.pos); if(d<bd){bd=d;b=t;} } return b; }
+  function nearestEnemy(){ const T=window.TUT1; if(T&&T.stg===0&&T.A&&!T.A.dead) return T.A; if(T&&T.stg===1&&T.B&&!T.B.dead) return T.B; let b=null,bd=3000; for(const t of tanks) if(!t.dead&&t.team!==player.team&&!t.T.static){ const d=t.pos.distanceTo(player.pos); if(d<bd){bd=d;b=t;} } return b; }
   function target(){ if(C.step===2){ const e=nearestEnemy(); return e?{pos:e.pos.clone().setY(e.pos.y+(e.topH||2.4)+1.5),col:'#ff4a36',txt:'Enemigo',d:e.pos.distanceTo(player.pos)}:null; }
     if(C.step===3){ let b=null,bd=1e9; for(const Z of zones) if(Z.owner!==1){ const d=Math.hypot(Z.x-player.pos.x,Z.z-player.pos.z); if(d<bd){bd=d;b=Z;} }
       return b?{id:b.id,pos:new THREE.Vector3(b.x,heightAt(b.x,b.z)+6,b.z),col:'#ffd24a',txt:'Punto '+b.id,d:bd}:null; }
@@ -85,7 +85,7 @@
     const moved=Math.hypot(player.pos.x-C.start.x,player.pos.z-C.start.z);
     if(C.step===0&&moved>20){ C.step=1; C.t0=now; C.fired=false; }
     else if(C.step===1&&C.fired&&now-C.t0>1){ C.step=2; C.t0=now; C.kills0=(playerCrew&&playerCrew.kills)||0; }
-    else if(C.step===2&&((playerCrew&&playerCrew.kills>C.kills0)||now-C.t0>100||!nearestEnemy())){ C.step=3; C.t0=now; }
+    else if(C.step===2&&(window.TUT1&&TUT1.stg>=0?TUT1.stg>=2:((playerCrew&&playerCrew.kills>C.kills0)||now-C.t0>100||!nearestEnemy()))){ C.step=3; C.t0=now; }   // con las etapas de primeras.js, recién después de los dos tanques
     else if(C.step===3&&(zones.some(Z=>Z.owner===1&&Math.hypot(Z.x-player.pos.x,Z.z-player.pos.z)<Z.r+5)||now-C.t0>120)){ C.step=4; C.t0=now; }
     else if(C.step===4&&now-C.t0>5){ C.on=false; LS('tw2_coach','1'); card.style.display='none'; return; }
     if(C.step<=1&&typeof bannerT!=='undefined'&&bannerT>0){ card.style.display='none'; return; }   // primero el cartel del centro ("Desplegado en…"): se pisaban
@@ -111,6 +111,7 @@
   (function tick(){ requestAnimationFrame(tick);
     const on=C.first&&['play','paused'].includes(state)&&!net.on;
     if(!on){ clock.style.display='none'; return; }
+    if(window.TUT1&&TUT1.stg<2){ C.firstT=null; clock.style.display='none'; return; }   // el reloj corre recién después de las etapas del tutorial
     if(C.firstT==null) C.firstT=now;
     const left=FIRST_LEN-(now-C.firstT);
     if(left<=0&&state==='play'){ clock.style.display='none'; finish(firstWinner()); return; }

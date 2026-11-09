@@ -11,7 +11,7 @@
 //  · Batallas 1 y 2: tu tanque no recibe daño y no hay artillería ni bombardeo (todavía no se explicaron). En la 3ª se explican
 //    la reparación, los refuerzos y los apoyos y desde ahí todo funciona normal (antes en la 4ª; pedido de Sebastián). Las batallas 2 y 3 son más cortas (barras de 150 y 250).
 //  · Cada explicación nueva detiene la partida hasta que el jugador la lee y aprieta "Seguir" (antes tapaba el tanque y la acción seguía).
-//  · Premio de la 1ª batalla: 1.000 de plata (antes ~4.400, casi medio tanque) y una caja misteriosa que regala el tanque con el que jugaste.
+//  · Premio de la 1ª batalla: 1.000 Yaguaretés. Al terminar la 3ª se devuelve el tanque prestado (rapida.js) y la caja regala el primero de la línea.
 //  · Pedido de Sebastián ("demasiado cargado"): menos tanques (1ª: 2 aliados y 3 enemigos; 2ª: 3 y 4), sin infantería suelta ni
 //    refuerzos en la 1ª y la 2ª (la 3ª la presenta con su cartel), sin humo, morteros, artillería ni bombardeo de nadie hasta la 3ª.
 //  · El primer enemigo que aparece: pausa, zoom sobre él y "apuntá con el mouse y clic para disparar"; ese primero cae de un tiro.
@@ -126,6 +126,7 @@
   const _sb=startBattle; startBattle=function(){ B=null; preLvl=lvlNow(); window.TEAM_N=tut||net.on?null:preLvl===1?[2,3]:preLvl===2?[3,4]:null;
     let r; try{ r=_sb.apply(this,arguments); } finally{ window.TEAM_N=null; }
     HUD_LVL=lvlNow(); for(const n of [1,2,3]) document.body.classList.toggle('hud'+n,HUD_LVL===n); document.body.classList.remove('tkOn');
+    TUT1.stg=-1; TUT1.A=TUT1.B=null;
     B={lvl:HUD_LVL,first:!!C.first,t0:null,shown:false,said:{},max:400,teach:HUD_LVL===3&&!tut&&!net.on&&battles()===2};
     if(B.first){ tickets[0]=tickets[1]=100; DRAIN_K=0; aces(); } else DRAIN_K=.42;
     if(!B.first&&!tut&&!net.on&&!curSpecial&&(HUD_LVL===2||HUD_LVL===3)) tickets[0]=tickets[1]=HUD_LVL===2?150:250;   // 2ª y 3ª más cortas
@@ -150,6 +151,7 @@
     if(B.t0==null) B.t0=now;
     if(player&&!player._prot) protect(player);
     const t=now-B.t0;
+    tut1Tick();
     // carteles de las partes nuevas (2ª y 3ª batalla), unos segundos después de aparecer
     if(B.lvl===2&&!B.said.l2&&t>4&&lesson(EN()?'New: ammo and minimap':'Nuevo: munición y minimapa',EN()
         ?`<p>At the bottom you choose your <b>ammo</b>:</p>${ammoList()}<p>Armor-piercing for tanks, high explosive for soldiers and cannons.</p><p>Bottom right, the <b>minimap</b>: green are allies, red are enemies, and the letters are the capture points.</p>`
@@ -161,15 +163,15 @@
       if(lesson(EN()?'Now your tank can take damage':'Ahora tu tanque puede recibir daño',EN()
         ?`<p>${K('repair')} <b>Repair</b>: the tank stops and the crew fixes tracks, engine and gun, and puts out fires. Do it behind cover.</p><p>${K('arty')} <b>Artillery</b>${air?` · ${K('air')} <b>Air strike</b>`:''}: press the key and click on the map where it should land. They recharge on their own (the button shows the wait).</p>${infOK()?`<p>${K('inf')} <b>Call infantry</b>: ${INF_COST} points. Pick a point on the map and a half-track or paratroopers bring soldiers there to capture or defend it.</p>`:''}<p>${K('smoke')} <b>Smoke</b>: throws smoke grenades to hide your tank.</p>`
         :`<p>${K('repair')} <b>Reparar</b>: el tanque se queda quieto y la tripulación arregla orugas, motor y cañón y apaga el fuego. Hacelo a cubierto.</p><p>${K('arty')} <b>Artillería</b>${air?` · ${K('air')} <b>Bombardeo</b>`:''}: apretá la tecla y hacé clic en el mapa donde querés que caiga. Se recargan solos (el botón muestra cuánto falta).</p>${infOK()?`<p>${K('inf')} <b>Pedir infantería</b>: ${INF_COST} puntos. Elegís un punto en el mapa y un semioruga o paracaidistas llevan soldados para capturarlo o defenderlo.</p>`:''}<p>${K('smoke')} <b>Humo</b>: tira granadas de humo para esconder tu tanque.</p>`)) B.said.l4=1; }
-    if(B.lvl<4&&player&&!player.dead&&!LSg('tw2_lFoe')){ const e=tanks.find(o=>!o.dead&&o.team!==player.team&&!(o.T&&o.T.static)&&o.visP&&o.pos.distanceTo(player.pos)<380);
+    if(B.lvl<4&&player&&!player.dead&&!LSg('tw2_lFoe')&&!(B.first&&TUT1.stg<0)){ const e=B.first&&TUT1.A&&!TUT1.A.dead?TUT1.A:tanks.find(o=>!o.dead&&o.team!==player.team&&!(o.T&&o.T.static)&&o.visP&&o.pos.distanceTo(player.pos)<380);
       if(e){ const p=e.pos.clone(); p.y+=(e.topH||2.4)*.55;
         if(lesson(EN()?'An enemy tank!':'¡Un tanque enemigo!',(EN()
             ?`<p>Enemies are marked in <b style="color:#ff6a50">red</b>.</p><p>${mob()?'Drag on the right side of the screen to <b>aim</b> and tap <b>🔥</b> to <b>fire</b>.':'Aim with the <b>mouse</b> and <b>left click</b> to <b>fire</b>.'}</p>`
             :`<p>Los enemigos se marcan en <b style="color:#ff6a50">rojo</b>.</p><p>${mob()?'Arrastrá en la parte derecha de la pantalla para <b>apuntar</b> y tocá <b>🔥</b> para <b>disparar</b>.':'<b>Apuntá</b> con el <b>mouse</b> y hacé <b>clic izquierdo</b> para <b>disparar</b>.'}</p>`),
           {low:1,zoom:{p,r:9},marks:[{p,txt:EN()?'ENEMY':'ENEMIGO',col:'#ff4a36'}]})) LSs('tw2_lFoe'); } }
     // ---- punto débil (pedido de Sebastián): después de la primera baja, al ver otro tanque, antes de dispararle ----
-    if(B.lvl<4&&player&&!player.dead&&LSg('tw2_lFoe')&&!LSg('tw2_lWeak')&&playerCrew&&playerCrew.kills>=1){
-      const e=tanks.find(o=>!o.dead&&o.team!==player.team&&!(o.T&&o.T.static)&&o.visP&&o.pos.distanceTo(player.pos)<380);
+    if(B.lvl<4&&player&&!player.dead&&!LSg('tw2_lWeak')&&(B.first?!!B.weakT:(LSg('tw2_lFoe')&&playerCrew&&playerCrew.kills>=1))){
+      const e=B.first?(B.weakT&&!B.weakT.dead?B.weakT:null):tanks.find(o=>!o.dead&&o.team!==player.team&&!(o.T&&o.T.static)&&o.visP&&o.pos.distanceTo(player.pos)<380);
       if(e){ const h=e.heading||0, f=new THREE.Vector3(Math.sin(h),0,Math.cos(h)), rt=new THREE.Vector3(Math.cos(h),0,-Math.sin(h)), M=e.T.m||{}, Lh=(M.L||6)/2, Wh=(M.W||3)/2;
         const sd=Math.sign(player.pos.clone().sub(e.pos).dot(rt))||1, y=e.pos.y+(e.topH||2.4)*.38;
         const front=e.pos.clone().addScaledVector(f,Lh*.92).setY(y), side=e.pos.clone().addScaledVector(rt,sd*Wh).addScaledVector(f,-Lh*.2).setY(y);
@@ -178,7 +180,7 @@
             ?`<p><b>Not all tanks are the same</b>, and armor is not the same all around.</p><p>The <b style="color:#ff6a50">front</b> has <b>${fm} mm</b>: shots bounce off there. The <b style="color:#7ce07c">side</b> has only <b>${sm} mm</b>: aim there to penetrate it. The rear is the weakest.</p><p>From now on <b>every shot counts</b>: look for sides and rears.</p>`
             :`<p><b>No todos los tanques son iguales</b>, y el blindaje no es igual en todos lados.</p><p>El <b style="color:#ff6a50">frente</b> tiene <b>${fm} mm</b>: ahí rebotan los tiros. El <b style="color:#7ce07c">costado</b> tiene solo <b>${sm} mm</b>: apuntá ahí para perforarlo. La parte de atrás es lo más débil.</p><p>Desde ahora <b>cada tiro cuenta</b>: buscá los costados y la cola.</p>`),
           {low:1,zoom:{p:e.pos.clone().setY(y),r:8},marks:[{p:front,txt:EN()?`Strong · ${fm} mm`:`Fuerte · ${fm} mm`,col:'#ff4a36'},{p:side,txt:EN()?`Weak · ${sm} mm · AIM HERE`:`Débil · ${sm} mm · APUNTÁ ACÁ`,col:'#7ce07c'}]})) LSs('tw2_lWeak'); } }
-    if(B.lvl<4&&!LSg('tw2_lCap')){ const Z=zones.find(z=>z.owner===1);
+    if(B.lvl<4&&!LSg('tw2_lCap')&&!(B.first&&TUT1.stg<2)){ const Z=zones.find(z=>z.owner===1);
       if(!Z) B.capT=null; else if(B.capT==null) B.capT=now; else if(now-B.capT>1.5){ const F=Z.fort&&Z.fort.team===0?Z.fort:null, zp=new THREE.Vector3(Z.x,heightAt(Z.x,Z.z)+1,Z.z), marks=[];
         const up=(o,h)=>o&&o.pos?o.pos.clone().setY(o.pos.y+h):null;
         if(F){ const m=new THREE.Vector3(F.nx,heightAt(F.nx,F.nz)+1,F.nz); marks.push({p:m,txt:EN()?'Machine gun':'Ametralladora'});
@@ -193,8 +195,8 @@
             return {pos:new THREE.Vector3(Z.x+dx*r*1.5,zp.y+r*.9,Z.z+dz*r*1.5),look:zp.clone().setY(zp.y-r*.25)}; })(),marks})) LSs('tw2_lCap'); } }
     // ---- la mira del artillero (pedido de Sebastián: "no me enseña a usar la mira"): 2ª batalla, con un enemigo cerca.
     // Después del cartel, un aviso hasta que la use, otro para el aumento y otro para salir. Una sola vez (tw2_lMira). ----
-    if(B.lvl<4&&!B.said.mira&&LSg('tw2_lWeak')&&!LSg('tw2_lMira')&&player&&!player.dead&&!scopeOn&&state==='play'){
-      const e=tanks.find(o=>!o.dead&&o.team!==player.team&&!(o.T&&o.T.static)&&o.visP&&o.pos.distanceTo(player.pos)>200&&o.pos.distanceTo(player.pos)<750);
+    if(B.lvl<4&&!B.said.mira&&(B.first?TUT1.stg===1:LSg('tw2_lWeak'))&&!LSg('tw2_lMira')&&player&&!player.dead&&!scopeOn&&state==='play'){
+      const e=B.first?(TUT1.B&&!TUT1.B.dead&&TUT1.B.pos.distanceTo(player.pos)>150?TUT1.B:null):tanks.find(o=>!o.dead&&o.team!==player.team&&!(o.T&&o.T.static)&&o.visP&&o.pos.distanceTo(player.pos)>200&&o.pos.distanceTo(player.pos)<750);
       if(e&&lesson(EN()?'The gunner\'s sight':'La mira del artillero',EN()
           ?`<p>That one is <b>far away</b>. To see it better and hit it, look through the gun sight (sniper mode).</p><p>${mob()?'Tap <b>◎</b> to go in and out of the sight · <b>🔍</b> zooms in more.':`${K('scope')} goes in and out of the sight · <b>right click</b> zooms in more.`}</p><p>Put the <b>center of the sight</b> on the enemy and fire. The farther it is, the higher you aim: use the marks under the center.</p>`
           :`<p>Ese está <b>lejos</b>. Para verlo mejor y pegarle, mirá por la mira del cañón (modo francotirador).</p><p>${mob()?'Tocá <b>◎</b> para entrar y salir de la mira · <b>🔍</b> acerca más.':`${K('scope')} entra y sale de la mira · <b>clic derecho</b> acerca más.`}</p><p>Poné el <b>centro de la mira</b> sobre el enemigo y disparale. Cuanto más lejos esté, más arriba apuntás: usá las marcas debajo del centro.</p>`,
@@ -214,7 +216,8 @@
     if(!B.first) return;
     if(tickets[0]<FLOOR_FIRST) tickets[0]=FLOOR_FIRST;   // la 1ª se gana sí o sí
     // 1ª batalla: las barras aparecen a los 30 s con la explicación y desde ahí se gastan
-    if(!B.shown&&t>=30){ document.body.classList.add('tkOn');
+    if(TUT1.stg<2) B.stg2T=t; else if(B.stg2T==null) B.stg2T=t;
+    if(!B.shown&&TUT1.stg>=2&&t>=(B.stg2T||0)+15){ document.body.classList.add('tkOn');
       if(lesson(EN()?'The bars':'Las barras',EN()?'<p>Each team has a <b>bar</b> at the top. It only goes down.</p><p>Hold <b>more capture points</b> than the enemy and <b>their bar drains</b> · the more points, the faster. When a bar runs out, that team loses.</p>'
         :'<p>Cada equipo tiene una <b>barra</b> arriba. Solo baja.</p><p>Si tenés <b>más puntos capturados</b> que el enemigo, <b>se gasta la suya</b> · cuantos más puntos, más rápido. El equipo que se queda sin barra pierde.</p>')){ B.shown=true; DRAIN_K=K_FIRST; } }
     if(B.shown&&!B.said.drop){ const o0=zones.filter(Z=>Z.owner===1).length, o1=zones.filter(Z=>Z.owner===-1).length;
@@ -245,19 +248,42 @@
   // 1ª y 2ª: sin escuadras de infantería ni refuerzos (en la 3ª se presentan); los soldados del nido del punto sí
   { const _a=spawnSquad; spawnSquad=function(){ if(curLvl()<=2) return; return _a.apply(this,arguments); }; }
   if(typeof sendReinforcements==='function'){ const _a=sendReinforcements; sendReinforcements=function(){ if(curLvl()<=2) return; return _a.apply(this,arguments); }; }
-  // 1ª: tu primer tiro que pega destruye al primer enemigo (después cada tiro cuenta: viene el cartel del punto débil)
-  { const _a=hitTank; hitTank=function(by,hit,dir,pen,kind){ const r=_a.apply(this,arguments);
-      try{ const t=hit&&hit.object&&hit.object.userData.tank; if(B&&B.first&&!B.oneDone&&by&&by.isPlayer&&kind==='shell'&&t&&!t.dead&&t.team!==by.team&&!(t.immuneT>0)&&!(t.T&&t.T.static)){ B.oneDone=1; destroy(t,by,false); } }catch(e){ console.warn('primeras: un tiro',e); }
-      return r; }; }
-  // ---- premio de la 1ª batalla: 1.000 de plata (un tanque cuesta ~10.000) y la caja misteriosa ----
+  // ---- 1ª batalla por etapas (pedido de Sebastián: "hagámoslo progresivo") ----
+  // TUT1.stg 0: un tanque enemigo (A) quieto y cerca, en ángulo. Tiro tuyo en el frente = rebota (y la 1ª vez, cartel del
+  //   punto débil); en el costado o atrás = destruido. stg 1: aparece otro (B) quieto a ~320 m: cartel de la mira; cualquier
+  //   tiro que le pegue lo destruye. stg 2: se sueltan todos y recién ahí vienen la captura, las barras y el reloj.
+  //   Mientras tanto los demás enemigos quedan quietos en su base y nadie te ataca (tu tanque va protegido).
+  const TUT1=window.TUT1={stg:-1,A:null,B:null};
+  const tutOn=()=>!!(B&&B.first&&!tut&&!net.on&&TUT1.stg>=0&&TUT1.stg<2);
+  const enemiesT=()=>tanks.filter(o=>!o.dead&&player&&o.team!==player.team&&!(o.T&&o.T.static)&&!(o.T&&o.T.support));
+  function placeT(o,d,side,face){ const Z=zones.length?zones.reduce((a,z)=>Math.hypot(z.x,z.z)<Math.hypot(a.x,a.z)?z:a,zones[0]):{x:player.pos.x+Math.sin(player.heading)*100,z:player.pos.z+Math.cos(player.heading)*100};
+    const dx=Z.x-player.pos.x, dz=Z.z-player.pos.z, L=Math.hypot(dx,dz)||1, ux=dx/L, uz=dz/L;
+    const x=player.pos.x+ux*d+uz*side, z=player.pos.z+uz*d-ux*side; o.pos.set(x,heightAt(x,z),z); o.speed=0;
+    o.heading=Math.atan2(-ux,-uz)+face; if(o.root){ o.root.position.copy(o.pos); o.root.rotation.y=o.heading; } }
+  { const _ai=updateAI; updateAI=function(t,dt){ if(tutOn()&&t!==player){ t.speed=0; t.target=null; return; }   // durante las etapas nadie se mueve ni dispara (los aliados ases tampoco)
+      return _ai.apply(this,arguments); }; }
+  { const _bf=typeof botFire==='function'?botFire:null; if(_bf) botFire=function(t){ if(tutOn()&&t!==player) return; return _bf.apply(this,arguments); }; }
+  function tut1Tick(){ if(!B||!B.first||tut||net.on||!player||player.dead) return;
+    if(TUT1.stg===-1&&window.coach&&(coach.step>=1||!coach.on)){ const L=enemiesT(); if(!L.length){ TUT1.stg=2; return; }
+      TUT1.A=L[0]; placeT(TUT1.A,95,8,.75); TUT1.stg=0; }
+    if(TUT1.stg===0&&(!TUT1.A||TUT1.A.dead)){ const L=enemiesT(); TUT1.B=L[0]||null; if(TUT1.B) placeT(TUT1.B,320,-25,.4); TUT1.stg=TUT1.B?1:2; }
+    if(TUT1.stg===1&&(!TUT1.B||TUT1.B.dead)) TUT1.stg=2; }
+  { const _a=hitTank; hitTank=function(by,hit,dir,pen,kind){
+      const t=hit&&hit.object&&hit.object.userData.tank, me=by&&by.isPlayer&&kind==='shell'&&t&&!t.dead&&player&&t.team!==player.team;
+      if(me&&tutOn()&&(t===TUT1.A||t===TUT1.B)){
+        if(t===TUT1.A){ const h=t.heading||0, f=new THREE.Vector3(Math.sin(h),0,Math.cos(h)), d=dir.clone().setY(0).normalize();
+          if(-d.dot(f)>.64){ try{ hitMark(hit,0,'Rebote',dir); }catch(e){} hitMsg(EN()?'Bounced off: that is its strongest armor':'Rebotó: le pegaste en su blindaje más fuerte','#ffb04a'); if(!LSg('tw2_lWeak')) B.weakT=t; return; } }
+        destroy(t,by,false); return; }
+      return _a.apply(this,arguments); }; }
+  // ---- premio de la 1ª batalla: 1.000 Yaguaretés (un tanque cuesta ~10.000); la caja sale al terminar la 3ª ----
   { const _br=battleReward; battleReward=function(){ const r=_br.apply(this,arguments); if(B&&B.first&&!tut) r.yp=Math.min(r.yp,1000); return r; }; }
   const gift=document.createElement('div'); gift.id='pGift'; gift.setAttribute('data-notr',''); document.body.appendChild(gift);
-  function giftBox(k){ const V=VEH[k]; if(!V) return;
+  function giftBox(k,lent){ const V=VEH[k]; if(!V) return; const E=EN();
     try{ PROG.unlocked[k]=1; PROG.owned[k]=1; const g=garRef(V.nation,eraOf(k)); if(!g.includes(k)){ if(g.length>=3) g.pop(); g.unshift(k); } saveProg(); }catch(e){}
-    gift.className=''; gift.innerHTML=`<h2>${EN()?'Reward for your first victory':'Premio por tu primera victoria'}</h2><div class="sub">${EN()?'A mystery box! What could be inside?':'¡Una caja misteriosa! ¿Qué habrá adentro?'}</div>
+    gift.className=''; gift.innerHTML=`<h2>${E?'Training complete!':'¡Terminaste el entrenamiento!'}</h2><div class="sub">${lent?(E?`You return the ${lent} you were lent. Here is your own first tank:`:`Devolvés el ${lent} prestado. Acá está tu primer tanque propio:`):(E?'Here is your own first tank:':'Acá está tu primer tanque propio:')}</div>
       <div class="crate"><div class="star">⭐</div><div class="body"><div class="q">?</div></div><div class="lid"></div></div><div class="burst"></div>
       <div class="prize">${typeof miniHTML==='function'?miniHTML(k):''}<div class="nm">${V.label}</div>
-        <div class="ds">${EN()?'It is yours! Your first tank stays in your hangar for good.':'¡Es tuyo! Tu primer tanque queda en tu hangar para siempre.'}</div>
+        <div class="ds">${E?'It is yours for good. Win battles to research and buy the next ones in the line.':'Es tuyo para siempre. Ganá batallas para investigar y comprar los siguientes de la línea.'}</div>
         <button class="go" id="pGiftOk">${EN()?'Great!':'¡Genial!'}</button></div>
       <button class="go openB" id="pGiftOpen">${EN()?'Open the box':'Abrir la caja'}</button>`;
     gift.style.display='flex';
@@ -267,10 +293,12 @@
       try{ if(typeof cgCall==='function') cgCall(S=>S.game.happytime()); }catch(e){} };
     gift.querySelector('.crate').onclick=open; gift.querySelector('#pGiftOpen').onclick=open;
     gift.querySelector('#pGiftOk').onclick=()=>{ gift.style.display='none'; }; }
-  { const _sum=summary; summary=function(winner){ const first=!!(B&&B.first&&!tut&&!B.gift), r=_sum.apply(this,arguments);
-      if(first&&winner===0&&PROG&&state==='summary'){ B.gift=1; const me=crews.find(c=>c.isPlayer), k=Object.keys((me&&me.uses)||{}).find(x=>VEH[x])||(player&&player.key);
-        let g=k; try{ if(g&&localStorage.getItem('tw2_elegido')===g){ const n=VEH[g].nation; g=vehTreeE(n,eraOf(g)).find(x=>!owned(x))||g; } }catch(e){}   // el tanque elegido al empezar ya es tuyo: la caja trae el siguiente de la nación (rapida.js)
-        if(g){ giftBox(g); if(g!==k) try{ const G=garRef(VEH[k].nation,eraOf(k)), i=G.indexOf(k); if(i>0){ G.splice(i,1); G.unshift(k); saveProg(); } }catch(e){} } }   // el elegido sigue primero
+  // al terminar la 3ª batalla se devuelve el tanque prestado y se regala el primero de la línea de esa nación (rapida.js)
+  { const _sum=summary; summary=function(winner){ const r=_sum.apply(this,arguments);
+      try{ const L=PROG&&PROG.loan; if(L&&!L.done&&!tut&&!curSpecial&&battles()>=3&&state==='summary'){
+        if(window.returnLoan) returnLoan(); L.done=1; const f=vehTreeE(L.n,3)[0];
+        if(f){ const G=garRef(L.n,3), i=G.indexOf(f); if(i>=0) G.splice(i,1); G.unshift(f); if(typeof hgSel!=='undefined') hgSel=f; chosenNation=L.n; }
+        saveProg(); if(f) setTimeout(()=>giftBox(f,VEH[L.k]&&VEH[L.k].label),900); } }catch(e){ console.warn('prestado',e); }
       return r; }; }
 
   // ---- CrazyGames: un jugador nuevo arranca con Estados Unidos y un Sherman ----
