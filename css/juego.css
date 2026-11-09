@@ -388,3 +388,8 @@ body.movil #specBar button{font-size:13px!important;padding:6px 9px!important;wh
 /* Primera partida (entrenador de arranque.js): HUD simple */
 body.novato #ammobar .wt-wpn,body.novato #ammobar .ab-info,body.novato #status .wt-tele,body.novato #status .wt-state,
 body.novato #ammoSlots .gap,body.novato #ammoSlots .gap~.as{display:none!important}
+
+/* cámara de muerte (hitcam.js): grande y en el centro */
+#hcBox.kill{left:50%;right:auto;top:46%;transform:translate(-50%,-50%);width:min(680px,90vw);height:min(420px,58vh);border-color:#e0402a;box-shadow:0 0 0 2px rgba(224,64,42,.4),0 8px 40px rgba(0,0,0,.8)}
+#hcBox.kill b{font-size:18px;color:#ffd0c8}
+body.deploy #hcBox.kill{display:block}

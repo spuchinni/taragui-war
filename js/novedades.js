@@ -6,6 +6,15 @@
   const EN=()=>window.LANG==='en';
   const LS=(k,v)=>{ try{ if(v===undefined) return localStorage.getItem(k); localStorage.setItem(k,v); }catch(e){ return null; } };
   const NOV=[
+    {id:'2026-11-09',fecha:'9/11/2026',
+     es:['Premio diario en ruleta: gira sola al entrar y vuelve a las 0 h.',
+         'Primeras batallas: te enseña el punto débil de cada tanque y a usar la mira de lejos.',
+         'La munición se desbloquea con el nivel del tanque y en el garaje elegís cuánta llevar.',
+         'Cuando te destruyen, la cámara de muerte te muestra el tiro y quién fue. Un tanque nuevo ahora cuesta unas 5 batallas.'],
+     en:['Daily reward wheel: spins on its own when you log in and resets at midnight.',
+         'First battles: learn each tank\'s weak spot and how to use the sight at long range.',
+         'Ammo unlocks with tank level, and in the garage you choose how much to carry.',
+         'When you are destroyed, the death cam shows the shot and who fired it. A new tank now takes about 5 battles.']},
     {id:'2026-11-08',fecha:'8/11/2026',
      es:['Elegí tu primer tanque: Sherman, T-34 o Panzer IV, y a pelear en segundos.',
          'Batallas rápidas de 5 minutos (en el garaje podés volver a la batalla grande).',

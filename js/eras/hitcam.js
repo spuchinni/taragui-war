@@ -56,7 +56,7 @@ function hitcamUpd(dt){ if(!HC.on) return; HC.t+=dt; const T=HC.t;
   // al final, el tanque como quedó (sin rayos X)
   if(T>3.3&&HC.phase===0){ HC.phase=1; HC.g.traverse(o=>{ if(o.userData.hcOrig){ o.material=o.userData.hcOrig; } }); for(const e of HC.edges) e.visible=false; for(const m of HC.mods) m.visible=false; if(HC.seg) HC.seg.forEach(m=>m.visible=false); }
   const a=T*.12; hcCam.position.copy(HC.cam0).applyAxisAngle(new THREE.Vector3(0,1,0),a*(HC.phase?1.6:1)); hcCam.lookAt(HC.look);
-  if(T>HC.dur||state!=='play'){ HC.on=false; hcBox.classList.remove('on'); hcClear(); } }
+  if(T>HC.dur||(state!=='play'&&!(HC.kill&&['play','deploy','spectate','paused'].includes(state)))){ HC.on=false; HC.kill=false; HC.dur=5.4; hcBox.classList.remove('on','kill'); hcClear(); } }
 function hitcamDraw(){ const r=hcBox.getBoundingClientRect(); if(r.width<10) return;
   hcCam.aspect=r.width/r.height; hcCam.updateProjectionMatrix();
   const y=innerHeight-r.bottom; renderer.setScissorTest(true); renderer.setScissor(r.left,y,r.width,r.height); renderer.setViewport(r.left,y,r.width,r.height);
@@ -70,6 +70,17 @@ renderer.render=function(sc,cam){ _hcRender(sc,cam); if(HC.on&&sc===scene&&rende
 // quién disparó (hitMark recibe el resultado del impacto)
 let hcBy=null;
 { const _ht=hitTank; hitTank=function(by){ hcBy=by; try{ return _ht.apply(this,arguments); } finally{ hcBy=null; } }; }
-{ const _hm=hitMark; hitMark=function(hit,pen,res,dir,A){ _hm.apply(this,arguments); const t=hit.object.userData.tank; if(hcBy&&hcBy.isPlayer&&t&&t.team!==hcBy.team) hitcamShow(t,hit,dir,res); }; }
+// cámara de muerte (pedido de Sebastián): cuando te destruyen, el mismo recuadro en grande y en el centro con el tiro que te mató
+// (se guarda el último impacto de cañón que recibiste; si `destroy` llega enseguida, se muestra ese tiro y quién lo hizo).
+const HCK={hit:null};
+{ const _hm=hitMark; hitMark=function(hit,pen,res,dir,A){ _hm.apply(this,arguments); const t=hit.object.userData.tank;
+    if(hcBy&&hcBy.isPlayer&&t&&t.team!==hcBy.team) hitcamShow(t,hit,dir,res);
+    if(t&&t.isPlayer&&hcBy&&!hcBy.isPlayer&&t.team!==hcBy.team&&dir) HCK.hit={hit:{point:hit.point.clone(),face:hit.face,object:hit.object},dir:dir.clone(),res,by:hcBy,at:now}; }; }
+{ const _ds=destroy; destroy=function(t,by){ const mine=!!(t&&t.isPlayer&&!t.dead), r=_ds.apply(this,arguments);
+    try{ const K=HCK.hit; if(mine&&K&&now-K.at<8&&t.root){ HCK.hit=null;
+        hitcamShow(t,K.hit,K.dir,t.rack?'Estiba de munición':'Destruido'); HC.kill=true; HC.dur=6.5; hcBox.classList.add('kill');
+        const B=K.by||by, nm=B&&B.name?B.name:'', lb=B&&B.T?B.T.label:'';
+        hcBox.querySelector('b').textContent=`💀 ${window.LANG==='en'?'Destroyed by':'Te destruyó'} ${nm}${lb?' · '+lb:''}`; } }catch(e){ console.warn('cámara de muerte',e); }
+    return r; }; }
 { const _ua=updateArty; updateArty=function(dt){ _ua(dt); hitcamUpd(dt); }; }
-{ const _cb=clearBattle; clearBattle=function(){ HC.on=false; hcBox.classList.remove('on'); hcClear(); return _cb.apply(this,arguments); }; }
+{ const _cb=clearBattle; clearBattle=function(){ HC.on=false; HC.kill=false; HC.dur=5.4; hcBox.classList.remove('on','kill'); hcClear(); return _cb.apply(this,arguments); }; }
