@@ -110,7 +110,7 @@
   const K=a=>`<kbd>${(typeof keyName==='function'?keyName(binds[a]):'')||'?'}</kbd>`;
   // lista de la munición del tanque con su tecla (pedido de Sebastián: "1 tal munición, 2 tal munición… y 4 AUTO")
   function ammoList(){ const L=(player&&player.T&&player.T.ammo)||[];
-    const rows=L.slice(0,3).map((A,i)=>`<li>${mob()?`<b>${i+1}</b>`:K('ammo'+(i+1))} ${A.n}</li>`);
+    const lk=(player&&player.ammoLock)||[]; const rows=L.slice(0,3).map((A,i)=>`<li${lk[i]?' style="opacity:.55"':''}>${mob()?`<b>${i+1}</b>`:K('ammo'+(i+1))} ${A.n}${lk[i]?(EN()?` · 🔒 unlocks at tank level ${i+1}`:` · 🔒 se desbloquea con el nivel ${i+1} del tanque`):''}</li>`);
     if(L.length>1) rows.push(`<li>${mob()?'<b>AUTO</b>':K('ammoAuto')} ${EN()?'<b>AUTO</b>: picks the best one for each target':'<b>AUTO</b>: elige la mejor para cada blanco'}</li>`);
     return `<ul style="list-style:none;padding:0;margin:.3em 0;text-align:left;display:inline-block">${rows.join('')}</ul>`; }
   function showHint(html,secs,where){ hint.innerHTML=html; hint.style.top=where==='low'?'auto':(where||'38%'); hint.style.bottom=where==='low'?'190px':'auto'; hint.style.display='block'; hintT=secs; }
