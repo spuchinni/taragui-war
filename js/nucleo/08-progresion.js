@@ -1,7 +1,10 @@
 /* ---------- Puntos de reaparición (SP) ---------- */
 function addSP(tank,n,score=0,label){ if(!tank||!tank.crew) return; tank.crew.sp+=n; tank.crew.score+=score; if(tank.crew.isPlayer) $('spT').textContent=tank.crew.sp; if(label&&score) awardNote(tank.crew,label,score); }
 // Lo que vale una acción al final de la batalla (la misma cuenta que battleReward, sin el premio por ganar): PI y Yaguaretés según el rango de tu tanque
-function actionReward(score){ const k=(player&&player.key)||selKey, K=RANK_K[k&&VEH[k]?rankOf(k):1]||1; return {rp:Math.round(score*2.5*K),yp:Math.round(score*.5*K)}; }
+// Economía (pedido de Sebastián, 9/11/2026: "50 mil Yaguaretés en 3 batallas es mucho"): un tanque nuevo cada 4 a 6 batallas.
+// Antes un tanque de rango III daba ~17.000 Yaguaretés y ~7.700 PI por batalla (un tanque por batalla). ECON los baja.
+const ECON={rp:.3,yp:.2};
+function actionReward(score){ const k=(player&&player.key)||selKey, K=RANK_K[k&&VEH[k]?rankOf(k):1]||1; return {rp:Math.round(score*2.5*K*ECON.rp),yp:Math.round(score*.5*K*ECON.yp)}; }
 // ---------- Progresión estilo War Thunder ----------
 // Cada época es un rango (I = 1ª Guerra … V = Guerra Fría) con su árbol propio: como la 2ª Guerra es la permanente y las demás son
 // eventos con fecha, cada época se abre sola (su primer tanque viene regalado) y no depende de la anterior. Cada nación tiene líneas por clase en orden de año: un tanque pide el
@@ -77,7 +80,7 @@ function addRP(n,rp){ const out=[]; let left=rp;
   saveProg(); return out; }
 // Premio de una batalla según el rango más alto que usaste: los tanques viejos dan menos
 function battleReward(rank,win,score){ const K=RANK_K[rank]||1;
-  return {rp:Math.round(((win?450:250)+score*2.5)*K), yp:Math.round(((win?1700:900)+score*5)*K/10)*10}; }
+  return {rp:Math.round(((win?450:250)+score*2.5)*K*ECON.rp), yp:Math.round(((win?1700:900)+score*5)*K*ECON.yp/10)*10}; }
 let battleBR=null;
 /* ---------- Progresión: rango de jugador, desafíos diarios, medallas y estadísticas por tanque ---------- */
 const RANKS=[[0,'Soldado'],[2000,'Cabo'],[5000,'Cabo primero'],[10000,'Sargento'],[18000,'Sargento primero'],[30000,'Suboficial'],[45000,'Subteniente'],[65000,'Teniente'],
