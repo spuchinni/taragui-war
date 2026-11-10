@@ -37,12 +37,14 @@ function lockReason(k){ const n=VEH[k].nation, r=rankOf(k);
 // Garaje: uno por nación y por época
 const garRef=(n,e=curEra)=>PROG.garage[n+'@'+e]||(PROG.garage[n+'@'+e]=[]);
 let PROG=null;
+const PROG_V=4;   // versión del progreso: al subirla se reinicia el de todos (4 = reinicio del 10/11/2026, pedido de Sebastián)
 // Progreso (tw2_progress, versión 3 = rangos e investigar/comprar; las versiones anteriores se reinician). La versión 1 del juego usa tw_progress.
 // Con cuenta iniciada la clave pasa a tw2_progress@<uid> (ver nube.js), así cada cuenta tiene el suyo en este navegador.
 let PROG_KEY='tw2_progress';
 function loadProg(){ try{ PROG=JSON.parse(localStorage.getItem(PROG_KEY)||'null'); }catch(e){ PROG=null; }
-  { const cp=progLS(PROG_KEY+'#copia'); if(cp&&progBat(cp)>progBat(PROG&&PROG.v===3?PROG:null)+.5){ PROG=cp; PROG.recuperado=1; try{ localStorage.setItem(PROG_KEY,JSON.stringify(cp)); }catch(e){} } }   // se había pisado: vuelve la copia
-  if(!PROG||PROG.v!==3) PROG={v:3,unlocked:{},owned:{},rp:{},target:{},yp:YP_START,garage:{},stats:{battles:0,wins:0},eraOpen:{1:1},camp:{},train:1};   // train: entrenamiento (3 primeras batallas, rapida.js/primeras.js): sin tanques propios
+  { const cp=progLS(PROG_KEY+'#copia'); if(cp&&progBat(cp)>progBat(PROG&&PROG.v===PROG_V?PROG:null)+.5){ PROG=cp; PROG.recuperado=1; try{ localStorage.setItem(PROG_KEY,JSON.stringify(cp)); }catch(e){} } }   // se había pisado: vuelve la copia
+  if(!PROG||PROG.v!==PROG_V){ for(const k of ['tw2_arranque','tw2_coach','tw2_elegido','tw2_menuFull','tw2_lFoe','tw2_lWeak','tw2_lMira','tw2_lCap']) try{ localStorage.removeItem(k); }catch(e){}   // progreso nuevo: el entrenamiento vuelve a salir
+    PROG={v:PROG_V,unlocked:{},owned:{},rp:{},target:{},yp:YP_START,garage:{},stats:{battles:0,wins:0},eraOpen:{1:1},camp:{},train:1}; }   // train: entrenamiento (3 primeras batallas, rapida.js/primeras.js): sin tanques propios
   PROG.camp=PROG.camp||{}; PROG.owned=PROG.owned||{}; PROG.target=PROG.target||{};
   // cada nación arranca, en cada época, con su primer tanque investigado y comprado (los jugadores nuevos no: reciben uno solo al terminar el entrenamiento; PROG.openN = naciones abiertas)
   if(!PROG.train) for(const n in NATIONS){ if(NATIONS[n].special||(PROG.openN&&!PROG.openN.includes(n))) continue; for(const e of eraList()){ if(!eraReady(e)) continue; const T=vehTreeE(n,e); if(!T.length) continue; PROG.unlocked[T[0]]=1; PROG.owned[T[0]]=1;
@@ -53,7 +55,7 @@ function syncEraOpen(){ const out=[]; for(const e of eraList()) PROG.eraOpen[e]=
   return out; }
 // Respaldo: las batallas jugadas nunca bajan, así que si lo que se va a guardar tiene menos que lo guardado, lo viejo se copia a <clave>#copia
 const progBat=P=>P?((P.stats&&P.stats.battles)||0)+Object.keys(P.camp||{}).length+Object.keys(P.owned||{}).length*.01:0;
-const progLS=k=>{ try{ const P=JSON.parse(localStorage.getItem(k)||'null'); return P&&P.v===3?P:null; }catch(e){ return null; } };
+const progLS=k=>{ try{ const P=JSON.parse(localStorage.getItem(k)||'null'); return P&&P.v===PROG_V?P:null; }catch(e){ return null; } };
 function saveProg(){ if(!PROG) return; PROG.era=curEra; PROG.t=Date.now();
   try{ const old=progLS(PROG_KEY), cp=progLS(PROG_KEY+'#copia'); if(old&&progBat(old)>progBat(PROG)+.5&&progBat(old)>progBat(cp)) localStorage.setItem(PROG_KEY+'#copia',JSON.stringify(old)); }catch(e){}
   try{ localStorage.setItem(PROG_KEY,JSON.stringify(PROG)); }catch(e){}

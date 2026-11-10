@@ -6,7 +6,7 @@ const nube={on:false,user:null,ok:false,vista:null,msg:'',ocupado:false,timer:0,
 try{ if(typeof firebase!=='undefined'&&typeof FIREBASE_CONFIG!=='undefined'){ firebase.initializeApp(FIREBASE_CONFIG); firebase.auth().languageCode='es'; nube.on=true; } }catch(e){ nube.on=false; }
 const nubeDoc=()=>firebase.firestore().collection('jugadores').doc(nube.user.uid);
 const escH=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-const progDe=s=>{ try{ const P=JSON.parse(s||'null'); return P&&P.v===3?P:null; }catch(e){ return null; } };
+const progDe=s=>{ try{ const P=JSON.parse(s||'null'); return P&&P.v===PROG_V?P:null; }catch(e){ return null; } };
 const progJugado=s=>{ const P=progDe(s); return P?((P.stats&&P.stats.battles)||0)+Object.keys(P.camp||{}).length:0; };
 const progT=s=>{ const P=progDe(s); return (P&&P.t)||0; };
 const leerLS=k=>{ try{ return localStorage.getItem(k); }catch(e){ return null; } };
@@ -160,7 +160,7 @@ function progGuardados(){ const L=[]; { const P=progDe(nube.ant); if(P) L.push({
       $('recCopy').onclick=()=>{ const code='TW2:'+btoa(unescape(encodeURIComponent(JSON.stringify(PROG))));
         (navigator.clipboard?navigator.clipboard.writeText(code):Promise.reject()).then(()=>banner('Copiado','Pegalo en el otro dispositivo',2.5)).catch(()=>prompt('Copiá este código:',code)); };
       $('recPaste').onclick=()=>{ const c=(prompt('Pegá el código del progreso (empieza con TW2:)')||'').trim(); if(!c) return;
-        try{ const P=JSON.parse(decodeURIComponent(escape(atob(c.replace(/^TW2:/,''))))); if(!P||P.v!==3) throw 0; usar(P,`${(P.stats&&P.stats.battles)||0} batallas`); }catch(e){ alert('Ese código no sirve. Copialo de nuevo completo.'); } }; }
+        try{ const P=JSON.parse(decodeURIComponent(escape(atob(c.replace(/^TW2:/,''))))); if(!P||P.v!==PROG_V) throw 0; usar(P,`${(P.stats&&P.stats.battles)||0} batallas`); }catch(e){ alert('Ese código no sirve. Copialo de nuevo completo.'); } }; }
     return r; }; }
 // aviso si al cargar se volvió a la copia de seguridad
 setTimeout(()=>{ if(PROG&&PROG.recuperado){ delete PROG.recuperado; saveProg(); if(typeof banner==='function') banner('Progreso recuperado','Se había pisado y volvimos a tu copia',3); } },4000);

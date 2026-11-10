@@ -297,7 +297,7 @@
   { const _sum=summary; summary=function(winner){ const r=_sum.apply(this,arguments);
       try{ const L=PROG&&PROG.loan; if(PROG&&(PROG.train||(L&&!L.done))&&!tut&&!curSpecial&&battles()>=3&&state==='summary'){
         if(L&&window.returnLoan) returnLoan(); if(L) L.done=1; const n=(L&&L.n)||chosenNation, f=vehTreeE(n,3)[0];
-        if(PROG.train){ PROG.train=0; PROG.lockN=1; PROG.openN=[n]; }   // las otras naciones quedan cerradas (rapida.js)
+        if(PROG.train){ PROG.train=0; PROG.lockN=1; PROG.openN=[n]; PROG.winBase=(PROG.stats&&PROG.stats.wins)||0; }   // las otras naciones quedan cerradas (rapida.js)
         if(f){ const G=garRef(n,3), i=G.indexOf(f); if(i>=0) G.splice(i,1); G.unshift(f); if(typeof hgSel!=='undefined') hgSel=f; chosenNation=n; }
         saveProg(); if(f) setTimeout(()=>giftBox(f),900); } }catch(e){ console.warn('entrenamiento',e); }
       return r; }; }

@@ -6,6 +6,11 @@
   const EN=()=>window.LANG==='en';
   const LS=(k,v)=>{ try{ if(v===undefined) return localStorage.getItem(k); localStorage.setItem(k,v); }catch(e){ return null; } };
   const NOV=[
+    {id:'2026-11-10',fecha:'10/11/2026',
+     es:['Arrancamos de cero: se reinició el progreso de todos.',
+         'Con 2 victorias después del entrenamiento se abre la Argentina con el Nahuel; después, cada 5 victorias elegís una nación nueva.'],
+     en:['Fresh start: everyone\'s progress was reset.',
+         'After the training, 2 wins unlock Argentina and the Nahuel; then every 5 wins you choose a new nation.']},
     {id:'2026-11-09',fecha:'9/11/2026',
      es:['Premio diario en ruleta: gira sola al entrar y vuelve a las 0 h.',
          'Primeras batallas: te enseña el punto débil de cada tanque y a usar la mira de lejos.',

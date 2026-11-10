@@ -48,7 +48,7 @@ const CG_KEYS=['tw2_progress','tw2_lang','tw2_arranque','tw2_coach','tw-name','t
 function cgData(){ try{ return CG.ready&&CG.sdk&&CG.sdk.data?CG.sdk.data:null; }catch(e){ return null; } }
 function cgSync(){ const D=cgData(); if(!D) return;
   try{ const rem=D.getItem('tw2_progress'), loc=localStorage.getItem('tw2_progress'); let R=null,L=null; try{ R=JSON.parse(rem||'null'); }catch(e){} try{ L=JSON.parse(loc||'null'); }catch(e){}
-    if(R&&progBat(R)>progBat(L)){ localStorage.setItem('tw2_progress',rem); for(const k of CG_KEYS.slice(1)){ const v=D.getItem(k); if(v!=null) localStorage.setItem(k,v); } loadProg(); if(state==='menu') mainMenu(); }
+    if(R&&R.v===PROG_V&&progBat(R)>progBat(L)){ localStorage.setItem('tw2_progress',rem); for(const k of CG_KEYS.slice(1)){ const v=D.getItem(k); if(v!=null) localStorage.setItem(k,v); } loadProg(); if(state==='menu') mainMenu(); }
     else for(const k of CG_KEYS){ const v=localStorage.getItem(k); if(v!=null) D.setItem(k,v); } }catch(e){ console.warn('crazygames data',e); } }
 if(CG.on){ const _sp=saveProg; saveProg=function(){ const r=_sp.apply(this,arguments); const D=cgData(); if(D) try{ for(const k of CG_KEYS){ const v=localStorage.getItem(k); if(v!=null) D.setItem(k,v); } }catch(e){} return r; }; }
 // silencio pedido desde CrazyGames (botón de sonido del sitio): settings.muteAudio y su aviso de cambios

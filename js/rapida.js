@@ -121,9 +121,45 @@
     if(md&&playMode==='battle'){ const L=EN(), q=modo()==='rapida';
       md.insertAdjacentHTML('beforebegin',`<button class="hgMapB hgModeB" id="hgModeB" data-notr title="${L?'Battle length':'Duración de la batalla'}">${q?(L?'⏱ Quick battle: <b>5 min, close bases</b>':'⏱ Batalla rápida: <b>5 min, bases cerca</b>'):(L?'🗺 Big battle: <b>full map, 12–15 min</b>':'🗺 Batalla grande: <b>mapa entero, 12–15 min</b>')}</button>`);
       document.getElementById('hgModeB').onclick=()=>{ LS('tw2_modo',q?'grande':'rapida'); mainMenu(); }; }
-    // jugadores nuevos: solo la nación elegida tiene tanque; las demás quedan cerradas (PROG.lockN; cómo se abren: por decidir)
+    // naciones cerradas (PROG.lockN): 🔒 y cuántas victorias faltan
     if(PROG&&PROG.lockN){ const L=EN(), has=n=>(PROG.openN||[]).includes(n)||Object.keys(VEH).some(k=>VEH[k].nation===n&&eraOf(k)===curEra&&owned(k));
       document.querySelectorAll('.hgN[data-n]').forEach(b=>{ if(!has(b.dataset.n)&&!b.querySelector('.lk')) b.insertAdjacentHTML('beforeend','<span class="lk" data-notr> 🔒</span>'); });
-      const pb=document.getElementById('hgPlay'); if(pb&&!has(chosenNation)&&['battle','tut','camp'].includes(playMode)){ pb.disabled=true; pb.textContent=L?'🔒 Nation locked':'🔒 Nación cerrada'; } }
+      const pb=document.getElementById('hgPlay'); if(pb&&!has(chosenNation)&&['battle','tut','camp'].includes(playMode)){ pb.disabled=true; const f=winsLeft();
+        pb.textContent=f>0?(L?`🔒 Opens with ${f} more win${f>1?'s':''}`:`🔒 Se abre con ${f} victoria${f>1?'s':''} más`):(L?'🔒 Nation locked':'🔒 Nación cerrada'); } }
     return r; };
+
+  // ---- 4) naciones nuevas por victorias (pedido de Sebastián): después del entrenamiento, con 2 victorias se abre la
+  // Argentina (el Nahuel) y después cada 5 victorias otra nación, que elige el jugador entre las que faltan. ----
+  const AR_WINS=2, EVERY=5;
+  const winsT=()=>Math.max(0,((PROG.stats&&PROG.stats.wins)||0)-(PROG.winBase||0));
+  const allowedN=w=>1+(w>=AR_WINS?1+Math.floor((w-AR_WINS)/EVERY):0);
+  function winsLeft(){ if(!PROG||!PROG.lockN) return 0; const w=winsT(), next=w<AR_WINS?AR_WINS:AR_WINS+EVERY*(Math.floor((w-AR_WINS)/EVERY)+1); return next-w; }
+  window.winsLeft=winsLeft;
+  const lockedN=()=>eraNations(3).filter(n=>!(PROG.openN||[]).includes(n)&&vehTreeE(n,3).length);
+  function openNation(n){ const f=vehTreeE(n,3)[0]; PROG.openN=PROG.openN||[]; if(!PROG.openN.includes(n)) PROG.openN.push(n);
+    if(f){ PROG.unlocked[f]=1; PROG.owned[f]=1; const G=garRef(n,3); if(!G.includes(f)) G.unshift(f); } saveProg(); return f; }
+  const nbox=document.createElement('div'); nbox.id='natPick'; nbox.setAttribute('data-notr',''); document.body.appendChild(nbox);
+  const st2=document.createElement('style'); st2.textContent=`#natPick{position:fixed;inset:0;z-index:62;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.75);padding:12px}
+    #natPick .card{width:min(640px,96vw);background:rgba(18,20,24,.97);border:2px solid #ffd24a;border-radius:14px;padding:16px 20px;color:#fff;text-align:center;font:600 17px 'Saira Condensed',system-ui,sans-serif}
+    #natPick h2{margin:0 0 6px;font:800 30px 'Saira Condensed',system-ui,sans-serif;color:#ffd24a} #natPick .row{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin-top:12px}
+    #natPick .row button{min-width:150px;padding:10px 14px;border-radius:10px;border:2px solid #cfc6b0;background:#2a2c30;color:#fff;font:700 18px 'Saira Condensed',system-ui,sans-serif;cursor:pointer}
+    #natPick .row button:hover{border-color:#ffd24a} #natPick .row small{display:block;color:#cfc6b0;font-weight:600}`;
+  document.head.appendChild(st2);
+  function checkNations(){ if(!PROG||!PROG.lockN||PROG.train||nbox.style.display==='flex') return false;
+    if((PROG.openN||[]).length>=allowedN(winsT())) return false; const L=EN();
+    const left=lockedN(); if(!left.length) return false;
+    if(left.includes('ar')){ const f=openNation('ar');   // la primera que se abre es siempre la Argentina
+      nbox.innerHTML=`<div class="card"><h2>${L?'New nation: Argentina':'Nueva nación: Argentina'}</h2><div>${typeof miniHTML==='function'&&f?miniHTML(f):''}</div>
+        <p>${L?`You unlocked the <b>${VEH[f].label}</b>, the first tank designed and built in Argentina (1943).`:`Desbloqueaste el <b>${VEH[f].label}</b>, el primer tanque diseñado y fabricado en la Argentina (1943).`}</p>
+        <p><small>${L?`Every ${EVERY} wins you unlock another nation.`:`Cada ${EVERY} victorias se abre otra nación.`}</small></p><button class="go" id="natOk">${L?'Great!':'¡Genial!'}</button></div>`;
+      nbox.style.display='flex'; try{ if(typeof miniPedir==='function') miniPedir([f]); }catch(e){}
+      document.getElementById('natOk').onclick=()=>{ nbox.style.display='none'; checkNations(); }; return true; }
+    nbox.innerHTML=`<div class="card"><h2>${L?'Choose a new nation':'Elegí una nación nueva'}</h2><p>${L?`${EVERY} more wins! You get the first tank of the nation you choose.`:`¡${EVERY} victorias más! Te llevás el primer tanque de la nación que elijas.`}</p>
+      <div class="row">${left.map(n=>{ const f=vehTreeE(n,3)[0]; return `<button data-n="${n}">${NATIONS[n].label}<small>${f?VEH[f].label:''}</small></button>`; }).join('')}</div></div>`;
+    nbox.style.display='flex';
+    nbox.querySelectorAll('[data-n]').forEach(b=>b.onclick=()=>{ openNation(b.dataset.n); chosenNation=b.dataset.n; nbox.style.display='none'; if(!checkNations()&&menuScreen==='hangar'&&state==='menu') renderHangar(); });
+    return true; }
+  window.checkNations=checkNations;
+  { const _s=summary; summary=function(){ const r=_s.apply(this,arguments); setTimeout(()=>{ try{ if(document.getElementById('pGift')&&getComputedStyle(pGift).display==='flex') return; checkNations(); }catch(e){} },1400); return r; }; }
+  { const _m=mainMenu; mainMenu=function(){ const r=_m.apply(this,arguments); setTimeout(()=>{ try{ checkNations(); }catch(e){} },600); return r; }; }
 })();
