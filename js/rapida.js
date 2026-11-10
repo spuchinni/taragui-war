@@ -88,7 +88,8 @@
       const k=(garRef(chosenNation,3)||[])[0]; if(k&&VEH[k]){
         const t=document.createElement('div'); t.className='homeTank'; t.setAttribute('data-notr','');
         t.innerHTML=`${L?'Your tank':'Tu tanque'}: <b>${VEH[k].label}</b><button id="tkChg">${L?'Change':'Cambiar'}</button>`;
-        $('panel').appendChild(t); document.getElementById('tkChg').onclick=()=>picker(()=>mainMenu(),true); }
+        $('panel').appendChild(t); const ch=document.getElementById('tkChg');
+        if(PROG.train&&PROG.loan&&nb>=1) ch.remove(); else ch.onclick=()=>picker(()=>mainMenu(),true); }   // en el entrenamiento ya no se cambia (pedido de Sebastián)
     } else if(!LS('tw2_menuFull')){ LS('tw2_menuFull','1');
       setTimeout(()=>{ try{ banner(L?'New!':'¡Nuevo!',L?'Campaign, Vehicles and Tutorial are now open':'Se abrieron Campaña, Vehículos y Tutorial',4); }catch(e){} },600); }
     return r; };
@@ -160,6 +161,12 @@
     nbox.querySelectorAll('[data-n]').forEach(b=>b.onclick=()=>{ openNation(b.dataset.n); chosenNation=b.dataset.n; nbox.style.display='none'; if(!checkNations()&&menuScreen==='hangar'&&state==='menu') renderHangar(); });
     return true; }
   window.checkNations=checkNations;
+  // entrenamiento (batallas 1 y 2): del resumen se sigue derecho a la próxima batalla, sin volver al menú
+  { const _s=summary; summary=function(){ const r=_s.apply(this,arguments);
+      try{ if(PROG&&PROG.train&&!tut&&!curSpecial&&!(typeof net!=='undefined'&&net.on)&&state==='summary'){ const L=EN(), a=document.getElementById('again'), m=document.getElementById('menuB');
+        if(m) m.remove(); if(a){ a.textContent=L?`Next training battle (${battles()+1} of 3)`:`Siguiente batalla del entrenamiento (${battles()+1} de 3)`; a.onclick=()=>directBattle(); }
+        document.querySelectorAll('#panel .rpbox.unl button').forEach(b=>b.remove()); } }catch(e){ console.warn('entrenamiento: resumen',e); }
+      return r; }; }
   { const _s=summary; summary=function(){ const r=_s.apply(this,arguments); setTimeout(()=>{ try{ if(document.getElementById('pGift')&&getComputedStyle(pGift).display==='flex') return; checkNations(); }catch(e){} },1400); return r; }; }
   { const _m=mainMenu; mainMenu=function(){ const r=_m.apply(this,arguments); setTimeout(()=>{ try{ checkNations(); }catch(e){} },600); return r; }; }
 })();

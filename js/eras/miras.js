@@ -2,7 +2,7 @@
    - Cañón: en los tanques sin telémetro (casi todos los de la 2ª Guerra, `manual` en drawOverlay) no se dibujaba nada. Ahora se marca
      hacia dónde apunta el tubo (derecho, sin la caída: la distancia la sigue calculando el jugador). Con telémetro sigue el círculo de impacto.
    - Si el cañón apunta fuera de la pantalla (miraste para otro lado), una burbuja en el borde muestra para dónde está girado.
-   - Ametralladoras: una cruz chica por cada una (coaxial y montadas, ametralladoras.js) donde apunta a la distancia de tu mira:
+   - Ametralladoras: una cruz chica por cada una que gira mucho (antiaéreas y de pivote; no la coaxial ni las de rótula o fijas, ametralladoras.js) donde apunta a la distancia de tu mira:
      clara = lista para tirar, apagada = el blanco queda fuera de su arco o todavía está girando. */
 const _gmP=new THREE.Vector3(), _gmD=new THREE.Vector3(), _gmQ=new THREE.Vector3();
 // punto donde pega el tubo si sigue derecho (suelo, ruinas, casas o tanques)
@@ -34,7 +34,9 @@ function drawGunMarks(){ if(state!=='play'||!player||player.dead||!player.barrel
     if(t.gunLim){ oc.fillStyle='rgba(255,90,60,.95)'; oc.font='700 15px "Saira Condensed",sans-serif'; oc.textAlign='center'; oc.fillText(t.gunLim<0?'El cañón no baja más':'El cañón no sube más',S.x,S.y+36); } }
   drawMgMarks(t); }
 function drawMgMarks(t){   // ametralladoras: coaxial + montadas
-  const aim=lastAim, L=[{muz:t.coax,dir:t.barrel,ok:true}].concat((t.mgs||[]).map(M=>({muz:M.muz,dir:M.pg,ok:M.can&&M.err<=.07&&M.seat.some(s=>manned(t,s))})));
+  // solo las que giran mucho (antiaéreas, de pivote): la coaxial va con el cañón y las de rótula o fijas (copiloto, trasera de la torre)
+  // casi no se mueven, no hace falta marcarlas (pedido de Sebastián)
+  const aim=lastAim, L=(t.mgs||[]).filter(M=>M.yaw[1]-M.yaw[0]>1).map(M=>({muz:M.muz,dir:M.pg,ok:M.can&&M.err<=.07&&M.seat.some(s=>manned(t,s))}));
   for(const G2 of L){ if(!G2.muz||!G2.dir) continue; const o=G2.muz.getWorldPosition(new THREE.Vector3()), d=G2.dir.getWorldDirection(new THREE.Vector3());
     const D=aim?clamp(o.distanceTo(aim),15,900):300, s=screenOrEdge(o.addScaledVector(d,D),20); if(s.edge) continue;
     const c=G2.ok?'rgba(255,214,120,.95)':'rgba(200,200,190,.4)';
