@@ -35,6 +35,7 @@
     body.hud2 #status,body.hud2 #feed,body.hud2 #counts,body.hud2 #tabB{display:none!important}
     body.hud2 #ammobar .wt-wpn,body.hud2 #ammobar .ab-info,body.hud2 #ammoSlots .gap,body.hud2 #ammoSlots .gap~.as{display:none!important}
     body.hud3 #counts,body.hud3 #tabB{display:none!important}
+    body.hud3.supOn #ammoSlots .gap,body.hud3.supOn #ammoSlots .gap~.as{display:flex!important} body.hud3.supOn #ammoSlots .gap{display:inline-block!important}
     body.hud3 #status .wt-tele,body.hud3 #status .wt-state,body.hud3 #ammobar .wt-wpn,body.hud3 #ammobar .ab-info,body.hud3 #ammoSlots .gap,body.hud3 #ammoSlots .gap~.as{display:none!important}
     #tickets #tkA,#tickets #tkE{display:none!important}
     #tickets .tkBar{width:150px;height:14px;align-self:center;margin:0 8px;background:rgba(10,12,14,.65);border:1px solid rgba(239,231,210,.45);border-radius:4px;overflow:hidden;display:flex}
@@ -52,10 +53,15 @@
       font:600 20px 'Saira Condensed',system-ui,sans-serif;line-height:1.35;box-shadow:0 12px 40px rgba(0,0,0,.6)}
     #pLesson h2{margin:0 0 10px;font:800 30px 'Saira Condensed',system-ui,sans-serif;color:#ffd24a;letter-spacing:.02em}
     #pLesson p{margin:.45em 0} #pLesson b{color:#ffd24a} #pLesson kbd{display:inline-block;min-width:1.5em;padding:0 .35em;border:1px solid #ffd24a;border-radius:4px;background:#2a2c30;color:#ffd24a;font-weight:800}
+    #pLesson.top{align-items:flex-start;padding-top:2vh} #pLesson.top .card{padding:14px 22px 12px} #pLesson.top button{margin-top:8px}
     #pLesson.low{align-items:flex-end;padding-bottom:4vh;background:rgba(0,0,0,.12)}
     #pLesson .mk{position:absolute;transform:translate(-50%,-50%);width:86px;height:86px;border:4px solid currentColor;border-radius:50%;pointer-events:none;animation:mkP 1s ease-in-out infinite alternate;box-shadow:0 0 0 3px rgba(0,0,0,.45)}
+    #pLesson .mkB{position:absolute;border:3px solid #7ce07c;border-radius:8px;pointer-events:none;animation:mkB .8s ease-in-out infinite alternate;box-shadow:0 0 0 2px #000,0 0 14px #7ce07c}
+    #pLesson .mkB span{position:absolute;left:50%;transform:translateX(-50%);white-space:nowrap;font:800 17px 'Saira Condensed',system-ui,sans-serif;color:#7ce07c;text-shadow:0 2px 4px #000,0 0 2px #000}
+    #pLesson .mkB span:after{content:'';position:absolute;left:50%;top:100%;width:2px;height:var(--ln,6px);background:#7ce07c;box-shadow:0 0 0 1px #000}
     #pLesson .mk span{position:absolute;left:50%;top:100%;transform:translateX(-50%);margin-top:6px;white-space:nowrap;font:800 20px 'Saira Condensed',system-ui,sans-serif;text-shadow:0 2px 4px #000,0 0 2px #000}
     @keyframes mkP{from{transform:translate(-50%,-50%) scale(.9)}to{transform:translate(-50%,-50%) scale(1.1)}}
+    @keyframes mkB{from{opacity:.55}to{opacity:1}}
     #pLesson .pause{font-size:14px;opacity:.7;letter-spacing:.1em;margin-bottom:6px} #pLesson button{margin-top:16px;font-size:22px;min-width:200px}
     #pGift{position:fixed;inset:0;z-index:40;display:none;flex-direction:column;align-items:center;justify-content:center;background:radial-gradient(ellipse at center,rgba(40,34,18,.97),rgba(0,0,0,.98));
       color:#fff;font:600 20px 'Saira Condensed',system-ui,sans-serif;text-align:center;padding:16px}
@@ -96,11 +102,15 @@
     if(opt.cam) try{ fov0=camera.fov; camera.position.copy(opt.cam.pos); camera.lookAt(opt.cam.look); camera.fov=55; camera.updateProjectionMatrix(); camera.updateMatrixWorld(); }catch(e){}   // vista desde arriba (punto capturado)
     else if(opt.zoom) try{ fov0=camera.fov; const d=Math.max(1,camera.position.distanceTo(opt.zoom.p)); camera.lookAt(opt.zoom.p);
       camera.fov=Math.max(6,Math.min(fov0,2*Math.atan((opt.zoom.r||8)/d)*180/Math.PI)); camera.updateProjectionMatrix(); if(opt.low) camera.rotateX(-Math.atan(.5*Math.tan(camera.fov*Math.PI/360))); camera.updateMatrixWorld(); }catch(e){}   // con el cartel abajo, el blanco queda arriba
-    les.className=opt.low?'low':'';
+    les.className=opt.low?'low':opt.dom?'top':'';
     let mk='', mi=0; for(const M of opt.marks||[]) try{ const v=M.p.clone().project(camera); if(v.z>1||Math.abs(v.x)>1.1||Math.abs(v.y)>1.1) continue;
       mk+=`<div class="mk" style="left:${((v.x+1)/2*100).toFixed(2)}%;top:${((1-v.y)/2*100).toFixed(2)}%;color:${M.col||'#ffd24a'}"><span style="${(mi++)%2?'top:auto;bottom:100%;margin:0 0 6px':''}">${M.txt||''}</span></div>`; }catch(e){}
+    let di=0; const doms=(opt.dom||[]).filter(M=>M.el);   // marcas sobre botones de la pantalla (apoyos): se ubican en vivo (la barra se acomoda)
+    for(const M of doms){ const up=8+(di++%3)*22; mk+=`<div class="mkB" data-i="${di-1}"><span style="bottom:calc(100% + ${up}px);--ln:${up}px">${M.txt||''}</span></div>`; }
     les.innerHTML=mk+`<div class="card"><div class="pause">${EN()?'⏸ GAME PAUSED':'⏸ PARTIDA EN PAUSA'}</div><h2>${title}</h2>${html}<button class="go" id="pLesOk">${EN()?'Continue':'Seguir'}</button></div>`;
     les.style.display='flex';
+    if(doms.length){ const place=()=>{ if(les.style.display==='none') return; les.querySelectorAll('.mkB').forEach(e=>{ const r=doms[+e.dataset.i].el.getBoundingClientRect();
+        Object.assign(e.style,{left:(r.left-3)+'px',top:(r.top-3)+'px',width:(r.width+6)+'px',height:(r.height+6)+'px',display:r.width?'block':'none'}); }); requestAnimationFrame(place); }; place(); }
     const go=()=>{ document.removeEventListener('keydown',kd,true); les.style.display='none'; if(fov0!=null){ camera.fov=fov0; camera.updateProjectionMatrix(); }
       if(state==='lesson'){ state='play'; try{ releaseAll(); }catch(e){} lock(); } };
     const kd=e=>{ if(e.code==='Enter'||e.code==='Space'||e.code==='NumpadEnter'){ e.preventDefault(); e.stopPropagation(); go(); } };
@@ -125,7 +135,7 @@
     try{ if(TUT1.pre&&TUT1.stg===-1&&r&&!(crew&&crew.isPlayer)&&!r.isPlayer&&mobileT(r)) hideT(r); }catch(e){} if(B&&B.first) for(let i=n;i<tanks.length;i++) setSk(tanks[i],tanks[i].team===0?.98:.18); return r; };
 
   // ---- al empezar cada batalla ----
-  let B=null, preLvl=4;   // estado de la batalla actual · nivel de la batalla que está arrancando (antes de que exista B)
+  let B=null, preLvl=4; window.__primB=()=>B;   // estado de la batalla actual · nivel de la batalla que está arrancando (antes de que exista B)
   const curLvl=()=>tut||net.on?4:B?B.lvl:preLvl;
   // entrenamiento: si se sale de una batalla, al volver arranca esa misma desde el principio (pedido de Sebastián). Los carteles ya vistos
   // en esa batalla se vuelven a mostrar: al empezar se restauran las marcas como estaban al terminar la anterior (PROG.lsSnap).
@@ -173,9 +183,12 @@
         ?`<p>Bottom left you see your <b>tank and its crew</b>. When something gets hit it turns red, and if a crew member falls, another one takes their place.</p>`
         :`<p>Abajo a la izquierda ves tu <b>tanque y su tripulación</b>. Lo que recibe un impacto se pone rojo y, si cae un tripulante, otro toma su lugar.</p>`)) B.said.l3=1;
     if(B.teach&&B.said.l3&&!B.said.l4&&t>14){ const air=RULE().sup&&RULE().sup.air;
+      B.l4on=1; document.body.classList.add('supOn'); try{ updateAmmoBar(player); }catch(e){}   // aparecen los botones de apoyo y se marcan
+      const S=id=>document.querySelector(`#ammoSlots .as[data-id="${id}"]`), en=EN();
+      const dom=[['rep',en?'Repair':'Reparar'],['arty',en?`Artillery · ${ARTY_COST}`:`Artillería · ${ARTY_COST}`],['air',en?`Air strike · ${AIR_COST}`:`Bombardeo · ${AIR_COST}`],['inf',en?`Infantry · ${INF_COST}`:`Infantería · ${INF_COST}`],['smk',en?'Smoke':'Humo'],['ext',en?'Extinguisher':'Extintor']].map(([id,txt])=>({el:S(id),txt})).filter(o=>o.el);
       if(lesson(EN()?'Now your tank can take damage':'Ahora tu tanque puede recibir daño',EN()
-        ?`<p>${K('repair')} <b>Repair</b>: the tank stops and the crew fixes tracks, engine and gun, and puts out fires. Do it behind cover.</p><p>${K('arty')} <b>Artillery</b>${air?` · ${K('air')} <b>Air strike</b>`:''}: press the key and click on the map where it should land. They recharge on their own (the button shows the wait).</p>${infOK()?`<p>${K('inf')} <b>Call infantry</b>: ${INF_COST} points. Pick a point on the map and a half-track or paratroopers bring soldiers there to capture or defend it.</p>`:''}<p>${K('smoke')} <b>Smoke</b>: throws smoke grenades to hide your tank.</p>`
-        :`<p>${K('repair')} <b>Reparar</b>: el tanque se queda quieto y la tripulación arregla orugas, motor y cañón y apaga el fuego. Hacelo a cubierto.</p><p>${K('arty')} <b>Artillería</b>${air?` · ${K('air')} <b>Bombardeo</b>`:''}: apretá la tecla y hacé clic en el mapa donde querés que caiga. Se recargan solos (el botón muestra cuánto falta).</p>${infOK()?`<p>${K('inf')} <b>Pedir infantería</b>: ${INF_COST} puntos. Elegís un punto en el mapa y un semioruga o paracaidistas llevan soldados para capturarlo o defenderlo.</p>`:''}<p>${K('smoke')} <b>Humo</b>: tira granadas de humo para esconder tu tanque.</p>`)) B.said.l4=1; }
+        ?`<p>${K('repair')} <b>Repair</b>: the tank stops and the crew fixes tracks, engine and gun, and puts out fires. Do it behind cover.</p><p>${K('arty')} <b>Artillery</b>${air?` · ${K('air')} <b>Air strike</b>`:''}: press the key and click on the map where it should land. Artillery costs <b>${ARTY_COST} points</b>${air?` and the air strike <b>${AIR_COST}</b>`:''}; you earn points by fighting, and after each use they recharge (the button shows the wait).</p>${infOK()?`<p>${K('inf')} <b>Call infantry</b>: ${INF_COST} points. Pick a point on the map and a half-track or paratroopers bring soldiers there to capture or defend it.</p>`:''}<p>${K('smoke')} <b>Smoke</b>: throws smoke grenades to hide your tank. ${K('ext')} <b>Extinguisher</b>: puts out fires.</p>`
+        :`<p>${K('repair')} <b>Reparar</b>: el tanque se queda quieto y la tripulación arregla orugas, motor y cañón y apaga el fuego. Hacelo a cubierto.</p><p>${K('arty')} <b>Artillería</b>${air?` · ${K('air')} <b>Bombardeo</b>`:''}: apretá la tecla y hacé clic en el mapa donde querés que caiga. La artillería cuesta <b>${ARTY_COST} puntos</b>${air?` y el bombardeo <b>${AIR_COST}</b>`:''}; los puntos se ganan peleando y después de usarlos se recargan (el botón muestra cuánto falta).</p>${infOK()?`<p>${K('inf')} <b>Pedir infantería</b>: ${INF_COST} puntos. Elegís un punto en el mapa y un semioruga o paracaidistas llevan soldados para capturarlo o defenderlo.</p>`:''}<p>${K('smoke')} <b>Humo</b>: tira granadas de humo para esconder tu tanque. ${K('ext')} <b>Extintor</b>: apaga el fuego.</p>`,{dom})) B.said.l4=1; }
     if(B.lvl<4&&player&&!player.dead&&!LSg('tw2_lFoe')&&!(B.first&&TUT1.stg<0)){ const e=B.first&&TUT1.A&&!TUT1.A.dead?TUT1.A:tanks.find(o=>!o.dead&&o.team!==player.team&&!(o.T&&o.T.static)&&o.visP&&o.pos.distanceTo(player.pos)<380);
       if(e&&B.first&&e===TUT1.A){ const p=e.pos.clone(); p.y+=(e.topH||2.4)*.45; const {fm,sm}=armorOf(e);   // 1ª batalla: enemigo + blindaje en un solo cartel
         if(lesson(EN()?`An enemy tank! A ${e.T.label}`:`¡Un tanque enemigo! Un ${e.T.label}`,(EN()
@@ -356,6 +369,7 @@
     for(const a in LOCK_OF) if(Lk[LOCK_OF[a]]&&(e.code===binds[a]||(a==='scope'&&binds.scope==='ShiftLeft'&&e.code==='ShiftRight'))){ e.stopImmediatePropagation(); e.preventDefault(); if(!e.repeat) lockMsg(); return; } },true);
   { const _f=frame; frame=function(){ const r=_f.apply(this,arguments); try{ const Lk=locks();
       document.body.classList.toggle('lkScope',!!Lk.scope); document.body.classList.toggle('lkAmmo',!!Lk.ammo); document.body.classList.toggle('lkSup',!!Lk.sup);
+      document.body.classList.toggle('supOn',!!(B&&B.lvl===3&&(!B.teach||B.said.l4||B.l4on)));
       if(state==='play'&&player){ if(Lk.scope&&(scopeOn||rightDown)){ scopeOn=false; rightDown=false; lockMsg(); } } }catch(e){} return r; }; }
   { const st4=document.createElement('style'); st4.textContent=`body.lkScope #tch .tScope,body.lkScope #tch .tZoom,body.lkAmmo #tch .tMg,body.lkAmmo #ammoSlots{display:none!important}`; document.head.appendChild(st4); }
   // ---- premio de la 1ª batalla: 1.000 Yaguaretés (un tanque cuesta ~10.000); la caja sale al terminar la 3ª ----

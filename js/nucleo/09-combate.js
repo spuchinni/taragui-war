@@ -377,8 +377,8 @@ function fireMG(t){
 }
 
 /* ---------- Apoyo: artillería y ataque aéreo ---------- */
-// Pedido de Sebastián: los apoyos no cuestan puntos, se recargan con el tiempo (artillería cada 45 s, bombardeo cada 1:30)
-const ARTY_COST=0, AIR_COST=0, ARTY_CD=45, AIR_CD=90;
+// Pedido de Sebastián: artillería 150 puntos y bombardeo 300 (antes gratis), y además se recargan (artillería cada 45 s, bombardeo cada 1:30)
+const ARTY_COST=150, AIR_COST=300, ARTY_CD=45, AIR_CD=90;
 // Demora desde que se pide hasta que llega (pedido de Sebastián): la batería calcula y carga, el avión tiene que venir.
 // Fija, sin azar, para que el anfitrión y los invitados la vean igual. En la 1ª Guerra y Entreguerras, por teléfono de campaña, tarda más.
 const artyDelay=()=>W.era<=2?14:10, AIR_DELAY=9;
