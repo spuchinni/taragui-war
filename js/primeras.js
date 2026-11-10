@@ -127,7 +127,16 @@
   // ---- al empezar cada batalla ----
   let B=null, preLvl=4;   // estado de la batalla actual · nivel de la batalla que está arrancando (antes de que exista B)
   const curLvl=()=>tut||net.on?4:B?B.lvl:preLvl;
-  const _sb=startBattle; startBattle=function(spectator){ B=null; preLvl=lvlNow(); medSeen=false; TUT1.stg=-1; TUT1.hid=[]; TUT1.pre=!spectator&&!!(window.coach&&coach.closeNext)&&!net.on;   // closeNext: todavía no lo leyó arranque.js (corre adentro)   // 1ª batalla: los demás tanques se esconden apenas aparecen (antes se veían un instante) window.TEAM_N=tut||net.on?null:preLvl===1?[2,3]:preLvl===2?[3,4]:null;
+  // entrenamiento: si se sale de una batalla, al volver arranca esa misma desde el principio (pedido de Sebastián). Los carteles ya vistos
+  // en esa batalla se vuelven a mostrar: al empezar se restauran las marcas como estaban al terminar la anterior (PROG.lsSnap).
+  const LS_KEYS=['tw2_lFoe','tw2_lWeak','tw2_lMira','tw2_lCap','tw2_coach'];
+  function lsSnap(){ const o={}; for(const k of LS_KEYS){ const v=LSg(k); if(v!=null) o[k]=v; } return o; }
+  function lsRestore(o){ for(const k of LS_KEYS) try{ if(o&&o[k]!=null) localStorage.setItem(k,o[k]); else localStorage.removeItem(k); }catch(e){} }
+  // los bots no reparan en el entrenamiento hasta que el jugador repare por primera vez (pedido de Sebastián)
+  { const _r=startRepair; startRepair=function(t){ if(t&&!t.isPlayer&&PROG&&PROG.train&&!PROG.firstRep) return; const r=_r.apply(this,arguments);
+      if(t&&t.isPlayer&&t.repairT>0&&PROG&&!PROG.firstRep){ PROG.firstRep=1; try{ saveProg(); }catch(e){} } return r; }; }
+  const _sb=startBattle; startBattle=function(spectator){ if(!spectator&&PROG&&PROG.train&&!tut) lsRestore(PROG.lsSnap||{});
+    B=null; preLvl=lvlNow(); medSeen=false; TUT1.stg=-1; TUT1.hid=[]; TUT1.pre=!spectator&&!!(window.coach&&coach.closeNext)&&!net.on;   // closeNext: todavía no lo leyó arranque.js (corre adentro)   // 1ª batalla: los demás tanques se esconden apenas aparecen (antes se veían un instante) window.TEAM_N=tut||net.on?null:preLvl===1?[2,3]:preLvl===2?[3,4]:null;
     let r; try{ r=_sb.apply(this,arguments); } finally{ window.TEAM_N=null; }
     HUD_LVL=lvlNow(); for(const n of [1,2,3]) document.body.classList.toggle('hud'+n,HUD_LVL===n); document.body.classList.remove('tkOn');
     TUT1.A=TUT1.B=null; TUT1.t=0;   // stg, hid y pre se ponen antes de armar la batalla (los tanques se esconden al aparecer)
@@ -369,6 +378,7 @@
     gift.querySelector('#pGiftOk').onclick=()=>{ gift.style.display='none'; }; }
   // al terminar la 3ª batalla (fin del entrenamiento) se saca el tanque elegido y se regala el primero de la línea de esa nación (rapida.js)
   { const _sum=summary; summary=function(winner){ const r=_sum.apply(this,arguments);
+      try{ if(PROG&&PROG.train&&!tut&&!curSpecial){ PROG.lsSnap=lsSnap(); saveProg(); } }catch(e){}
       try{ const L=PROG&&PROG.loan; if(PROG&&(PROG.train||(L&&!L.done))&&!tut&&!curSpecial&&battles()>=3&&state==='summary'){
         if(L&&window.returnLoan) returnLoan(); if(L) L.done=1; const n=(L&&L.n)||chosenNation, f=vehTreeE(n,3)[0];
         if(PROG.train){ PROG.train=0; PROG.lockN=1; PROG.openN=[n]; PROG.winBase=(PROG.stats&&PROG.stats.wins)||0; }   // las otras naciones quedan cerradas (rapida.js)

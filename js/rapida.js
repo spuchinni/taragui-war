@@ -68,6 +68,7 @@
 
   // ---- arranque directo de una batalla (sin hangar, sin resumen del mapa ni despliegue) ----
   function directBattle(){
+    if(PROG&&PROG.train&&battles()<1&&window.coachQuickStart){ try{ localStorage.removeItem('tw2_coach'); }catch(e){} return coachQuickStart(); }   // la 1ª otra vez desde el principio, con el entrenador
     try{ initAudio(); if(AC&&AC.state==='suspended') AC.resume(); }catch(e){}
     if(typeof netName!=='undefined'&&!netName){ netName=(EN()?'Player':'Jugador')+(1000+((Math.random()*9000)|0)); LS('tw-name',netName); }
     curEra=3; applyEraNations(3); startBattle(false);

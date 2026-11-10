@@ -23,6 +23,7 @@
       else if(state==='deploy'&&typeof doDeploy==='function'){ try{ doDeploy(); }catch(e){} }
       else if(state==='play'){ clearInterval(tick); C.auto=false; } },250);
     setTimeout(()=>clearInterval(tick),20000); }
+  window.coachQuickStart=quickStart;   // rapida.js: si se salió de la 1ª batalla del entrenamiento, se vuelve a empezar igual
   // ---- primera batalla corta: los dos bandos salen cerca del punto del medio ----
   // En El Alamein las bases quedan a ~1 km una de otra y el primer enemigo tardaba más de un minuto en aparecer.
   // Solo en la batalla de "Jugar ahora": cada base se acerca a CLOSE m del punto más central (≈350 m entre bandos),
