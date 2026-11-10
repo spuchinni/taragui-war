@@ -315,7 +315,7 @@
     const moveDone=window.coach&&coach.on?coach.step>=1:(B.said.welcome&&tn>10);
     if(TUT1.stg===-1&&B.said.welcome&&moveDone&&state==='play'){
       const E=TUT1.hid.filter(o=>o._tutP&&!o.dead&&o.team!==player.team); if(!E.length){ for(const o of TUT1.hid) showT(o); TUT1.hid=[]; TUT1.stg=2; return; }
-      const gap=o=>{ const A=hullA(o); return (A.front||0)-Math.min(A.side||99,A.rear||99)+(['ligero','medio','pesado'].includes(o.T.cls)?100:0); };   // mejor un tanque que un cazatanques
+      const gap=o=>{ const A=hullA(o); return (A.front||0)-Math.min(A.side||99,A.rear||99)+(o.T.cls==='medio'?1000:['ligero','pesado'].includes(o.T.cls)?100:0); };   // siempre un mediano si hay (pedido de Sebastián); si no, otro tanque antes que un cazatanques
       TUT1.A=E.slice().sort((a,b)=>gap(b)-gap(a))[0]; showT(TUT1.A); placeView(TUT1.A,55,useRear(TUT1.A)?2.3:1.15); TUT1.stg=0; }
     if(TUT1.stg===0&&(!TUT1.A||TUT1.A.dead)){ if(!TUT1.t) TUT1.t=now+1.6; else if(now>=TUT1.t){ TUT1.t=0;
       const L=TUT1.hid.filter(o=>o._tutP&&!o.dead&&o.team!==player.team); TUT1.B=L[0]||null;
