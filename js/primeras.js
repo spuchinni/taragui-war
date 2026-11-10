@@ -121,15 +121,16 @@
   let medSeen=false;   // 1ª batalla: el primer tanque enemigo que sale es un mediano de su nación (pedido de Sebastián: el del punto débil siempre mediano)
   const _sc=spawnCrew; spawnCrew=function(crew,key){ if(preLvl===1&&!tut&&!net.on&&!medSeen&&crew&&crew.team!==0&&VEH[key]&&!VEH[key].static&&!VEH[key].support){ medSeen=true;
       if(VEH[key].cls!=='medio'){ const m=vehTreeE(VEH[key].nation,eraOf(key)).find(k=>VEH[k].cls==='medio'); if(m) arguments[1]=m; } }
-    const n=tanks.length, r=_sc.apply(this,arguments); if(B&&B.first) for(let i=n;i<tanks.length;i++) setSk(tanks[i],tanks[i].team===0?.98:.18); return r; };
+    const n=tanks.length, r=_sc.apply(this,arguments);
+    try{ if(TUT1.pre&&TUT1.stg===-1&&r&&!(crew&&crew.isPlayer)&&!r.isPlayer&&mobileT(r)) hideT(r); }catch(e){} if(B&&B.first) for(let i=n;i<tanks.length;i++) setSk(tanks[i],tanks[i].team===0?.98:.18); return r; };
 
   // ---- al empezar cada batalla ----
   let B=null, preLvl=4;   // estado de la batalla actual · nivel de la batalla que está arrancando (antes de que exista B)
   const curLvl=()=>tut||net.on?4:B?B.lvl:preLvl;
-  const _sb=startBattle; startBattle=function(){ B=null; preLvl=lvlNow(); medSeen=false; window.TEAM_N=tut||net.on?null:preLvl===1?[2,3]:preLvl===2?[3,4]:null;
+  const _sb=startBattle; startBattle=function(spectator){ B=null; preLvl=lvlNow(); medSeen=false; TUT1.stg=-1; TUT1.hid=[]; TUT1.pre=!spectator&&!!(window.coach&&coach.closeNext)&&!net.on;   // closeNext: todavía no lo leyó arranque.js (corre adentro)   // 1ª batalla: los demás tanques se esconden apenas aparecen (antes se veían un instante) window.TEAM_N=tut||net.on?null:preLvl===1?[2,3]:preLvl===2?[3,4]:null;
     let r; try{ r=_sb.apply(this,arguments); } finally{ window.TEAM_N=null; }
     HUD_LVL=lvlNow(); for(const n of [1,2,3]) document.body.classList.toggle('hud'+n,HUD_LVL===n); document.body.classList.remove('tkOn');
-    TUT1.stg=-1; TUT1.A=TUT1.B=null; TUT1.hid=[]; TUT1.t=0;
+    TUT1.A=TUT1.B=null; TUT1.t=0;   // stg, hid y pre se ponen antes de armar la batalla (los tanques se esconden al aparecer)
     B={lvl:HUD_LVL,first:!!C.first,t0:null,shown:false,said:{},max:400,teach:HUD_LVL===3&&!tut&&!net.on&&battles()===2};
     if(B.first){ tickets[0]=tickets[1]=100; DRAIN_K=0; aces(); } else DRAIN_K=.42;
     if(!B.first&&!tut&&!net.on&&!curSpecial&&(HUD_LVL===2||HUD_LVL===3)) tickets[0]=tickets[1]=HUD_LVL===2?150:250;   // 2ª y 3ª más cortas
@@ -265,7 +266,7 @@
   //   bots y viene la explicación de los puntos y las barras.
   const TUT1=window.TUT1={stg:-1,A:null,B:null,hid:[],t:0};
   const tutOn=()=>!!(B&&B.first&&!tut&&!net.on&&TUT1.stg<2&&(TUT1.stg>=0||TUT1.hid.length>0));
-  const mobileT=o=>!o.dead&&o!==player&&!(o.T&&o.T.static)&&!(o.T&&o.T.support);
+  const mobileT=o=>!o.dead&&o!==player&&!o.isPlayer&&!(o.T&&o.T.static)&&!(o.T&&o.T.support);
   function camDir(){ const v=new THREE.Vector3(); camera.getWorldDirection(v); v.y=0; if(v.lengthSq()<1e-4) v.set(Math.sin(player.heading),0,Math.cos(player.heading)); return v.normalize(); }
   function okSpot(x,z){ if(Math.abs(x)>W.bx-25||Math.abs(z)>W.bz-25) return false; if(W.water!=null&&heightAt(x,z)<W.water+.4) return false; return true; }
   // pone el tanque delante de la cámara a la distancia d, de modo que se vea (relieve, casas y árboles) y con el ángulo face respecto del jugador
@@ -307,7 +308,8 @@
     const v=sidePt(e).project(camera); if(v.z>1||Math.abs(v.x)>1.05||Math.abs(v.y)>1.05){ wk.style.display='none'; return; }
     wk.style.left=((v.x+1)/2*innerWidth)+'px'; wk.style.top=((1-v.y)/2*innerHeight)+'px';
     const t=`${EN()?'AIM HERE':'APUNTÁ ACÁ'} · ${armorOf(e).sm} mm`; if(wk._t!==t){ wk._t=t; wk.innerHTML=`<b>${t}</b>`; } wk.style.display='block'; }
-  function tut1Tick(){ if(!B||!B.first||tut||net.on||!player||player.dead){ wk.style.display='none'; return; }
+  function tut1Tick(){ if(B&&!B.first&&TUT1.hid.length){ for(const o of TUT1.hid) showT(o); TUT1.hid=[]; }   // por las dudas: fuera de la 1ª batalla nadie queda escondido
+    if(!B||!B.first||tut||net.on||!player||player.dead){ wk.style.display='none'; return; }
     const tn=now-B.t0;
     // bienvenida del instructor (pedido de Sebastián) y primero a moverse: el enemigo aparece cuando el entrenador pasa a "disparar"
     if(TUT1.stg===-1&&!TUT1.hid.length&&tn>.3){ if(!tanks.some(o=>mobileT(o)&&o.team!==player.team)){ TUT1.stg=2; return; } for(const o of tanks) if(mobileT(o)) hideT(o); }   // al desplegar: solo vos en el mapa

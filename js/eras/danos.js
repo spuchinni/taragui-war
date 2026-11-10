@@ -101,23 +101,38 @@ function deadFate(t,rack){
 { const _nk=netKill; netKill=function(t,rack){ const was=t.dead; _nk.apply(this,arguments); if(!was&&t.dead) deadFate(t,rack); }; }
 
 // ---- 4) cañón roto y abollado ----
-const _tipMat=new THREE.MeshLambertMaterial({color:0x2a2420}), _scarMat=new THREE.MeshLambertMaterial({color:0x4a4038});
+const _tipMat=new THREE.MeshLambertMaterial({color:0x2a2420}), _scarMat=new THREE.MeshLambertMaterial({color:0x9a8e7c}), _rustMat=new THREE.MeshLambertMaterial({color:0x8a4a22});   // metal pelado claro y quemado: se ve sobre el tubo oscuro
 const _tipGeo=(()=>{ const g=new THREE.CylinderGeometry(1,1,1,10,1,true), p=g.attributes.position, R=mulberry0(21);   // boca desgarrada (bordes irregulares)
   for(let i=0;i<p.count;i++) if(p.getY(i)>0){ p.setY(i,p.getY(i)+R()*.9); p.setX(i,p.getX(i)*(1+R()*.35)); p.setZ(i,p.getZ(i)*(1+R()*.35)); } g.computeVertexNormals(); return g; })();
 setBarrelLook=function(t){
   const m=t.barrelMesh, G=t.barrel; if(!m||!G) return; const b=t.mod.barrel??100, L=t.T.m.gl, r=t.T.m.gr||.05;
   if(!t._bl){ t._bl={pos:m.position.z,sy:m.scale.y,kids:G.children.filter(c=>c!==m&&c.position.z>L*.5&&c.isMesh)}; }
   const B=t._bl, broken=b<=0;
-  m.scale.y=broken?B.sy*.5:B.sy; m.position.z=broken?B.pos-L*.25:B.pos; m.rotation.x=Math.PI/2+(b<60&&!broken?.03:0);
+  if(B.py==null) B.py=m.position.y;
+  const bend=0;   // (torcerlo separaba las piezas del tubo)
+  m.scale.y=broken?B.sy*.5:B.sy; m.position.z=broken?B.pos-L*.25:B.pos; m.rotation.x=Math.PI/2+bend; m.position.y=B.py-Math.sin(bend)*L*.5;
   for(const k of B.kids) k.visible=!broken;
   G.rotation.x=broken?.07:0;                                                                         // lo que queda del tubo cae un poco
   if(broken&&!t._tip){ const tip=new THREE.Mesh(_tipGeo,_tipMat); tip.scale.set(r*1.25,.22,r*1.25); tip.rotation.x=Math.PI/2; tip.position.z=B.pos+.0; G.add(tip); t._tip=tip;
     if(!t._bentDone){ t._bentDone=1; t.root.updateMatrixWorld(true); const wp=G.localToWorld(new THREE.Vector3(0,0,L*.75)), piece=new THREE.Mesh(new THREE.CylinderGeometry(r,r,L*.5,8),_tipMat);   // el pedazo cae al suelo
       piece.position.copy(wp); piece.rotation.set(Math.PI/2,0,-(t.heading+t.turretYaw)+rand(-.4,.4),'YXZ'); scene.add(piece); shed.push({o:piece,t,v:new THREE.Vector3(rand(-1,1),rand(1,2),rand(-1,1)),w:new THREE.Vector3(0,0,0),rest:false,age:0}); } }   // cae acostado
   if(!broken&&t._tip){ G.remove(t._tip); t._tip=null; t._bentDone=0; }
-  if(b<60&&!broken&&!t._scar){ const s=new THREE.Mesh(new THREE.CylinderGeometry(r*1.18,r*1.18,.16,10),_scarMat); s.rotation.x=Math.PI/2; s.position.z=L*rand(.45,.7); G.add(s); t._scar=s; }   // abolladura quemada
-  if(b>=60&&t._scar){ G.remove(t._scar); t._scar=null; }
+  // dañado (pedido de Sebastián: "no se ve"): el tubo se ennegrece de quemado, dos abolladuras anchas y una chapa levantada, y larga humo (abajo)
+  const dmg=b<60;
+  if(!B.parts){ B.parts=G.children.filter(c=>c.isMesh&&c.material&&!Array.isArray(c.material)&&c!==t._tip).map(c=>({c,m0:c.material})); B.burntOf=new Map(); }
+  for(const P of B.parts){ if(dmg){ let bm=B.burntOf.get(P.m0); if(!bm){ bm=P.m0.clone(); if(bm.color) bm.color.lerp(new THREE.Color(0x6a4028),.6); if(bm.emissive) bm.emissive.setHex(0x140700); B.burntOf.set(P.m0,bm); } P.c.material=bm; } else P.c.material=P.m0; }   // todas las piezas del tubo quedan quemadas
+  if(dmg&&!broken&&!t._scar){ const g=new THREE.Group();
+    for(const [z,k,mt] of [[.42,1.45,_scarMat],[.58,1.3,_rustMat],[.7,1.38,_scarMat]]){ const s=new THREE.Mesh(new THREE.CylinderGeometry(r*k,r*k*.9,.26,9),mt); s.rotation.x=Math.PI/2; s.position.z=L*z; s.rotation.z=rand(0,6); g.add(s); }
+    const flap=new THREE.Mesh(new THREE.BoxGeometry(r*1.4,.012,.22),_tipMat); flap.position.set(r*.9,r*.6,L*.55); flap.rotation.set(.5,0,.7); g.add(flap);
+    G.add(g); t._scar=g; }
+  if((!dmg||broken)&&t._scar){ G.remove(t._scar); t._scar=null; }
 };
+// humo del cañón dañado o roto: el tubo humea mientras no se repare (se ve de lejos)
+{ const _fx=tankFX; tankFX=function(t,dt){ const r=_fx.apply(this,arguments);
+    try{ const b=t.mod&&(t.mod.barrel??100); if(!t.dead&&b<60&&t.barrel&&t.root&&t.root.visible){ t._bsT=(t._bsT||0)-dt; if(t._bsT<=0){ t._bsT=b<=0?.25:.45;
+        const L=t.T.m.gl||3, p=t.barrel.localToWorld(new THREE.Vector3(0,0,L*(b<=0?.5:.55)));
+        puff(p,b<=0?0x2a2622:0x4a4642,rand(.6,1)*(b<=0?1.3:1),rand(1.2,1.9),.9,b<=0?.6:.45); } } }catch(e){}
+    return r; }; }
 
 // ---- 5) impactos en el suelo: cráteres, quemado y terrones ----
 const DEC_G=240; let gDec=null;

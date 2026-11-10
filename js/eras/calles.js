@@ -17,6 +17,9 @@
   const HYD=new THREE.MeshStandardMaterial({color:0x8e2c22,roughness:.6,metalness:.3});
   const BENCH=new THREE.MeshLambertMaterial({color:0x6e5434});
   const WIRE=new THREE.LineBasicMaterial({color:0x1c1c1c,transparent:true,opacity:.7});
+  // los cables se desvanecen entre 60 y 110 m: de lejos el poste (fino) deja de verse pero la línea siempre ocupa un píxel y parecía flotar (pedido de Sebastián)
+  WIRE.onBeforeCompile=sh=>{ sh.vertexShader=sh.vertexShader.replace('#include <common>','#include <common>\nvarying float vWD;').replace('#include <project_vertex>','#include <project_vertex>\nvWD=-mvPosition.z;');
+    sh.fragmentShader=sh.fragmentShader.replace('#include <common>','#include <common>\nvarying float vWD;').replace('#include <fog_fragment>','#include <fog_fragment>\ngl_FragColor.a*=1.0-smoothstep(60.0,110.0,vWD);'); };
   const merge=a=>THREE.BufferGeometryUtils.mergeBufferGeometries(a.map(g=>g.index?g.toNonIndexed():g));
   const cy=(r0,r1,h,y,s=8)=>{ const g=new THREE.CylinderGeometry(r0,r1,h,s); g.translate(0,y+h/2,0); return g; };
   const bx=(w,h,d,x,y,z)=>new THREE.BoxGeometry(w,h,d).translate(x,y,z);
