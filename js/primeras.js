@@ -11,7 +11,7 @@
 //  · Batallas 1 y 2: tu tanque no recibe daño y no hay artillería ni bombardeo (todavía no se explicaron). En la 3ª se explican
 //    la reparación, los refuerzos y los apoyos y desde ahí todo funciona normal (antes en la 4ª; pedido de Sebastián). Las batallas 2 y 3 son más cortas (barras de 150 y 250).
 //  · Cada explicación nueva detiene la partida hasta que el jugador la lee y aprieta "Seguir" (antes tapaba el tanque y la acción seguía).
-//  · Premio de la 1ª batalla: 1.000 Yaguaretés. Al terminar la 3ª se devuelve el tanque prestado (rapida.js) y la caja regala el primero de la línea.
+//  · Premio de la 1ª batalla: 1.000 Yaguaretés. Al terminar la 3ª (fin del entrenamiento) la caja regala el primero de la línea de la nación elegida.
 //  · Pedido de Sebastián ("demasiado cargado"): menos tanques (1ª: 2 aliados y 3 enemigos; 2ª: 3 y 4), sin infantería suelta ni
 //    refuerzos en la 1ª y la 2ª (la 3ª la presenta con su cartel), sin humo, morteros, artillería ni bombardeo de nadie hasta la 3ª.
 //  · El primer enemigo que aparece: pausa, zoom sobre él y "apuntá con el mouse y clic para disparar"; ese primero cae de un tiro.
@@ -278,9 +278,9 @@
   // ---- premio de la 1ª batalla: 1.000 Yaguaretés (un tanque cuesta ~10.000); la caja sale al terminar la 3ª ----
   { const _br=battleReward; battleReward=function(){ const r=_br.apply(this,arguments); if(B&&B.first&&!tut) r.yp=Math.min(r.yp,1000); return r; }; }
   const gift=document.createElement('div'); gift.id='pGift'; gift.setAttribute('data-notr',''); document.body.appendChild(gift);
-  function giftBox(k,lent){ const V=VEH[k]; if(!V) return; const E=EN();
+  function giftBox(k){ const V=VEH[k]; if(!V) return; const E=EN();
     try{ PROG.unlocked[k]=1; PROG.owned[k]=1; const g=garRef(V.nation,eraOf(k)); if(!g.includes(k)){ if(g.length>=3) g.pop(); g.unshift(k); } saveProg(); }catch(e){}
-    gift.className=''; gift.innerHTML=`<h2>${E?'Training complete!':'¡Terminaste el entrenamiento!'}</h2><div class="sub">${lent?(E?`You return the ${lent} you were lent. Here is your own first tank:`:`Devolvés el ${lent} prestado. Acá está tu primer tanque propio:`):(E?'Here is your own first tank:':'Acá está tu primer tanque propio:')}</div>
+    gift.className=''; gift.innerHTML=`<h2>${E?'Training complete!':'¡Terminaste el entrenamiento!'}</h2><div class="sub">${E?'Here is your first tank:':'Acá está tu primer tanque:'}</div>
       <div class="crate"><div class="star">⭐</div><div class="body"><div class="q">?</div></div><div class="lid"></div></div><div class="burst"></div>
       <div class="prize">${typeof miniHTML==='function'?miniHTML(k):''}<div class="nm">${V.label}</div>
         <div class="ds">${E?'It is yours for good. Win battles to research and buy the next ones in the line.':'Es tuyo para siempre. Ganá batallas para investigar y comprar los siguientes de la línea.'}</div>
@@ -293,12 +293,13 @@
       try{ if(typeof cgCall==='function') cgCall(S=>S.game.happytime()); }catch(e){} };
     gift.querySelector('.crate').onclick=open; gift.querySelector('#pGiftOpen').onclick=open;
     gift.querySelector('#pGiftOk').onclick=()=>{ gift.style.display='none'; }; }
-  // al terminar la 3ª batalla se devuelve el tanque prestado y se regala el primero de la línea de esa nación (rapida.js)
+  // al terminar la 3ª batalla (fin del entrenamiento) se saca el tanque elegido y se regala el primero de la línea de esa nación (rapida.js)
   { const _sum=summary; summary=function(winner){ const r=_sum.apply(this,arguments);
-      try{ const L=PROG&&PROG.loan; if(L&&!L.done&&!tut&&!curSpecial&&battles()>=3&&state==='summary'){
-        if(window.returnLoan) returnLoan(); L.done=1; const f=vehTreeE(L.n,3)[0];
-        if(f){ const G=garRef(L.n,3), i=G.indexOf(f); if(i>=0) G.splice(i,1); G.unshift(f); if(typeof hgSel!=='undefined') hgSel=f; chosenNation=L.n; }
-        saveProg(); if(f) setTimeout(()=>giftBox(f,VEH[L.k]&&VEH[L.k].label),900); } }catch(e){ console.warn('prestado',e); }
+      try{ const L=PROG&&PROG.loan; if(PROG&&(PROG.train||(L&&!L.done))&&!tut&&!curSpecial&&battles()>=3&&state==='summary'){
+        if(L&&window.returnLoan) returnLoan(); if(L) L.done=1; const n=(L&&L.n)||chosenNation, f=vehTreeE(n,3)[0];
+        if(PROG.train){ PROG.train=0; PROG.lockN=1; PROG.openN=[n]; }   // las otras naciones quedan cerradas (rapida.js)
+        if(f){ const G=garRef(n,3), i=G.indexOf(f); if(i>=0) G.splice(i,1); G.unshift(f); if(typeof hgSel!=='undefined') hgSel=f; chosenNation=n; }
+        saveProg(); if(f) setTimeout(()=>giftBox(f),900); } }catch(e){ console.warn('entrenamiento',e); }
       return r; }; }
 
   // ---- CrazyGames: un jugador nuevo arranca con Estados Unidos y un Sherman ----

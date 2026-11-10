@@ -1,7 +1,7 @@
 // Arranque nuevo y partidas rápidas (pedido de Sebastián: "a los que probaron no les gustó arrancar lento, con tanques débiles
 // y con demasiadas cosas"). Va después de primeras.js y antes de inicio.js.
 //  · Primera vez: antes de la primera batalla se elige el tanque entre los tres famosos (Sherman, T-34, Panzer IV); el elegido
-//    queda PRESTADO y primero en el garaje las primeras 3 batallas (tw2_elegido, PROG.loan).
+//    se usa durante el entrenamiento (3 primeras batallas, PROG.train) sin ser tuyo (PROG.loan; no se le dice nada al jugador).
 //  · Menú simple las primeras 3 batallas: "Jugar ahora" va derecho a la batalla (sin hangar) y solo están Jugar, el tanque
 //    (con "Cambiar") y Opciones. Desde la 3ª aparecen Campaña, Vehículos y Tutorial con un aviso (tw2_menuFull).
 //  · Partida rápida (por defecto, tw2_modo='rapida'): las bases salen a QUICK_R m del punto del medio y la batalla dura
@@ -42,7 +42,7 @@
   document.head.appendChild(st);
 
   // ---- 1) elegir el primer tanque ----
-  // El elegido es PRESTADO para las primeras 3 batallas (PROG.loan): al terminar la 3ª se devuelve y queda el primero de la línea (primeras.js).
+  // El elegido se usa en el entrenamiento (PROG.loan, sin avisar): al terminar la 3ª se saca y se regala el primero de la línea de esa nación (primeras.js).
   function returnLoan(){ const L=PROG&&PROG.loan; if(!L||L.done) return;
     try{ if(!L.was){ delete PROG.owned[L.k]; delete PROG.unlocked[L.k]; const g=garRef(L.n,3), i=g.indexOf(L.k); if(i>=0) g.splice(i,1); } }catch(e){} }
   window.returnLoan=returnLoan;
@@ -57,7 +57,7 @@
   function picker(then,closable){
     const L=EN();
     box.innerHTML=`${closable?'<button class="x" id="tkPickX">✕</button>':''}<h2>${L?'Choose your tank':'Elegí tu tanque'}</h2>
-      <div class="sub">${L?'The most famous tanks of World War II. We lend it to you for your first 3 battles.':'Los tanques más famosos de la Segunda Guerra. Te lo prestamos para tus primeras 3 batallas.'}</div>
+      <div class="sub">${L?'The most famous tanks of World War II':'Los tanques más famosos de la Segunda Guerra'}</div>
       <div class="row">${PICK.filter(p=>VEH[p.k]).map(p=>`<button class="c" data-k="${p.k}"><img class="vmini" data-k="${p.k}" alt="">
         <b>${VEH[p.k].label}</b><i>${NATIONS[p.n]?NATIONS[p.n].label:''}</i><span>${L?p.en:p.es}</span></button>`).join('')}</div>`;
     box.style.display='flex';
@@ -81,13 +81,13 @@
   mainMenu=function(){ const r=_mm.apply(this,arguments);
     const b=document.getElementById('playB'); if(!b||!document.body.classList.contains('home')) return r;
     const L=EN(), nb=battles();
-    if(!LS('tw2_elegido')&&nb<1){ const orig=b.onclick; b.onclick=()=>picker(orig); return r; }   // la primera vez: elegir el tanque y después la batalla con el entrenador
+    if((PROG.train?!PROG.loan:!LS('tw2_elegido'))&&nb<1){ const orig=b.onclick; b.onclick=()=>picker(orig); return r; }   // la primera vez: elegir el tanque y después la batalla con el entrenador
     if(nb<3){
       for(const id of ['campB','vehB','tutB']){ const e=document.getElementById(id); if(e) e.style.display='none'; }
       b.onclick=directBattle;
       const k=(garRef(chosenNation,3)||[])[0]; if(k&&VEH[k]){
         const t=document.createElement('div'); t.className='homeTank'; t.setAttribute('data-notr','');
-        t.innerHTML=`${L?'Your tank':'Tu tanque'}: <b>${VEH[k].label}</b>${PROG.loan&&!PROG.loan.done&&PROG.loan.k===k?` <small>(${L?'on loan':'prestado'})</small>`:''}<button id="tkChg">${L?'Change':'Cambiar'}</button>`;
+        t.innerHTML=`${L?'Your tank':'Tu tanque'}: <b>${VEH[k].label}</b><button id="tkChg">${L?'Change':'Cambiar'}</button>`;
         $('panel').appendChild(t); document.getElementById('tkChg').onclick=()=>picker(()=>mainMenu(),true); }
     } else if(!LS('tw2_menuFull')){ LS('tw2_menuFull','1');
       setTimeout(()=>{ try{ banner(L?'New!':'¡Nuevo!',L?'Campaign, Vehicles and Tutorial are now open':'Se abrieron Campaña, Vehículos y Tutorial',4); }catch(e){} },600); }
@@ -121,5 +121,9 @@
     if(md&&playMode==='battle'){ const L=EN(), q=modo()==='rapida';
       md.insertAdjacentHTML('beforebegin',`<button class="hgMapB hgModeB" id="hgModeB" data-notr title="${L?'Battle length':'Duración de la batalla'}">${q?(L?'⏱ Quick battle: <b>5 min, close bases</b>':'⏱ Batalla rápida: <b>5 min, bases cerca</b>'):(L?'🗺 Big battle: <b>full map, 12–15 min</b>':'🗺 Batalla grande: <b>mapa entero, 12–15 min</b>')}</button>`);
       document.getElementById('hgModeB').onclick=()=>{ LS('tw2_modo',q?'grande':'rapida'); mainMenu(); }; }
+    // jugadores nuevos: solo la nación elegida tiene tanque; las demás quedan cerradas (PROG.lockN; cómo se abren: por decidir)
+    if(PROG&&PROG.lockN){ const L=EN(), has=n=>(PROG.openN||[]).includes(n)||Object.keys(VEH).some(k=>VEH[k].nation===n&&eraOf(k)===curEra&&owned(k));
+      document.querySelectorAll('.hgN[data-n]').forEach(b=>{ if(!has(b.dataset.n)&&!b.querySelector('.lk')) b.insertAdjacentHTML('beforeend','<span class="lk" data-notr> 🔒</span>'); });
+      const pb=document.getElementById('hgPlay'); if(pb&&!has(chosenNation)&&['battle','tut','camp'].includes(playMode)){ pb.disabled=true; pb.textContent=L?'🔒 Nation locked':'🔒 Nación cerrada'; } }
     return r; };
 })();
