@@ -98,7 +98,7 @@ Object.assign(VEH,{
     maxF:0,maxR:0,turn:.18,trav:.3,reload:4.5,pen:14,hp:50,arc:.07,crewReal:5,seats:['gunner','loader','commander','driver','mg1'],
     armor:{hull:{front:4,side:2,rear:2,top:2},turret:{front:4,side:2,rear:2,top:2}},camo:['#6f7a6a','#59634f','#383f33'],camoMode:'flat',mgc:8,
     m:{ww1:'gun',L:5.0,W:1.8,H:1.0,wr:.7,wheels:0,tz:.6,tw:1.2,th:.7,tl:.4,gl:2.6,gr:.04}},
-  fk96:{nation:'de',era:1,static:1,uses:1,br:1,cls:'cañón',label:'7,7 cm FK 96 n.A.',desc:'Cañón de campaña alemán: en 1917 y 1918 fue el peor enemigo de los tanques, con granadas perforantes "K".',
+  fk96:{nation:'de',era:1,static:1,uses:1,br:1,cls:'cañón',label:'77 mm FK 96 n.A.',desc:'Cañón de campaña alemán: en 1917 y 1918 fue el peor enemigo de los tanques, con granadas perforantes "K".',
     maxF:0,maxR:0,turn:.18,trav:.3,reload:5,pen:32,hp:50,arc:.07,crewReal:5,seats:['gunner','loader','commander','driver','mg1'],
     armor:{hull:{front:4,side:2,rear:2,top:2},turret:{front:4,side:2,rear:2,top:2}},camo:['#5f6150','#4b4d3f','#2f3128'],camoMode:'flat',mgc:7.92,
     m:{ww1:'gun',L:5.0,W:1.8,H:1.0,wr:.7,wheels:0,tz:.6,tw:1.2,th:.7,tl:.4,gl:2.2,gr:.039}}

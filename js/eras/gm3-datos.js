@@ -19,7 +19,7 @@ NAT_ERA[3]={
 const W2DE=['#8a7f5a','#5f6a46','#6b5038'], W2DEG=['#5b5f55','#4a4d45','#33352f'], W2RU=['#56603c','#47502f','#2f3520'], W2US=['#5c5b3a','#4b4a2f','#2f2e1f'], W2UK=['#6a6b4a','#565838','#3a3b27'], W2DES=['#c7b48a','#a8946a','#7a6a4a'];
 Object.assign(VEH,{
   // ---- Alemania ----
-  pz3j:{nation:'de',era:3,year:1941,br:3.3,cls:'medio',label:'Panzer III Ausf. J',desc:'El tanque de la Blitzkrieg con el 5 cm KwK 38: cinco tripulantes, radio y comandante con cúpula. En el desierto y en Rusia peleó contra todo lo que encontró.',
+  pz3j:{nation:'de',era:3,year:1941,br:3.3,cls:'medio',label:'Panzer III Ausf. J',desc:'El tanque de la Blitzkrieg con el 50 mm KwK 38: cinco tripulantes, radio y comandante con cúpula. En el desierto y en Rusia peleó contra todo lo que encontró.',
     maxF:kmh2(40),maxR:2.6,turn:.75,trav:.8,reload:3.6,pen:70,hp:105,crewReal:5,seats:['driver','commander','gunner','loader','mg1'],
     armor:{hull:{front:50,side:30,rear:50,top:16},turret:{front:57,side:30,rear:30,top:10}},camo:W2DEG,camoMode:'flat',mgc:7.92,
     m:{ww1:'w2',L:5.52,W:2.95,H:2.5,tz:.05,tw:1.9,th:.8,tl:2.0,gl:2.2,gr:.045,
@@ -44,7 +44,7 @@ Object.assign(VEH,{
     armor:{hull:{front:140,side:45,rear:40,top:16},turret:{front:110,side:45,rear:45,top:16}},camo:W2DE,camoMode:'w2de',mgc:7.92,
     m:{ww1:'w2',L:6.87,W:3.27,H:2.99,tz:.0,tw:2.0,th:.95,tl:2.6,gl:4.5,gr:.05,
       w2:{trW:.66,trH:1.05,trF:1.0,trR:1.05,deck:1.9,glacis:1.7,lowF:.25,slope:.18,nW:8,wR:.43,inter:1,ret:0,tur:'pan',cup:1,mb:2,ins:'de',bmg:.45,rearS:.5,det:'panther'}}},
-  tiger1:{nation:'de',era:3,year:1942,br:5.7,cls:'pesado',label:'Tiger I Ausf. E',desc:'El tanque más temido: 100 mm de frente plano y el 8,8 cm KwK 36 que destruía cualquier aliado a más de un kilómetro. Lento, pesado (57 t) y difícil de mantener.',
+  tiger1:{nation:'de',era:3,year:1942,br:5.7,cls:'pesado',label:'Tiger I Ausf. E',desc:'El tanque más temido: 100 mm de frente plano y el 88 mm KwK 36 que destruía cualquier aliado a más de un kilómetro. Lento, pesado (57 t) y difícil de mantener.',
     maxF:kmh2(38),maxR:2.2,turn:.5,trav:.45,reload:6.0,pen:165,hp:190,crewReal:5,seats:['driver','commander','gunner','loader','mg1'],
     armor:{hull:{front:100,side:80,rear:80,top:25},turret:{front:120,side:80,rear:80,top:25}},camo:W2DE,camoMode:'w2de',mgc:7.92,
     m:{ww1:'w2',L:6.32,W:3.56,H:3.0,tz:.05,tw:2.3,th:.95,tl:2.7,gl:4.7,gr:.06,
@@ -134,7 +134,7 @@ Object.assign(VEH,{
     m:{ww1:'w2',L:6.23,W:2.63,H:2.95,tz:-.15,tw:1.8,th:.95,tl:2.3,gl:2.25,gr:.05,
       w2:{trW:.42,trH:.95,trF:.9,trR:.95,deck:1.95,glacis:1.35,lowF:.55,slope:.24,sideH:.75,nW:6,wR:.27,tur:'cast',ins:'ar',bmg:.38,coax:0,mant:'none',det:'nahuel'}}},
   // ---- Cañones antitanque (solo los usa la IA) ----
-  pak40:{nation:'de',era:3,static:1,uses:1,br:3,cls:'cañón',label:'7,5 cm Pak 40',desc:'El antitanque alemán estándar desde 1942: perfora a cualquier T-34 o Sherman.',
+  pak40:{nation:'de',era:3,static:1,uses:1,br:3,cls:'cañón',label:'75 mm Pak 40',desc:'El antitanque alemán estándar desde 1942: perfora a cualquier T-34 o Sherman.',
     maxF:0,maxR:0,turn:.25,trav:.4,reload:4,pen:135,hp:50,arc:.5,crewReal:4,seats:['gunner','loader','commander','driver'],
     armor:{hull:{front:5,side:2,rear:2,top:2},turret:{front:5,side:2,rear:2,top:2}},camo:W2DEG,camoMode:'flat',mgc:7.92,
     m:{ww1:'gun',L:3.7,W:2.0,H:1.2,wr:.45,wheels:0,tz:.4,tw:1.0,th:.6,tl:.4,gl:3.2,gr:.045}},
@@ -156,12 +156,12 @@ Object.assign(VEH,{
     m:{ww1:'gun',L:3.3,W:1.6,H:.9,wr:.4,wheels:0,tz:.4,tw:1.0,th:.6,tl:.4,gl:1.8,gr:.025}}
 });
 Object.assign(AMMO_DEF,{
-  pz3j:[['Perforante 5 cm PzGr 39','ke',70,685],['Subcalibre 5 cm PzGr 40','ke',94,1050],['Explosivo 5 cm','he',8,450]],
-  pz4f2:[['Perforante 7,5 cm PzGr 39','ke',98,740],['Explosivo 7,5 cm','he',18,550]],
-  stug3g:[['Perforante 7,5 cm PzGr 39','ke',106,790],['Carga hueca 7,5 cm Gr 38 HL','heat',85,450],['Explosivo 7,5 cm','he',18,550]],
-  pz4h:[['Perforante 7,5 cm PzGr 39','ke',106,790],['Carga hueca 7,5 cm Gr 38 HL','heat',85,450],['Explosivo 7,5 cm','he',18,550]],
-  panther:[['Perforante 7,5 cm PzGr 39/42','ke',165,925],['Explosivo 7,5 cm','he',16,700]],
-  tiger1:[['Perforante 8,8 cm PzGr 39','ke',165,773],['Explosivo 8,8 cm','he',22,820]],
+  pz3j:[['Perforante 50 mm PzGr 39','ke',70,685],['Subcalibre 50 mm PzGr 40','ke',94,1050],['Explosivo 50 mm','he',8,450]],
+  pz4f2:[['Perforante 75 mm PzGr 39','ke',98,740],['Explosivo 75 mm','he',18,550]],
+  stug3g:[['Perforante 75 mm PzGr 39','ke',106,790],['Carga hueca 75 mm Gr 38 HL','heat',85,450],['Explosivo 75 mm','he',18,550]],
+  pz4h:[['Perforante 75 mm PzGr 39','ke',106,790],['Carga hueca 75 mm Gr 38 HL','heat',85,450],['Explosivo 75 mm','he',18,550]],
+  panther:[['Perforante 75 mm PzGr 39/42','ke',165,925],['Explosivo 75 mm','he',16,700]],
+  tiger1:[['Perforante 88 mm PzGr 39','ke',165,773],['Explosivo 88 mm','he',22,820]],
   t70:[['Perforante 45 mm BR-240','ke',54,760],['Explosivo 45 mm','he',5,335]],
   t34:[['Perforante 76 mm BR-350A','ke',73,662],['Explosivo 76 mm OF-350','he',18,680]],
   kv1:[['Perforante 76 mm BR-350A','ke',73,662],['Explosivo 76 mm OF-350','he',18,680]],
@@ -178,7 +178,7 @@ Object.assign(AMMO_DEF,{
   churchill7:[['Perforante 75 mm M61','ke',81,618],['Explosivo 75 mm','he',20,463]],
   firefly:[['Perforante 17 lb APCBC','ke',163,884],['Subcalibre 17 lb APDS','ke',220,1204],['Explosivo 17 lb','he',14,884]],
   nahuel:[['Perforante sólido 75 mm Krupp','ke',70,510],['Explosivo 75 mm (6 kg)','he',18,510],['Metralla 75 mm (295 balines)','he',8,510]],
-  pak40:[['Perforante 7,5 cm','ke',135,790]],
+  pak40:[['Perforante 75 mm','ke',135,790]],
   zis3:[['Perforante 76 mm','ke',85,662],['Explosivo 76 mm','he',18,680]],
   pdr6:[['Perforante 6 lb','ke',105,846]],
   at57us:[['Perforante 57 mm','ke',105,846]],
@@ -201,12 +201,12 @@ Object.assign(VEH,{
     armor:{hull:{front:25,side:15,rear:15,top:8},turret:{front:25,side:15,rear:15,top:8}},camo:W2DEG,camoMode:'flat',mgc:7.92,
     m:{ww1:'w2',L:4.61,W:2.14,H:2.4,tz:.05,tw:1.45,th:.75,tl:1.6,gl:1.6,gr:.035,
       w2:{trW:.3,trH:.9,trF:.85,trR:.85,deck:1.55,glacis:.5,lowF:.45,nW:4,wR:.38,ret:2,tur:'bevel',ins:'de',bmg:.3,coax:0,det:'de',de:'pz38'}}},
-  jagdpanther:{nation:'de',era:3,year:1944,br:6.0,cls:'cazatanques',label:'Jagdpanther',desc:'El mejor cazatanques de la guerra: el 8,8 cm L/71 del Tiger II sobre el chasis del Panther, con la casamata de una sola pieza inclinada a 55°. Rápido, bajo y mortal a dos kilómetros.',
+  jagdpanther:{nation:'de',era:3,year:1944,br:6.0,cls:'cazatanques',label:'Jagdpanther',desc:'El mejor cazatanques de la guerra: el 88 mm L/71 del Tiger II sobre el chasis del Panther, con la casamata de una sola pieza inclinada a 55°. Rápido, bajo y mortal a dos kilómetros.',
     arc:.2,maxF:kmh2(46),maxR:2.8,turn:.65,trav:.5,reload:5.5,pen:230,hp:160,crewReal:5,seats:['driver','commander','gunner','loader','mg1'],
     armor:{hull:{front:150,side:50,rear:40,top:25},turret:{front:150,side:50,rear:40,top:25}},camo:W2DE,camoMode:'w2de',mgc:7.92,
     m:{ww1:'w2',L:6.87,W:3.42,H:2.72,tz:1.25,tw:1.0,th:.6,tl:1.0,gl:4.7,gr:.06,
       w2:{trW:.66,trH:1.05,trF:1.0,trR:1.05,deck:1.75,glacis:1.6,lowF:.25,slope:.18,nW:8,wR:.43,inter:1,ret:0,tur:'none',case:{w:2.9,l:3.6,h:.95,z:-.2,taper:.32},mant:'round',mb:2,ins:'de',rearS:.5,det:'de',de:'jagdp'}}},
-  tiger2:{nation:'de',era:3,year:1944,br:6.3,cls:'pesado',label:'Tiger II (Königstiger)',desc:'El "Tigre Real": 69 toneladas, 150 mm de frente inclinado y el 8,8 cm KwK 43 L/71, que perfora cualquier tanque aliado a cualquier distancia. Gasta muchísimo y se rompe seguido.',
+  tiger2:{nation:'de',era:3,year:1944,br:6.3,cls:'pesado',label:'Tiger II (Königstiger)',desc:'El "Tigre Real": 69 toneladas, 150 mm de frente inclinado y el 88 mm KwK 43 L/71, que perfora cualquier tanque aliado a cualquier distancia. Gasta muchísimo y se rompe seguido.',
     maxF:kmh2(41),maxR:2,turn:.45,trav:.45,reload:6.5,pen:230,hp:220,crewReal:5,seats:['driver','commander','gunner','loader','mg1'],climb:.48,
     armor:{hull:{front:185,side:80,rear:80,top:40},turret:{front:185,side:80,rear:80,top:40}},camo:W2DE,camoMode:'w2de',mgc:7.92,
     m:{ww1:'w2',L:7.38,W:3.76,H:3.09,tz:-.1,tw:2.4,th:1.0,tl:3.2,gl:5.2,gr:.06,
@@ -258,9 +258,9 @@ Object.assign(VEH,{
       w2:{trW:.42,trH:.95,trF:.85,trR:.95,deck:1.75,glacis:1.4,lowF:.35,slope:.22,nW:6,wR:.26,bog:1,ret:3,nose:'sher',tur:'open',mant:'box',mb:1,ins:'uk',coax:0}}}
 });
 Object.assign(AMMO_DEF,{
-  pz38t:[['Perforante 3,7 cm PzGr','ke',41,750],['Explosivo 3,7 cm','he',4,700]],
-  jagdpanther:[['Perforante 8,8 cm PzGr 39/43','ke',230,1000],['Explosivo 8,8 cm','he',22,750]],
-  tiger2:[['Perforante 8,8 cm PzGr 39/43','ke',230,1000],['Explosivo 8,8 cm','he',22,750]],
+  pz38t:[['Perforante 37 mm PzGr','ke',41,750],['Explosivo 37 mm','he',4,700]],
+  jagdpanther:[['Perforante 88 mm PzGr 39/43','ke',230,1000],['Explosivo 88 mm','he',22,750]],
+  tiger2:[['Perforante 88 mm PzGr 39/43','ke',230,1000],['Explosivo 88 mm','he',22,750]],
   bt7:[['Perforante 45 mm BR-240','ke',54,760],['Explosivo 45 mm','he',5,335]],
   kv2:[['Perforante 152 mm','ke',72,436],['Explosivo 152 mm OF-530','he',60,432]],
   su100:[['Perforante 100 mm BR-412','ke',175,895],['Explosivo 100 mm','he',30,900]],
@@ -391,7 +391,7 @@ Object.assign(VEH,{
     maxF:0,maxR:0,turn:.25,trav:.4,reload:3.4,pen:60,hp:45,arc:.5,crewReal:4,seats:['gunner','loader','commander','driver'],
     armor:{hull:{front:5,side:2,rear:2,top:2},turret:{front:5,side:2,rear:2,top:2}},camo:W2FR,camoMode:'flat',mgc:7.5,
     m:{ww1:'gun',L:3.5,W:1.7,H:1.0,wr:.42,wheels:0,tz:.4,tw:1.0,th:.6,tl:.4,gl:2.4,gr:.035}},
-  pak36cn:{nation:'cn',era:3,static:1,uses:1,br:3,cls:'cañón',label:'3,7 cm Pak 36 (China)',desc:'Los antitanques alemanes que compró China antes de la guerra.',
+  pak36cn:{nation:'cn',era:3,static:1,uses:1,br:3,cls:'cañón',label:'37 mm Pak 36 (China)',desc:'Los antitanques alemanes que compró China antes de la guerra.',
     maxF:0,maxR:0,turn:.25,trav:.4,reload:3,pen:40,hp:45,arc:.5,crewReal:4,seats:['gunner','loader','commander','driver'],
     armor:{hull:{front:5,side:2,rear:2,top:2},turret:{front:5,side:2,rear:2,top:2}},camo:W2CN,camoMode:'flat',mgc:7.92,
     m:{ww1:'gun',L:3.4,W:1.65,H:.85,wr:.4,wheels:0,tz:.4,tw:1.0,th:.6,tl:.4,gl:1.6,gr:.025}}
@@ -435,7 +435,7 @@ Object.assign(VEH,{
     troops:6,auto:{mag:50,rof:.1},maxF:kmh2(64),maxR:3,turn:.85,trav:1.2,reload:5,pen:20,hp:50,crewReal:2,seats:['driver','gunner'],
     armor:{hull:{front:12,side:6,rear:6,top:0},turret:{front:6,side:6,rear:6,top:0}},camo:W2US,camoMode:'flat',mgc:12.7,
     m:{ww1:'ht',L:6.2,W:2.2,H:2.0,tz:0,tw:.8,th:.5,tl:.4,gl:1.1,gr:.025,ht:{ins:'us'}}},
-  aa_de:{nation:'de',era:3,support:1,static:1,uses:1,br:3,cls:'cañón',label:'2 cm Flak 38',desc:'El antiaéreo liviano alemán: 20 mm automático, también terrible contra la infantería.',aa:1,elev:1.45,
+  aa_de:{nation:'de',era:3,support:1,static:1,uses:1,br:3,cls:'cañón',label:'20 mm Flak 38',desc:'El antiaéreo liviano alemán: 20 mm automático, también terrible contra la infantería.',aa:1,elev:1.45,
     auto:{mag:20,rof:.12},maxF:0,maxR:0,turn:.25,trav:1.4,reload:4,pen:22,hp:40,crewReal:4,seats:['gunner','loader','commander','driver'],
     armor:{hull:{front:5,side:2,rear:2,top:2},turret:{front:6,side:2,rear:2,top:2}},camo:W2DEG,camoMode:'flat',mgc:7.92,
     m:{ww1:'aa',L:3,W:2,H:1.6,tz:0,tw:1,th:.6,tl:.4,gl:1.6,gr:.028}},
@@ -455,7 +455,7 @@ Object.assign(VEH,{
     armor:{hull:{front:80,side:30,rear:20,top:10},turret:{front:16,side:16,rear:16,top:0}},camo:W2DE,camoMode:'w2de',mgc:7.92,
     m:{ww1:'w2',L:5.92,W:2.88,H:2.76,tz:0,tw:1.9,th:.95,tl:1.9,gl:1.6,gr:.03,
       w2:{trW:.4,trH:.9,trF:.95,trR:.85,deck:1.7,glacis:.55,nW:8,wR:.24,bog:1,ret:4,tur:'open',mant:'none',ins:'de',bmg:.4,coax:0,aaN:4,aaSp:.2,det:'de',de:'flak4'}}},
-  ostwind:{nation:'de',era:3,year:1944,br:4.0,cls:'antiaéreo',label:'Flakpanzer IV Ostwind',desc:'El sucesor del Wirbelwind: un 3,7 cm Flak 43 en torre abierta sobre el Panzer IV. Más alcance y un tiro que también perfora blindados livianos.',
+  ostwind:{nation:'de',era:3,year:1944,br:4.0,cls:'antiaéreo',label:'Flakpanzer IV Ostwind',desc:'El sucesor del Wirbelwind: un 37 mm Flak 43 en torre abierta sobre el Panzer IV. Más alcance y un tiro que también perfora blindados livianos.',
     aa:1,elev:1.4,auto:{mag:8,rof:.24},maxF:kmh2(38),maxR:2.5,turn:.7,trav:1.3,reload:4,pen:60,hp:110,crewReal:6,seats:['driver','commander','gunner','loader','mg1'],
     armor:{hull:{front:80,side:30,rear:20,top:10},turret:{front:25,side:25,rear:25,top:0}},camo:W2DE,camoMode:'w2de',mgc:7.92,
     m:{ww1:'w2',L:5.92,W:2.88,H:2.9,tz:0,tw:2.0,th:1.0,tl:2.0,gl:2.6,gr:.04,
@@ -481,8 +481,8 @@ Object.assign(VEH,{
       w2:{trW:.3,trH:.8,trF:.75,trR:.8,deck:1.4,glacis:.6,lowF:.45,nW:4,wR:.3,bog:1,ret:2,tur:'open',mant:'none',ins:'jp',coax:0,det:'jp',jp:'tase'}}}
 });
 Object.assign(AMMO_DEF,{
-  wirbelwind:[['Explosivo 2 cm Sprgr','he',6,900],['Perforante 2 cm Pzgr 40','ke',40,1050]],
-  ostwind:[['Explosivo 3,7 cm Sprgr','he',8,820],['Perforante 3,7 cm Pzgr 18','ke',60,770]],
+  wirbelwind:[['Explosivo 20 mm Sprgr','he',6,900],['Perforante 20 mm Pzgr 40','ke',40,1050]],
+  ostwind:[['Explosivo 37 mm Sprgr','he',8,820],['Perforante 37 mm Pzgr 18','ke',60,770]],
   zsu37:[['Explosivo 37 mm OR-167','he',8,880],['Perforante 37 mm BR-167','ke',46,865]],
   m16mgmc:[['Browning 12,7 mm M2 perforante','ke',22,890]],
   crusaderaa:[['Explosivo 20 mm Oerlikon','he',5,830],['Perforante 20 mm Oerlikon','ke',32,830]],

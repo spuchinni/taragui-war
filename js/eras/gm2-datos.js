@@ -104,7 +104,7 @@ Object.assign(VEH,{
     m:{ww1:'iw',L:4.43,W:2.47,H:2.49,tz:-.1,tw:1.55,th:.85,tl:1.6,gl:1.6,gr:.035,
       iw:{trW:.3,trH:.85,trF:.75,trR:.9,deck:1.5,glacis:.65,nW:4,wR:.3,bog:1,ret:2,tur:'oct',coax:1,ins:'us'}}},
   // ---- Cañones antitanque (solo los usa la IA) ----
-  pak36:{nation:'de',era:2,static:1,uses:1,br:2,cls:'cañón',label:'3,7 cm Pak 36',desc:'El antitanque alemán: liviano y bajo, lo mueven dos hombres.',
+  pak36:{nation:'de',era:2,static:1,uses:1,br:2,cls:'cañón',label:'37 mm Pak 36',desc:'El antitanque alemán: liviano y bajo, lo mueven dos hombres.',
     maxF:0,maxR:0,turn:.25,trav:.4,reload:3,pen:40,hp:45,arc:.5,crewReal:4,seats:['gunner','loader','commander','driver'],
     armor:{hull:{front:5,side:2,rear:2,top:2},turret:{front:5,side:2,rear:2,top:2}},camo:['#5f6150','#4b4d3f','#2f3128'],camoMode:'flat',mgc:7.92,
     m:{ww1:'gun',L:3.4,W:1.65,H:.85,wr:.4,wheels:0,tz:.4,tw:1.0,th:.6,tl:.4,gl:1.6,gr:.025}},

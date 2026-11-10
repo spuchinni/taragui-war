@@ -153,9 +153,9 @@
     const t=now-B.t0;
     tut1Tick();
     // carteles de las partes nuevas (2ª y 3ª batalla), unos segundos después de aparecer
-    if(B.lvl===2&&!B.said.l2&&t>4&&lesson(EN()?'New: ammo and minimap':'Nuevo: munición y minimapa',EN()
-        ?`<p>At the bottom you choose your <b>ammo</b>:</p>${ammoList()}<p>Armor-piercing for tanks, high explosive for soldiers and cannons.</p><p>Bottom right, the <b>minimap</b>: green are allies, red are enemies, and the letters are the capture points.</p>`
-        :`<p>Abajo elegís la <b>munición</b>:</p>${ammoList()}<p>Perforante para tanques, explosiva para soldados y cañones.</p><p>Abajo a la derecha, el <b>minimapa</b>: verde son aliados, rojo enemigos y las letras son los puntos para capturar.</p>`)) B.said.l2=1;
+    if(B.lvl===2&&!B.said.l2&&t>4&&lesson(EN()?'New: ammo, machine gun and minimap':'Nuevo: munición, ametralladora y minimapa',EN()
+        ?`<p>At the bottom you choose your <b>ammo</b>:</p>${ammoList()}<p>Armor-piercing for tanks, high explosive for soldiers and cannons.</p><p>${mob()?'<b>⁞⁞</b>':K('mg')} <b>Machine gun</b>: for soldiers; it does almost nothing to tanks.</p><p>Bottom right, the <b>minimap</b>: green are allies, red are enemies, and the letters are the capture points.</p>`
+        :`<p>Abajo elegís la <b>munición</b>:</p>${ammoList()}<p>Perforante para tanques, explosiva para soldados y cañones.</p><p>${mob()?'<b>⁞⁞</b>':K('mg')} <b>Ametralladora</b>: para los soldados; a los tanques casi no les hace nada.</p><p>Abajo a la derecha, el <b>minimapa</b>: verde son aliados, rojo enemigos y las letras son los puntos para capturar.</p>`)) B.said.l2=1;
     if(B.lvl===3&&!B.said.l3&&t>4&&lesson(EN()?'New: your tank and crew':'Nuevo: tu tanque y tu tripulación',EN()
         ?`<p>Bottom left you see your <b>tank and its crew</b>. When something gets hit it turns red, and if a crew member falls, another one takes their place.</p>`
         :`<p>Abajo a la izquierda ves tu <b>tanque y su tripulación</b>. Lo que recibe un impacto se pone rojo y, si cae un tripulante, otro toma su lugar.</p>`)) B.said.l3=1;
@@ -164,7 +164,12 @@
         ?`<p>${K('repair')} <b>Repair</b>: the tank stops and the crew fixes tracks, engine and gun, and puts out fires. Do it behind cover.</p><p>${K('arty')} <b>Artillery</b>${air?` · ${K('air')} <b>Air strike</b>`:''}: press the key and click on the map where it should land. They recharge on their own (the button shows the wait).</p>${infOK()?`<p>${K('inf')} <b>Call infantry</b>: ${INF_COST} points. Pick a point on the map and a half-track or paratroopers bring soldiers there to capture or defend it.</p>`:''}<p>${K('smoke')} <b>Smoke</b>: throws smoke grenades to hide your tank.</p>`
         :`<p>${K('repair')} <b>Reparar</b>: el tanque se queda quieto y la tripulación arregla orugas, motor y cañón y apaga el fuego. Hacelo a cubierto.</p><p>${K('arty')} <b>Artillería</b>${air?` · ${K('air')} <b>Bombardeo</b>`:''}: apretá la tecla y hacé clic en el mapa donde querés que caiga. Se recargan solos (el botón muestra cuánto falta).</p>${infOK()?`<p>${K('inf')} <b>Pedir infantería</b>: ${INF_COST} puntos. Elegís un punto en el mapa y un semioruga o paracaidistas llevan soldados para capturarlo o defenderlo.</p>`:''}<p>${K('smoke')} <b>Humo</b>: tira granadas de humo para esconder tu tanque.</p>`)) B.said.l4=1; }
     if(B.lvl<4&&player&&!player.dead&&!LSg('tw2_lFoe')&&!(B.first&&TUT1.stg<0)){ const e=B.first&&TUT1.A&&!TUT1.A.dead?TUT1.A:tanks.find(o=>!o.dead&&o.team!==player.team&&!(o.T&&o.T.static)&&o.visP&&o.pos.distanceTo(player.pos)<380);
-      if(e){ const p=e.pos.clone(); p.y+=(e.topH||2.4)*.55;
+      if(e&&B.first&&e===TUT1.A){ const p=e.pos.clone(); p.y+=(e.topH||2.4)*.45; const {fm,sm}=armorOf(e);   // 1ª batalla: enemigo + blindaje en un solo cartel
+        if(lesson(EN()?`An enemy tank! A ${e.T.label}`:`¡Un tanque enemigo! Un ${e.T.label}`,(EN()
+            ?`<p>Enemies are marked in <b style="color:#ff6a50">red</b>. ${mob()?'Drag on the right side to <b>aim</b> and tap <b>🔥</b> to <b>fire</b>.':'Aim with the <b>mouse</b> and <b>left click</b> to <b>fire</b>.'}</p><p>Armor is not the same all around. The <b style="color:#ff6a50">front</b> has <b>${fm} mm</b>: shots bounce off there. The <b style="color:#7ce07c">${armorOf(e).rear?'rear':'side'}</b> has only <b>${sm} mm</b>: aim at the <b style="color:#7ce07c">green mark</b> and it goes down with one shot.</p>`
+            :`<p>Los enemigos se marcan en <b style="color:#ff6a50">rojo</b>. ${mob()?'Arrastrá en la parte derecha para <b>apuntar</b> y tocá <b>🔥</b> para <b>disparar</b>.':'<b>Apuntá</b> con el <b>mouse</b> y hacé <b>clic izquierdo</b> para <b>disparar</b>.'}</p><p>El blindaje no es igual en todos lados. El <b style="color:#ff6a50">frente</b> tiene <b>${fm} mm</b>: ahí rebotan los tiros. ${armorOf(e).rear?'La <b style="color:#7ce07c">cola</b>':'El <b style="color:#7ce07c">costado</b>'} tiene solo <b>${sm} mm</b>: apuntá a la <b style="color:#7ce07c">marca verde</b> y cae de un tiro.</p>`),
+          {low:1,zoom:{p,r:7},marks:[{p:frontPt(e),txt:EN()?`Strong · ${fm} mm`:`Fuerte · ${fm} mm`,col:'#ff4a36'},{p:sidePt(e),txt:EN()?`Weak · ${sm} mm · AIM HERE`:`Débil · ${sm} mm · APUNTÁ ACÁ`,col:'#7ce07c'}]})){ LSs('tw2_lFoe'); LSs('tw2_lWeak'); } }
+      else if(e&&!B.first){ const p=e.pos.clone(); p.y+=(e.topH||2.4)*.55;
         if(lesson(EN()?'An enemy tank!':'¡Un tanque enemigo!',(EN()
             ?`<p>Enemies are marked in <b style="color:#ff6a50">red</b>.</p><p>${mob()?'Drag on the right side of the screen to <b>aim</b> and tap <b>🔥</b> to <b>fire</b>.':'Aim with the <b>mouse</b> and <b>left click</b> to <b>fire</b>.'}</p>`
             :`<p>Los enemigos se marcan en <b style="color:#ff6a50">rojo</b>.</p><p>${mob()?'Arrastrá en la parte derecha de la pantalla para <b>apuntar</b> y tocá <b>🔥</b> para <b>disparar</b>.':'<b>Apuntá</b> con el <b>mouse</b> y hacé <b>clic izquierdo</b> para <b>disparar</b>.'}</p>`),
@@ -217,9 +222,9 @@
     if(tickets[0]<FLOOR_FIRST) tickets[0]=FLOOR_FIRST;   // la 1ª se gana sí o sí
     // 1ª batalla: las barras aparecen a los 30 s con la explicación y desde ahí se gastan
     if(TUT1.stg<2) B.stg2T=t; else if(B.stg2T==null) B.stg2T=t;
-    if(!B.shown&&TUT1.stg>=2&&t>=(B.stg2T||0)+15){ document.body.classList.add('tkOn');
-      if(lesson(EN()?'The bars':'Las barras',EN()?'<p>Each team has a <b>bar</b> at the top. It only goes down.</p><p>Hold <b>more capture points</b> than the enemy and <b>their bar drains</b> · the more points, the faster. When a bar runs out, that team loses.</p>'
-        :'<p>Cada equipo tiene una <b>barra</b> arriba. Solo baja.</p><p>Si tenés <b>más puntos capturados</b> que el enemigo, <b>se gasta la suya</b> · cuantos más puntos, más rápido. El equipo que se queda sin barra pierde.</p>')){ B.shown=true; DRAIN_K=K_FIRST; } }
+    if(!B.shown&&TUT1.stg>=2&&t>=(B.stg2T||0)+2.5){ document.body.classList.add('tkOn');
+      if(lesson(EN()?'Capture points and bars':'Los puntos y las barras',EN()?'<p>Now your allies and more enemies join in. The <b>capture points</b> (A, B, C) are on the map: drive into one and stay inside to capture it (follow the yellow arrow).</p><p>Each team has a <b>bar</b> at the top. It only goes down.</p><p>Hold <b>more capture points</b> than the enemy and <b>their bar drains</b> · the more points, the faster. When a bar runs out, that team loses.</p>'
+        :'<p>Ahora entran tus aliados y más enemigos. En el mapa están los <b>puntos</b> (A, B, C): metete en uno y quedate adentro para capturarlo (seguí la flecha amarilla).</p><p>Cada equipo tiene una <b>barra</b> arriba. Solo baja.</p><p>Si tenés <b>más puntos capturados</b> que el enemigo, <b>se gasta la suya</b> · cuantos más puntos, más rápido. El equipo que se queda sin barra pierde.</p>')){ B.shown=true; DRAIN_K=K_FIRST; } }
     if(B.shown&&!B.said.drop){ const o0=zones.filter(Z=>Z.owner===1).length, o1=zones.filter(Z=>Z.owner===-1).length;
       if(o0!==o1&&t>40){ B.said.drop=1; showHint(o0>o1?(EN()?'The <b>enemy bar</b> is draining. Hold your points!':'¡Se está gastando la <b>barra del enemigo</b>! Mantené tus puntos.')
         :(EN()?'<b>Your bar</b> is draining: capture a point!':'Se está gastando <b>tu barra</b>: ¡capturá un punto!'),5); } }
@@ -249,32 +254,89 @@
   { const _a=spawnSquad; spawnSquad=function(){ if(curLvl()<=2) return; return _a.apply(this,arguments); }; }
   if(typeof sendReinforcements==='function'){ const _a=sendReinforcements; sendReinforcements=function(){ if(curLvl()<=2) return; return _a.apply(this,arguments); }; }
   // ---- 1ª batalla por etapas (pedido de Sebastián: "hagámoslo progresivo") ----
-  // TUT1.stg 0: un tanque enemigo (A) quieto y cerca, en ángulo. Tiro tuyo en el frente = rebota (y la 1ª vez, cartel del
-  //   punto débil); en el costado o atrás = destruido. stg 1: aparece otro (B) quieto a ~320 m: cartel de la mira; cualquier
-  //   tiro que le pegue lo destruye. stg 2: se sueltan todos y recién ahí vienen la captura, las barras y el reloj.
-  //   Mientras tanto los demás enemigos quedan quietos en su base y nadie te ataca (tu tanque va protegido).
-  const TUT1=window.TUT1={stg:-1,A:null,B:null};
+  // Al desplegar se esconden todos los demás tanques (aliados y enemigos) y aparece un enemigo (A) quieto a ~55 m, delante de la
+  //   cámara y de costado, con la explicación del blindaje. Mientras viva, una marca verde fija muestra su costado: un tiro ahí
+  //   (costado o cola) lo destruye; en el frente o la torre rebota. stg 1: otro enemigo (B) quieto a ~300 m, a la vista (con línea
+  //   de tiro libre), con la explicación de la mira; cualquier impacto lo destruye. stg 2: vuelven todos a sus bases, se sueltan los
+  //   bots y viene la explicación de los puntos y las barras.
+  const TUT1=window.TUT1={stg:-1,A:null,B:null,hid:[],t:0};
   const tutOn=()=>!!(B&&B.first&&!tut&&!net.on&&TUT1.stg>=0&&TUT1.stg<2);
-  const enemiesT=()=>tanks.filter(o=>!o.dead&&player&&o.team!==player.team&&!(o.T&&o.T.static)&&!(o.T&&o.T.support));
-  function placeT(o,d,side,face){ const Z=zones.length?zones.reduce((a,z)=>Math.hypot(z.x,z.z)<Math.hypot(a.x,a.z)?z:a,zones[0]):{x:player.pos.x+Math.sin(player.heading)*100,z:player.pos.z+Math.cos(player.heading)*100};
-    const dx=Z.x-player.pos.x, dz=Z.z-player.pos.z, L=Math.hypot(dx,dz)||1, ux=dx/L, uz=dz/L;
-    const x=player.pos.x+ux*d+uz*side, z=player.pos.z+uz*d-ux*side; o.pos.set(x,heightAt(x,z),z); o.speed=0;
-    o.heading=Math.atan2(-ux,-uz)+face; if(o.root){ o.root.position.copy(o.pos); o.root.rotation.y=o.heading; } }
-  { const _ai=updateAI; updateAI=function(t,dt){ if(tutOn()&&t!==player){ t.speed=0; t.target=null; return; }   // durante las etapas nadie se mueve ni dispara (los aliados ases tampoco)
+  const mobileT=o=>!o.dead&&o!==player&&!(o.T&&o.T.static)&&!(o.T&&o.T.support);
+  function camDir(){ const v=new THREE.Vector3(); camera.getWorldDirection(v); v.y=0; if(v.lengthSq()<1e-4) v.set(Math.sin(player.heading),0,Math.cos(player.heading)); return v.normalize(); }
+  function okSpot(x,z){ if(Math.abs(x)>W.bx-25||Math.abs(z)>W.bz-25) return false; if(W.water!=null&&heightAt(x,z)<W.water+.4) return false; return true; }
+  // pone el tanque delante de la cámara a la distancia d, de modo que se vea (relieve, casas y árboles) y con el ángulo face respecto del jugador
+  function placeView(o,d,face){ const c=camDir(), eye=eyeOf(player);
+    for(const k of [1,.9,1.1,.8,1.2]) for(const a of [0,.1,-.1,.2,-.2,.3,-.3,.42,-.42,.55,-.55]){
+      const ca=Math.cos(a), sa=Math.sin(a), ux=c.x*ca+c.z*sa, uz=-c.x*sa+c.z*ca, x=player.pos.x+ux*d*k, z=player.pos.z+uz*d*k;
+      if(!okSpot(x,z)) continue; const y=heightAt(x,z), tgt=new THREE.Vector3(x,y+1.2,z), tgt2=new THREE.Vector3(x,y+2,z);
+      try{ if(!los(eye,tgt)||!los(camera.position.clone(),tgt2)) continue; }catch(e){}
+      o.pos.set(x,y,z); o.speed=0; const tx=player.pos.x-x, tz=player.pos.z-z; o.heading=Math.atan2(tx,tz)+face;
+      if(o.root){ o.root.position.copy(o.pos); o.root.rotation.y=o.heading; o.root.visible=true; } return true; }
+    const x=player.pos.x+c.x*d*.6, z=player.pos.z+c.z*d*.6; o.pos.set(x,heightAt(x,z),z); o.heading=Math.atan2(player.pos.x-x,player.pos.z-z)+face;
+    if(o.root){ o.root.position.copy(o.pos); o.root.rotation.y=o.heading; o.root.visible=true; } return false; }
+  function hideT(o){ if(o._tutP) return; o._tutP=o.pos.clone(); o._tutH=o.heading; o.pos.x+=6000; o.speed=0; if(o.root){ o.root.position.copy(o.pos); o.root.visible=false; } TUT1.hid.push(o); }
+  function showT(o){ if(!o._tutP) return; o.pos.copy(o._tutP); o.heading=o._tutH; o._tutP=null; if(o.root){ o.root.position.copy(o.pos); o.root.rotation.y=o.heading; o.root.visible=true; } }
+  { const _ai=updateAI; updateAI=function(t,dt){ if(tutOn()&&t!==player){ t.speed=0; t.target=null; return; }   // durante las etapas nadie se mueve ni dispara
       return _ai.apply(this,arguments); }; }
   { const _bf=typeof botFire==='function'?botFire:null; if(_bf) botFire=function(t){ if(tutOn()&&t!==player) return; return _bf.apply(this,arguments); }; }
-  function tut1Tick(){ if(!B||!B.first||tut||net.on||!player||player.dead) return;
-    if(TUT1.stg===-1&&window.coach&&(coach.step>=1||!coach.on)){ const L=enemiesT(); if(!L.length){ TUT1.stg=2; return; }
-      TUT1.A=L[0]; placeT(TUT1.A,95,8,.75); TUT1.stg=0; }
-    if(TUT1.stg===0&&(!TUT1.A||TUT1.A.dead)){ const L=enemiesT(); TUT1.B=L[0]||null; if(TUT1.B) placeT(TUT1.B,320,-25,.4); TUT1.stg=TUT1.B?1:2; }
-    if(TUT1.stg===1&&(!TUT1.B||TUT1.B.dead)) TUT1.stg=2; }
+  // zonas del tanque A según dónde pegó: costado o cola = débil; frente, techo o torre de frente = fuerte
+  function frame0(e){ const h=e.heading||0, M=e.T.m||{}; return {f:new THREE.Vector3(Math.sin(h),0,Math.cos(h)),rt:new THREE.Vector3(Math.cos(h),0,-Math.sin(h)),Lh:(M.L||6)/2,Wh:(M.W||3)/2}; }
+  function weakHit(e,hit,dir){ const F=frame0(e); let p=hit&&hit.point;
+    if(!p){ const d=dir.clone().setY(0).normalize(); return -d.dot(F.f)<.5; }
+    const v=p.clone().sub(e.pos), lz=v.dot(F.f), lx=v.dot(F.rt);
+    return lz<-F.Lh*.55||(Math.abs(lx)>F.Wh*.55&&lz<F.Lh*.6); }
+  const hullA=e=>(e.T.armor&&e.T.armor.hull)||{};
+  const useRear=e=>{ const A=hullA(e); return (A.side||0)>=(A.front||0)*.8&&(A.rear||99)<(A.side||0); };   // costado casi tan fuerte como el frente (Matilda): se marca la cola
+  function sidePt(e){ const F=frame0(e), y=e.pos.y+(e.topH||2.4)*.36;
+    if(useRear(e)) return e.pos.clone().addScaledVector(F.f,-F.Lh*1.02).setY(y);
+    const sd=Math.sign(player.pos.clone().sub(e.pos).dot(F.rt))||1;
+    return e.pos.clone().addScaledVector(F.rt,sd*F.Wh*1.02).addScaledVector(F.f,-F.Lh*.2).setY(y); }
+  function frontPt(e){ const F=frame0(e); return e.pos.clone().addScaledVector(F.f,F.Lh*.95).setY(e.pos.y+(e.topH||2.4)*.38); }
+  TUT1.sidePt=e=>sidePt(e);
+  const armorOf=e=>{ const A=hullA(e), r=useRear(e); return {fm:A.front||'?',sm:(r?A.rear:A.side)||'?',rear:r}; };
+  // marca verde fija sobre el costado de A (pedido de Sebastián: "que nunca me deje de mostrar el punto débil")
+  const wk=document.createElement('div'); wk.id='weakMk'; wk.setAttribute('data-notr',''); document.body.appendChild(wk);
+  { const st3=document.createElement('style'); st3.textContent=`#weakMk{position:fixed;z-index:7;pointer-events:none;display:none;transform:translate(-50%,-50%);width:20px;height:20px;border:3px solid #7ce07c;border-radius:50%;box-shadow:0 0 0 2px #000,0 0 12px #7ce07c;animation:wkP 1s ease-in-out infinite}
+    #weakMk b{position:absolute;left:50%;bottom:100%;transform:translateX(-50%);margin-bottom:6px;white-space:nowrap;font:800 15px 'Saira Condensed',system-ui,sans-serif;color:#7ce07c;text-shadow:0 1px 3px #000,0 0 2px #000}
+    @keyframes wkP{50%{transform:translate(-50%,-50%) scale(1.25)}}`; document.head.appendChild(st3); }
+  function weakMark(){ const e=TUT1.A; if(TUT1.stg!==0||!e||e.dead||state!=='play'||scopeOn){ wk.style.display='none'; return; }
+    const v=sidePt(e).project(camera); if(v.z>1||Math.abs(v.x)>1.05||Math.abs(v.y)>1.05){ wk.style.display='none'; return; }
+    wk.style.left=((v.x+1)/2*innerWidth)+'px'; wk.style.top=((1-v.y)/2*innerHeight)+'px';
+    const t=`${EN()?'AIM HERE':'APUNTÁ ACÁ'} · ${armorOf(e).sm} mm`; if(wk._t!==t){ wk._t=t; wk.innerHTML=`<b>${t}</b>`; } wk.style.display='block'; }
+  function tut1Tick(){ if(!B||!B.first||tut||net.on||!player||player.dead){ wk.style.display='none'; return; }
+    const tn=now-B.t0;
+    if(TUT1.stg===-1&&tn>1.5&&!(typeof bannerT!=='undefined'&&bannerT>0)){
+      const E=tanks.filter(o=>mobileT(o)&&o.team!==player.team); if(!E.length){ TUT1.stg=2; return; }
+      for(const o of tanks) if(mobileT(o)) hideT(o);
+      const gap=o=>{ const A=hullA(o); return (A.front||0)-Math.min(A.side||99,A.rear||99)+(['ligero','medio','pesado'].includes(o.T.cls)?100:0); };   // mejor un tanque que un cazatanques
+      TUT1.A=E.slice().sort((a,b)=>gap(b)-gap(a))[0]; showT(TUT1.A); placeView(TUT1.A,55,useRear(TUT1.A)?2.3:1.15); TUT1.stg=0; }
+    if(TUT1.stg===0&&(!TUT1.A||TUT1.A.dead)){ if(!TUT1.t) TUT1.t=now+1.6; else if(now>=TUT1.t){ TUT1.t=0;
+      const L=TUT1.hid.filter(o=>o._tutP&&!o.dead&&o.team!==player.team); TUT1.B=L[0]||null;
+      if(TUT1.B){ showT(TUT1.B); placeView(TUT1.B,300,.5); TUT1.stg=1; } else TUT1.stg=2; } }
+    if(TUT1.stg===1&&(!TUT1.B||TUT1.B.dead)){ if(!TUT1.t) TUT1.t=now+1.6; else if(now>=TUT1.t){ TUT1.t=0; for(const o of TUT1.hid) showT(o); TUT1.hid=[]; TUT1.stg=2; } }
+    weakMark(); }
   { const _a=hitTank; hitTank=function(by,hit,dir,pen,kind){
       const t=hit&&hit.object&&hit.object.userData.tank, me=by&&by.isPlayer&&kind==='shell'&&t&&!t.dead&&player&&t.team!==player.team;
       if(me&&tutOn()&&(t===TUT1.A||t===TUT1.B)){
-        if(t===TUT1.A){ const h=t.heading||0, f=new THREE.Vector3(Math.sin(h),0,Math.cos(h)), d=dir.clone().setY(0).normalize();
-          if(-d.dot(f)>.64){ try{ hitMark(hit,0,'Rebote',dir); }catch(e){} hitMsg(EN()?'Bounced off: that is its strongest armor':'Rebotó: le pegaste en su blindaje más fuerte','#ffb04a'); if(!LSg('tw2_lWeak')) B.weakT=t; return; } }
+        if(t===TUT1.A&&!weakHit(t,hit,dir)){ try{ hitMark(hit,0,'Rebote',dir); }catch(e){} try{ sfx('ric_'+((Math.random()*4)|0),hit.point,.8,{near:true}); }catch(e){}
+          hitMsg(EN()?`Bounced off (${armorOf(t).fm} mm). Aim at the green mark`:`Rebotó (${armorOf(t).fm} mm). Apuntá a la marca verde`,'#ffb04a'); return; }
         destroy(t,by,false); return; }
+      if(t&&t._tutP) return;   // escondido: no cuenta
       return _a.apply(this,arguments); }; }
+  // ---- funciones bloqueadas hasta que se explican (pedido de Sebastián) ----
+  // mira y zoom: hasta el cartel de la mira · munición y ametralladora: hasta el cartel de la 2ª batalla ·
+  // reparar, apoyos, humo, extintor, infantería: hasta el cartel de la 3ª
+  function locks(){ if(!B||tut||net.on||B.lvl>=4) return {}; const L=B.lvl;
+    return {scope:!(B.said.mira||LSg('tw2_lMira')), ammo:L===1||(L===2&&!B.said.l2), sup:L<3||(L===3&&B.teach&&!B.said.l4)}; }
+  const LOCK_OF={scope:'scope',ammo1:'ammo',ammo2:'ammo',ammo3:'ammo',ammoAuto:'ammo',mg:'ammo',arty:'sup',air:'sup',inf:'sup',nuke:'sup',thermal:'sup',aerial:'sup',troops:'sup',repair:'sup',crewSwap:'sup',smoke:'sup',ext:'sup'};
+  let lockMsgT=0;
+  function lockMsg(){ if(now-lockMsgT<2.5) return; lockMsgT=now; try{ hitMsg(EN()?'🔒 Not yet: I will explain it soon':'🔒 Todavía no: ya te lo explico','var(--paper)'); }catch(e){} }
+  document.addEventListener('keydown',e=>{ if(typeof state==='undefined'||state!=='play'||!player) return; const Lk=locks();
+    for(const a in LOCK_OF) if(Lk[LOCK_OF[a]]&&(e.code===binds[a]||(a==='scope'&&binds.scope==='ShiftLeft'&&e.code==='ShiftRight'))){ e.stopImmediatePropagation(); e.preventDefault(); if(!e.repeat) lockMsg(); return; } },true);
+  { const _f=frame; frame=function(){ const r=_f.apply(this,arguments); try{ const Lk=locks();
+      document.body.classList.toggle('lkScope',!!Lk.scope); document.body.classList.toggle('lkAmmo',!!Lk.ammo); document.body.classList.toggle('lkSup',!!Lk.sup);
+      if(state==='play'&&player){ if(Lk.scope&&(scopeOn||rightDown)){ scopeOn=false; rightDown=false; lockMsg(); } } }catch(e){} return r; }; }
+  { const st4=document.createElement('style'); st4.textContent=`body.lkScope #tch .tScope,body.lkScope #tch .tZoom,body.lkAmmo #tch .tMg,body.lkAmmo #ammoSlots{display:none!important}`; document.head.appendChild(st4); }
   // ---- premio de la 1ª batalla: 1.000 Yaguaretés (un tanque cuesta ~10.000); la caja sale al terminar la 3ª ----
   { const _br=battleReward; battleReward=function(){ const r=_br.apply(this,arguments); if(B&&B.first&&!tut) r.yp=Math.min(r.yp,1000); return r; }; }
   const gift=document.createElement('div'); gift.id='pGift'; gift.setAttribute('data-notr',''); document.body.appendChild(gift);
