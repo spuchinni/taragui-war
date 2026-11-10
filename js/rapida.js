@@ -108,7 +108,7 @@
   const clock=document.createElement('div'); clock.id='quickClock'; clock.setAttribute('data-notr',''); document.body.appendChild(clock);
   const mmss=s=>{ s=Math.max(0,Math.ceil(s)); return Math.floor(s/60)+':'+String(s%60).padStart(2,'0'); };
   (function tick(){ requestAnimationFrame(tick);
-    const on=Q.on&&['play','paused','lesson'].includes(state)&&!(window.coach&&window.coach.first);
+    const on=Q.on&&!tut&&['play','paused','lesson'].includes(state)&&!(window.coach&&window.coach.first);   // !tut: campo de tiro y desafíos
     if(!on){ clock.style.display='none'; return; }
     if(Q.t0==null) Q.t0=now;
     const left=QUICK_LEN-(now-Q.t0);

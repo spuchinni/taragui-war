@@ -6,6 +6,13 @@
   const EN=()=>window.LANG==='en';
   const LS=(k,v)=>{ try{ if(v===undefined) return localStorage.getItem(k); localStorage.setItem(k,v); }catch(e){ return null; } };
   const NOV=[
+    {id:'2026-11-10b',fecha:'10/11/2026',
+     es:['Capítulo Nahuel: la historia del primer tanque argentino, con fuentes (botón 📜 Historia en el garaje).',
+         'Tres desafíos del Nahuel basados en hechos reales: el desfile del 9 de Julio de 1944, la marcha a San Miguel y la prueba de tiro de 1947 (botón 🎖 Desafíos).',
+         'El cañón dañado ahora se ve: quemado, abollado y humeando.'],
+     en:['Nahuel chapter: the story of the first Argentine tank, with sources (📜 History button in the hangar).',
+         'Three Nahuel challenges based on real events: the July 9, 1944 parade, the march to San Miguel and the 1947 firing trial (🎖 Challenges button).',
+         'A damaged gun is now visible: burnt, dented and smoking.']},
     {id:'2026-11-10',fecha:'10/11/2026',
      es:['Arrancamos de cero: se reinició el progreso de todos.',
          'Con 2 victorias después del entrenamiento se abre la Argentina con el Nahuel; después, cada 5 victorias elegís una nación nueva.'],
