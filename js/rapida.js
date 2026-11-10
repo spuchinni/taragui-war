@@ -152,9 +152,9 @@
     if(left.includes('ar')){ const f=openNation('ar');   // la primera que se abre es siempre la Argentina
       nbox.innerHTML=`<div class="card"><h2>${L?'New nation: Argentina':'Nueva nación: Argentina'}</h2><div>${typeof miniHTML==='function'&&f?miniHTML(f):''}</div>
         <p>${L?`You unlocked the <b>${VEH[f].label}</b>, the first tank designed and built in Argentina (1943).`:`Desbloqueaste el <b>${VEH[f].label}</b>, el primer tanque diseñado y fabricado en la Argentina (1943).`}</p>
-        <p><small>${L?`Every ${EVERY} wins you unlock another nation.`:`Cada ${EVERY} victorias se abre otra nación.`}</small></p><button class="go" id="natOk">${L?'Great!':'¡Genial!'}</button></div>`;
+        <p><small>${L?`Every ${EVERY} wins you unlock another nation.`:`Cada ${EVERY} victorias se abre otra nación.`}</small></p><div style="display:flex;gap:8px;justify-content:center"><button class="go alt" id="natHist">📜 ${L?'Its history':'Su historia'}</button><button class="go" id="natOk">${L?'Great!':'¡Genial!'}</button></div></div>`;
       nbox.style.display='flex'; try{ if(typeof miniPedir==='function') miniPedir([f]); }catch(e){}
-      document.getElementById('natOk').onclick=()=>{ nbox.style.display='none'; checkNations(); }; return true; }
+      document.getElementById('natOk').onclick=()=>{ nbox.style.display='none'; checkNations(); }; document.getElementById('natHist').onclick=()=>{ if(window.nahuelHist) nahuelHist(); }; return true; }
     nbox.innerHTML=`<div class="card"><h2>${L?'Choose a new nation':'Elegí una nación nueva'}</h2><p>${L?`${EVERY} more wins! You get the first tank of the nation you choose.`:`¡${EVERY} victorias más! Te llevás el primer tanque de la nación que elijas.`}</p>
       <div class="row">${left.map(n=>{ const f=vehTreeE(n,3)[0]; return `<button data-n="${n}">${NATIONS[n].label}<small>${f?VEH[f].label:''}</small></button>`; }).join('')}</div></div>`;
     nbox.style.display='flex';
