@@ -8,7 +8,7 @@ function actionReward(score){ const k=(player&&player.key)||selKey, K=RANK_K[k&&
 // ---------- Progresión estilo War Thunder ----------
 // Cada época es un rango (I = 1ª Guerra … V = Guerra Fría) con su árbol propio: como la 2ª Guerra es la permanente y las demás son
 // eventos con fecha, cada época se abre sola (su primer tanque viene regalado) y no depende de la anterior. Cada nación tiene líneas por clase en orden de año: un tanque pide el
-// anterior de su línea dentro de la misma época. Con PI (puntos de investigación) se investiga y con Yaguaretés de plata se compra.
+// anterior de su línea dentro de la misma época. Con PI (puntos de investigación) se investiga y con Yaguaretés se compra.
 const BR_TABLE={stuart:2.0,m113:2.7,sherman:3.3,ee9:4.0,vctp:4.3,m41u:4.3,pt76:4.7,scorpion:5.0,marder:5.3,sk105:5.7,ru251:6.0,sheridan:6.3,tiran:6.3,centurion:6.7,
   t55:7.0,tam:7.0,leopard1:7.3,patagon:7.7,leo1v:7.7,m60:7.7,t62m:7.7,chieftain:8.3,leo1a5:8.7,m60a3:8.7,tam2c:9.0,leo2a4:10.0,abrams:10.3};
 for(const k in VEH) VEH[k].br=VEH[k].br||BR_TABLE[k]||5;
@@ -18,7 +18,7 @@ function vehTreeE(n,e){ return Object.keys(VEH).filter(k=>VEH[k].nation===n&&era
 function vehTree(n){ return vehTreeE(n,curEra); }
 const RANK_ROMAN=['','I','II','III','IV','V'], RANK_K={1:1,2:1.7,3:2.6,4:3.6,5:4.8}, RANK_NEED=3, YP_START=2000;
 const rankOf=k=>eraOf(k);
-const YP='Yaguaretés de plata', ypTxt=n=>`🐆 ${Math.round(n).toLocaleString('es-AR')}`;
+const YP='Yaguaretés', ypTxt=n=>`🐆 ${Math.round(n).toLocaleString('es-AR')}`;
 // Costos: crecen con el rango y dentro del rango (los primeros tanques cuestan unas 3 batallas)
 const rpCost=k=>{ const r=rankOf(k), i=Math.max(0,vehTreeE(VEH[k].nation,r).indexOf(k)); return Math.round((1800+700*i)*RANK_K[r]/50)*50; };
 const ypCost=k=>Math.round(rpCost(k)*2.2/100)*100;
@@ -66,7 +66,7 @@ function checkEraUnlock(){ const out=syncEraOpen(); if(out.length) saveProg(); r
 function nextResearch(n){ const t=PROG.target[n]; if(t&&VEH[t]&&canResearch(t)) return t;
   for(const e of eraList()){ const k=vehTreeE(n,e).find(canResearch); if(k) return k; } return null; }
 function setResearch(k){ if(canResearch(k)){ PROG.target[VEH[k].nation]=k; saveProg(); } }
-// Comprar un tanque investigado con Yaguaretés de plata; entra al garaje si hay lugar
+// Comprar un tanque investigado con Yaguaretés; entra al garaje si hay lugar
 function buyTank(k){ if(!researched(k)||owned(k)) return false; const c=ypCost(k); if((PROG.yp||0)<c) return false;
   PROG.yp-=c; PROG.owned[k]=1; const g=garRef(VEH[k].nation,eraOf(k)); if(g.length<3&&!g.includes(k)) g.push(k); saveProg(); return true; }
 const garageOf=n=>garRef(n).filter(k=>owned(k)&&VEH[k]&&eraOf(k)===curEra);

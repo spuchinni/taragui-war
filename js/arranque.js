@@ -130,7 +130,7 @@
       const line='display:block;max-width:none;margin:.35em auto;text-align:center';
       box.innerHTML=`<h1 style="font-size:64px;margin:.1em 0;text-align:center">${win?(EN()?'Victory!':'¡Victoria!'):(EN()?'Defeat':'Derrota')}</h1>`+
         `<p style="${line};font-size:22px">${EN()?`You destroyed <b>${k}</b> ${k===1?'tank':'tanks'} · captured <b>${cp}</b> ${cp===1?'point':'points'}`:`Destruiste <b>${k}</b> ${k===1?'tanque':'tanques'} · capturaste <b>${cp}</b> ${cp===1?'punto':'puntos'}`}</p>`+
-        (yp?`<p style="${line};font-size:20px;color:var(--amber)">+🐆 ${n(yp)} ${EN()?'silver to buy new tanks in the hangar':'de plata para comprar tanques nuevos en el hangar'}</p>`:'')+
+        (yp?`<p style="${line};font-size:20px;color:var(--amber)">+🐆 ${n(yp)} ${EN()?'Yaguaretés to buy new tanks in the hangar':'Yaguaretés para comprar tanques nuevos en el hangar'}</p>`:'')+
         `<div id="firstBtns" style="margin-top:22px"></div><button class="go alt" id="detB" style="margin-top:14px;font-size:15px;opacity:.85">${EN()?'Show scoreboard':'Ver la tabla completa'}</button>`;
       P.prepend(box);
       const bt=box.querySelector('#firstBtns'), a=$('again'), m=$('menuB');

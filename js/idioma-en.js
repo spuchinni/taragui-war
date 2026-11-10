@@ -410,7 +410,7 @@ I18N.add({
 "Digital": "Digital",
 "Ceremonial dorado": "Golden ceremonial",
 "¡Caída de {} m!": "{} m drop!",
-"Yaguaretés de plata": "Silver Yaguaretés",
+"Yaguaretés": "Yaguaretés",
 "Requiere investigar el {}": "Requires researching the {}",
 "Soldado": "Private",
 "Cabo": "Corporal",

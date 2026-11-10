@@ -302,7 +302,7 @@ function summary(winner){
   let rpHtml=''; const me=crews.find(c=>c.isPlayer||c.name==='Vos'||c.name==='Vos (IA)');
   const MS=curSpecial&&curSpecial.mission?missionById(curSpecial.mission):null; let mres=null, unl=[];
   if(!spectating&&(!curSpecial||MS)&&me&&PROG&&!summary._done){ summary._done=true; const n=MS?MS.ally:chosenNation, win=winner===0;
-    // premio según el rango más alto que usaste: PI para investigar y Yaguaretés de plata para comprar
+    // premio según el rango más alto que usaste: PI para investigar y Yaguaretés para comprar
     const used=Object.keys(me.uses||{}).filter(k=>VEH[k]), rk=Math.max(1,...used.map(rankOf)), R=battleReward(rk,win,me.score|0), rp=R.rp;
     if(MS) mres=missionResult(MS,win);
     PROG.stats.battles++; if(win) PROG.stats.wins++; updateSkill(me,win); PROG.yp=(PROG.yp||0)+R.yp; const un=addRP(n,rp).concat(mres&&mres.un||[]), nx=nextResearch(n); unl=un;
