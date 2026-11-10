@@ -118,12 +118,15 @@
   // ---- aliados ases y enemigos flojos (solo la 1ª batalla) ----
   function setSk(t,sk){ if(!t||t.isPlayer||t.sk==null) return; t.reloadMax=t.reloadMax/(1.5-t.sk*.4)*(1.5-sk*.4); t.sk=sk; }
   function aces(){ for(const t of tanks) setSk(t,t.team===0?.98:.18); }
-  const _sc=spawnCrew; spawnCrew=function(){ const n=tanks.length, r=_sc.apply(this,arguments); if(B&&B.first) for(let i=n;i<tanks.length;i++) setSk(tanks[i],tanks[i].team===0?.98:.18); return r; };
+  let medSeen=false;   // 1ª batalla: el primer tanque enemigo que sale es un mediano de su nación (pedido de Sebastián: el del punto débil siempre mediano)
+  const _sc=spawnCrew; spawnCrew=function(crew,key){ if(preLvl===1&&!tut&&!net.on&&!medSeen&&crew&&crew.team!==0&&VEH[key]&&!VEH[key].static&&!VEH[key].support){ medSeen=true;
+      if(VEH[key].cls!=='medio'){ const m=vehTreeE(VEH[key].nation,eraOf(key)).find(k=>VEH[k].cls==='medio'); if(m) arguments[1]=m; } }
+    const n=tanks.length, r=_sc.apply(this,arguments); if(B&&B.first) for(let i=n;i<tanks.length;i++) setSk(tanks[i],tanks[i].team===0?.98:.18); return r; };
 
   // ---- al empezar cada batalla ----
   let B=null, preLvl=4;   // estado de la batalla actual · nivel de la batalla que está arrancando (antes de que exista B)
   const curLvl=()=>tut||net.on?4:B?B.lvl:preLvl;
-  const _sb=startBattle; startBattle=function(){ B=null; preLvl=lvlNow(); window.TEAM_N=tut||net.on?null:preLvl===1?[2,3]:preLvl===2?[3,4]:null;
+  const _sb=startBattle; startBattle=function(){ B=null; preLvl=lvlNow(); medSeen=false; window.TEAM_N=tut||net.on?null:preLvl===1?[2,3]:preLvl===2?[3,4]:null;
     let r; try{ r=_sb.apply(this,arguments); } finally{ window.TEAM_N=null; }
     HUD_LVL=lvlNow(); for(const n of [1,2,3]) document.body.classList.toggle('hud'+n,HUD_LVL===n); document.body.classList.remove('tkOn');
     TUT1.stg=-1; TUT1.A=TUT1.B=null; TUT1.hid=[]; TUT1.t=0;
