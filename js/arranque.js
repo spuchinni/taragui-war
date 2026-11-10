@@ -46,8 +46,10 @@
   document.body.appendChild(card);
   const key=(k,hl)=>`<span style="display:inline-block;min-width:46px;height:46px;line-height:44px;margin:3px;padding:0 8px;border-radius:7px;border:2px solid ${hl?'#ffd24a':'#f2e6c8'};background:rgba(16,20,26,.78);font:800 22px system-ui;color:${hl?'#ffd24a':'#fff'};box-shadow:0 3px 0 rgba(0,0,0,.6)">${k}</span>`;
   const mouse=`<svg width="40" height="56" viewBox="0 0 40 56" style="vertical-align:middle;margin:0 6px"><rect x="3" y="3" width="34" height="50" rx="17" fill="rgba(16,20,26,.8)" stroke="#f2e6c8" stroke-width="3"/><path d="M20 3v20M3 23h34" stroke="#f2e6c8" stroke-width="3"/><path d="M5 21V20a15 15 0 0 1 15-15v16z" fill="#ffd24a"/></svg>`;
+  const MOVE_M=40, TURN_R=1.2;   // 1) moverse 40 m y girar la torreta (~70°) antes de que aparezca el primer enemigo (pedido de Sebastián)
   function cardHTML(){ const P=C.step;
-    if(P===0) return isMob()?`<div>🕹 Usá la palanca de la izquierda para moverte</div>`:`<div>${key('W')}</div><div>${key('A')}${key('S')}${key('D')}</div><div style="margin-top:6px">Moverse</div>`;
+    if(P===0){ const m=Math.min(MOVE_M,Math.round(C.moved||0)), tok=(C.turn||0)>=TURN_R, prog=`<div style="font-size:18px;margin-top:4px">${m>=MOVE_M?'✔':'·'} ${EN()?'Drive':'Avanzá'} ${m} / ${MOVE_M} m &nbsp; ${tok?'✔':'·'} ${EN()?'Turn the turret':'Girá la torreta'}</div>`;
+      return (isMob()?`<div>🕹 ${EN()?'Left stick: drive · drag on the right: turret':'Palanca de la izquierda: moverse · arrastrá a la derecha: torreta'}</div>`:`<div>${key('W')}</div><div>${key('A')}${key('S')}${key('D')}</div><div style="margin-top:6px">${EN()?'Drive · move the mouse to turn the turret':'Moverse · mové el mouse para girar la torreta'}</div>`)+prog; }
     if(P===1) return isMob()?`<div>Arrastrá a la derecha para apuntar · tocá 🔥 para disparar</div>`:`<div>${mouse} Apuntá con el mouse · <span style="color:#ffd24a">clic</span> para disparar</div>`;
     if(P===2) return `<div style="color:#ff6a50">Destruí un tanque enemigo</div><div style="font-size:18px;opacity:.9">Seguí la flecha roja · pegale de costado</div>`;
     if(P===3){ const Z=target(); return `<div style="color:#ffd24a">Capturá el punto ${Z?Z.id:''}</div><div style="font-size:18px;opacity:.9">Entrá al círculo y quedate adentro</div>`; }
@@ -83,7 +85,8 @@
     if(!C.start||C.start.ref!==player){ C.start={ref:player,x:player.pos.x,z:player.pos.z}; if(C.step<1) C.step=0; C.t0=now; C.kills0=(playerCrew&&playerCrew.kills)||0; }
     // avanzar
     const moved=Math.hypot(player.pos.x-C.start.x,player.pos.z-C.start.z);
-    if(C.step===0&&moved>20){ C.step=1; C.t0=now; C.fired=false; }
+    if(C.lastYaw!=null&&state==='play'){ let d=Math.abs(camYaw-C.lastYaw); if(d<1) C.turn=(C.turn||0)+d; } C.lastYaw=camYaw; C.moved=moved;   // cuánto giró la torreta (cámara)
+    if(C.step===0&&moved>MOVE_M&&(C.turn||0)>=TURN_R){ C.step=1; C.t0=now; C.fired=false; }
     else if(C.step===1&&C.fired&&now-C.t0>1){ C.step=2; C.t0=now; C.kills0=(playerCrew&&playerCrew.kills)||0; }
     else if(C.step===2&&(window.TUT1&&TUT1.stg>=0?TUT1.stg>=2:((playerCrew&&playerCrew.kills>C.kills0)||now-C.t0>100||!nearestEnemy()))){ C.step=3; C.t0=now; }   // con las etapas de primeras.js, recién después de los dos tanques
     else if(C.step===3&&(zones.some(Z=>Z.owner===1&&Math.hypot(Z.x-player.pos.x,Z.z-player.pos.z)<Z.r+5)||now-C.t0>120)){ C.step=4; C.t0=now; }

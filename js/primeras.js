@@ -126,7 +126,7 @@
   const _sb=startBattle; startBattle=function(){ B=null; preLvl=lvlNow(); window.TEAM_N=tut||net.on?null:preLvl===1?[2,3]:preLvl===2?[3,4]:null;
     let r; try{ r=_sb.apply(this,arguments); } finally{ window.TEAM_N=null; }
     HUD_LVL=lvlNow(); for(const n of [1,2,3]) document.body.classList.toggle('hud'+n,HUD_LVL===n); document.body.classList.remove('tkOn');
-    TUT1.stg=-1; TUT1.A=TUT1.B=null;
+    TUT1.stg=-1; TUT1.A=TUT1.B=null; TUT1.hid=[]; TUT1.t=0;
     B={lvl:HUD_LVL,first:!!C.first,t0:null,shown:false,said:{},max:400,teach:HUD_LVL===3&&!tut&&!net.on&&battles()===2};
     if(B.first){ tickets[0]=tickets[1]=100; DRAIN_K=0; aces(); } else DRAIN_K=.42;
     if(!B.first&&!tut&&!net.on&&!curSpecial&&(HUD_LVL===2||HUD_LVL===3)) tickets[0]=tickets[1]=HUD_LVL===2?150:250;   // 2ª y 3ª más cortas
@@ -254,13 +254,14 @@
   { const _a=spawnSquad; spawnSquad=function(){ if(curLvl()<=2) return; return _a.apply(this,arguments); }; }
   if(typeof sendReinforcements==='function'){ const _a=sendReinforcements; sendReinforcements=function(){ if(curLvl()<=2) return; return _a.apply(this,arguments); }; }
   // ---- 1ª batalla por etapas (pedido de Sebastián: "hagámoslo progresivo") ----
-  // Al desplegar se esconden todos los demás tanques (aliados y enemigos) y aparece un enemigo (A) quieto a ~55 m, delante de la
+  // Al desplegar: bienvenida del instructor, se esconden todos los demás tanques (aliados y enemigos) y, después de moverse 40 m y
+  //   girar la torreta (arranque.js), aparece un enemigo (A) quieto a ~55 m, delante de la
   //   cámara y de costado, con la explicación del blindaje. Mientras viva, una marca verde fija muestra su costado: un tiro ahí
   //   (costado o cola) lo destruye; en el frente o la torre rebota. stg 1: otro enemigo (B) quieto a ~300 m, a la vista (con línea
   //   de tiro libre), con la explicación de la mira; cualquier impacto lo destruye. stg 2: vuelven todos a sus bases, se sueltan los
   //   bots y viene la explicación de los puntos y las barras.
   const TUT1=window.TUT1={stg:-1,A:null,B:null,hid:[],t:0};
-  const tutOn=()=>!!(B&&B.first&&!tut&&!net.on&&TUT1.stg>=0&&TUT1.stg<2);
+  const tutOn=()=>!!(B&&B.first&&!tut&&!net.on&&TUT1.stg<2&&(TUT1.stg>=0||TUT1.hid.length>0));
   const mobileT=o=>!o.dead&&o!==player&&!(o.T&&o.T.static)&&!(o.T&&o.T.support);
   function camDir(){ const v=new THREE.Vector3(); camera.getWorldDirection(v); v.y=0; if(v.lengthSq()<1e-4) v.set(Math.sin(player.heading),0,Math.cos(player.heading)); return v.normalize(); }
   function okSpot(x,z){ if(Math.abs(x)>W.bx-25||Math.abs(z)>W.bz-25) return false; if(W.water!=null&&heightAt(x,z)<W.water+.4) return false; return true; }
@@ -305,9 +306,15 @@
     const t=`${EN()?'AIM HERE':'APUNTÁ ACÁ'} · ${armorOf(e).sm} mm`; if(wk._t!==t){ wk._t=t; wk.innerHTML=`<b>${t}</b>`; } wk.style.display='block'; }
   function tut1Tick(){ if(!B||!B.first||tut||net.on||!player||player.dead){ wk.style.display='none'; return; }
     const tn=now-B.t0;
-    if(TUT1.stg===-1&&tn>1.5&&!(typeof bannerT!=='undefined'&&bannerT>0)){
-      const E=tanks.filter(o=>mobileT(o)&&o.team!==player.team); if(!E.length){ TUT1.stg=2; return; }
-      for(const o of tanks) if(mobileT(o)) hideT(o);
+    // bienvenida del instructor (pedido de Sebastián) y primero a moverse: el enemigo aparece cuando el entrenador pasa a "disparar"
+    if(TUT1.stg===-1&&!TUT1.hid.length&&tn>.3){ if(!tanks.some(o=>mobileT(o)&&o.team!==player.team)){ TUT1.stg=2; return; } for(const o of tanks) if(mobileT(o)) hideT(o); }   // al desplegar: solo vos en el mapa
+    if(TUT1.stg===-1&&!B.said.welcome&&tn>1.2&&!(typeof bannerT!=='undefined'&&bannerT>0)){
+      if(lesson(EN()?'Welcome to TaraWar!':'¡Bienvenido a TaraWar!',EN()
+          ?`<p>I am your <b>instructor</b>. In a few minutes you will know how to drive and fight with your ${player.T.label}.</p><p>${mob()?'<b>Left stick</b>: drive · <b>drag on the right</b>: turn the turret and aim.':`${K('fwd')} forward · ${K('back')} reverse · ${K('left')} ${K('right')} turn the hull.<br>Move the <b>mouse</b> to turn the turret and aim.`}</p><p>First, get the feel of it: <b>drive about 40 m</b> and <b>turn the turret</b>.</p>`
+          :`<p>Soy tu <b>instructor</b>. En unos minutos vas a saber manejar y pelear con tu ${player.T.label}.</p><p>${mob()?'<b>Palanca de la izquierda</b>: moverse · <b>arrastrá a la derecha</b>: girar la torreta y apuntar.':`${K('fwd')} avanzar · ${K('back')} retroceder · ${K('left')} ${K('right')} girar el casco.<br>Mové el <b>mouse</b> para girar la torreta y apuntar.`}</p><p>Primero agarrale la mano: <b>avanzá unos 40 m</b> y <b>girá la torreta</b>.</p>`,{low:1})) B.said.welcome=1; }
+    const moveDone=window.coach&&coach.on?coach.step>=1:(B.said.welcome&&tn>10);
+    if(TUT1.stg===-1&&B.said.welcome&&moveDone&&state==='play'){
+      const E=TUT1.hid.filter(o=>o._tutP&&!o.dead&&o.team!==player.team); if(!E.length){ for(const o of TUT1.hid) showT(o); TUT1.hid=[]; TUT1.stg=2; return; }
       const gap=o=>{ const A=hullA(o); return (A.front||0)-Math.min(A.side||99,A.rear||99)+(['ligero','medio','pesado'].includes(o.T.cls)?100:0); };   // mejor un tanque que un cazatanques
       TUT1.A=E.slice().sort((a,b)=>gap(b)-gap(a))[0]; showT(TUT1.A); placeView(TUT1.A,55,useRear(TUT1.A)?2.3:1.15); TUT1.stg=0; }
     if(TUT1.stg===0&&(!TUT1.A||TUT1.A.dead)){ if(!TUT1.t) TUT1.t=now+1.6; else if(now>=TUT1.t){ TUT1.t=0;
