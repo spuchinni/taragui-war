@@ -273,7 +273,7 @@ function drawOverlay(){
   // así contrastan igual sobre pasto, barro, desierto o de noche
   const halo=(f)=>{ oc.lineWidth=4; oc.strokeStyle='rgba(235,238,240,.55)'; f(); oc.stroke(); oc.lineWidth=1.6; oc.strokeStyle='rgba(15,15,15,.95)'; f(); oc.stroke(); };
   if(scoped&&typeof drawReticle!=='function'){ oc.fillStyle='rgba(235,238,240,.6)'; oc.beginPath(); oc.arc(cx,cy,3.4,0,7); oc.fill(); oc.fillStyle='rgba(15,15,15,.95)'; oc.beginPath(); oc.arc(cx,cy,2,0,7); oc.fill(); }
-  else { // Mira central estilo War Thunder: anillo fino con borde oscuro y punto central
+  else if(!scoped){ // Mira central estilo War Thunder (vista del comandante): anillo fino con borde oscuro y punto central; con la mira del artillero solo su retícula
     oc.lineWidth=3.5; oc.strokeStyle='rgba(0,0,0,.45)'; oc.beginPath(); oc.arc(cx,cy,9,0,7); oc.stroke();
     oc.lineWidth=1.5; oc.strokeStyle='rgba(255,255,255,.92)'; oc.beginPath(); oc.arc(cx,cy,9,0,7); oc.stroke();
     oc.fillStyle='rgba(0,0,0,.5)'; oc.beginPath(); oc.arc(cx,cy,2.4,0,7); oc.fill();
@@ -289,7 +289,7 @@ function drawOverlay(){
     oc.textAlign='center';
   }
   if(manual&&player.reloadT>0&&!(scoped&&typeof drawReticle==='function')){ oc.strokeStyle='#ffc65c';oc.lineWidth=3;oc.beginPath();oc.arc(cx,cy,20,-Math.PI/2,-Math.PI/2+Math.PI*2*(1-player.reloadT/(player.reloadMax*reloadFactor(player))));oc.stroke(); }
-  const ip=manual?null:project(predictImpact(player));
+  const ip=manual||scoped?null:project(predictImpact(player));   // con la mira del artillero no: manda la retícula
   if(ip){
     const ready=player.reloadT<=0, onTarget=Math.hypot(ip.x-cx,ip.y-cy)<10;
     oc.lineWidth=2; oc.strokeStyle=player.gunLim?'rgba(255,90,60,.9)':ready?(onTarget?'rgba(143,209,106,1)':'rgba(239,231,210,.85)'):'rgba(239,231,210,.45)';

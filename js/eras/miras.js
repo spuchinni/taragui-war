@@ -23,7 +23,7 @@ function gunRing(x,y,col,t){ const ready=t.reloadT<=0;
   oc.lineWidth=2; oc.strokeStyle=col; oc.beginPath(); oc.arc(x,y,12,0,7); oc.moveTo(x-19,y); oc.lineTo(x-12,y); oc.moveTo(x+12,y); oc.lineTo(x+19,y); oc.moveTo(x,y+12); oc.lineTo(x,y+18); oc.stroke();
   if(!ready){ oc.strokeStyle='#ffc65c'; oc.lineWidth=3; oc.beginPath(); oc.arc(x,y,20,-Math.PI/2,-Math.PI/2+Math.PI*2*(1-t.reloadT/(t.reloadMax*reloadFactor(t)))); oc.stroke(); } }
 function drawGunMarks(){ if(state!=='play'||!player||player.dead||!player.barrel||!player.muzzle) return; const t=player, manual=realMode&&!hasFcs(t), cx=innerWidth/2, cy=innerHeight/2;
-  if(scoped){ drawReticle(t,manual); drawMgMarks(t); return; }
+  if(scoped){ drawReticle(t,manual); return; }   // en la mira del artillero solo su retícula (sin marcas de ametralladoras ni del comandante)
   // cañón
   const P=manual?barrelPoint(t):predictImpact(t), S=screenOrEdge(P), col=t.gunLim?'rgba(255,90,60,.95)':t.reloadT<=0?'rgba(239,231,210,.95)':'rgba(239,231,210,.55)';
   if(S.edge){ const a=S.ang; oc.fillStyle='rgba(20,20,18,.75)'; oc.strokeStyle='#efe7d2'; oc.lineWidth=2; oc.beginPath(); oc.arc(S.x,S.y,16,0,7); oc.fill(); oc.stroke();
