@@ -139,7 +139,7 @@
   const curLvl=()=>tut||net.on?4:B?B.lvl:preLvl;
   // entrenamiento: si se sale de una batalla, al volver arranca esa misma desde el principio (pedido de Sebastián). Los carteles ya vistos
   // en esa batalla se vuelven a mostrar: al empezar se restauran las marcas como estaban al terminar la anterior (PROG.lsSnap).
-  const LS_KEYS=['tw2_lFoe','tw2_lWeak','tw2_lMira','tw2_lCap','tw2_coach'];
+  const LS_KEYS=['tw2_lFoe','tw2_lWeak','tw2_lMira','tw2_lCap','tw2_coach','tw2_lAmmo'];
   function lsSnap(){ const o={}; for(const k of LS_KEYS){ const v=LSg(k); if(v!=null) o[k]=v; } return o; }
   function lsRestore(o){ for(const k of LS_KEYS) try{ if(o&&o[k]!=null) localStorage.setItem(k,o[k]); else localStorage.removeItem(k); }catch(e){} }
   // los bots no reparan en el entrenamiento hasta que el jugador repare por primera vez (pedido de Sebastián)
@@ -190,6 +190,17 @@
       if(lesson(EN()?'Now your tank can take damage':'Ahora tu tanque puede recibir daño',EN()
         ?`<p>${K('repair')} <b>Repair</b>: the tank stops and the crew fixes tracks, engine and gun, and puts out fires. Do it behind cover.</p><p>${K('arty')} <b>Artillery</b>${air?` · ${K('air')} <b>Air strike</b>`:''}: press the key and click on the map where it should land. Artillery costs <b>${ARTY_COST} points</b> and can be used every <b>${ARTY_CD} s</b>${air?`; the air strike costs <b>${AIR_COST} points</b> and can be used every <b>${Math.floor(AIR_CD/60)}:${String(AIR_CD%60).padStart(2,'0')} min</b>`:''}. You earn points by fighting and the button shows the wait. <b>This time they are ready</b> so you can try them now.</p>${infOK()?`<p>${K('inf')} <b>Call infantry</b>: ${INF_COST} points. Pick a point on the map and a half-track or paratroopers bring soldiers there to capture or defend it.</p>`:''}<p>${K('smoke')} <b>Smoke</b>: throws smoke grenades to hide your tank. ${K('ext')} <b>Extinguisher</b>: puts out fires.</p>`
         :`<p>${K('repair')} <b>Reparar</b>: el tanque se queda quieto y la tripulación arregla orugas, motor y cañón y apaga el fuego. Hacelo a cubierto.</p><p>${K('arty')} <b>Artillería</b>${air?` · ${K('air')} <b>Bombardeo</b>`:''}: apretá la tecla y hacé clic en el mapa donde querés que caiga. La artillería cuesta <b>${ARTY_COST} puntos</b> y se puede usar cada <b>${ARTY_CD} s</b>${air?`; el bombardeo cuesta <b>${AIR_COST} puntos</b> y se puede usar cada <b>${Math.floor(AIR_CD/60)}:${String(AIR_CD%60).padStart(2,'0')} min</b>`:''}. Los puntos se ganan peleando y el botón muestra cuánto falta. <b>Esta vez te los dejo listos</b> para que los pruebes ya.</p>${infOK()?`<p>${K('inf')} <b>Pedir infantería</b>: ${INF_COST} puntos. Elegís un punto en el mapa y un semioruga o paracaidistas llevan soldados para capturarlo o defenderlo.</p>`:''}<p>${K('smoke')} <b>Humo</b>: tira granadas de humo para esconder tu tanque. ${K('ext')} <b>Extintor</b>: apaga el fuego.</p>`,{dom})) B.said.l4=1; }
+    // munición baja (una sola vez): cómo reponerla en un punto propio (pedido de Sebastián)
+    if(!tut&&!net.on&&!B.said.ammo&&!LSg('tw2_lAmmo')&&t>6&&player&&!player.dead&&player.ammoCount&&player.ammoMax&&!(B.first&&TUT1.stg<2)){
+      const tot=player.ammoCount.reduce((a,b)=>a+b,0), max=player.ammoMax.reduce((a,b)=>a+b,0);
+      if(max>0&&tot/max<.3){ const mine=player.team===0?1:-1, en=EN();
+        let Z=null,zd=1e9; for(const z of zones){ if(z.owner!==mine) continue; const d=Math.hypot(z.x-player.pos.x,z.z-player.pos.z); if(d<zd){ zd=d; Z=z; } }
+        const where=Z?(en?`The nearest one is <b>${Z.id}</b>, ${Math.round(zd)} m away (marked in green).`:`El más cercano es el <b>${Z.id}</b>, a ${Math.round(zd)} m (marcado en verde).`)
+          :(en?'You don\'t hold any point yet: <b>capture one</b> first.':'Todavía no tenés ningún punto: <b>capturá uno</b> primero.');
+        const marks=Z?[{p:new THREE.Vector3(Z.x,heightAt(Z.x,Z.z)+4,Z.z),txt:(en?'Resupply ':'Reponer ')+Z.id,col:'#7ce07c'}]:[];
+        if(lesson(en?'Low on ammo':'Te queda poca munición',en
+          ?`<p>To get ammo back, <b>stop inside a point your side holds</b> (A, B or C in your color). One shell is loaded every second, starting with the type you have least of, and the machine-gun belts are refilled too.</p><p>${where}</p><p>The status at the bottom left turns yellow while you resupply. If you move, it stops.</p>`
+          :`<p>Para recuperar munición, <b>quedate quieto dentro de un punto de tu bando</b> (A, B o C de tu color). Se carga un proyectil por segundo, primero la munición de la que tenés menos, y también se reponen las cintas de la ametralladora.</p><p>${where}</p><p>Mientras se repone, el estado abajo a la izquierda se pone amarillo. Si te movés, se corta.</p>`,{marks})){ B.said.ammo=1; LSs('tw2_lAmmo'); } } }
     if(B.lvl<4&&player&&!player.dead&&!LSg('tw2_lFoe')&&!(B.first&&TUT1.stg<0)){ const e=B.first&&TUT1.A&&!TUT1.A.dead?TUT1.A:tanks.find(o=>!o.dead&&o.team!==player.team&&!(o.T&&o.T.static)&&o.visP&&o.pos.distanceTo(player.pos)<380);
       if(e&&B.first&&e===TUT1.A){ const p=e.pos.clone(); p.y+=(e.topH||2.4)*.45; const {fm,sm}=armorOf(e);   // 1ª batalla: enemigo + blindaje en un solo cartel
         if(lesson(EN()?`An enemy tank! A ${e.T.label}`:`¡Un tanque enemigo! Un ${e.T.label}`,(EN()
