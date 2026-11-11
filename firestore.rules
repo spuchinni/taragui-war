@@ -24,5 +24,19 @@ service cloud.firestore {
         && request.resource.data.t == request.time;
       allow delete: if resource.data.t < request.time - duration.value(1, 'd');
     }
+
+    // Opiniones de los jugadores (js/opinion.js): cualquiera puede mandar una, nadie las lee desde el juego
+    // (se ven en la consola de Firebase). Solo estos campos y tamaños.
+    match /opiniones/{id} {
+      allow read, update, delete: if false;
+      allow create: if request.resource.data.keys().hasOnly(['r','c','x','k','de','v','b','e','m','tk','mov','lang','ua','w','h','t'])
+        && request.resource.data.r is int && request.resource.data.r >= 0 && request.resource.data.r <= 5
+        && request.resource.data.c in ['error','idea','bien','otro']
+        && request.resource.data.x is string && request.resource.data.x.size() <= 1500
+        && request.resource.data.k is string && request.resource.data.k.size() <= 120
+        && request.resource.data.de is string && request.resource.data.de.size() <= 12
+        && request.resource.data.ua is string && request.resource.data.ua.size() <= 160
+        && request.resource.data.t == request.time;
+    }
   }
 }
