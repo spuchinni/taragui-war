@@ -1,5 +1,7 @@
 # TaraWar en itch.io (semana 4: salir al mundo)
 
+Página: https://spuchinni.itch.io/tarawar · Discord: https://discord.gg/5fgkzJY6T
+
 El juego **no se copia** a itch.io: el zip tiene un solo `index.html` que muestra adentro la versión publicada en GitHub Pages.
 Así, cada vez que se sube algo a `main`, itch.io ya tiene la última versión sin volver a subir nada.
 
@@ -73,17 +75,17 @@ Found a bug or have an idea? Use the **💬 Give feedback** button in the game o
 ### Discord (servidor propio)
 Canales sugeridos: `#anuncios`, `#novedades` (pegar las líneas de 📰 Novedades), `#buscar-partida`, `#errores`, `#ideas`, `#capturas`.
 Mensaje de bienvenida:
-> ¡Bienvenido al cuartel de TaraWar! Juego de tanques gratis en el navegador, hecho en Corrientes. Jugá en <link de itch.io>. Avisá en #buscar-partida cuando entres así se arma una batalla online.
+> ¡Bienvenido al cuartel de TaraWar! Juego de tanques gratis en el navegador, hecho en Corrientes. Jugá en https://spuchinni.itch.io/tarawar. Avisá en #buscar-partida cuando entres así se arma una batalla online.
 
 ### Reddit
 - Dónde: r/WWIIgames, r/tanks, r/WebGames, r/IndieGaming, r/playmygame, r/argentina (los viernes, con la etiqueta que corresponda). Leer las reglas de cada uno antes; en varios hay que ser el autor y responder comentarios.
 - Título: *I'm making a free WW2 tank game that runs in the browser, featuring Argentina's first tank (Nahuel DL-43)*
 - Cuerpo:
 > Hi! I'm a solo dev from Corrientes, Argentina. TaraWar is a free 3D tank game that runs in the browser (no install), with WW2 tanks and Argentine armor. The Nahuel DL-43 was the first tank designed and built in Argentina (1943); the game has a short history page and three challenges based on its real trials.
-> Play: <link>
+> Play: https://spuchinni.itch.io/tarawar
 > Feedback very welcome — there's a feedback button in the game.
 
 ### Grupos (Facebook, WhatsApp)
-> Hice un juego de tanques gratis que se juega en el navegador, con los blindados argentinos: arranca en la 2ª Guerra y tiene al Nahuel DL-43, el primer tanque argentino, con su historia y desafíos. Está hecho en Corrientes. Se juega acá: <link>. Si lo prueban, ¡díganme qué les pareció!
+> Hice un juego de tanques gratis que se juega en el navegador, con los blindados argentinos: arranca en la 2ª Guerra y tiene al Nahuel DL-43, el primer tanque argentino, con su historia y desafíos. Está hecho en Corrientes. Se juega acá: https://spuchinni.itch.io/tarawar. Si lo prueban, ¡díganme qué les pareció!
 
 Fuentes de lo que se dice del Nahuel: ver `js/nahuel.js` (Tank Encyclopedia y Sigal Fogliani, *Nahuel DL 43*, Dunken 2004).

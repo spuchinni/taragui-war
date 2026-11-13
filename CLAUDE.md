@@ -15,6 +15,8 @@ Hablar siempre en español rioplatense (vos), respuestas concretas y breves.
 
 - **itch.io** (`herramientas/itch/`, semana 4): el zip (`sh herramientas/itch/armar.sh` → `dist/tarawar-itch.zip`) tiene solo un `index.html` con un iframe a GitHub Pages (`?desde=itch`; `allow` fullscreen/pointer-lock/autoplay/gamepad), así itch siempre muestra la última versión sin volver a subir. `LEEME.md` tiene los pasos para crear la página (HTML, 1280×720, sin SharedArrayBuffer), la frase corta, la descripción en los dos idiomas, etiquetas y textos para Discord, Reddit y grupos. Portadas 630×500 (`portada-630x500.jpg`, `portada-en-630x500.jpg`) y capturas en `capturas/` (las automáticas son flojas: mejor que Sebastián saque las suyas jugando).
 
+- **Comunidad** (`js/comunidad.js`, después de opinion.js): links 👥 Discord (https://discord.gg/5fgkzJY6T) y 🎮 itch.io (https://spuchinni.itch.io/tarawar, no se muestra dentro de itch.io con `?desde=itch`) al lado de Dar opinión en el menú, y "Sumate al Discord" en el resumen de la batalla (`TW_LINKS`). Semana 4 cerrada en Novedades (13/11/2026).
+
 ## Estructura (versión 2)
 - `index.html` → juego nuevo por épocas (arranca en la 2ª Guerra; la 1ª Guerra, Entreguerras y la Guerra Fría son eventos con fecha). Carga three.js r128 desde `js/lib/three.min.js` (copia local, antes cdnjs) y los scripts de `js/` en orden.
 - `v1/` → versión anterior completa (Guerra Fría + mapas de Corrientes). No tocar salvo pedido. Guarda progreso en `tw_progress`; la v2 usa `tw2_progress`.
