@@ -1644,7 +1644,10 @@ I18N.add({
 "{} fortifica el punto {}: ametralladora, antitanque": "{} fortifies point {}: machine gun and anti-tank gun",
 "{} fortifica el punto {}: ametralladora y antiaéreo": "{} fortifies point {}: machine gun and anti-aircraft gun",
 ", antitanque y antiaéreo": ", anti-tank gun and anti-aircraft gun",
-" y antiaéreo": " and anti-aircraft gun"
+" y antiaéreo": " and anti-aircraft gun",
+"120 Sherman Firefly convertidos en el país en 1977–78, en plena crisis del Beagle: cañón de 105 mm de la Fábrica Militar de Río Tercero y motor diésel Poyaud de 500 CV. El blindaje es el de 1944.": "120 Sherman Fireflies converted in Argentina in 1977–78, during the Beagle crisis: a 105 mm gun from the Río Tercero Military Factory and a 500 hp Poyaud diesel. The armor is still the 1944 one.",
+"Carga hueca FMK-3 105 mm": "FMK-3 105 mm HEAT",
+"Explosivo FMK-1 105 mm": "FMK-1 105 mm HE"
 });
 I18N.words({
 "Perforante sólido": "Solid AP",

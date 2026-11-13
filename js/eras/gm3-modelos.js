@@ -278,6 +278,19 @@ function shermanTurret(tur,G,M,I,mat,gy){
   // .50 en el aro: cajón, tubo y caja de munición
   { const ax=M.tw*.22, az=I.tur==='t23'?-M.tl*.42:-M.tl*.2;                                                          // en la T23 la .50 va atrás
     mgMount(tur,ax,ty+.44,az,{post:.38,cal:12.7,...MG_AA,seat:['commander','loader']}); }
+  if(I.rep) repotTurret(tur,M,mat);
+}
+// Sherman Repotenciado (Argentina, 1977–78): 2 lanzahumos por lado, canasto atrás de la torre y el tanque de 200 l de diésel
+// que se podía colgar detrás (Tank Encyclopedia, "Sherman Repotenciado")
+function repotTurret(tur,M,mat){
+  const hw=M.tw/2, y=M.th*.62, z0=-M.tl*.5;
+  for(const sx of [-1,1]) for(let k=0;k<2;k++){ const c=cyl(tur,.05,.05,.3,sx*(hw+.04),y+k*.12,M.tl*.12,8,darkMat); c.rotation.x=-.5; c.rotation.z=-sx*.35; }   // lanzahumos
+  const bw=M.tw*.82, bl=.62, by=M.th*.42, zb=z0-.55;
+  for(const sx of [-1,1]) box(tur,.035,.035,bl,sx*bw/2,by+.22,zb,darkMat);                      // canasto: barandas de los costados
+  box(tur,bw,.035,.035,0,by+.22,zb-bl/2,darkMat); box(tur,bw,.03,bl,0,by-.04,zb,darkMat);       // baranda de atrás y piso
+  for(const sx of [-1,1]) for(const dz of [-bl/2,bl/2]) box(tur,.03,.26,.03,sx*bw/2,by+.09,zb+dz,darkMat);
+  const d=cyl(tur,.29,.29,.88,0,by+.27,zb-.02,14,mat); d.rotation.z=Math.PI/2;                    // tanque de 200 l acostado
+  for(const dx of [-.3,0,.3]){ const r=cyl(tur,.3,.3,.03,dx,by+.27,zb-.02,14,darkMat); r.rotation.z=Math.PI/2; }
 }
 const _shHalf=new THREE.CylinderGeometry(.3,.3,.05,12,1,false,0,Math.PI), _shGreenBox=new THREE.MeshLambertMaterial({color:0x4a5236});
 

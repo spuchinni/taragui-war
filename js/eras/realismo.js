@@ -12,7 +12,7 @@ const GUN_ARC={
   pz3j:[10,20],pz4f2:[8,20],pz4h:[8,20],stug3g:[6,20],panther:[8,18],tiger1:[8,15],tiger2:[8,15],jagdpanther:[8,14],pz38t:[10,25],
   t70:[6,20],t34:[5,25],t3485:[5,22],kv1:[5,25],kv2:[3,18],is2:[3,20],su100:[2,17],bt7:[6,25],t26cn:[6,22],
   m3stuart:[10,20],m4a1:[10,25],m4a3e8:[10,25],m10:[10,19],m18:[10,19],m24:[10,15],m26:[10,20],m36:[10,20],
-  matilda2:[15,20],crusader3:[12,20],cromwell:[12,20],churchill7:[12,20],firefly:[5,20],comet:[12,20],valentine:[8,20],achilles:[10,19],
+  matilda2:[15,20],crusader3:[12,20],cromwell:[12,20],churchill7:[12,20],firefly:[5,20],repot:[5,20],comet:[12,20],valentine:[8,20],achilles:[10,19],
   chiha:[9,20],chihe:[9,20],chinu:[9,20],hago:[9,20],nahuel:[8,20]};
 // grados por segundo al subir o bajar el cañón
 const ELEV_SP={ligero:12,medio:9,pesado:6,cazatanques:7,principal:20};
@@ -196,7 +196,7 @@ function reliefTex(){ if(_relief) return _relief;
 
 // qué tanques llevan qué (por tanque; la 1ª Guerra y Entreguerras casi todos remachados)
 const RIVETED=['m3stuart','valentine','crusader3','pz38t','hago','chiha','chihe','l640','m1340','sem7518','p40','h39','v6cn','t26cn','m3a3cn','bt7','kv2','achilles','m10'];
-const CAST=['m4a1','m4a3e8','m4a2fr','m4a4cn','matilda2','is2','t3485','s35f','h39','m26','churchill7','firefly','m36','chinu'];
+const CAST=['repot','m4a1','m4a3e8','m4a2fr','m4a4cn','matilda2','is2','t3485','s35f','h39','m26','churchill7','firefly','m36','chinu'];
 const ZIMMERIT=['pz4h','panther','tiger1','stug3g','jagdpanther','tiger2'];
 for(const k in VEH){ const V=VEH[k]; if(V.static) continue;
   V.rel=[RIVETED.includes(k)||(V.era<=2&&!['s35','b1bis','r35'].includes(k))?1:0, ZIMMERIT.includes(k)?1:0, CAST.includes(k)||(V.era<=2&&['s35','r35'].includes(k))?1:V.era>=5?.4:.15]; }
@@ -288,7 +288,7 @@ function updateEngVoices(dt){
 const TRAV_DEG={pz3j:18,pz4f2:14,pz4h:14,stug3g:10,panther:18,tiger1:10,tiger2:10,jagdpanther:8,pz38t:12,
   t70:12,t34:25,t3485:22,kv1:12,kv2:6,is2:14,su100:8,bt7:20,
   m3stuart:30,m4a1:24,m4a3e8:24,m10:10,m18:24,m24:30,m26:20,m36:10,
-  matilda2:20,crusader3:25,cromwell:24,churchill7:20,firefly:24,comet:24,valentine:20,achilles:10,nahuel:15,
+  matilda2:20,crusader3:25,cromwell:24,churchill7:20,firefly:24,repot:24,comet:24,valentine:20,achilles:10,nahuel:15,
   l640:12,m1340:10,sem7518:8,p40:12,hago:20,chiha:12,chihe:14,chinu:10,h39:10,s35f:10,b1f:8,m4a2fr:24,v6cn:20,t26cn:15,m3a3cn:30,m4a4cn:24};
 const TRAV_CLS={ligero:25,medio:18,pesado:11,cazatanques:9,principal:40};
 for(const k in VEH){ const V=VEH[k]; if(V.static||V.aa||V.support||V.era<=1) continue;

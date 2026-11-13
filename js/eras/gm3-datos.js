@@ -188,6 +188,22 @@ const W2_KEYS=['pz3j','pz4f2','stug3g','pz4h','panther','tiger1','t70','t34','kv
 for(const k of W2_KEYS){ FC[k]={crew:VEH[k].seats.length}; OPTIC[k]=VEH[k].static?[3]:['tiger1','panther'].includes(k)?[2.5,5]:['firefly','m26','is2','t3485','m4a3e8','pz4h','stug3g','m10'].includes(k)?[3,6]:[2.5,4]; }
 // Estabilizador (Sherman), lanzahumos donde lo tenían, cañón de carga lenta del IS-2
 Object.assign(FC.m4a1,{stab:1}); Object.assign(FC.m4a3e8,{stab:1}); Object.assign(FC.firefly,{stab:0});
+// ---- Argentina de posguerra (capítulo TAM, semana 1; pedido de Sebastián) ----
+// Sherman Repotenciado: 120 Sherman Firefly convertidos entre 1977 y 1978 (crisis del Beagle) con el cañón de 105 mm L44/57 FTR
+// de la Fábrica Militar de Río Tercero (copia del CN-105-57 francés) y motor diésel Poyaud 520 V8 de 450–500 CV: 48–50 km/h,
+// 31,6 t en orden de combate, sin blindaje extra; 2 lanzahumos por lado, MAG coaxial, .50 arriba, canasto y tanque de 200 l
+// atrás de la torre. Munición: carga hueca FMK-3 (360 mm, 800 m/s), explosiva FMK-1 y humo FMK-5.
+// Fuente: Tank Encyclopedia, "Sherman Repotenciado" (https://tanks-encyclopedia.com/coldwar-argentina-sherman-repotenciado/).
+{ const F=VEH.firefly;
+  VEH.repot={nation:'ar',era:5,year:1978,br:5.0,cls:'medio',label:'Sherman Repotenciado',
+    desc:'120 Sherman Firefly convertidos en el país en 1977–78, en plena crisis del Beagle: cañón de 105 mm de la Fábrica Militar de Río Tercero y motor diésel Poyaud de 500 CV. El blindaje es el de 1944.',
+    camo:['#55573a','#4a4c33','#3b3d2a'],camoMode:'flat',   // verde oliva del Ejército Argentino
+    maxF:13.6,maxR:4,turn:.8,trav:.8,reload:8,pen:360,hp:110,crewReal:4,seats:['driver','commander','gunner','loader'],diesel:1,mgc:7.62,
+    armor:JSON.parse(JSON.stringify(F.armor)),
+    m:Object.assign({},F.m,{gl:4.7,w2:Object.assign({},F.m.w2,{ins:'ar',rep:1})})};
+  AMMO_DEF.repot=[['Carga hueca FMK-3 105 mm','heat',360,800],['Explosivo FMK-1 105 mm','he',30]];
+  FC.repot={crew:4}; OPTIC.repot=[3,6];   // sin dato del aumento de la mira nueva: el de la del Firefly
+  if(NATIONS.ar&&NATIONS.ar.lineup&&!NATIONS.ar.lineup.includes('repot')) NATIONS.ar.lineup.unshift('repot'); }
 GUN_ERA[3]={de:'pak40',ru:'zis3',uk:'pdr6',us:'at57us',ar:'bofors37'};
 // Pendiente máxima (rad): el Churchill trepa como ninguno; los pesados alemanes y el IS-2, menos
 Object.assign(VEH.tiger1,{climb:.5}); Object.assign(VEH.is2,{climb:.5}); Object.assign(VEH.matilda2,{climb:.5}); Object.assign(VEH.t34,{climb:.6}); Object.assign(VEH.t3485,{climb:.6});

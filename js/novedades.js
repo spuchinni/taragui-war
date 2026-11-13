@@ -6,6 +6,13 @@
   const EN=()=>window.LANG==='en';
   const LS=(k,v)=>{ try{ if(v===undefined) return localStorage.getItem(k); localStorage.setItem(k,v); }catch(e){ return null; } };
   const NOV=[
+    {id:'2026-11-14',fecha:'14/11/2026',
+     es:['Capítulo TAM, semana 1: nuevo tanque argentino, el Sherman Repotenciado (1978), un Firefly con cañón de 105 mm de Río Tercero y motor diésel.',
+         'Botón 📜 Historia con su historia y sus fuentes, del Sherman de 1946 a la crisis del Beagle.',
+         'Por ahora está en la línea argentina de la Guerra Fría; la semana que viene esa línea se abre todo el año.'],
+     en:['TAM chapter, week 1: a new Argentine tank, the Sherman Repotenciado (1978), a Firefly with a 105 mm gun from Río Tercero and a diesel engine.',
+         '📜 History button with its story and sources, from the 1946 Shermans to the Beagle crisis.',
+         'For now it is in the Argentine Cold War line; next week that line opens all year round.']},
     {id:'2026-11-13',fecha:'13/11/2026',
      es:['TaraWar ya está en itch.io: spuchinni.itch.io/tarawar.',
          'Abrimos el Discord del juego para armar partidas, avisar errores y proponer ideas (botón 👥 Discord en el menú).',
