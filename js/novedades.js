@@ -102,12 +102,12 @@
     const t=document.createElement('div'); t.className='homeTag'; t.setAttribute('data-notr','');
     t.textContent=EN()?'Argentine armor, from the Nahuel to the TAM · made in Corrientes':'Los blindados argentinos, del Nahuel al TAM · hecho en Corrientes';
     $('panel').appendChild(t);
-    // se abre sola cada vez que se abre el juego, en el primer menú (pedido de Sebastián), después del premio diario
-    // y de las otras cajas; no antes de la primera batalla (el que recién llega va directo a jugar)
-    if(!novShown&&!autoT){ let n=0; autoT=setInterval(()=>{ n++;
-      if(state!=='menu'||!$('playB')||(PROG&&progBat(PROG)<1)||PROG.train){ n=0; return; }   // todavía en la portada o fuera del menú: espera (sigue mirando hasta que se pueda)
+    // se abre sola al llegar al menú si hay una novedad sin ver (pedido de Sebastián), para todos (también el que recién llega),
+    // esperando a que se vaya la portada y a que no haya otra caja abierta (ruleta del premio diario, etc.)
+    if(!novShown&&!autoT&&LS('tw2_nov')!==NOV[0].id){ let n=0; autoT=setInterval(()=>{ n++;
+      if(state!=='menu'||!$('playB')){ n=0; return; }   // todavía en la portada o fuera del menú: espera (sigue mirando hasta que se pueda)
       const busy=[...document.querySelectorAll('#dayBox,#natPick,#tkPick,#giftBox,#opBox,#nahBox,#iosGuide')].some(e=>e&&getComputedStyle(e).display!=='none');
-      if(!busy&&n>=3){ clearInterval(autoT); autoT=0; novShown=true; showNov(); } },500); }
+      if(!busy&&n>=3){ clearInterval(autoT); autoT=0; novShown=true; if(LS('tw2_nov')!==NOV[0].id) showNov(); } },500); }
     return r; };
   let autoT=0, novShown=false;
 })();
