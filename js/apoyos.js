@@ -20,20 +20,50 @@
   const cb=document.createElement('div'); cb.id='cineBox'; cb.setAttribute('data-notr',''); document.body.appendChild(cb);
 
   // ---- radio con coordenadas ----
-  const NUM_ES=['cero','uno','dos','tres','cuatro','cinco','seis','siete','ocho','nueve'], NUM_EN=['zero','one','two','three','four','five','six','seven','eight','niner'];
   function coords(p){ const bx=W.bx||750, bz=W.bz||750;
     const e=Math.max(0,Math.min(999,Math.round((bx-p.x)/(2*bx)*999))), n=Math.max(0,Math.min(999,Math.round((p.z+bz)/(2*bz)*999)));   // x = oeste, z = norte
     return [String(e).padStart(3,'0'),String(n).padStart(3,'0')]; }
   let rbT=null;
-  function say(txt){ return; /* voz del navegador apagada: sonaba muy mal (Sebastián). Ver voces grabadas */ try{ if(!window.speechSynthesis||!radioOn||volMaster<.02) return; const u=new SpeechSynthesisUtterance(txt);
-      u.lang=EN()?'en-US':'es-AR'; u.rate=1.12; u.pitch=.85; u.volume=.9; speechSynthesis.cancel(); speechSynthesis.speak(u); }catch(e){} }
+  // (la voz del navegador, speechSynthesis, se sacó: sonaba muy mal. Ahora son las palabras grabadas por Sebastián)
+  // ---- voz de radio grabada por Sebastián (voz/radio/*.mp3, solo en castellano): palabras sueltas que se encadenan con filtro de radio ----
+  const RW=['coordenadas','0','1','2','3','4','5','6','7','8','9','fuego','alfa','bravo','charlie','bombardeo','capturamos','perdimos','fuego-sobre'], RB={}; let rwLoad=false, rvBusy=0;
+  function rvLoad(){ if(rwLoad||typeof AC==='undefined'||!AC) return; rwLoad=true;
+    for(const w of RW) sndFetch(`voz/radio/${w}.mp3`).then(ab=>AC.decodeAudioData(ab,b=>{ RB[w]=b; },()=>{})).catch(()=>{}); }
+  let rvCurve=null;
+  function rvChain(){ const out=AC.createGain(); out.gain.value=.9; out.connect(master);
+    if(!rvCurve){ rvCurve=new Float32Array(1024); for(let i=0;i<1024;i++){ const x=i/511.5-1; rvCurve[i]=Math.tanh(x*3)/Math.tanh(3); } }
+    const hp=AC.createBiquadFilter(); hp.type='highpass'; hp.frequency.value=420; const pk=AC.createBiquadFilter(); pk.type='peaking'; pk.frequency.value=1600; pk.Q.value=1.2; pk.gain.value=6;
+    const ws=AC.createWaveShaper(); ws.curve=rvCurve; const lp=AC.createBiquadFilter(); lp.type='lowpass'; lp.frequency.value=3000;
+    const comp=AC.createDynamicsCompressor(); comp.threshold.value=-30; comp.ratio.value=8; const pre=AC.createGain(); pre.gain.value=1.6;
+    const bus=AC.createGain(); bus.connect(comp).connect(pre).connect(hp).connect(pk).connect(ws).connect(lp).connect(out);
+    // estática de fondo mientras habla
+    try{ const nb=AC.createBuffer(1,AC.sampleRate,AC.sampleRate), d=nb.getChannelData(0); for(let i=0;i<d.length;i++) d[i]=(Math.random()*2-1)*.05;
+      const ns=AC.createBufferSource(); ns.buffer=nb; ns.loop=true; const nf=AC.createBiquadFilter(); nf.type='bandpass'; nf.frequency.value=1800; nf.Q.value=.6; ns.connect(nf).connect(out); bus._ns=ns; }catch(e){}
+    return bus; }
+  // words: lista de palabras ('|' = pausa corta). Devuelve cuánto dura.
+  function rvSay(words,delay=0){ if(EN()||typeof AC==='undefined'||!AC||!radioOn||volMaster<.02) return 0; rvLoad(); if(words.some(w=>w!=='|'&&!RB[w])) return 0;
+    let t=Math.max(AC.currentTime+.08+delay,rvBusy); const t0=t, bus=rvChain();
+    for(const w of words){ if(w==='|'){ t+=.18; continue; } const s=AC.createBufferSource(); s.buffer=RB[w]; s.playbackRate.value=1.06; s.connect(bus); s.start(t); t+=RB[w].duration/1.06-.03; }
+    if(bus._ns){ bus._ns.start(t0-.06); bus._ns.stop(t+.12); } try{ sfx('squelch',null,.35); }catch(e){}
+    rvBusy=t+.15; return t-t0; }
+  const ZW={A:'alfa',B:'bravo',C:'charlie'};
+  // capturamos / perdimos un punto (se mira cada cuadro, así también lo oyen los invitados)
+  { const _fr=frame; frame=function(){ const r=_fr.apply(this,arguments);
+      try{ rvLoad(); if(state==='play'&&player&&!tut&&typeof zones!=='undefined'){ const mine=player.team===0?1:-1;
+        for(const Z of zones){ const o=Z.owner; if(Z._vo===undefined){ Z._vo=o; continue; } if(o===Z._vo) continue;
+          const w=ZW[Z.id]; if(w&&o===mine) rvSay(['capturamos',w]); else if(w&&Z._vo===mine&&o===-mine) rvSay(['perdimos',w]); Z._vo=o; } } }catch(e){}
+      return r; }; }
+  window.rvSay=rvSay;
   function radio(point,D){ const [e,n]=coords(point), en=EN(), sp=s=>s.split('').join('-');
-    const N=en?NUM_EN:NUM_ES, words=s=>s.split('').map(d=>N[+d]).join(' ');
-    rb.innerHTML=`📻 ${en?'Coordinates':'Coordenadas'} <b>${sp(e)}</b>, <b>${sp(n)}</b>…`; rb.style.display='block';
-    try{ sfx('squelch',null,.5); }catch(e){}
-    say(en?`Coordinates ${words(e)}, ${words(n)}. Fire!`:`Coordenadas ${words(e)}, ${words(n)}. ¡Fuego!`);
-    clearTimeout(rbT); rbT=setTimeout(()=>{ rb.innerHTML=`📻 ${en?'Coordinates':'Coordenadas'} <b>${sp(e)}</b>, <b>${sp(n)}</b>… <span class="f">${en?'FIRE!':'¡FUEGOOO!'}</span>`;
-      rbT=setTimeout(()=>{ rb.style.display='none'; },2600); },1900); }
+    // sobre un punto: "Fuego sobre Bravo"; si no, las coordenadas
+    const zn=(typeof zones!=='undefined'?zones:[]).find(Z=>ZW[Z.id]&&Math.hypot(Z.x-point.x,Z.z-point.z)<(Z.r||20)*1.2);
+    const dur=rvSay(zn?['fuego-sobre',ZW[zn.id]]:['coordenadas',...e.split(''),'|',...n.split('')]);
+    if(dur) setTimeout(()=>rvSay(['fuego']),dur*1000+400);
+    const head=zn?`📻 ${en?'Fire on':'Fuego sobre'} <b>${en?{A:'Alpha',B:'Bravo',C:'Charlie'}[zn.id]:ZW[zn.id][0].toUpperCase()+ZW[zn.id].slice(1)}</b>…`:`📻 ${en?'Coordinates':'Coordenadas'} <b>${sp(e)}</b>, <b>${sp(n)}</b>…`;
+    rb.innerHTML=head; rb.style.display='block';
+    if(!dur) try{ sfx('squelch',null,.5); }catch(e){}
+    clearTimeout(rbT); rbT=setTimeout(()=>{ rb.innerHTML=`${head} <span class="f">${en?'FIRE!':'¡FUEGOOO!'}</span>`;
+      rbT=setTimeout(()=>{ rb.style.display='none'; },2600); },dur?dur*1000+400:1900); }
 
   // ---- animación: cámara propia ----
   const CI={on:false}, cam=new THREE.PerspectiveCamera(50,1,.5,4000);
@@ -102,6 +132,7 @@
         if(!LSg('tw2_cArty')&&!net.guest){ LSs('tw2_cArty'); const D=artyDelay(); supQ.push({t:now+D-4,f:()=>{ if(player===by&&!by.dead) artyCine(by,point.clone()); }}); } } }catch(e){ console.warn(e); }
     return ok; };
   const _cs=callAirstrike; callAirstrike=function(by,point){ const ok=_cs.apply(this,arguments);
+    try{ if(ok&&by&&by.isPlayer) rvSay(['bombardeo']); }catch(e){}
     try{ if(ok&&by&&by.isPlayer&&!LSg('tw2_cAir')&&!net.guest){ LSs('tw2_cAir'); by._airCine=1; } }catch(e){} return ok; };
   const _ap=airPass; airPass=function(by,point,dir){ const n=planes.length, r=_ap.apply(this,arguments);
     try{ if(by&&by._airCine&&by.isPlayer&&!by.dead){ by._airCine=0; airCine(by,point,n); } }catch(e){ console.warn(e); } return r; };
