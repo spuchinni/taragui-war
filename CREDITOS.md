@@ -27,9 +27,9 @@ Si se agrega un sonido nuevo, anotarlo acá con su página y licencia (solo CC0 
 
 ## Voces de radio (`voz/`)
 Generadas con **TTSMaker** (es, en-gb, en-us, de, ru; 14 frases por idioma). ✅ El sitio oficial (ttsmaker.com) dice que el audio generado se puede usar
+comercialmente gratis y que el usuario tiene todos los derechos de uso. Guardar una captura de esa página por si cambian la política.
 
 Voz de radio en castellano (`voz/radio/`: coordenadas, números, "¡Fuego!", Alfa/Bravo/Charlie, capturamos, perdimos, bombarderos en camino): grabada por Sebastián Puchinni, autor del juego. ✅ Propia.
-comercialmente gratis y que el usuario tiene todos los derechos de uso. Guardar una captura de esa página por si cambian la política.
 
 ## Imágenes
 - `img/portada-nueva.jpg` y el logo: ilustración del autor hecha con herramientas de IA (Gemini / ChatGPT). Se pueden usar; la protección legal de imágenes hechas con IA todavía no está clara.
