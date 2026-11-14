@@ -8,6 +8,7 @@
   const NOV=[
     {id:'2026-11-14b',fecha:'14/11/2026',
      es:['Aviones y cañones de cada país: apoyo aéreo con Ju 87 Stuka, Il-2, P-47, Typhoon y el Northrop 8A-2 argentino; paracaidistas en Ju 52, C-47, Dakota y Li-2; artillería con leFH 18, M-30, M2A1, 25 libras y los Schneider y Bofors argentinos.',
+         'Cada ejército con sus armas y cascos: Kar98k, MP 40 y Stahlhelm; Mosin, PPSh y SSh-40; Garand, Thompson y M1; Lee-Enfield, Sten y Brodie; Mauser 1909 argentino. Y los civiles con poses más naturales.',
          'La animación de la artillería y del avión sale la primera vez que la pide tu equipo en cada partida, y una versión corta cuando la pide el enemigo.',
          'Arreglos de lo que reportaron: los postes del telégrafo, faroles, bancos e hidrantes no se veían (quedaban solo los cables en el aire). Postes nuevos, con crucetas, riostras, escalones y aisladores de campana.',
          'Semiorugas de los refuerzos rehechas: Sd.Kfz. 251 y M3 Half-track.',
@@ -15,6 +16,7 @@
          'Cuando cae un tripulante, un cartel explica qué pasa y cómo recuperarlo; en un punto propio se recupera aunque no haya infantería cerca.',
          'Las novedades se abren solas cuando hay algo nuevo.'],
      en:['Aircraft and guns for each country: air support with Ju 87 Stuka, Il-2, P-47, Typhoon and the Argentine Northrop 8A-2; paratroopers in Ju 52, C-47, Dakota and Li-2; artillery with leFH 18, M-30, M2A1, 25-pounder and the Argentine Schneider and Bofors.',
+         'Each army with its own weapons and helmets: Kar98k, MP 40 and Stahlhelm; Mosin, PPSh and SSh-40; Garand, Thompson and M1; Lee-Enfield, Sten and Brodie; Argentine Mauser 1909. And more natural civilian poses.',
          'The artillery and air support animation plays the first time your team calls it in each battle, and a short version when the enemy does.',
          'Fixes from your reports: telegraph poles, street lamps, benches and hydrants were invisible (only the wires showed). New poles with crossarms, braces, steps and bell insulators.',
          'Reinforcement half-tracks rebuilt: Sd.Kfz. 251 and M3 Half-track.',
