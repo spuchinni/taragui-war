@@ -51,7 +51,8 @@
     ns.connect(F('bandpass',1700,.7)).connect(F('highpass',400)).connect(ng).connect(out); ns.start(t0-.12); ns.stop(t1+.3);
     return bus; }
   // words: lista de palabras ('|' = pausa corta). Devuelve cuánto dura.
-  function rvSay(words,delay=0){ if(EN()||typeof AC==='undefined'||!AC||!radioOn||volMaster<.02) return 0; rvLoad(); if(words.some(w=>w!=='|'&&!RB[w])) return 0;
+  const RV_ON=false;   // voces grabadas apagadas por ahora (pedido de Sebastián: "no me gusta como quedó"); queda el cartel de radio con el chasquido
+  function rvSay(words,delay=0){ if(!RV_ON||EN()||typeof AC==='undefined'||!AC||!radioOn||volMaster<.02) return 0; rvLoad(); if(words.some(w=>w!=='|'&&!RB[w])) return 0;
     let t=Math.max(AC.currentTime+.2+delay,rvBusy); const t0=t; let te=t;
     for(const w of words) te+=w==='|'?.18:RB[w].duration/1.06-.03;
     const bus=rvChain(t0,te);
