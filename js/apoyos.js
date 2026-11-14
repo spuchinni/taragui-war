@@ -30,22 +30,33 @@
   function rvLoad(){ if(rwLoad||typeof AC==='undefined'||!AC) return; rwLoad=true;
     for(const w of RW) sndFetch(`voz/radio/${w}.mp3`).then(ab=>AC.decodeAudioData(ab,b=>{ RB[w]=b; },()=>{})).catch(()=>{}); }
   let rvCurve=null;
-  function rvChain(){ const out=AC.createGain(); out.gain.value=.9; out.connect(master);
-    if(!rvCurve){ rvCurve=new Float32Array(1024); for(let i=0;i<1024;i++){ const x=i/511.5-1; rvCurve[i]=Math.tanh(x*3)/Math.tanh(3); } }
-    const hp=AC.createBiquadFilter(); hp.type='highpass'; hp.frequency.value=420; const pk=AC.createBiquadFilter(); pk.type='peaking'; pk.frequency.value=1600; pk.Q.value=1.2; pk.gain.value=6;
-    const ws=AC.createWaveShaper(); ws.curve=rvCurve; const lp=AC.createBiquadFilter(); lp.type='lowpass'; lp.frequency.value=3000;
-    const comp=AC.createDynamicsCompressor(); comp.threshold.value=-30; comp.ratio.value=8; const pre=AC.createGain(); pre.gain.value=1.6;
-    const bus=AC.createGain(); bus.connect(comp).connect(pre).connect(hp).connect(pk).connect(ws).connect(lp).connect(out);
-    // estática de fondo mientras habla
-    try{ const nb=AC.createBuffer(1,AC.sampleRate,AC.sampleRate), d=nb.getChannelData(0); for(let i=0;i<d.length;i++) d[i]=(Math.random()*2-1)*.05;
-      const ns=AC.createBufferSource(); ns.buffer=nb; ns.loop=true; const nf=AC.createBiquadFilter(); nf.type='bandpass'; nf.frequency.value=1800; nf.Q.value=.6; ns.connect(nf).connect(out); bus._ns=ns; }catch(e){}
+  // cadena de radio de campaña (segunda versión, pedido de Sebastián: "que suene a radio"): banda angosta de 550–2400 Hz en dos etapas,
+  // pico nasal, saturación fuerte y cuantizada (equipo viejo), un poco de AM que tiembla, estática con chasquidos y "kshh" al cortar
+  function rvChain(t0,t1){ const out=AC.createGain(); out.gain.value=1; out.connect(master);
+    if(!rvCurve){ rvCurve=new Float32Array(2048); for(let i=0;i<2048;i++){ const x=i/1023.5-1, y=Math.tanh(x*6)/Math.tanh(6); rvCurve[i]=Math.round(y*20)/20; } }
+    const F=(type,f,q)=>{ const b=AC.createBiquadFilter(); b.type=type; b.frequency.value=f; if(q) b.Q.value=q; return b; };
+    const comp=AC.createDynamicsCompressor(); comp.threshold.value=-36; comp.knee.value=3; comp.ratio.value=16; comp.attack.value=.002; comp.release.value=.06;
+    const pre=AC.createGain(); pre.gain.value=3.2; const ws=AC.createWaveShaper(); ws.curve=rvCurve; ws.oversample='2x';
+    const am=AC.createGain(); am.gain.value=.8; const lfo=AC.createOscillator(); lfo.frequency.value=7; const lg=AC.createGain(); lg.gain.value=.18; lfo.connect(lg).connect(am.gain); lfo.start(t0); lfo.stop(t1+.5);
+    const post=AC.createGain(); post.gain.value=.5;
+    const bus=AC.createGain(); bus.connect(comp).connect(pre).connect(F('highpass',550,1.1)).connect(F('highpass',550,.7)).connect(F('peaking',1700,1.6)).connect(ws)
+      .connect(F('lowpass',2400,1.3)).connect(F('lowpass',2600,.8)).connect(am).connect(post).connect(out);
+    bus._pk=null;
+    // estática: ruido en banda + chasquidos sueltos, más fuerte al abrir y al cerrar el micrófono
+    const L=AC.sampleRate*2, nb=AC.createBuffer(1,L,AC.sampleRate), d=nb.getChannelData(0);
+    for(let i=0;i<L;i++){ d[i]=(Math.random()*2-1)*.11; if(Math.random()<.0006) for(let k=0;k<60&&i+k<L;k++) d[i+k]+=(Math.random()*2-1)*.6*Math.exp(-k/12); }
+    const ns=AC.createBufferSource(); ns.buffer=nb; ns.loop=true; const ng=AC.createGain();
+    ng.gain.setValueAtTime(0,t0-.12); ng.gain.linearRampToValueAtTime(.9,t0-.1); ng.gain.linearRampToValueAtTime(.32,t0+.02);   // golpe al apretar el botón
+    ng.gain.setValueAtTime(.32,t1); ng.gain.linearRampToValueAtTime(1,t1+.03); ng.gain.linearRampToValueAtTime(0,t1+.28);         // "kshh" al soltarlo
+    ns.connect(F('bandpass',1700,.7)).connect(F('highpass',400)).connect(ng).connect(out); ns.start(t0-.12); ns.stop(t1+.3);
     return bus; }
   // words: lista de palabras ('|' = pausa corta). Devuelve cuánto dura.
   function rvSay(words,delay=0){ if(EN()||typeof AC==='undefined'||!AC||!radioOn||volMaster<.02) return 0; rvLoad(); if(words.some(w=>w!=='|'&&!RB[w])) return 0;
-    let t=Math.max(AC.currentTime+.08+delay,rvBusy); const t0=t, bus=rvChain();
+    let t=Math.max(AC.currentTime+.2+delay,rvBusy); const t0=t; let te=t;
+    for(const w of words) te+=w==='|'?.18:RB[w].duration/1.06-.03;
+    const bus=rvChain(t0,te);
     for(const w of words){ if(w==='|'){ t+=.18; continue; } const s=AC.createBufferSource(); s.buffer=RB[w]; s.playbackRate.value=1.06; s.connect(bus); s.start(t); t+=RB[w].duration/1.06-.03; }
-    if(bus._ns){ bus._ns.start(t0-.06); bus._ns.stop(t+.12); } try{ sfx('squelch',null,.35); }catch(e){}
-    rvBusy=t+.15; return t-t0; }
+    rvBusy=t+.35; return t-t0; }
   const ZW={A:'alfa',B:'bravo',C:'charlie'};
   // capturamos / perdimos un punto (se mira cada cuadro, así también lo oyen los invitados)
   { const _fr=frame; frame=function(){ const r=_fr.apply(this,arguments);
@@ -53,7 +64,7 @@
         for(const Z of zones){ const o=Z.owner; if(Z._vo===undefined){ Z._vo=o; continue; } if(o===Z._vo) continue;
           const w=ZW[Z.id]; if(w&&o===mine) rvSay(['capturamos',w]); else if(w&&Z._vo===mine&&o===-mine) rvSay(['perdimos',w]); Z._vo=o; } } }catch(e){}
       return r; }; }
-  window.rvSay=rvSay;
+  window.rvSay=rvSay; window.rvBuf=RB;
   function radio(point,D){ const [e,n]=coords(point), en=EN(), sp=s=>s.split('').join('-');
     // sobre un punto: "Fuego sobre Bravo"; si no, las coordenadas
     const zn=(typeof zones!=='undefined'?zones:[]).find(Z=>ZW[Z.id]&&Math.hypot(Z.x-point.x,Z.z-point.z)<(Z.r||20)*1.2);

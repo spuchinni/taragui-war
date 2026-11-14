@@ -1,7 +1,7 @@
 // Juego sin conexión (service worker). La primera vez que se abre con internet guarda todo el juego en el navegador
 // (lista en offline.json, la arma version.sh); después anda sin conexión: batallas con bots, campaña, tutorial.
 // version.sh cambia V en cada versión: el navegador baja el service worker nuevo, guarda la versión nueva y borra la vieja.
-const V='20261114-0334', CACHE='tw-'+V;
+const V='20261114-0347', CACHE='tw-'+V;
 
 self.addEventListener('install',e=>{ self.skipWaiting();
   e.waitUntil((async()=>{ const c=await caches.open(CACHE);
