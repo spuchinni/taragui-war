@@ -6,6 +6,17 @@
   const EN=()=>window.LANG==='en';
   const LS=(k,v)=>{ try{ if(v===undefined) return localStorage.getItem(k); localStorage.setItem(k,v); }catch(e){ return null; } };
   const NOV=[
+    {id:'2026-11-14b',fecha:'14/11/2026',
+     es:['Arreglos de lo que reportaron: los postes del telégrafo, faroles, bancos e hidrantes no se veían (quedaban solo los cables en el aire). Postes nuevos, con crucetas, riostras, escalones y aisladores de campana.',
+         'Semiorugas de los refuerzos rehechas: Sd.Kfz. 251 y M3 Half-track.',
+         'Las animaciones de la artillería y el bombardeo ya no se cortan al tocar una tecla (tienen botón Saltear).',
+         'Cuando cae un tripulante, un cartel explica qué pasa y cómo recuperarlo; en un punto propio se recupera aunque no haya infantería cerca.',
+         'Las novedades se abren solas cuando hay algo nuevo.'],
+     en:['Fixes from your reports: telegraph poles, street lamps, benches and hydrants were invisible (only the wires showed). New poles with crossarms, braces, steps and bell insulators.',
+         'Reinforcement half-tracks rebuilt: Sd.Kfz. 251 and M3 Half-track.',
+         'The artillery and air strike animations no longer stop when you press a key (they have a Skip button).',
+         'When a crew member is down, a message explains what happens and how to get him back; in your own point you get crew back even with no infantry nearby.',
+         'News opens by itself when there is something new.']},
     {id:'2026-11-14',fecha:'14/11/2026',
      es:['Capítulo TAM, semana 1: nuevo tanque argentino, el Sherman Repotenciado (1978), un Firefly con cañón de 105 mm de Río Tercero y motor diésel.',
          'Botón 📜 Historia con su historia y sus fuentes, del Sherman de 1946 a la crisis del Beagle.',
@@ -89,5 +100,11 @@
     const t=document.createElement('div'); t.className='homeTag'; t.setAttribute('data-notr','');
     t.textContent=EN()?'Argentine armor, from the Nahuel to the TAM · made in Corrientes':'Los blindados argentinos, del Nahuel al TAM · hecho en Corrientes';
     $('panel').appendChild(t);
+    // se abre sola al entrar al menú si hay una novedad sin ver (pedido de Sebastián), después del premio diario y nunca en el entrenamiento
+    if(LS('tw2_nov')!==NOV[0].id&&!(PROG&&PROG.train)&&!autoT){ let n=0; autoT=setInterval(()=>{ n++;
+      const busy=[...document.querySelectorAll('#dayBox,#natPick,#tkPick,#giftBox,#opBox,#nahBox')].some(e=>e&&getComputedStyle(e).display!=='none');
+      if(state!=='menu'||n>120){ clearInterval(autoT); autoT=0; return; }
+      if(!busy&&n>=3){ clearInterval(autoT); autoT=0; if(LS('tw2_nov')!==NOV[0].id) showNov(); } },500); }
     return r; };
+  let autoT=0;
 })();

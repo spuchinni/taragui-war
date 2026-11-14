@@ -139,7 +139,7 @@
   const curLvl=()=>tut||net.on?4:B?B.lvl:preLvl;
   // entrenamiento: si se sale de una batalla, al volver arranca esa misma desde el principio (pedido de Sebastián). Los carteles ya vistos
   // en esa batalla se vuelven a mostrar: al empezar se restauran las marcas como estaban al terminar la anterior (PROG.lsSnap).
-  const LS_KEYS=['tw2_lFoe','tw2_lWeak','tw2_lMira','tw2_lCap','tw2_coach','tw2_lAmmo'];
+  const LS_KEYS=['tw2_lFoe','tw2_lWeak','tw2_lMira','tw2_lCap','tw2_coach','tw2_lAmmo','tw2_lCrew'];
   function lsSnap(){ const o={}; for(const k of LS_KEYS){ const v=LSg(k); if(v!=null) o[k]=v; } return o; }
   function lsRestore(o){ for(const k of LS_KEYS) try{ if(o&&o[k]!=null) localStorage.setItem(k,o[k]); else localStorage.removeItem(k); }catch(e){} }
   // los bots no reparan en el entrenamiento hasta que el jugador repare por primera vez (pedido de Sebastián)
@@ -201,6 +201,12 @@
         if(lesson(en?'Low on ammo':'Te queda poca munición',en
           ?`<p>To get ammo back, <b>stop inside a point your side holds</b> (A, B or C in your color). One shell is loaded every second, starting with the type you have least of, and the machine-gun belts are refilled too.</p><p>${where}</p><p>The status at the bottom left turns yellow while you resupply. If you move, it stops.</p>`
           :`<p>Para recuperar munición, <b>quedate quieto dentro de un punto de tu bando</b> (A, B o C de tu color). Se carga un proyectil por segundo, primero la munición de la que tenés menos, y también se reponen las cintas de la ametralladora.</p><p>${where}</p><p>Mientras se repone, el estado abajo a la izquierda se pone amarillo. Si te movés, se corta.</p>`,{marks})){ B.said.ammo=1; LSs('tw2_lAmmo'); } } }
+    // primer tripulante caído (una sola vez): qué pasa y cómo se recupera (pedido de Sebastián: "nunca menciona qué hacer")
+    if(!tut&&!net.on&&!B.said.crew&&!LSg('tw2_lCrew')&&t>4&&player&&!player.dead&&player.crewM&&player.crewM.some(m=>!m.alive)&&!(B.first&&TUT1.stg<2)){
+      const en=EN(), m=player.crewM.find(x=>!x.alive), seat=en?({driver:'driver',gunner:'gunner',loader:'loader',commander:'commander'}[m.seat]||'crew member'):(SEAT_ES[m.seat]||'tripulante');
+      if(lesson(en?'A crew member is down':'Cayó un tripulante',en
+        ?`<p>You lost your <b>${seat}</b>. If another crew member can, he takes the empty seat; while seats are missing the tank works worse: <b>without a loader it reloads almost twice as slow</b>, without a gunner it cannot fire and without a driver it cannot move.</p><p>Two ways to get him back: <b>stop inside a point your side holds</b> (A, B or C in your color) and every 10 s a new crew member climbs in, or press ${mob()?'<b>👤</b>':K('crewSwap')} and a <b>friendly soldier</b> within 150 m runs to take the seat.</p>`
+        :`<p>Perdiste al <b>${seat}</b>. Si otro tripulante puede, pasa a su puesto; mientras falten puestos el tanque anda peor: <b>sin cargador recarga casi el doble de lento</b>, sin artillero no dispara y sin conductor no se mueve.</p><p>Dos formas de recuperarlo: <b>quedate quieto dentro de un punto de tu bando</b> (A, B o C de tu color) y cada 10 s sube un tripulante nuevo, o apretá ${mob()?'<b>👤</b>':K('crewSwap')} y un <b>soldado aliado</b> a menos de 150 m corre a ocupar el puesto.</p>`)){ B.said.crew=1; LSs('tw2_lCrew'); } }
     if(B.lvl<4&&player&&!player.dead&&!LSg('tw2_lFoe')&&!(B.first&&TUT1.stg<0)){ const e=B.first&&TUT1.A&&!TUT1.A.dead?TUT1.A:tanks.find(o=>!o.dead&&o.team!==player.team&&!(o.T&&o.T.static)&&o.visP&&o.pos.distanceTo(player.pos)<380);
       if(e&&B.first&&e===TUT1.A){ const p=e.pos.clone(); p.y+=(e.topH||2.4)*.45; const {fm,sm}=armorOf(e);   // 1ª batalla: enemigo + blindaje en un solo cartel
         if(lesson(EN()?`An enemy tank! A ${e.T.label}`:`¡Un tanque enemigo! Un ${e.T.label}`,(EN()

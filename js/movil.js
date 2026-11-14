@@ -100,7 +100,6 @@ if(MOVIL){
 
   // ---- menú principal: cambia el aviso de teclado y, en iPhone, explica cómo instalarlo ----
   function fixHome(){ const c=document.querySelector('.homeCopy'); if(!c||c.dataset.mv) return; c.dataset.mv=1;
-    for(const n of c.childNodes) if(n.nodeType===3&&n.textContent.includes('necesita teclado')) n.textContent=n.textContent.replace('necesita teclado y mouse','versión para celular');   // sin tocar el botón de la intro
     if(IOS&&!STANDALONE){ c.insertAdjacentHTML('beforeend',' · <button class="iosTip" id="iosInstB">📲 Instalar en el iPhone (pantalla completa)</button>'); $('iosInstB').onclick=iosGuide; }
     }
   // tutorial y carteles: nombran los botones de la pantalla en vez de las teclas

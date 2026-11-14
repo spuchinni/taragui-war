@@ -170,17 +170,62 @@ const _wdMat=new THREE.MeshLambertMaterial({color:0x6b5236});
 
 // ---- Semioruga (Sd.Kfz. 251 / M3): ruedas adelante, oruga atrás, caja abierta con la infantería y ametralladora con escudo ----
 function buildHT(t,M,mat,root,lkL,lkR){
-  const H=M.ht, L=M.L, hw=M.W/2, zf=L/2, zr=-L/2, tl=L*.55, tz0=zr+tl/2, tw=.32, tx=hw-tw/2-.05;
-  const prof=[[tz0+tl/2-.2,.75],[tz0-tl/2+.2,.75],[tz0-tl/2,.5],[tz0-tl/2+.25,.1],[tz0-tl/2+.55,0],[tz0+tl/2-.55,0],[tz0+tl/2-.2,.1],[tz0+tl/2,.5]];
-  for(const s of [-1,1]){ const x=s*tx; trackLoop(root,prof,tw,x,s>0?lkR:lkL,sideTrkMat,.06);
-    for(let i=0;i<5;i++) wheel(root,x+s*(i%2?.06:-.04),.33,tz0-tl/2+.45+i*(tl-.9)/4,.3);
-    wheel(root,s*(hw-.15),.42,zf-.75,.42); }                                                              // ruedas delanteras
-  // casco: capó del motor adelante (más angosto) y la caja de los soldados atrás, con los costados inclinados
-  const hood=profGeo([[zf,.85],[zf-1.6,1.25],[zf-1.7,.6],[zf-.1,.55]],M.W*.72); slopeX(hood,.8,1.25,.15); const hm=new THREE.Mesh(hood,mat); hm.castShadow=hm.receiveShadow=true; root.add(hm);
-  const bx=profGeo([[zf-1.6,1.55],[zr+.1,1.55],[zr,1.4],[zr,.55],[zf-1.7,.55]],M.W-.1); slopeX(bx,.6,1.55,.12); const bm=new THREE.Mesh(bx,mat); bm.castShadow=bm.receiveShadow=true; root.add(bm);
-  box(root,M.W*.72,.06,L-2.0,0,1.53,(zf-1.6+zr)/2-.05,darkMat);                                          // interior abierto
+  const H=M.ht, L=M.L, hw=M.W/2, zf=L/2, zr=-L/2, de=H.ins==='de';
+  const add=g=>{ const m=new THREE.Mesh(g,mat); m.castShadow=m.receiveShadow=true; root.add(m); return m; };
+  if(de){
+    // ---- Sd.Kfz. 251/1 Ausf. C (5,80 × 2,10 × 1,75 m): trompa en cuña de chapas soldadas, casco de sección en diamante
+    //      (costados de abajo hacia afuera, de arriba hacia adentro), oruga larga con ruedas intercaladas y motriz adelante ----
+    const tl=3.5, tz0=zr+tl/2+.12, tw=.28, tx=hw-tw/2-.08;
+    const prof=[[tz0+tl/2-.15,.62],[tz0-tl/2+.15,.62],[tz0-tl/2,.42],[tz0-tl/2+.25,.08],[tz0-tl/2+.5,0],[tz0+tl/2-.5,0],[tz0+tl/2-.2,.12],[tz0+tl/2,.42]];
+    for(const s of [-1,1]){ const x=s*tx; trackLoop(root,prof,tw,x,s>0?lkR:lkL,sideTrkMat,.05);
+      for(let i=0;i<6;i++) dWheel(root,x+s*(i%2?.07:-.05),.3,tz0-tl/2+.42+i*(tl-.84)/5,.29,mat,{rim:.82});          // 6 ruedas intercaladas
+      sprocketT(root,x,.36,tz0+tl/2-.22,.24,14,mat);                                                              // motriz adelante
+      const fw=dWheel(root,s*(hw-.2),.42,zf-.98,.42,mat,{rim:.72});                                           // rueda delantera con su guardabarros curvo
+      const fg=new THREE.Mesh(new THREE.CylinderGeometry(.5,.5,.32,12,1,true,0,Math.PI),mat); fg.material.side=THREE.DoubleSide; fg.rotation.z=Math.PI/2; fg.position.set(s*(hw-.2),.44,zf-.98); root.add(fg);
+      box(root,.34,.04,.5,s*(hw-.2),.98,zf-1.65,mat); }                                                       // guardabarros sobre la oruga
+    // casco: parte baja (se abre hacia arriba) y parte alta (se cierra hacia arriba); la trompa baja en dos planos hasta el paragolpes
+    const lo=profGeo([[zf-1.35,1.0],[zr,1.0],[zr,.5],[zf-1.35,.5]],M.W*.8); slopeX(lo,.5,1.0,-.22); add(lo);
+    { const bl=zf-1.4-zr, bz=(zf-1.4+zr)/2, wU=M.W*.98/2;                                                   // parte alta abierta: chapas que se cierran hacia arriba
+      for(const sx of [-1,1]){ const sd=box(root,.04,.7,bl,sx*(wU-.12),1.32,bz,mat); sd.rotation.z=sx*.34; }   // bien inclinadas hacia adentro, como el original }
+      { const fr=new THREE.Mesh(new THREE.CylinderGeometry(M.W*.5,M.W*.68,.68,4,1,true,Math.PI/4),mat); fr.scale.z=.04; fr.position.set(0,1.32,zf-1.4); fr.rotation.x=-.18; root.add(fr);
+        const bk=fr.clone(); bk.rotation.x=0; bk.position.set(0,1.32,zr+.02); root.add(bk); }   // frente y popa trapezoidales (siguen a los costados)
+      box(root,M.W*.84,.04,bl,0,1.0,bz,darkMat); }                                                             // piso de la caja
+    const nose=profGeo([[zf-1.35,1.42],[zf-.55,1.08],[zf,.78],[zf,.6],[zf-.2,.48],[zf-1.35,.5]],M.W*.74); slopeX(nose,.5,1.42,.32); add(nose);
+    box(root,.04,.1,.5,0,1.16,zf-.95,darkMat); for(const sx of [-1,1]) box(root,.5,.03,.28,sx*.24,1.32,zf-1.05,darkMat);   // rejillas del motor en el capó
+    // frente del compartimiento: visores del conductor y del jefe; antena
+    for(const sx of [-.3,.32]) box(root,.24,.05,.04,sx,1.5,zf-1.43,darkMat);
+    { const a=cyl(root,.012,.012,1.6,hw-.25,2.35,zr+.9,4,darkMat); }
+    // atrás: dos puertas con bisagras y manijas; cajones de herramientas a los costados
+    for(const sx of [-1,1]){ box(root,.8,.85,.04,sx*.42,1.08,zr-.02,mat); box(root,.04,.6,.06,sx*.08,1.1,zr-.05,darkMat); }
+    for(const sx of [-1,1]) rbox(root,.18,.24,.9,sx*(hw-.02),1.05,zr+1.1,mat,.03);
+    for(const sx of [-1,1]){ const f=cyl(root,.09,.11,.16,sx*(hw*.55),.82,zf+.02,10,darkMat); f.rotation.x=Math.PI/2; }        // faros
+  } else {
+    // ---- M3 Half-track (6,18 × 2,22 m): capó recto con persianas blindadas del radiador, rodillo para zanjas adelante,
+    //      parabrisas blindado rebatible, caja de costados rectos, oruga corta con un bogie de 4 ruedas, motriz adelante ----
+    const tl=2.85, tz0=zr+tl/2+.1, tw=.3, tx=hw-tw/2-.08;
+    const prof=[[tz0+tl/2-.12,.6],[tz0-tl/2+.12,.6],[tz0-tl/2,.4],[tz0-tl/2+.3,0],[tz0+tl/2-.45,0],[tz0+tl/2-.15,.15],[tz0+tl/2,.42]];
+    for(const s of [-1,1]){ const x=s*tx; trackLoop(root,prof,tw,x,s>0?lkR:lkL,sideTrkMat,.05);
+      for(let i=0;i<4;i++) dWheel(root,x,.22,tz0-tl/2+.6+i*.48,.2,mat,{rim:.7});                                  // bogie de 4 ruedas
+      rbox(root,.06,.1,1.5,x+s*.13,.36,tz0-tl/2+1.32,darkMat,.02);                                                 // viga del bogie con el resorte
+      dWheel(root,x,.38,tz0+tl/2-.25,.3,mat,{rim:.6,holes:6}); dWheel(root,x,.32,tz0-tl/2+.2,.28,mat,{rim:.7}); // motriz adelante, tensora atrás
+      dWheel(root,s*(hw-.22),.48,zf-.95,.48,mat,{rim:.62,holes:5});                                           // rueda delantera
+      box(root,.42,.05,1.1,s*(hw-.22),1.02,zf-.95,mat); box(root,.42,.05,.4,s*(hw-.22),.88,zf-.25,mat).rotation.x=-.5; } // guardabarros chato
+    add(profGeo([[zf-.3,1.3],[zf-1.75,1.32],[zf-1.75,.7],[zf-.25,.7]],M.W*.62));                              // capó
+    rbox(root,M.W*.6,.62,.06,0,1.0,zf-.26,mat,.02); for(let i=0;i<7;i++) box(root,M.W*.54,.03,.05,0,.76+i*.07,zf-.22,darkMat); // persianas blindadas
+    { const r=cyl(root,.17,.17,M.W*.82,0,.62,zf+.08,12,darkMat); r.rotation.z=Math.PI/2; for(const sx of [-1,1]) box(root,.08,.12,.4,sx*M.W*.4,.68,zf-.1,mat); } // rodillo para zanjas
+    for(const sx of [-1,1]){ const f=cyl(root,.1,.1,.12,sx*(M.W*.32),1.12,zf-.2,10,darkMat); f.rotation.x=Math.PI/2; }   // faros sobre el capó
+    // caja: costados rectos, parabrisas blindado con dos visores, puertas de la cabina y puerta atrás
+    add(profGeo([[zf-1.75,1.0],[zr,1.0],[zr,.62],[zf-1.75,.62]],M.W-.06));                                    // parte baja
+    { const bl=zf-1.75-zr, bz=(zf-1.75+zr)/2; for(const sx of [-1,1]) box(root,.05,.8,bl,sx*(hw-.06),1.38,bz,mat);   // costados rectos de la caja abierta
+      box(root,M.W-.12,.8,.05,0,1.38,zr+.02,mat); box(root,M.W-.12,.04,bl,0,1.0,bz,darkMat); }                   // atrás y piso
+    { const ws=box(root,M.W-.1,.5,.05,0,1.65,zf-1.72,mat); ws.rotation.x=-.12; for(const sx of [-.45,.45]) box(root,.42,.06,.06,sx,1.68,zf-1.68,darkMat); }
+    for(const sx of [-1,1]){ box(root,.03,.5,.86,sx*(hw-.01),1.28,zf-2.25,mat); box(root,.035,.03,.86,sx*(hw),1.03,zf-2.25,darkMat); box(root,.035,.08,.05,sx*(hw),1.3,zf-2.6,darkMat); }   // puertas de la cabina con manija
+    box(root,.7,.9,.04,0,1.2,zr-.02,mat); box(root,.05,.12,.06,.25,1.2,zr-.05,darkMat);
+    for(const sx of [-1,1]) rbox(root,.16,.28,1.0,sx*(hw+.06),1.0,zr+1.2,mat,.03);                            // cajones de estiba sobre las orugas
+    { const a=cyl(root,.012,.012,1.8,-hw+.3,2.5,zr+.6,4,darkMat); }
+  }
   if(!H.aa) for(let i=0;i<6;i++){ const s=i%2?1:-1, z=zf-2.2-Math.floor(i/2)*.9; const P=personMesh({kind:'rifle',team:t.team,nat:(t.crew&&t.crew.nation)||t.T.nation}); P.g.position.set(s*.42,.62,z); P.parts.hip.position.y=.5; P.parts.legL.rotation.x=P.parts.legR.rotation.x=-1.4; P.g.rotation.y=s>0?-Math.PI/2:Math.PI/2; root.add(P.g); (t.deco||(t.deco=[])).push(P.g); (t.seated||(t.seated=[])).push(P.g); } // soldados sentados
-  if(H.ins) for(const sx of [-1,1]) w2Insignia(root,H.ins,sx*(M.W/2-.04),1.1,zr+L*.35,sx>0?0:Math.PI,.8);
+  if(H.ins) for(const sx of [-1,1]) w2Insignia(root,H.ins,sx*(M.W/2+(de?.0:0)),de?1.12:1.38,zr+L*.35,sx>0?0:Math.PI,.8);   // afuera de la chapa (antes quedaba tapada)
   // ametralladora adelante de la caja, con su escudo
   const tur=new THREE.Group(); tur.position.set(0,H.aa?1.1:1.55,H.aa?zr+1.6:zf-1.75); root.add(tur);
   if(H.aa){ cyl(tur,.35,.4,.45,0,.22,0,10,mat); box(tur,1.3,.7,.05,0,.75,.35,mat); for(const sx of [-.62,.62]) box(tur,.05,.6,.5,sx,.7,.1,mat); } else

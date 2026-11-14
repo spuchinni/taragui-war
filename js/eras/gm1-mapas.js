@@ -180,8 +180,11 @@ function buildWW1Map(key){
       for(let x=-bx-30;x<=bx+30;x+=3.2){ if(B.gaps.some(g=>Math.abs(x-g)<6)){ prev=null; continue; } const z=zz+rr(-.8,.8), y=ww1Sample(W,x,z);
         P.push([x,y,z,rr(-.15,.15)]); if(prev){ for(const hh of [.35,.8,1.15]) lines.push(prev[0],prev[1]+hh,prev[2],x,y+(hh===.8?.35:hh===.35?.8:1.15),z); lines.push(prev[0],prev[1]+1.15,prev[2],x,y+.35,z); } prev=[x,y,z]; } } }
     const pg=new THREE.CylinderGeometry(.045,.05,1.3,5); pg.translate(0,.6,0); const im=new THREE.InstancedMesh(pg,new THREE.MeshLambertMaterial({color:0x4a3f33}),P.length), M4=new THREE.Matrix4();
-    P.forEach((p,i)=>{ M4.makeRotationZ(p[3]); M4.setPosition(p[0],p[1]-.1,p[2]); im.setMatrixAt(i,M4); }); im.castShadow=true; worldGroup.add(im);
-    const lg=new THREE.BufferGeometry(); lg.setAttribute('position',new THREE.Float32BufferAttribute(lines,3)); worldGroup.add(new THREE.LineSegments(lg,new THREE.LineBasicMaterial({color:0x2a2622,transparent:true,opacity:.75})));
+    P.forEach((p,i)=>{ M4.makeRotationZ(p[3]); M4.setPosition(p[0],p[1]-.1,p[2]); im.setMatrixAt(i,M4); }); im.castShadow=true; im.frustumCulled=false; worldGroup.add(im);   // sin esto, three.js apagaba TODOS los postes cuando el centro del mapa salía de la cámara y el alambre quedaba flotando
+    const lg=new THREE.BufferGeometry(); lg.setAttribute('position',new THREE.Float32BufferAttribute(lines,3)); { const wm=new THREE.LineBasicMaterial({color:0x2a2622,transparent:true,opacity:.75});   // el alambre se desvanece entre 50 y 90 m: de lejos el poste fino no se ve y la línea parecía flotar
+      wm.onBeforeCompile=sh=>{ sh.vertexShader=sh.vertexShader.replace('#include <common>','#include <common>\nvarying float vWD;').replace('#include <project_vertex>','#include <project_vertex>\nvWD=-mvPosition.z;');
+        sh.fragmentShader=sh.fragmentShader.replace('#include <common>','#include <common>\nvarying float vWD;').replace('#include <fog_fragment>','#include <fog_fragment>\ngl_FragColor.a*=1.0-smoothstep(50.0,90.0,vWD);'); };
+      const ls=new THREE.LineSegments(lg,wm); ls.frustumCulled=false; worldGroup.add(ls); }
     // un tanque que pasa por encima aplasta la alambrada: los postes quedan tirados, el alambre en el suelo y se abre un paso
     const LP=lg.attributes.position;
     W.wireCrush=(x,z,r)=>{ let hit=false; for(const B of belts){ if(z<B.z0-r||z>B.z1+r||B.gaps.some(g=>Math.abs(x-g)<6)||B.cut.some(c=>Math.abs(x-c)<r*.6)) continue; B.cut.push(x); hit=true; }
@@ -233,7 +236,7 @@ function buildWW1Map(key){
   // ---- charcos de agua barrosa en los embudos grandes ----
   { const big=crs.filter(c=>c.r>2.6&&R()<.45&&Math.abs(c.x)<bx+25&&Math.abs(c.z)<bz+25); const pg=new THREE.CircleGeometry(1,14); pg.rotateX(-Math.PI/2);
     const im=new THREE.InstancedMesh(pg,new THREE.MeshLambertMaterial({color:0x4d5246,transparent:true,opacity:.85}),Math.max(1,big.length)), M4=new THREE.Matrix4();
-    big.forEach((c,i)=>{ const y=ww1Sample(W,c.x,c.z); M4.makeScale(c.r*.45,1,c.r*.45); M4.setPosition(c.x,y+.12,c.z); im.setMatrixAt(i,M4); }); if(!big.length){ M4.makeScale(0,0,0); im.setMatrixAt(0,M4); } im.receiveShadow=true; worldGroup.add(im); }
+    big.forEach((c,i)=>{ const y=ww1Sample(W,c.x,c.z); M4.makeScale(c.r*.45,1,c.r*.45); M4.setPosition(c.x,y+.12,c.z); im.setMatrixAt(i,M4); }); if(!big.length){ M4.makeScale(0,0,0); im.setMatrixAt(0,M4); } im.receiveShadow=true; im.frustumCulled=false; worldGroup.add(im); }
   // posiciones de los cañones de campaña (detrás de la trinchera de apoyo, mirando al enemigo)
   { const K=C.big?4:1; W.gunSpots={0:[-70,10,85,-150,150].map(x=>({x:x*K+rr(-8,8),z:-(C.front+40)})),1:[-80,-5,75,-160,140].map(x=>({x:x*K+rr(-8,8),z:C.front+42}))}; }
   // la infantería entra por su propia trinchera (en los mapas grandes, la base queda lejos)

@@ -1,7 +1,7 @@
 // Apoyos del jugador (pedido de Sebastián): la radio dicta las coordenadas a la batería ("Coordenadas 4-7-2, 3-1-8… ¡Fuego!")
 // y la primera vez que se usa la artillería y la primera vez el bombardeo sale una animación corta (una sola vez cada una: tw2_cArty, tw2_cAir).
 // La animación cambia solo la cámara con la que se dibuja (envuelve renderer.render); la partida sigue y el tanque queda inmune mientras dura.
-// Cualquier tecla o clic la saltea.
+// Mientras dura no se maneja ni se dispara (pedido de Sebastián: moverse o tocar una tecla la cortaba); se saltea solo con el botón "Saltear".
 (function(){
   const EN=()=>window.LANG==='en';
   const LSg=k=>{ try{ return localStorage.getItem(k); }catch(e){ return null; } }, LSs=k=>{ try{ localStorage.setItem(k,'1'); }catch(e){} };
@@ -13,7 +13,7 @@
     #cineBox:before,#cineBox:after{content:'';position:absolute;left:0;right:0;height:11vh;background:#000}
     #cineBox:before{top:0} #cineBox:after{bottom:0}
     #cineBox .t{position:absolute;left:0;right:0;bottom:calc(11vh + 14px);text-align:center;color:#fff;font:800 26px 'Saira Condensed',system-ui,sans-serif;text-shadow:0 2px 6px #000}
-    #cineBox .s{position:absolute;right:16px;top:calc(11vh + 10px);color:#ccc;font:600 14px system-ui,sans-serif;opacity:.8}
+    #cineBox .s{position:absolute;right:16px;top:calc(11vh + 10px);pointer-events:auto;cursor:pointer;background:rgba(0,0,0,.55);border:1px solid #888;border-radius:6px;color:#ddd;font:600 14px system-ui,sans-serif;padding:4px 10px}
     body.cine .hud,body.cine #ov,body.cine #mm,body.cine #tutbox,body.cine #hcBox,body.cine #tch,body.cine #weakMk,body.cine #radioBox{visibility:hidden!important}`;
   document.head.appendChild(st);
   const rb=document.createElement('div'); rb.id='radioBox'; rb.setAttribute('data-notr',''); document.body.appendChild(rb);
@@ -25,7 +25,7 @@
     const e=Math.max(0,Math.min(999,Math.round((bx-p.x)/(2*bx)*999))), n=Math.max(0,Math.min(999,Math.round((p.z+bz)/(2*bz)*999)));   // x = oeste, z = norte
     return [String(e).padStart(3,'0'),String(n).padStart(3,'0')]; }
   let rbT=null;
-  function say(txt){ try{ if(!window.speechSynthesis||!radioOn||volMaster<.02) return; const u=new SpeechSynthesisUtterance(txt);
+  function say(txt){ return; /* voz del navegador apagada: sonaba muy mal (Sebastián). Ver voces grabadas */ try{ if(!window.speechSynthesis||!radioOn||volMaster<.02) return; const u=new SpeechSynthesisUtterance(txt);
       u.lang=EN()?'en-US':'es-AR'; u.rate=1.12; u.pitch=.85; u.volume=.9; speechSynthesis.cancel(); speechSynthesis.speak(u); }catch(e){} }
   function radio(point,D){ const [e,n]=coords(point), en=EN(), sp=s=>s.split('').join('-');
     const N=en?NUM_EN:NUM_ES, words=s=>s.split('').map(d=>N[+d]).join(' ');
@@ -37,12 +37,14 @@
 
   // ---- animación: cámara propia ----
   const CI={on:false}, cam=new THREE.PerspectiveCamera(50,1,.5,4000);
-  function cineStart(o){ if(CI.on) cineEnd(); Object.assign(CI,{on:true,t0:now,dur:o.dur,upd:o.upd,end:o.end}); cb.innerHTML=`<div class="t">${o.title}</div><div class="s">${EN()?'Any key: skip':'Cualquier tecla: saltear'}</div>`;
+  function cineStart(o){ if(CI.on) cineEnd(); Object.assign(CI,{on:true,t0:now,dur:o.dur,upd:o.upd,end:o.end}); cb.innerHTML=`<div class="t">${o.title}</div><button class="s" id="cineSkip">${EN()?'Skip ⏭':'Saltear ⏭'}</button>`; cb.querySelector('#cineSkip').onclick=e=>{ e.stopPropagation(); cineEnd(); };
     cb.style.display='block'; document.body.classList.add('cine'); try{ releaseAll(); mouseDown=false; rightDown=false; }catch(e){}
     if(player&&!player.dead) player.immuneT=Math.max(player.immuneT||0,o.dur+1); }
   function cineEnd(){ if(!CI.on) return; CI.on=false; cb.style.display='none'; document.body.classList.remove('cine'); try{ CI.end&&CI.end(); }catch(e){} }
-  const skip=e=>{ if(!CI.on) return; e.stopImmediatePropagation(); e.preventDefault(); cineEnd(); };
-  document.addEventListener('keydown',skip,true); document.addEventListener('mousedown',skip,true); document.addEventListener('touchstart',skip,{capture:true,passive:false});
+  // mientras dura: el tanque no recibe teclas ni clics (no se mueve ni dispara); solo el botón Saltear la corta
+  const block=e=>{ if(!CI.on) return; if(e.target&&e.target.id==='cineSkip') return; e.stopImmediatePropagation(); if(e.cancelable) e.preventDefault(); };
+  for(const ev of ['keydown','keyup','mousedown','mouseup','touchstart']) document.addEventListener(ev,block,{capture:true,passive:false});
+  { const _f=frame; frame=function(){ if(CI.on){ try{ releaseAll(); mouseDown=false; rightDown=false; if(typeof T!=='undefined'&&T&&T.ax) T.ax.x=T.ax.y=0; }catch(e){} } return _f.apply(this,arguments); }; }
   const _rr=renderer.render; renderer.render=function(sc,c){
     if(CI.on&&sc===scene&&renderer.getRenderTarget()===null){
       if(state!=='play'&&state!=='lesson'&&state!=='paused'){ cineEnd(); return _rr.call(this,sc,c); }

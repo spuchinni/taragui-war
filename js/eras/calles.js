@@ -29,9 +29,16 @@
     bx(.62,.04,.04,0,3.18,0),cy(.035,.035,.08,3.53,6),cy(.02,.2,.16,4.03,4).rotateY(Math.PI/4),cy(.0,.03,.2,4.19,6),cy(.03,.03,.05,4.0,6)]);
   const gasGlass=cy(.2,.13,.48,3.55,4).rotateY(Math.PI/4);
   // poste del telégrafo: palo de 7,5 m con dos crucetas, riostras y aisladores
-  const telePole=merge([cy(.11,.15,7.6,-.4,6),bx(1.7,.1,.1,0,6.95,0),bx(1.3,.09,.09,0,6.35,0),bx(.05,.6,.05,.35,6.65,0).rotateZ(-.6),bx(.05,.6,.05,-.35,6.65,0).rotateZ(.6)]);
+  // (segunda versión, con las referencias de Sketchfab que pasó Sebastián: palo más grueso y torneado con la punta biselada, crucetas con
+  //  pernos y riostras en V, escalones de hierro para trepar, aisladores de campana sobre su perno de madera)
+  const STEPS=[]; for(let i=0;i<9;i++){ const y=2.4+i*.48, sd=i%2?1:-1; STEPS.push(cy(.016,.016,.26,0,4).rotateZ(Math.PI/2).translate(sd*.2,y,0)); }
+  const telePole=merge([cy(.12,.16,7.55,-.4,8),cy(.0,.12,.16,7.15,8),cy(.17,.19,.5,-.05,8),                       // palo, punta biselada, base embreada
+    bx(1.75,.1,.11,0,6.95,0),bx(1.35,.09,.1,0,6.35,0),                                                           // crucetas
+    bx(.035,.62,.03,.3,6.62,.07).rotateZ(-.62),bx(.035,.62,.03,-.3,6.62,.07).rotateZ(.62),                        // riostras de hierro en V
+    bx(.035,.55,.03,.25,6.07,.06).rotateZ(-.62),bx(.035,.55,.03,-.25,6.07,.06).rotateZ(.62),
+    cy(.02,.02,.3,0,4).rotateX(Math.PI/2).translate(0,6.95,0),cy(.02,.02,.3,0,4).rotateX(Math.PI/2).translate(0,6.35,0)].concat(STEPS));   // pernos y escalones
   const INS=[[-.75,7.0],[-.32,7.0],[.32,7.0],[.75,7.0],[-.55,6.4],[.55,6.4]];
-  const teleIns=merge(INS.map(([x,y])=>cy(.035,.05,.13,y,6).translate(x,0,0)));
+  const teleIns=merge(INS.flatMap(([x,y])=>[cy(.018,.018,.08,y-.02,5).translate(x,0,0),cy(.06,.04,.06,y+.03,8).translate(x,0,0),cy(.04,.025,.06,y+.08,8).translate(x,0,0)]));   // perno, campana y cabeza
   const hydrant=merge([cy(.16,.18,.08,0,8),cy(.12,.12,.62,.08,8),cy(.15,.15,.06,.5,8),new THREE.SphereGeometry(.12,8,5,0,Math.PI*2,0,Math.PI/2).translate(0,.7,0),cy(.03,.03,.05,.82,6),
     cy(.05,.05,.12,0,6).rotateZ(Math.PI/2).translate(.17,.42,0),cy(.05,.05,.12,0,6).rotateZ(Math.PI/2).translate(-.05,.42,0)]);
   const columnBody=cy(.62,.62,2.7,.25,14), columnTop=merge([cy(.68,.68,.25,0,14),cy(.7,.64,.14,2.95,14),cy(.66,.12,.5,3.09,14),cy(.05,.0,.3,3.59,6)]);
@@ -60,9 +67,9 @@
   let wireGeo=null;
 
   // las piezas propias (P.ims) usan el mismo pivote que los postes del núcleo: se tumban desde la base
-  const _spm=setPropMatrix;
+  const _spm=setPropMatrix, _UPV=new THREE.Vector3(0,1,0);   // (antes usaba _up, que más abajo es updateProps: rotación NaN y los postes no se veían, solo los cables)
   setPropMatrix=function(P){ if(!P.ims) return _spm(P);
-    _pq.setFromAxisAngle(_up,P.a); if(P.fallen&&P.axis){ _pq2.setFromAxisAngle(P.axis,P.t*P.t*Math.PI/2*(P.tilt||.95)); _pq.premultiply(_pq2); }
+    _pq.setFromAxisAngle(_UPV,P.a); if(P.fallen&&P.axis){ _pq2.setFromAxisAngle(P.axis,P.t*P.t*Math.PI/2*(P.tilt||.95)); _pq.premultiply(_pq2); }
     const sink=P.sink||0; _pm.compose(_pv.set(P.x,P.y-sink*1.2,P.z),_pq,_ps.set(1,1-sink*.9,1)); if(P.gone) _pm.makeScale(0,0,0);
     for(const im of P.ims){ im.setMatrixAt(P.i,_pm); im.instanceMatrix.needsUpdate=true; }
     if(P.spans&&P.fallen&&!P.wDown){ P.wDown=1; dropSpans(P); } };

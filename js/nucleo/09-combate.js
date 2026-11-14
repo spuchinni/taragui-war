@@ -251,7 +251,10 @@ function callCrew(t){
   const lost=t.crewM.filter(m=>!m.alive); if(!lost.length){ tell(t,'La tripulación está completa','var(--paper)'); return; }
   if(t.boarding){ tell(t,'Ya viene un soldado en camino','var(--paper)'); return; }
   let best=null,bd=150; for(const P of infantry){ if(P.dead||isCiv(P)||P.team!==t.team||P.board||P.embark) continue; const d=P.pos.distanceTo(t.pos); if(d<bd){bd=d;best=P;} }
-  if(!best){ tell(t,'No hay infantería aliada a menos de 150 m','var(--enemy)'); return; }
+  // en un punto propio no hace falta infantería: quieto ahí, cada 10 s sube un tripulante nuevo (updateModules)
+  const mine=t.team===0?1:-1, inZ=zones.some(Z=>Z.owner===mine&&Math.hypot(Z.x-t.pos.x,Z.z-t.pos.z)<Z.r);
+  if(!best&&inZ){ tell(t,'Quedate quieto en el punto: en 10 s sube un tripulante nuevo','var(--ally)'); return; }
+  if(!best){ tell(t,'No hay infantería cerca: andá a un punto de tu bando y quedate quieto','var(--enemy)'); return; }
   best.board=t; best.goal=null; best.target=null; t.boarding=best; tell(t,`Un soldado viene a reemplazar al ${SEAT_RADIO[lost[0].seat]||'tripulante'} (${Math.round(bd)} m)`,'var(--ally)');
 }
 function extinguish(t){
