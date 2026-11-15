@@ -50,7 +50,7 @@
   function seatPeople(){ const L=(W._benchL||[]).filter(o=>o.P&&props.includes(o.P)&&!o.P.fallen); let n=0;
     for(const B of L){ if(n>=10||Math.random()<.45) continue; const m=Math.random()<.4?2:1;
       for(let i=0;i<m;i++){ const st=seat(B,i,m), P=makePerson('civ',-1,st.x,st.z); if(!P||P.kind!=='civ'||!P.parts||!P.parts.legL) continue;
-        if(!kneeSplit(P)) continue; P.sit={...st,b:B.P,cross:Math.random()<.3,pose:m===2&&i===0?'talk':Math.random()<.3?'read':'rest'}; P.heading=st.h; P.g.rotation.y=st.h; n++; } }
+        if(!(window.kneeSplit||kneeSplit)(P)) continue; P.sit={...st,b:B.P,cross:Math.random()<.3,pose:m===2&&i===0?'talk':Math.random()<.3?'read':'rest'}; P.heading=st.h; P.g.rotation.y=st.h; n++; } }
     return n; }
   function chatGroups(){ let made=0;
     for(let g=0;g<14&&made<4;g++){ const B=buildings[(Math.random()*buildings.length)|0]; if(!B) break;
