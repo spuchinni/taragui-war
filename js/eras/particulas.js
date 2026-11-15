@@ -101,5 +101,69 @@
   const _uf=updateFx; updateFx=function(dt){ _uf.apply(this,arguments); try{ updParts(dt); updDebris(dt); updTracers(dt); if(typeof craterTick==='function') craterTick(); prewarm(); }catch(e){ console.warn('partículas',e); } };
   // al salir de la batalla no queda nada colgado
   if(typeof clearBattle==='function'){ const _cb=clearBattle; clearBattle=function(){ warm=null; if(typeof craterQ!=='undefined') craterQ.length=0; for(const l of L) l.list.length=0; for(const P of DB.by.values()) P.list.length=0; TR.list.length=0; return _cb.apply(this,arguments); }; }
+  // ---- humo a media resolución (como War Thunder) ----
+  // Cuando hay mucho humo en pantalla (suma de lo que tapa cada nube > 2,2 pantallas) y en esta PC conviene (lo mide solo: 40 cuadros
+  // de cada forma, cada 25 s; `HUMO_MEDIA.meas` = ms por cuadro a media resolución y completo), la escena se dibuja igual que siempre (con
+  // antialias) pero sin el humo, que se dibuja aparte en una imagen de la mitad de ancho y alto (un cuarto de los píxeles) y se pega
+  // encima. Para que no se vea a través de casas y tanques, antes se saca la profundidad de la escena a media resolución (un pase
+  // barato: sin sombra ni color, con la máscara de color apagada) y cada nube la compara: además se funde suave donde toca el suelo o una pared
+  // (humo "blando", antes cortaba en seco). Con poco humo, todo como antes. Se apaga solo si la placa no tiene texturas de profundidad.
+  const HR={on:true,cov:0,act:false,heavy:false,pref:null,prefT:0,tr:{on:0,ph:0,n:0,sum:[0,0],last:0},ok:!!(renderer.capabilities.isWebGL2||renderer.extensions.get('WEBGL_depth_texture')),w:0,h:0};
+  const FS2=`uniform sampler2D map; uniform sampler2D tDepth; uniform vec2 uRes; uniform float cNear; uniform float cFar;
+    varying vec2 vUv; varying vec3 vCol; varying float vOp; varying float vZ;
+    #include <common>
+    #include <packing>
+    #include <fog_pars_fragment>
+    void main(){ vec4 t=texture2D(map,vUv); float a=t.a*vOp;
+      float sd=texture2D(tDepth,gl_FragCoord.xy/uRes).x, sz=-perspectiveDepthToViewZ(sd,cNear,cFar), pz=-vZ;
+      a*=clamp((sz-pz)/1.5,0.,1.);                                              // detrás de algo: no se ve; cerca: se funde
+      if(a<.004) discard; gl_FragColor=vec4(vCol,1.);
+      #include <fog_fragment>
+      gl_FragColor=linearToOutputTexel(gl_FragColor); gl_FragColor.rgb*=a; gl_FragColor.a=a;   // premultiplicado
+    }`;
+  const VS2=VS.replace('varying float vOp;','varying float vOp; varying float vZ;').replace('gl_Position=projectionMatrix*mvPosition;','gl_Position=projectionMatrix*mvPosition; vZ=mvPosition.z;');
+  const hrMat=new THREE.ShaderMaterial({uniforms:THREE.UniformsUtils.merge([THREE.UniformsLib.fog,{map:{value:null},tDepth:{value:null},uRes:{value:new THREE.Vector2()},cNear:{value:.1},cFar:{value:1000}}]),
+    vertexShader:VS2,fragmentShader:FS2,transparent:true,depthWrite:false,depthTest:false,fog:true,blending:THREE.CustomBlending,blendSrc:THREE.OneFactor,blendDst:THREE.OneMinusSrcAlphaFactor,blendSrcAlpha:THREE.OneFactor,blendDstAlpha:THREE.OneMinusSrcAlphaFactor});
+  hrMat.uniforms.map.value=smokeTex;
+  const hrScene=new THREE.Scene(), hrMesh=new THREE.Mesh(L[NRM].g,hrMat); hrMesh.frustumCulled=false; hrScene.add(hrMesh);
+  const depMat=new THREE.MeshBasicMaterial({colorWrite:false}), qCam=new THREE.OrthographicCamera(-1,1,1,-1,0,1), qScene=new THREE.Scene();
+  const qMat=new THREE.ShaderMaterial({uniforms:{t:{value:null}},vertexShader:'varying vec2 u; void main(){ u=uv; gl_Position=vec4(position.xy,0.,1.); }',
+    fragmentShader:'uniform sampler2D t; varying vec2 u; void main(){ gl_FragColor=texture2D(t,u); }',transparent:true,depthTest:false,depthWrite:false,
+    blending:THREE.CustomBlending,blendSrc:THREE.OneFactor,blendDst:THREE.OneMinusSrcAlphaFactor,blendSrcAlpha:THREE.OneFactor,blendDstAlpha:THREE.OneMinusSrcAlphaFactor});
+  { const q=new THREE.Mesh(new THREE.PlaneGeometry(2,2),qMat); q.frustumCulled=false; qScene.add(q); }
+  let rtC=null, rtD=null; const _ds=new THREE.Vector2();
+  function hrTargets(){ renderer.getDrawingBufferSize(_ds); const w=Math.max(2,_ds.x>>1), h=Math.max(2,_ds.y>>1); if(rtC&&HR.w===w&&HR.h===h) return;
+    if(rtC){ rtC.dispose(); rtD.dispose(); } HR.w=w; HR.h=h;
+    rtC=new THREE.WebGLRenderTarget(w,h,{depthBuffer:false}); rtC.texture.encoding=renderer.outputEncoding;   // el humo sale ya convertido (como en pantalla)
+    rtD=new THREE.WebGLRenderTarget(w,h,{depthBuffer:true}); rtD.depthTexture=new THREE.DepthTexture(w,h); rtD.depthTexture.type=THREE.UnsignedIntType; }
+  function coverage(cam){ const P=L[NRM].list; if(P.length<30) return 0; const k=1/Math.tan(THREE.MathUtils.degToRad(cam.fov||60)/2); let c=0;
+    for(const q of P){ const d=Math.sqrt(q.d)||1; if(d<.5) continue; const r=q.s*.5*k/d; c+=Math.min(1,r*r*.8)*(q.op*q.life/q.max); } return c; }
+  const _rr=renderer.render; renderer.render=function(sc,cam){
+    if(!HR.on||!HR.ok||sc!==scene||renderer.getRenderTarget()!==null||!cam||!cam.isPerspectiveCamera||state!=='play'||!L[NRM].mesh.visible) return _rr.apply(this,arguments);
+    const cv=coverage(cam); HR.cov=cv; const heavy=HR.heavy?cv>1.4:cv>2.2; HR.heavy=heavy;
+    // ¿conviene en ESTA PC? Con mucho humo prueba 40 cuadros de cada forma y se queda con la más rápida (vuelve a probar cada 25 s)
+    const tn=performance.now(), T=HR.tr; HR.act=false;
+    if(heavy){ if(HR.pref==null||tn-HR.prefT>25000){ if(!T.on){ T.on=1; T.ph=0; T.n=0; T.sum=[0,0]; T.last=0; }
+        if(T.last) { T.sum[T.ph]+=Math.min(100,tn-T.last); T.n++; } T.last=tn;
+        if(T.n>=40){ if(T.ph===0){ T.ph=1; T.n=0; T.last=0; } else { HR.pref=T.sum[0]<T.sum[1]*.95; HR.prefT=tn; T.on=0; HR.meas=[+(T.sum[0]/40).toFixed(1),+(T.sum[1]/40).toFixed(1)]; } }
+        HR.act=T.on?T.ph===0:HR.pref; }
+      else HR.act=HR.pref; }
+    else HR.tr.last=0;
+    if(!HR.act) return _rr.apply(this,arguments);
+    const ov=sc.overrideMaterial, bg=sc.background;
+    try{ hrTargets(); const sm=L[NRM].mesh, add=L[ADD].mesh, tr=TR.mesh, au=renderer.autoClear, su=renderer.shadowMap.autoUpdate;
+      sm.visible=false; _rr.call(this,sc,cam);                                                     // 1) la escena como siempre, sin el humo
+      const av=add.visible, tv=tr.visible; add.visible=false; tr.visible=false;
+      renderer.shadowMap.autoUpdate=false; sc.background=null; const cb=renderer.state.buffers.color;
+      renderer.setRenderTarget(rtD); renderer.clear(); cb.setMask(false); cb.setLocked(true);       // 2) profundidad a media resolución: los materiales de
+      try{ _rr.call(this,sc,cam); } finally{ cb.setLocked(false); cb.setMask(true); }               //    siempre (instancias, huesos) pero sin escribir color
+      sc.background=bg; add.visible=av; tr.visible=tv; sm.visible=true;
+      hrScene.fog=sc.fog; const U=hrMat.uniforms; U.tDepth.value=rtD.depthTexture; U.uRes.value.set(HR.w,HR.h); U.cNear.value=cam.near; U.cFar.value=cam.far;
+      const cc=renderer.getClearColor(new THREE.Color()), ca=renderer.getClearAlpha();
+      renderer.setRenderTarget(rtC); renderer.setClearColor(0x000000,0); renderer.clear(); renderer.autoClear=false; _rr.call(this,hrScene,cam);   // 3) el humo, a media resolución
+      renderer.setClearColor(cc,ca); renderer.setRenderTarget(null); qMat.uniforms.t.value=rtC.texture; _rr.call(this,qScene,qCam);             // 4) se pega encima
+      renderer.autoClear=au; renderer.shadowMap.autoUpdate=su; }
+    catch(e){ console.warn('humo media resolución',e&&e.stack||e); HR.ok=false; sc.overrideMaterial=ov; sc.background=bg; renderer.shadowMap.autoUpdate=true; L[ADD].mesh.visible=true; renderer.setRenderTarget(null); renderer.autoClear=true; L[NRM].mesh.visible=true; } };
+  window.HUMO_MEDIA=HR;
   window.fxStats=()=>({humo:L[0].list.length,fogonazos:L[1].list.length,esquirlas:[...DB.by.values()].reduce((a,P)=>a+P.list.length,0),trazadoras:TR.list.length});
 })();
