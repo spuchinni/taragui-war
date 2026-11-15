@@ -74,8 +74,8 @@ const OSM_CFG={
   itati:{label:'Itatí',desc:'La Basílica de Nuestra Señora de Itatí y su cúpula de 80 m sobre la barranca del Paraná, el pueblo manzana por manzana, la terminal y la plaza Ex Combatiente Guillermo Núñez.',
     sky:0xbac6ca,fog:[280,860],urban:1,ground:'#80864e',pisos:[1,1,1,1,2],fill:{p:.7,row2:.3,fr:[7,12],dp:[9,14],gap:[1,6]},pitch:.3,rural:.1,shoreSand:6,waterCol:[86,96,82],waterHex:0x4e5c52,
     sp:{calle:['lapacho','timbo','ceibo','pindo','jacaranda'],parque:['lapacho','jacaranda','pindo','timbo'],bosque:['timbo','ceibo','algarrobo']},calleArb:.3,
-    hitos:o=>osmCupula(o.poi('Basílica'),{cuerpo:20,tambor:16,r:14,radio:90,col:0x5d7f9c}),
-    zones:[{id:'A',x:-15,z:330,r:26,label:'Plaza de la Basílica'},{id:'B',x:-108,z:-163,r:24,label:'Terminal de ómnibus'},{id:'C',x:530,z:-141,r:24,label:'Plaza Ex Combatiente Núñez'}],
+    hitos:o=>osmBasilica(o.poi('Basílica')),
+    zones:[{id:'A',x:-52,z:298,r:26,label:'Plaza de la Basílica'},{id:'B',x:-108,z:-163,r:24,label:'Terminal de ómnibus'},{id:'C',x:530,z:-141,r:24,label:'Plaza Ex Combatiente Núñez'}],
     spawns:{0:[{label:'Base sur, acceso',x:100,z:-680},{label:'Base sudoeste, bomberos',x:500,z:-620}],
             1:[{label:'Base este, costa',x:-620,z:420},{label:'Base este, barrio',x:-650,z:-50}]}},
   malvinas:{label:'Puerto Argentino y Sapper Hill',desc:'El oeste de Puerto Argentino frente a la bahía, el Museo, el Monumento a la Batalla y el camino a Sapper Hill, donde se peleó el 14 de junio de 1982. Turba y piedra, sin árboles.',
@@ -263,8 +263,8 @@ function buildOSM(key){
             if(R()>(urb(cx,cz)?pf:pf*(C.rural||.25))){ s0+=w+rr(2,8); continue; }
             const ok=tryHouse(cx,cz,w,dd,a,h); s0+=ok?w+rr(F.gap[0],F.gap[1]):2.5;
             if(ok&&R()<F.row2){ const d2=rr(F.dp[0],F.dp[1]), o2=off+dd/2+rr(.5,3)+d2/2; tryHouse(A[0]+ux*along+nx2*sd*o2,A[1]+uz*along+nz2*sd*o2,w*rr(.8,1.1),d2,a,Math.min(h,rr(3,7))); } } } } } }
-  if(C.hitos) C.hitos({R,rr,pick,hg,D,roads,areas,poi:n=>{ const p=D.pois.find(q=>q[0]&&q[0].includes(n)); return p?{x:osmW(D,p[1]),z:osmZ(p[2])}:null; }});
-  finalizeBuildings();
+  osmHitoMs=[]; if(C.hitos) C.hitos({R,rr,pick,hg,D,roads,areas,poi:n=>{ const p=D.pois.find(q=>q[0]&&q[0].includes(n)); return p?{x:osmW(D,p[1]),z:osmZ(p[2])}:null; }});
+  finalizeBuildings(); houseMeshes.push(...osmHitoMs); osmHitoMs=[]; // los hitos frenan los proyectiles (finalizeBuildings rehace houseMeshes)
   // ---- árboles ----
   const list=[], tOk=(X,Z,m)=>!roadAt(X,Z)&&!wetAt(X,Z)&&!gridQuery(X,Z,4).some(b=>b.ob&&obPush(X,Z,m,b))&&!W.zones.some(Zn=>Math.hypot(X-Zn.x,Z-Zn.z)<Zn.r-3)&&(!W.deckAt||deckAt(X,Z)===null);
   const sp=C.sp||{calle:['timbo'],parque:['timbo'],bosque:['timbo']}, inT=(X,Z)=>Math.abs(X)<EX-4&&Math.abs(Z)<EZ-4;
@@ -310,6 +310,18 @@ for(const k in OSM_CFG){ const C=OSM_CFG[k], D0=WORLDS[k]||{};
   WORLDS[k]={key:k,label:C.label,desc:C.desc,osm:true,bx:C.bx||750,bz:C.bz||750,sky:C.sky||D0.sky,fog:C.fog||[240,780],h:(x,z)=>0,zones:C.zones,spawns:C.spawns,eastNat:C.eastNat,city:!!C.urban,dust:C.dust}; }
 
 // ---- Hitos que OSM no tiene en 3D ----
+let osmHitoMs=[];
+// Basílica de Itatí (basilica-itati.js, a escala real) sobre los pedazos de planta que trae OSM: los pedazos quedan como basamento bajo (siguen frenando a los tanques)
+// y se suman tres bloques bajos con la cruz completa (63 x 81 m). El frente (+Z del modelo) mira al pueblo, lejos del río.
+function osmBasilica(P){ if(!P) return; let best=null; for(const b of bList){ const d=Math.hypot(b.x-P.x,b.z-P.z); if(d<30&&(!best||b.w*b.d>best.w*best.d)) best=b; } if(!best) return;
+  const a=best.a, gy=heightAt(best.x,best.z), low=r=>{ r.top=gy+1; r.box.max.y=r.top+.4; r.hp=r.max=1e9; r.wall=0xcdbfa6; r.roof=0xcdbfa6; r.pitched=false; };
+  for(const b of bList) if(b!==best&&Math.hypot(b.x-best.x,b.z-best.z)<48&&Math.abs(Math.sin(b.a-a))<.05) low(b); low(best);
+  const c=Math.cos(a), s=Math.sin(a), at=(lx,lz)=>[best.x+lx*c+lz*s,best.z-lx*s+lz*c];
+  // casas de relleno que caían encima de la planta completa: se achican a nada (no se sacan de bList para no correr los índices)
+  for(const b of bList){ if(b.hp>1e8) continue; const dx=b.x-best.x, dz=b.z-best.z, lx=dx*c-dz*s, lz=dx*s+dz*c, r=Math.max(b.w,b.d)/2;
+    if(Math.abs(lx)<33+r&&Math.abs(lz)<42+r){ b.w=b.d=.01; b.top=b.base+.02; b.hp=b.max=1e9; b.pitched=false; b.box.ob.hw=b.box.ob.hd=.005; b.box.min.set(b.x-.005,b.base,b.z-.005); b.box.max.set(b.x+.005,b.top,b.z+.005); } }
+  for(const [lx,lz,w,d] of [[0,0,26,81],[0,0,63,24],[0,0,40,40]]){ const [x,z]=at(lx,lz); addBuilding(x,z,w,d,1,a,0xcdbfa6,0xcdbfa6,false,1e9,false); low(bList[bList.length-1]); }
+  const G=crearBasilicaItati(THREE); G.position.set(best.x,gy-.2,best.z); G.rotation.y=a; worldGroup.add(G); G.updateMatrixWorld(true); G.children.forEach(m=>osmHitoMs.push(m)); }
 // Cúpula de iglesia sobre el edificio más grande cerca del punto (Basílica de Itatí)
 function osmCupula(P,o){ if(!P) return; let best=null; for(const b of bList){ const d=Math.hypot(b.x-P.x,b.z-P.z); if(d<(o.radio||60)&&(!best||b.w*b.d>best.w*best.d)) best=b; } if(!best) return;
   best.top=best.base+1+o.cuerpo; best.box.max.y=best.top+.4; best.hp=best.max=1e9; best.wall=0xeee6d6; best.roof=0x9a8f80; const g=heightAt(best.x,best.z)+o.cuerpo, M=new THREE.MeshLambertMaterial({color:0xeee6d6}), Mc=new THREE.MeshLambertMaterial({color:o.col||0x6d8fa8});
@@ -318,7 +330,7 @@ function osmCupula(P,o){ if(!P) return; let best=null; for(const b of bList){ co
   const cup=new THREE.Mesh(new THREE.SphereGeometry(o.r*1.04,24,12,0,Math.PI*2,0,Math.PI/2),Mc); cup.scale.y=1.25; cup.position.y=o.tambor; grp.add(cup);
   const lin=new THREE.Mesh(new THREE.CylinderGeometry(o.r*.18,o.r*.2,o.r*.5,12),M); lin.position.y=o.tambor+o.r*1.3+o.r*.2; grp.add(lin);
   const cruz=new THREE.Mesh(new THREE.BoxGeometry(.5,4,.5),new THREE.MeshLambertMaterial({color:0xc9b26a})); cruz.position.y=o.tambor+o.r*1.3+o.r*.5+2; grp.add(cruz);
-  grp.traverse(m=>{ if(m.isMesh){ m.castShadow=true; m.receiveShadow=true; } }); worldGroup.add(grp); grp.updateMatrixWorld(true); grp.children.forEach(m=>houseMeshes.push(m)); }
+  grp.traverse(m=>{ if(m.isMesh){ m.castShadow=true; m.receiveShadow=true; } }); worldGroup.add(grp); grp.updateMatrixWorld(true); grp.children.forEach(m=>osmHitoMs.push(m)); }
 // Estatua sobre un pedestal (Cristo Redentor de los Andes)
 function osmEstatua(P,o){ if(!P) return; const g=heightAt(P.x,P.z); addBuilding(P.x,P.z,o.base,o.base,o.ped,0,0xa8a49a,0x8e8a80,false,1e9,false); bList[bList.length-1].hp=bList[bList.length-1].max=1e9;
   const M=new THREE.MeshLambertMaterial({color:o.col||0x5f5a4e}), grp=new THREE.Group(); grp.position.set(P.x,g+o.ped,P.z); grp.rotation.y=o.rot||0; const H=o.alto;
@@ -327,7 +339,7 @@ function osmEstatua(P,o){ if(!P) return; const g=heightAt(P.x,P.z); addBuilding(
   const bra=new THREE.Mesh(new THREE.BoxGeometry(H*.7,H*.06,H*.07),M); bra.position.y=H*.84; grp.add(bra);
   const cab=new THREE.Mesh(new THREE.SphereGeometry(H*.065,12,10),M); cab.position.y=H*.96; grp.add(cab);
   const cruz=new THREE.Mesh(new THREE.BoxGeometry(H*.04,H*.5,H*.04),M); cruz.position.set(H*.12,H*.55,0); grp.add(cruz);
-  grp.traverse(m=>{ if(m.isMesh){ m.castShadow=true; m.receiveShadow=true; } }); worldGroup.add(grp); grp.updateMatrixWorld(true); grp.children.forEach(m=>houseMeshes.push(m)); }
+  grp.traverse(m=>{ if(m.isMesh){ m.castShadow=true; m.receiveShadow=true; } }); worldGroup.add(grp); grp.updateMatrixWorld(true); grp.children.forEach(m=>osmHitoMs.push(m)); }
 // Paredón de la represa: un muro de hormigón debajo del camino (los tramos de puente sobre el agua)
 function osmPresa(o){ const M=new THREE.MeshLambertMaterial({color:0xb4b0a6}), gs=[];
   for(const L of o.roads){ if(!L.br||L.t>5) continue; for(let i=0;i<L.pts.length-1;i++){ const [a,b]=[L.pts[i],L.pts[i+1]], len=Math.hypot(b[0]-a[0],b[1]-a[1]); if(len<1) continue;
