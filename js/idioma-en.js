@@ -1649,7 +1649,10 @@ I18N.add({
 "Carga hueca FMK-3 105 mm": "FMK-3 105 mm HEAT",
 "Explosivo FMK-1 105 mm": "FMK-1 105 mm HE",
 "Insignias históricas completas": "Full historical insignia",
-"El águila con la esvástica en los uniformes alemanes de la 2ª Guerra, como en las fotos de época. Se aplica en la próxima batalla.": "The eagle with the swastika on German WW2 uniforms, as in period photos. Applies from the next battle."
+"El águila con la esvástica en los uniformes alemanes de la 2ª Guerra, como en las fotos de época. Se aplica en la próxima batalla.": "The eagle with the swastika on German WW2 uniforms, as in period photos. Applies from the next battle.",
+"Leopard 1A1A1 con el visor EMES 18 (láser y térmica) en el techo y la torre fundida con blindaje Blohm & Voss abulonado.": "Leopard 1A1A1 with the EMES 18 sight (laser and thermal) on the roof and the cast turret with bolted-on Blohm & Voss armor.",
+"M41 Walker Bulldog modernizado en 1991 por Bernardini para Uruguay: cañón Cockerill de 90 mm y motor diésel Scania. Liviano y ágil.": "M41 Walker Bulldog upgraded in 1991 by Bernardini for Uruguay: Cockerill 90 mm gun and Scania diesel engine. Light and agile.",
+"Guerra Fría: M60A1 y M60A3, Leopard 1A1, 1A5 y 1V, M41 uruguayo y T-62M rehechos con el modelo detallado (torre \"nariz de aguja\" del M60, faldones y manga térmica del Leopard, 90 mm Cockerill del M41UR, evacuador a un tercio del T-62).": "Cold War: M60A1 and M60A3, Leopard 1A1, 1A5 and 1V, Uruguayan M41 and T-62M rebuilt with the detailed model (M60 \"needle nose\" turret, Leopard skirts and thermal sleeve, M41UR Cockerill 90 mm, T-62 fume extractor one third from the muzzle)."
 });
 I18N.words({
 "Perforante sólido": "Solid AP",

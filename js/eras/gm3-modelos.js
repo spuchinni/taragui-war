@@ -1194,7 +1194,7 @@ function t55Hull(root,M,I,mat,iw2,deck,gz,zf,zr,L){ const hw=M.W/2, ft=hw-I.trW/
   { const c=cyl(root,.03,.03,L*.5,hw-.05,deck-.15,0,6,darkMat); c.rotation.x=Math.PI/2; } }
 function t55Turret(tur,G,M,I,mat,gy){ const hw=M.tw/2, hl=M.tl/2, th=M.th, am=I.t55==='am';
   { const m=new THREE.Mesh(new THREE.SphereGeometry(.42,14,8,0,Math.PI*2,0,Math.PI/2),mat); m.scale.set(1.35,.75,.7); m.rotation.x=Math.PI/2; m.position.set(0,0,.02); G.gp.add(m); }   // mantelete redondo
-  { const e=cyl(G.barrel,M.gr*1.7,M.gr*1.7,.55,0,0,M.gl*.82,12,darkMat); e.rotation.x=Math.PI/2; }                                                   // evacuador cerca de la boca
+  if(!I.t62){ const e=cyl(G.barrel,M.gr*1.7,M.gr*1.7,.55,0,0,M.gl*.82,12,darkMat); e.rotation.x=Math.PI/2; }                                                   // evacuador cerca de la boca (el T-62 lo tiene a un tercio: gfria-modelos.js)
   cyl(G.gp,.025,.025,.35,.28,-.05,.32,6,darkMat).rotation.x=Math.PI/2;                                                                           // coaxial
   { const l=rbox(G.gp,.36,.36,.3,-.62,.08,.15,darkMat,.05); box(l,.28,.28,.02,0,0,.16,_shLensMat()); }                                             // reflector infrarrojo L-2 (a la derecha del cañón)
   if(am){ for(const sx of [-1,1]){ const b=prism(tur,[[-.3,.35],[.3,.35],[.36,-.35],[-.24,-.35]],th*.62,.15,sx*hw*.5,th*.12,hl*.62,mat); b.rotation.y=-sx*.45; }   // bloques "ceja" BDD
