@@ -53,18 +53,23 @@ function onZoneCaptured(Z,team){ if(net.guest) return; fortifyZone(Z,team);
 // Pedir infantería (pedido de Sebastián): con la tecla se abre el mapa, elegís un punto y llega un semioruga o paracaidistas,
 // igual que los refuerzos que llegan solos al capturar. Cuesta puntos (los mismos que se usan para sacar tanques) y tiene espera.
 const INF_COST=150, INF_CD=60;
-const infOK=()=>typeof W!=='undefined'&&W&&W.era===3&&!net.guest&&!!RULE().guns&&!!VEH.ht_de&&!!VEH.ht_al;
+// 2ª Guerra: semioruga o paracaidistas. Guerra Fría (pedido de Sebastián): llega un M113 con la escuadra y la baja en el punto.
+const infOK=()=>typeof W!=='undefined'&&W&&!net.guest&&((W.era===3&&!!RULE().guns&&!!VEH.ht_de&&!!VEH.ht_al)||(W.era===5&&!!VEH.m113));
 function callInfantry(by,p){ const c=by.crew; if(!c||!infOK()||!p||!zones.length) return false;
   if((c.infCD||0)>0||c.sp<INF_COST) return false;
   let Z=null, best=1e18; for(const z of zones){ const d=(z.x-p.x)**2+(z.z-p.z)**2; if(d<best){ best=d; Z=z; } }
   c.sp-=INF_COST; c.infCD=INF_CD; if(c.isPlayer) $('spT').textContent=c.sp;
   sendReinforcements(Z,by.team);
-  if(by.isPlayer) banner('Infantería pedida',`Va al punto ${Z.id}: un semioruga o paracaidistas`,2.5);
+  if(by.isPlayer) banner('Infantería pedida',W.era===5?`Un M113 la lleva al punto ${Z.id}`:`Va al punto ${Z.id}: un semioruga o paracaidistas`,2.5);
   return true; }
-function sendReinforcements(Z,team){ if(Math.random()<.5) paraDrop(Z,team); else halfTrack(Z,team); }
+function sendReinforcements(Z,team){ if(W.era===5) return apcConvoy(Z,team); if(Math.random()<.5) paraDrop(Z,team); else halfTrack(Z,team); }
 function halfTrack(Z,team){ const nat=teamNation(team), key=axisOf(team)?'ht_de':'ht_al', B=W.sp[team][(Math.random()*W.sp[team].length)|0], c=newCrew(`Semioruga (${NATIONS[nat].label})`,team,nat,false);
   c.lineup=[key]; c.gun=true; const p=findSpawnPos(B), t=makeTank(c,key,p.x,p.z,Math.atan2(Z.x-p.x,Z.z-p.z)); c.uses[key]=1; c.spawns=1; c.tank=t; c.respawnT=1e9; crews.push(c);
   t.convoyZ=Z; t.convoyT=now; t.goal=null; feed(`Un semioruga lleva infantería al punto ${Z.id}`,team===0?'var(--ally)':'var(--enemy)'); }
+// Guerra Fría: el M113 sale de la base con 4 soldados (y uno más con el jefe), va derecho al punto y los baja (misma lógica del convoy)
+function apcConvoy(Z,team){ const nat=teamNation(team), key='m113', B=W.sp[team][(Math.random()*W.sp[team].length)|0], c=newCrew(`M113 (${(NATIONS[nat]&&NATIONS[nat].label)||nat})`,team,nat,false);
+  c.lineup=[key]; c.gun=true; const p=findSpawnPos(B), t=makeTank(c,key,p.x,p.z,Math.atan2(Z.x-p.x,Z.z-p.z)); c.uses[key]=1; c.spawns=1; c.tank=t; c.respawnT=1e9; crews.push(c);
+  t.troops=Math.max(t.troops||0,5); t.convoyZ=Z; t.convoyT=now; t.goal=null; feed(`Un M113 lleva infantería al punto ${Z.id}`,team===0?'var(--ally)':'var(--enemy)'); return t; }
 // El semioruga va derecho al punto (en vez de elegir otro) hasta bajar a los soldados
 { const _pickGoal=pickGoal; pickGoal=function(t){ if(t.convoyZ&&!t.dismounted){ const Z=t.convoyZ; t.path=null; t.goal=new THREE.Vector3(Z.x+rand(-Z.r*.3,Z.r*.3),0,Z.z+rand(-Z.r*.3,Z.r*.3)); return; } _pickGoal(t); }; }
 // Avión de transporte (Ju 52 / C-47): fuselaje, alas, tres o dos motores
