@@ -52,10 +52,13 @@
     const wS2=chain(R,['Spine','Spine1','Spine2'],wH); chain(R,['Neck','Head'],wS2);
     for(const [k,L] of [[0,p.armL],[1,p.armR]]){ const S=R.side.arm[k]; const wSh=chain(R,[S+'Shoulder'],wS2);
       const t=DOWN.clone().applyQuaternion(L.quaternion).applyQuaternion(hipQ).normalize(); const wA=aim(R,S+'Arm',wSh,t);
-      const t2=t.clone().addScaledVector(fwd,.35).normalize(); aim(R,S+'ForeArm',wA,t2); }
+      const F=L.userData.fore, t2=F&&F.quaternion.w<.9995?DOWN.clone().applyQuaternion(F.quaternion).applyQuaternion(L.quaternion).applyQuaternion(hipQ).normalize()   // con codo (personas.js)
+        :t.clone().addScaledVector(fwd,.35).normalize(); aim(R,S+'ForeArm',wA,t2); }
     for(const [k,L] of [[0,p.legL],[1,p.legR]]){ const S=R.side.leg[k];
       const t=DOWN.clone().applyQuaternion(L.quaternion).applyQuaternion(hipQ).normalize(); const wU=aim(R,S+'UpLeg',wH,t);
-      const bend=clamp((.88-p.hip.position.y)*1.6,0,1.3); const t2=t.clone().addScaledVector(fwd,-bend).normalize(); aim(R,S+'Leg',wU,t2); } };
+      const Sh=L.userData.shin, bend=clamp((.88-p.hip.position.y)*1.6,0,1.3);
+      const t2=Sh?DOWN.clone().applyQuaternion(Sh.quaternion).applyQuaternion(L.quaternion).applyQuaternion(hipQ).normalize():t.clone().addScaledVector(fwd,-bend).normalize();   // con rodilla (vecinos.js)
+      aim(R,S+'Leg',wU,t2); } };
 
   // ---- qué ropa según la época, el sexo y el oficio ----
   // null = esa persona sigue con la ropa de época hecha por código (en las épocas viejas el paquete casi no tiene ropa que sirva)

@@ -72,9 +72,23 @@
     return P; };
   // ---- civiles quietos con poses ----
   const IDLE=['pockets','crossed','back','talk','relax','relax'];
+  const _IQ=new THREE.Quaternion(), _TL=new THREE.Vector3(), _TR=new THREE.Vector3(), _PL=new THREE.Vector3(), _PR=new THREE.Vector3(), L0=p=>p.armL.userData.fore&&p.armR.userData.fore;
   const _ai=animInf; animInf=function(P,dt){ _ai.apply(this,arguments);
     try{ const p=P.parts; if(!p||P.dead||P.kind!=='civ'||!p.armL||P.pose) return; const still=(P.spd||0)<.25;
       if(!P.idleK) P.idleK=IDLE[(Math.random()*IDLE.length)|0];
+      if(P.sit) return;
+      if(window.armIK&&L0(p)){ // con codo (posturas.js): cada pose pone las manos donde van y el brazo se acomoda solo
+        const H=P._ik||(P._ik={l:new THREE.Vector3(-.26,-.02,.02),r:new THREE.Vector3(.26,-.02,.02)}), k=Math.min(1,dt*4), t=(typeof now==='number'?now:0)+(P.id||0);
+        if(!still){ p.armL.rotation.y=p.armR.rotation.y=p.armL.rotation.z=p.armR.rotation.z=0; for(const f of [p.armL.userData.fore,p.armR.userData.fore]) f.quaternion.slerp(_IQ,Math.min(1,dt*6));
+          H.l.set(-.26,-.02,.02); H.r.set(.26,-.02,.02); return; }
+        if(!P.idleK) P.idleK=IDLE[(Math.random()*IDLE.length)|0];
+        let l=_TL.set(-.26,-.02,.02), r=_TR.set(.26,-.02,.02);                                                       // sueltos
+        if(P.idleK==='pockets'){ l.set(-.17,-.04,.06); r.set(.17,-.04,.06); }
+        else if(P.idleK==='crossed'){ l.set(.07,.27,.15); r.set(-.07,.24,.17); }                                    // brazos cruzados
+        else if(P.idleK==='back'){ l.set(-.04,.0,-.16); r.set(.04,.0,-.16); }                                       // manos atrás
+        else if(P.idleK==='talk'){ l.set(-.2,-.02,.1); r.set(.17+Math.sin(t*2.3)*.06,.2+Math.max(0,Math.sin(t*1.1))*.14,.28); }   // gesticula
+        H.l.lerp(l,k); H.r.lerp(r,k);
+        const pz=P.idleK==='crossed'?.5:P.idleK==='back'?.2:-.6; armIK(p.armL,H.l,_PL.set(-1,-.6,pz)); armIK(p.armR,H.r,_PR.set(1,-.6,pz)); return; }
       const k=Math.min(1,dt*4), L=p.armL, Rr=p.armR; let lx=L.rotation.x, rx=Rr.rotation.x, lz=0, rz=0;
       if(still){ const t=(typeof now==='number'?now:0)+(P.id||0);
         if(P.idleK==='pockets'){ lx=.18; rx=.18; lz=-.1; rz=.1; }

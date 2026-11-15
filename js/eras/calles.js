@@ -132,6 +132,7 @@
     if(pts.length){ wireGeo=new THREE.BufferGeometry(); wireGeo.setAttribute('position',new THREE.Float32BufferAttribute(pts,3)); const ls=new THREE.LineSegments(wireGeo,WIRE); ls.frustumCulled=false; worldGroup.add(ls); }
     props.forEach(P=>{ if(P.ims) setPropMatrix(P); });
     GLASS.emissive.setHex(0x000000);                                                   // oscurecimiento de guerra
+    W._benchL=benches;   // vecinos.js sienta gente en los bancos (o.P = el banco; si se cae, se levantan)
     W._street={lamps:lamps.length,poles:flat.length,hyd:hyd.length,cols:cols.length,benches:benches.length,wires:pts.length/6};
   }
   window.eraStreets=eraStreets;

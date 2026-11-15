@@ -173,7 +173,7 @@ function infDeathFx(P,how){
   P.how=how;
   if(how==='crush'){ P.g.scale.y=.18; P.g.position.y=heightAt(P.pos.x,P.pos.z)+.05; }
   else if(how==='blast'&&P.parts&&P.parts.hip){ P.gibs=[]; P.g.updateMatrixWorld(true);
-    for(const key of ['head','armL','armR','legL','legR','torso']){ const m=P.parts[key]; if(!m) continue; const wp=new THREE.Vector3(), wq=new THREE.Quaternion(); m.getWorldPosition(wp); m.getWorldQuaternion(wq);
+    for(const key of ['head','armL','armR','foreL','foreR','legL','legR','torso']){ const m=P.parts[key]; if(!m) continue; const wp=new THREE.Vector3(), wq=new THREE.Quaternion(); m.getWorldPosition(wp); m.getWorldQuaternion(wq);
       const c=new THREE.Mesh(m.geometry,m.material); c.position.copy(wp); c.quaternion.copy(wq); scene.add(c);
       P.gibs.push({m:c,v:new THREE.Vector3(rand(-4,4),rand(3,8),rand(-4,4)),av:new THREE.Vector3(rand(-9,9),rand(-9,9),rand(-9,9)),rest:false}); }
     // pedazos chicos (carne, tela y equipo) que vuelan más lejos

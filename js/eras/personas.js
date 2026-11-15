@@ -34,7 +34,13 @@
     tunic:(r,h,f=1.18)=>{ const g=new THREE.CylinderGeometry(r,r*f,h,12,1,true); g.scale(1,1,.68); g.translate(0,-h/2,0); return g; },
     sleeveCuff:new THREE.CylinderGeometry(.05,.05,.04,8), pocket:B(.085,.095,.022), flap:B(.09,.03,.026), button:B(.016,.016,.01), lapel:B(.05,.16,.012),
     strap:B(.035,.5,.012), pouch3:B(.15,.08,.055), pouchS:B(.055,.07,.05), pouchB:B(.12,.16,.07), can:new THREE.CylinderGeometry(.055,.055,.26,10),
-    bread:B(.2,.16,.07), smallPack:B(.28,.26,.12), haver:B(.24,.42,.11), sack:(()=>{ const g=new THREE.SphereGeometry(.15,8,6); g.scale(1.1,1.2,.6); return g; })(),
+    bread:rboxGeo(.2,.16,.08,.03), smallPack:rboxGeo(.28,.26,.13,.045), haver:rboxGeo(.25,.42,.12,.045),
+    // equipo con volumen (tanda de infantería): cantimplora torneada con tapa y vaso, pala en su funda con mango y perilla, marmita
+    canteenV:(()=>{ const g=lathe(up([[.0,-.09],[.05,-.088],[.058,-.06],[.058,.04],[.045,.075],[.018,.088],[.0,.09]]),10); g.scale(1,1,.62); return g; })(),
+    cCap:new THREE.CylinderGeometry(.016,.018,.03,8), cCup:(()=>{ const g=new THREE.CylinderGeometry(.06,.056,.07,10); g.scale(1,1,.65); return g; })(),
+    shovelCase:rboxGeo(.15,.22,.05,.02), shovelH:new THREE.CylinderGeometry(.016,.018,.24,6), shovelK:new THREE.SphereGeometry(.024,6,4),
+    mess:(()=>{ const g=new THREE.CylinderGeometry(.075,.075,.14,10); g.scale(1,1,.55); g.rotateZ(Math.PI/2); return g; })(),
+    packR:rboxGeo(.34,.4,.18,.055), sack:(()=>{ const g=new THREE.SphereGeometry(.15,8,6); g.scale(1.1,1.2,.6); return g; })(),
     skatka:(()=>{ const g=new THREE.TorusGeometry(.235,.045,6,16); g.scale(1,1.12,.62); return g; })(),
     stickG:new THREE.CylinderGeometry(.017,.017,.24,6), stickH:new THREE.CylinderGeometry(.036,.036,.075,8),
     tie:B(.04,.2,.012), collarW:B(.11,.04,.03), bib:B(.22,.24,.02), apron:(()=>{ const g=new THREE.PlaneGeometry(.3,.5); g.translate(0,-.25,0); return g; })(),
@@ -127,8 +133,12 @@
     for(const L of [LL,LR]){ add(L,footG,foot,0,-.84,0); if(style==='boy') add(L,X.sock,legLow,0,-.7,0); if(style==='boy') add(L,X.shorts,bot,0,0,0); }
     // brazos
     const AU=female?X.uarmF:X.uarmM, AF=female?X.farmF:X.farmM, ax=female?.2:.235;
-    const armMesh=x=>{ const A=new THREE.Mesh(AU,pMat(sleeve==='short'?skinC:top)); A.position.set(x,.56,0); add(A,AF,sleeve==='long'?top:skinC);
-      if(sleeve==='rolled') add(A,X.sleeveCuff,top,0,-.29,0); const h=add(A,X.hand,skinC,0,-.58,0); add(A,X.thumb,skinC,x>0?-.03:.03,-.565,.02,0,0,x>0?.4:-.4); return A; };
+    // brazo con codo (tanda de infantería: para sostener el arma de verdad): A = brazo desde el hombro, A.userData.fore = antebrazo con la
+    // mano colgado del codo (a 0,29 m); cada uno se hornea aparte, así siguen siendo 2 mallas por brazo
+    const armMesh=x=>{ const A=new THREE.Mesh(AU,pMat(sleeve==='short'?skinC:top)); A.position.set(x,.56,0);
+      if(sleeve==='rolled') add(A,X.sleeveCuff,top,0,-.29,0);
+      const F=new THREE.Mesh(AF.clone().translate(0,.29,0),pMat(sleeve==='long'?top:skinC)); F.position.y=-.29; F.castShadow=true;
+      add(F,X.hand,skinC,0,-.29,0); add(F,X.thumb,skinC,x>0?-.03:.03,-.275,.02,0,0,x>0?.4:-.4); A.userData.fore=F; A.add(F); return A; };
     const armL=armMesh(-ax), armR=armMesh(ax); hip.add(armL,armR);
     // ---- cabeza: pelo y sombreros ----
     const hat=(geo,col,y=.03,z=0,rx=0)=>add(head,geo,col,0,y,z,rx);
@@ -187,11 +197,17 @@
       if(K.bread) add(torso,X.bread,0x6a6248,-.15,-.33,-.05,0,1.4,0);
       if(K.grenade&&rnd()<K.grenade){ add(torso,X.stickG,0x6a4e30,.06,-.2,.15,0,0,.2); add(torso,X.stickH,0x3a4030,.08,-.08,.15); }
       if(K.skatka&&rnd()<K.skatka) add(torso,X.skatka,dark(camo,.8),0,.02,0,0,0,.65);
-      if(!K.vest){ add(torso,PG.canteen,nat==='de'?0x3a3428:nat==='ru'?0x4a5236:0x5a5a40,.15,-.33,-.09); add(torso,PG.shovel,0x4a4a3a,-.13,-.38,-.13); add(torso,PG.handle,0x6a4e30,-.13,-.2,-.13); }
+      if(!K.vest){ const cc=nat==='de'?0x4a3a2a:nat==='ru'?0x4a5236:nat==='us'?0x5a5a40:0x56553e, cz=-.1;
+        if(nat==='us'||nat==='uk'||nat==='ar'){ add(torso,X.cCup,cc,.155,-.35,cz); add(torso,X.canteenV,0x6a6a5a,.155,-.31,cz,0,0,0,[.92,.8,.92]); }   // funda de lona con el vaso
+        else { add(torso,X.canteenV,nat==='ru'?0x5a6a4a:0x6a5a40,.155,-.34,cz); add(torso,X.cCup,0x2a2a26,.155,-.27,cz,0,0,0,[.7,.5,.7]); }   // cantimplora con la taza arriba
+        add(torso,X.cCap,0x222220,.155,-.235,cz);
+        add(torso,X.shovelCase,nat==='de'?0x2a2622:web,-.135,-.4,-.13,.12,0,0);                                // pala en su funda, colgando atrás
+        add(torso,X.shovelH,0x6a4e30,-.135,-.2,-.155,.12,0,0); add(torso,X.shovelK,0x5a4228,-.135,-.08,-.17);
+        if(nat==='de'&&rnd()<.75) add(torso,X.mess,0x3e4232,-.03,.0,-.18); }                                      // marmita sobre el morral
       // mochila según la nación (el ingeniero y el mortero siempre llevan)
       if(kind==='eng'||kind==='mortar'||(kind==='rifle'&&rnd()<.6)){ const pk=K.pack, pc=dark(camo,.8);
         if(pk==='haver') add(torso,X.haver,0x8a8058,0,-.02,-.17); else if(pk==='small') add(torso,X.smallPack,web,0,.1,-.17); else if(pk==='sack') add(torso,X.sack,pc,0,.0,-.17);
-        else if(pk==='mod'){ add(torso,PG.pack,0x4a4a36,0,.02,-.2); if(rnd()<.6) add(torso,PG.roll,pick([0x5a5040,0x6a6050,0x4a4a3a]),0,.26,-.2); } }
+        else if(pk==='mod'){ add(torso,X.packR,0x4a4a36,0,.02,-.2); if(rnd()<.6) add(torso,PG.roll,pick([0x5a5040,0x6a6050,0x4a4a3a]),0,.26,-.2); } }
       // calzado
       const bk=K.boots;
       for(const L of [LL,LR]){ if(bk==='jack') add(L,PG.jboot,bootMat.color.getHex()); else if(bk==='leg') add(L,PG.gaiter,0xb8a87a); else if(bk==='anklet') add(L,new THREE.CylinderGeometry(.06,.058,.12,8),dark(camo,1.1),0,-.76,0); else add(L,PG.gaiter,dark(camo,.9)); } }
@@ -236,8 +252,10 @@
     else if(kind==='mortar'){ wep=new THREE.Mesh(PG.mort,darkMat); wep.rotation.x=.4; wep.position.set(0,.45,-.22); }
     if(wep) hip.add(wep);
     if(female) g.scale.setScalar(.95);
-    for(const pt of [torso,head,LL,LR,armL,armR]) bakePart(pt);
+    const foreL=armL.userData.fore, foreR=armR.userData.fore; armL.remove(foreL); armR.remove(foreR);
+    for(const pt of [torso,head,LL,LR,armL,armR,foreL,foreR]) bakePart(pt);
+    armL.add(foreL); armR.add(foreR); armL.userData.fore=foreL; armR.userData.fore=foreR;
     g.traverse(m=>{ if(m.isMesh) m.castShadow=true; });
-    return {g,female,child,job,parts:{hip,torso,head,legL:LL,legR:LR,armL,armR,wep}};
+    return {g,female,child,job,parts:{hip,torso,head,legL:LL,legR:LR,armL,armR,foreL,foreR,wep}};
   };
 })();

@@ -49,3 +49,40 @@ function opPose(P,M){ const b=M.base.position, f=P.g.position, yaw=M.base.rotati
     L.forEach((M,i)=>{ const s=ex[i]; if(!s) return; const b=s.querySelector('b'), v=String(M.belts??'∞'); if(b.textContent!==v) b.textContent=v;
       const w=(M.rel>0?0:Math.round((M.belt??250)/250*100))+'%', bar=s.querySelector('.bar i'); if(bar._w!==w){ bar._w=w; bar.style.width=w; } });
     return r; }; }
+
+// ---- Tripulantes expuestos vulnerables (pedido de Sebastián): el tirador de la ametralladora de pivote mientras asoma y la tripulación
+// de las torres abiertas reciben balas (de la infantería y de las ametralladoras), esquirlas y explosiones. Decide solo el anfitrión.
+const _exP=new THREE.Vector3();
+function exposedOf(t){ const L=[]; if(t.dead) return L;
+  if(t.crewFig) for(const c of t.crewFig) if(c.P.g.visible) L.push(c);
+  if(t.mgs) for(const M of t.mgs) if(M.op&&M.op.P.g.visible) L.push(M.op);
+  return L; }
+function exposedPos(c){ c.P.parts.hip.getWorldPosition(_exP); _exP.y+=.45; return _exP; }      // pecho
+function exposedKill(t,c,by,why){ if(net.guest||t.dead) return false;
+  const seats=Array.isArray(c.seat)?c.seat:[c.seat], v=t.crewM.find(x=>x.alive&&seats.includes(x.seat)); if(!v) return false;
+  v.alive=false; v.hp=0; c.P.g.visible=false;
+  t.hp=Math.min(t.hp,t.T.hp*t.crewM.reduce((a,x)=>a+Math.max(0,x.hp),0)/(t.crewM.length*100));
+  const n0=(typeof SEAT_ES!=='undefined'&&SEAT_ES[v.seat])||'tripulante', nm=n0[0].toUpperCase()+n0.slice(1);
+  if(t.isPlayer){ hitMsg(`${nm} muerto: ${why}`,'var(--enemy)'); radio(`¡Perdimos al ${n0}!`,2); }
+  const bt=by&&(by.tank||by); if(bt&&bt.isPlayer&&bt.team!==t.team) hitMsg(`Tripulante expuesto abatido`,'var(--amber)');
+  if(bt&&bt.crew&&!bt.inf&&bt.team!==t.team) addSP(bt,10,12,'Tripulante abatido');
+  if(crewAlive(t)<2) destroy(t,bt&&bt.team!==t.team?bt:null,false); return true; }
+function exposedRay(o,d,len,team,chance,why,by){ for(const t of tanks){ if(t.dead||t.team===team) continue;
+    if(t.pos.distanceToSquared(o)>(len+8)*(len+8)) continue;
+    for(const c of exposedOf(t)){ const p=exposedPos(c), s=clamp(p.clone().sub(o).dot(d),0,len);
+      if(p.distanceTo(o.clone().addScaledVector(d,s))<.42&&Math.random()<chance&&exposedKill(t,c,by,why)) return s; } }
+  return -1; }
+{ const _ior=infOnRay; infOnRay=function(o,d,len,by,chance,how){ const r=_ior.apply(this,arguments); if(r>=0||how==='blast') return r;
+    try{ const team=by?by.team:-99; return exposedRay(o,d,len,team,Math.min(1,(chance||.3)*1.5),'ametralladora',by); }catch(e){ return -1; } }; }
+{ const _ib=infBlast; infBlast=function(p,r,by){ _ib.apply(this,arguments);
+    try{ if(net.guest) return; for(const t of tanks){ if(t.dead||(by&&by.team===t.team)) continue; if(t.pos.distanceTo(p)>r+6) continue;
+      for(const c of exposedOf(t)){ const d=exposedPos(c).distanceTo(p); if(d<r*1.2&&Math.random()<(d<r*.6?.9:.45)) exposedKill(t,c,by,'esquirlas'); } } }catch(e){} }; }
+// la infantería: cada tiro de fusil o ametralladora que pasa cerca de un tripulante asomado puede voltearlo
+{ const _is=infShoot; infShoot=function(P,o,aim,col){ _is.apply(this,arguments);
+    try{ if(net.guest||!P||isCiv(P)) return; const d=aim.clone().sub(o), L=d.length(); if(L<1) return; d.multiplyScalar(1/L);
+      const K=P.kind, ch=(K==='sniper'?.6:K==='hmg'?.3:.14)*clamp(1.2-L/400,.25,1);
+      for(const t of tanks){ if(t.dead||t.team===P.team||t.pos.distanceTo(aim)>5) continue; const E=exposedOf(t);   // le tiraba a ese tanque: apunta al que asoma
+        if(E.length&&Math.random()<ch){ exposedKill(t,E[(Math.random()*E.length)|0],P,'disparo de infantería'); return; } }
+      exposedRay(o,d,L+3,P.team,ch,'disparo de infantería',P); }catch(e){} }; }
+// los soldados enemigos le apuntan al tripulante asomado si lo ven (en vez de al blindaje)
+{ const _ma=mgAim; mgAim=function(t){ if(!t.isPlayer&&t.target&&!t.target.dead){ const L=exposedOf(t.target); if(L.length) return _mgP.copy(exposedPos(L[0])); } return _ma(t); }; }
