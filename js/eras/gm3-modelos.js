@@ -310,6 +310,7 @@ function shermanHull(root,M,I,mat,iw2,deck,gz,zf,zr,L){
   for(const sx of [-1,1]) cyl(root,.06,.06,.04,sx*iw2*.36,deck+.02,zr+L*.2,8,darkMat);
   box(root,.05,.04,.9,-(M.W/2-.3),deck+.05,zr+L*.3,darkMat); box(root,.16,.03,.12,-(M.W/2-.3),deck+.05,zr+L*.3+.42,_shSteel);
   box(root,.04,.04,1.3,(M.W/2-.35),deck+.04,zr+L*.24,_shSteel);
+  if(I.rep) repotHull(root,M,mat,iw2,deck,zr,L);
 }
 const _shShackle=new THREE.TorusGeometry(.07,.02,6,10), _shGuard=new THREE.TorusGeometry(.12,.018,4,10,Math.PI);
 const _shLens=new THREE.CircleGeometry(.06,10), _shHead=new THREE.MeshLambertMaterial({color:0xd8d4c0}), _shSteel=new THREE.MeshLambertMaterial({color:0x6a6a66});
@@ -333,7 +334,7 @@ function shermanTurret(tur,G,M,I,mat,gy){
   // .50 en el aro: cajón, tubo y caja de munición
   { const ax=M.tw*.22, az=I.tur==='t23'?-M.tl*.42:-M.tl*.2;                                                          // en la T23 la .50 va atrás
     mgMount(tur,ax,ty+.44,az,{post:.38,cal:12.7,...MG_AA,seat:['commander','loader']}); }
-  if(I.rep) repotTurret(tur,M,mat);
+  if(I.rep){ repotTurret(tur,M,mat); repotGun(G,M,mat); }
 }
 // Sherman Repotenciado (Argentina, 1977–78): 2 lanzahumos por lado, canasto atrás de la torre y el tanque de 200 l de diésel
 // que se podía colgar detrás (Tank Encyclopedia, "Sherman Repotenciado")
@@ -346,6 +347,28 @@ function repotTurret(tur,M,mat){
   for(const sx of [-1,1]) for(const dz of [-bl/2,bl/2]) box(tur,.03,.26,.03,sx*bw/2,by+.09,zb+dz,darkMat);
   const d=cyl(tur,.29,.29,.88,0,by+.27,zb-.02,14,mat); d.rotation.z=Math.PI/2;                    // tanque de 200 l acostado
   for(const dx of [-.3,0,.3]){ const r=cyl(tur,.3,.3,.03,dx,by+.27,zb-.02,14,darkMat); r.rotation.z=Math.PI/2; }
+}
+// Cañón de 105 mm L44/57 FTR (copia del CN-105-57 del AMX-13 FL-12): tubo más grueso que el del 17 libras (gr .065 en VEH.repot),
+// freno de boca doble grande con las ventanas a los costados, collar ancho en la raíz y mantelete agrandado para el 105
+// (pedido de Sebastián con referencias de Sketchfab: Firefly y M51 Super Sherman, que también lleva un 105 de origen francés).
+function repotGun(G,M,mat){
+  const r=M.gr, z=M.gl;
+  { const c=cyl(G.barrel,r*1.25,r*1.25,z*.55,0,0,z*.275+.15,12,mat); c.rotation.x=Math.PI/2; }                   // refuerzo de la mitad de atrás del tubo
+  { const c=cyl(G.barrel,r*2.4,r*2.4,.32,0,0,.2,12,mat); c.rotation.x=Math.PI/2; }                                // collar en la raíz
+  for(const [dz,ln] of [[.04,.22],[-.27,.2]]){ const b=cyl(G.barrel,r*2.2,r*2.2,ln,0,0,z+dz,12,darkMat); b.rotation.x=Math.PI/2;   // 2 cámaras del freno
+    for(const sx of [-1,1]) box(G.barrel,.025,r*2.6,ln*.7,sx*r*2.1,0,z+dz,darkMat); }                             // aletas laterales
+  { const b=cyl(G.barrel,r*1.6,r*1.6,.12,0,0,z-.12,10,darkMat); b.rotation.x=Math.PI/2; }                         // cuello entre las cámaras
+  rbox(G.gp,1.08,.56,.12,0,.02,.19,mat,.05);                                                                       // mantelete agrandado delante del M34A1
+}
+// Casco del Repotenciado: el motor diésel Poyaud 520 V8 pidió tapa del motor nueva con rejillas y dos silenciadores en la popa. Forma aproximada (fotos de época y el M51, que también pasó a diésel): no hay planos publicados.
+const _rpMuff=new THREE.MeshLambertMaterial({color:0x4a4640});
+function repotHull(root,M,mat,iw2,deck,zr,L){
+  const z0=zr+L*.16;
+  rbox(root,iw2*.78,.06,L*.22,0,deck+.03,z0,mat,.02);                                                              // tapa del motor
+  for(let i=0;i<6;i++) box(root,iw2*.66,.025,.035,0,deck+.075,z0-L*.09+i*L*.036,darkMat);                          // rejillas
+  for(const sx of [-1,1]){ const m=cyl(root,.11,.11,.55,sx*iw2*.3,1.0,zr-.2,12,_rpMuff); m.rotation.z=Math.PI/2;   // silenciadores
+    const e=cyl(root,.035,.035,.18,sx*iw2*.3+sx*.3,1.0,zr-.2,8,darkMat); e.rotation.z=Math.PI/2;                    // caño de salida
+    for(const dx of [-.18,.18]) box(root,.03,.12,.04,sx*iw2*.3+dx,1.08,zr-.14,darkMat); }                          // abrazaderas
 }
 const _shHalf=new THREE.CylinderGeometry(.3,.3,.05,12,1,false,0,Math.PI), _shGreenBox=new THREE.MeshLambertMaterial({color:0x4a5236});
 

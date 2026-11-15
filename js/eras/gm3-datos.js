@@ -200,7 +200,7 @@ Object.assign(FC.m4a1,{stab:1}); Object.assign(FC.m4a3e8,{stab:1}); Object.assig
     camo:['#55573a','#4a4c33','#3b3d2a'],camoMode:'flat',   // verde oliva del Ejército Argentino
     maxF:13.6,maxR:4,turn:.8,trav:.8,reload:8,pen:360,hp:110,crewReal:4,seats:['driver','commander','gunner','loader'],diesel:1,mgc:7.62,
     armor:JSON.parse(JSON.stringify(F.armor)),
-    m:Object.assign({},F.m,{gl:4.7,w2:Object.assign({},F.m.w2,{ins:'ar',rep:1})})};
+    m:Object.assign({},F.m,{gl:4.7,gr:.065,w2:Object.assign({},F.m.w2,{ins:'ar',rep:1,mb:0})})};   // mb:0: el freno doble lo dibuja repotGun
   AMMO_DEF.repot=[['Carga hueca FMK-3 105 mm','heat',360,800],['Explosivo FMK-1 105 mm','he',30]];
   FC.repot={crew:4}; OPTIC.repot=[3,6];   // sin dato del aumento de la mira nueva: el de la del Firefly
   if(NATIONS.ar&&NATIONS.ar.lineup&&!NATIONS.ar.lineup.includes('repot')) NATIONS.ar.lineup.unshift('repot'); }
