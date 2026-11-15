@@ -317,7 +317,7 @@ const climbOf=T=>T.climb||CLIMB_ERA[T.era||5]||.55;
 // Frenos (m/s²): la 1ª Guerra frenaba con embragues y bandas (malo), la 2ª Guerra con bandas o discos mecánicos, la Guerra Fría con
 // discos hidráulicos (~0,5 g). Los pesados frenan peor (más masa con frenos parecidos). VEH[k].brake lo pisa.
 // Rueda libre: la oruga tiene mucha resistencia (y el freno motor), así que sin acelerar se para sola en unos metros.
-const BRAKE_ERA={1:1.3,2:2.6,3:3.6,4:4.4,5:5.2}, BRAKE_CLS={ligero:1.15,medio:1,pesado:.8,cazatanques:.9,'antiaéreo':1};
+const BRAKE_ERA={1:2.6,2:3,3:3.6,4:4.4,5:5.2}, BRAKE_CLS={ligero:1.15,medio:1,pesado:.8,cazatanques:.9,'antiaéreo':1};
 const brakeOf=T=>T.brake||(BRAKE_ERA[T.era||5]||5)*(BRAKE_CLS[T.cls]||1)*(T.wheeled||T.m&&T.m.wheeled?1.1:1);
 const coastOf=T=>T.coast||((T.era||5)<=1?2.2:(T.era||5)<=3?1.9:1.6)*(WX.mud?1.4:1)*(T.wheeled||T.m&&T.m.wheeled?.6:1);
 let lastTh=false;
