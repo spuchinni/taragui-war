@@ -7,7 +7,8 @@
   const LS=(k,v)=>{ try{ if(v===undefined) return localStorage.getItem(k); localStorage.setItem(k,v); }catch(e){ return null; } };
   const NOV=[
     {id:'2026-11-15',fecha:'15/11/2026',
-     es:['Guerra Fría: M60A1 y M60A3, Leopard 1A1, 1A5 y 1V, M41 uruguayo y T-62M rehechos con el modelo detallado (torre "nariz de aguja" del M60, faldones y manga térmica del Leopard, 90 mm Cockerill del M41UR, evacuador a un tercio del T-62).',
+     es:['Guerra Fría, segunda tanda: M1 Abrams, Leopard 2A4, Centurion, Chieftain, M113, M551 Sheridan, Scorpion, PT-76B, Marder 1A3, Ru 251, EE-9 Cascavel (con sus 6 ruedas y el bogie boomerang), Tiran-5Sh y el M3 Stuart paraguayo rehechos con el modelo detallado, comparados con modelos de Sketchfab.',
+         'Guerra Fría: M60A1 y M60A3, Leopard 1A1, 1A5 y 1V, M41 uruguayo y T-62M rehechos con el modelo detallado (torre "nariz de aguja" del M60, faldones y manga térmica del Leopard, 90 mm Cockerill del M41UR, evacuador a un tercio del T-62).',
          'M10 Wolverine rehecho: torre abierta de verdad con los contrapesos "pico de pato", escudo grande del cañón de 3 pulgadas, la .50 atrás y los bulones del blindaje extra en el casco.',
          'Tripulación a la vista en las torres abiertas (M10, M18, M36 y los antiaéreos): apuntador, cargador y jefe; si cae uno, desaparece.',
          'Las ametralladoras de pivote se tiran desde afuera: en el Sherman, el IS-2, el TAM y otros, el tirador asoma de la escotilla mientras la usa. Y como está expuesto, lo pueden voltear la infantería, las ametralladoras y las esquirlas.',
@@ -20,7 +21,8 @@
          'Guerra Fría: ahora se puede pedir infantería (B): llega un M113 que baja la escuadra en el punto.',
          'Las animaciones de la artillería y del bombardeo salen en todos los mapas y épocas, también si entrás a la partida de otro.',
          'M10 Wolverine, segunda versión: escudo del cañón en cuña, contrapesos en pentágono atrás, la .50 bien alta en su pivote y el interior de la torre (recámara, munición, radio, mira, asientos).'],
-     en:['Cold War: M60A1 and M60A3, Leopard 1A1, 1A5 and 1V, Uruguayan M41 and T-62M rebuilt with the detailed model (M60 "needle nose" turret, Leopard skirts and thermal sleeve, M41UR Cockerill 90 mm, T-62 fume extractor one third from the muzzle).',
+     en:['Cold War, second batch: M1 Abrams, Leopard 2A4, Centurion, Chieftain, M113, M551 Sheridan, Scorpion, PT-76B, Marder 1A3, Ru 251, EE-9 Cascavel (with its 6 wheels and boomerang bogie), Tiran-5Sh and the Paraguayan M3 Stuart rebuilt with the detailed model, compared against Sketchfab models.',
+         'Cold War: M60A1 and M60A3, Leopard 1A1, 1A5 and 1V, Uruguayan M41 and T-62M rebuilt with the detailed model (M60 "needle nose" turret, Leopard skirts and thermal sleeve, M41UR Cockerill 90 mm, T-62 fume extractor one third from the muzzle).',
          'M10 Wolverine rebuilt: a real open-top turret with the "duckbill" counterweights, the big 3-inch gun shield, the .50 at the rear and the appliqué armor bosses on the hull.',
          'Visible crew in open-top turrets (M10, M18, M36 and the AA vehicles): gunner, loader and commander; if one is lost, he disappears.',
          'Pintle-mounted machine guns are fired from outside: on the Sherman, IS-2, TAM and others, the gunner pops out of the hatch while using it. Since he is exposed, infantry, machine guns and shrapnel can take him out.',

@@ -101,7 +101,7 @@ function buildW2(t,M,mat,root,lkL,lkR){ shTurMG.t=t;
     : [[zf-.25,I.trF],[zr+.3,I.trR],[zr,I.trR*.62],[zr+.35,.15],[zr+.75,0],[zf-.75,0],[zf-.3,.18],[zf,I.trF*.62]];
   const nW=I.nW, wR=I.wR, span=L-(I.chr?1.1:1.55);
   for(const s of [-1,1]){ const x=s*tx;
-    trackLoop(root,prof,tw,x,s>0?lkR:lkL,sideTrkMat,.08);
+    if(!I.noTrk) trackLoop(root,prof,tw,x,s>0?lkR:lkL,sideTrkMat,.08);                                  // noTrk: a ruedas (EE-9)
     if(I.nose==='sher') shermanGear(root,I,x,s,tw,zf,zr,mat);                                           // Sherman: bogies VVSS/HVSS, motriz adelante
     else if(I.tiger) tigerGear(root,I,x,s,tw,zf,zr,mat);
     else if(I.det) DET[I.det].gear(root,I,x,s,tw,zf,zr,mat);                                             // Panther, T-34, IS-2                                                   // Tiger: ruedas intercaladas en capas, motriz adelante
@@ -119,7 +119,7 @@ function buildW2(t,M,mat,root,lkL,lkR){ shTurMG.t=t;
       for(let k=0;k<n;k++){ const z=z0+(k+.5)*len/n, P=box(root,.025,h,len/n-.07,xo+s*.03,top-h/2,z,mat); P.rotation.z=-s*.05; P.rotation.y=(k%2?1:-1)*.012;   // levemente abiertas y desparejas
         for(const d of [-.3,.3]) box(root,.06,.12,.05,xo,top-.03,z+d*len/n,darkMat); } }                                             // ganchos
     if(I.chur) profMesh(root,[[zf-.35,H+.06],[zr+.35,H+.06],[zr+.1,H*.8],[zf-.1,H*.8]],tw+.08,x,mat);        // techo de la oruga envuelta
-    else box(root,tw+.08,.04,L-.25,x,Math.max(I.trF,I.trR)+.04,-.04,t.mud||mat);                          // guardabarros
+    else if(!I.noTrk) box(root,tw+.08,.04,L-.25,x,Math.max(I.trF,I.trR)+.04,-.04,t.mud||mat);                          // guardabarros
   }
   // ---- casco ----
   const iw2=I.cover?M.W-tw*2-.1:M.W-tw*2+.04, deck=I.deck, gz=I.glacis, low=I.lowF??.35, rz=I.rearS??.25;
