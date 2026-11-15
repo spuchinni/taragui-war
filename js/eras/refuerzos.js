@@ -54,15 +54,15 @@ function onZoneCaptured(Z,team){ if(net.guest) return; fortifyZone(Z,team);
 // igual que los refuerzos que llegan solos al capturar. Cuesta puntos (los mismos que se usan para sacar tanques) y tiene espera.
 const INF_COST=150, INF_CD=60;
 // 2ª Guerra: semioruga o paracaidistas. Guerra Fría (pedido de Sebastián): llega un M113 con la escuadra y la baja en el punto.
-const infOK=()=>typeof W!=='undefined'&&W&&!net.guest&&((W.era===3&&!!RULE().guns&&!!VEH.ht_de&&!!VEH.ht_al)||(W.era===5&&!!VEH.m113));
+const infOK=()=>typeof W!=='undefined'&&W&&!net.guest&&((W.era===3&&!!RULE().guns&&!!VEH.ht_de&&!!VEH.ht_al)||((W.era||5)===5&&!!VEH.m113));
 function callInfantry(by,p){ const c=by.crew; if(!c||!infOK()||!p||!zones.length) return false;
   if((c.infCD||0)>0||c.sp<INF_COST) return false;
   let Z=null, best=1e18; for(const z of zones){ const d=(z.x-p.x)**2+(z.z-p.z)**2; if(d<best){ best=d; Z=z; } }
   c.sp-=INF_COST; c.infCD=INF_CD; if(c.isPlayer) $('spT').textContent=c.sp;
   sendReinforcements(Z,by.team);
-  if(by.isPlayer) banner('Infantería pedida',W.era===5?`Un M113 la lleva al punto ${Z.id}`:`Va al punto ${Z.id}: un semioruga o paracaidistas`,2.5);
+  if(by.isPlayer) banner('Infantería pedida',(W.era||5)===5?`Un M113 la lleva al punto ${Z.id}`:`Va al punto ${Z.id}: un semioruga o paracaidistas`,2.5);
   return true; }
-function sendReinforcements(Z,team){ if(W.era===5) return apcConvoy(Z,team); if(Math.random()<.5) paraDrop(Z,team); else halfTrack(Z,team); }
+function sendReinforcements(Z,team){ if((W.era||5)===5) return apcConvoy(Z,team); if(Math.random()<.5) paraDrop(Z,team); else halfTrack(Z,team); }
 function halfTrack(Z,team){ const nat=teamNation(team), key=axisOf(team)?'ht_de':'ht_al', B=W.sp[team][(Math.random()*W.sp[team].length)|0], c=newCrew(`Semioruga (${NATIONS[nat].label})`,team,nat,false);
   c.lineup=[key]; c.gun=true; const p=findSpawnPos(B), t=makeTank(c,key,p.x,p.z,Math.atan2(Z.x-p.x,Z.z-p.z)); c.uses[key]=1; c.spawns=1; c.tank=t; c.respawnT=1e9; crews.push(c);
   t.convoyZ=Z; t.convoyT=now; t.goal=null; feed(`Un semioruga lleva infantería al punto ${Z.id}`,team===0?'var(--ally)':'var(--enemy)'); }
@@ -71,7 +71,10 @@ function apcConvoy(Z,team){ const nat=teamNation(team), key='m113', B=W.sp[team]
   c.lineup=[key]; c.gun=true; const p=findSpawnPos(B), t=makeTank(c,key,p.x,p.z,Math.atan2(Z.x-p.x,Z.z-p.z)); c.uses[key]=1; c.spawns=1; c.tank=t; c.respawnT=1e9; crews.push(c);
   t.troops=Math.max(t.troops||0,5); t.convoyZ=Z; t.convoyT=now; t.goal=null; feed(`Un M113 lleva infantería al punto ${Z.id}`,team===0?'var(--ally)':'var(--enemy)'); return t; }
 // El semioruga va derecho al punto (en vez de elegir otro) hasta bajar a los soldados
-{ const _pickGoal=pickGoal; pickGoal=function(t){ if(t.convoyZ&&!t.dismounted){ const Z=t.convoyZ; t.path=null; t.goal=new THREE.Vector3(Z.x+rand(-Z.r*.3,Z.r*.3),0,Z.z+rand(-Z.r*.3,Z.r*.3)); return; } _pickGoal(t); }; }
+// (con grafo de calles, como en las ciudades y los mapas reales de la Guerra Fría, va por las calles con A*: derecho se trababa en las casas)
+{ const _pickGoal=pickGoal; pickGoal=function(t){ if(t.convoyZ&&!t.dismounted){ const Z=t.convoyZ, gx=Z.x+rand(-Z.r*.3,Z.r*.3), gz=Z.z+rand(-Z.r*.3,Z.r*.3);
+      if(nodes){ try{ t.path=astar(nearestNode(t.pos.x,t.pos.z),nearestNode(gx,gz)).map(n=>n.p.clone()); t.goal=t.path[t.path.length-1]; if(t.goal) return; }catch(e){} }
+      t.path=null; t.goal=new THREE.Vector3(gx,0,gz); return; } _pickGoal(t); }; }
 // Avión de transporte (Ju 52 / C-47): fuselaje, alas, tres o dos motores
 function transportMesh(axis){ const g=new THREE.Group(), m=new THREE.MeshLambertMaterial({color:axis?0x4f5440:0x5a5a40}), dk=darkMat;
   const f=cyl(g,1.1,.8,18,0,0,0,10,m); f.rotation.x=Math.PI/2; const n=cyl(g,.2,1.1,2.4,0,0,10.2,10,m); n.rotation.x=Math.PI/2;
@@ -154,7 +157,8 @@ function initRefuerzos(){ if(net.guest) return;
 function updRefuerzos(dt){
   for(let i=refPending.length-1;i>=0;i--){ const R=refPending[i]; if(now<R.t) continue; refPending.splice(i,1); if(!net.guest&&R.Z.owner===(R.team===0?1:-1)) sendReinforcements(R.Z,R.team); }
   for(const t of tanks){ if(t.dead) continue; if(t.T.aa&&!net.guest&&!t.isPlayer&&!(t.crew&&t.crew.peer)) updateAA(t,dt);
-    if(t.convoyZ&&!t.dismounted){ const Z=t.convoyZ; if(Math.hypot(t.pos.x-Z.x,t.pos.z-Z.z)<Z.r+10||now-t.convoyT>120){ t.dismounted=true; t.speed=0; dismount(t); } } }
+    if(t.convoyZ&&!t.dismounted){ const Z=t.convoyZ, threat=(t.target&&!t.target.dead&&t.target.pos.distanceTo(t.pos)<220)||t.hp<t.T.hp*.65;   // si lo atacan, baja a la escuadra antes de que lo destruyan
+      if(Math.hypot(t.pos.x-Z.x,t.pos.z-Z.z)<Z.r+10||now-t.convoyT>120||threat){ t.dismounted=true; t.speed=0; dismount(t); } } }
   for(let i=transports.length-1;i>=0;i--){ const T=transports[i];
     if(T.down){ if(planeFall(T,dt)){ if(T.snd) T.snd.stop(); scene.remove(T.g); unhit(T); transports.splice(i,1); } continue; }
     T.g.position.addScaledVector(T.dir,T.v*dt); T.life-=dt; if(T.snd) T.snd.set(T.g.position);
