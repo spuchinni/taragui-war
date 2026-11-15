@@ -6,6 +6,13 @@
   const EN=()=>window.LANG==='en';
   const LS=(k,v)=>{ try{ if(v===undefined) return localStorage.getItem(k); localStorage.setItem(k,v); }catch(e){ return null; } };
   const NOV=[
+    {id:'2026-11-15',fecha:'15/11/2026',
+     es:['M10 Wolverine rehecho: torre abierta de verdad con los contrapesos "pico de pato", escudo grande del cañón de 3 pulgadas, la .50 atrás y los bulones del blindaje extra en el casco.',
+         'Tripulación a la vista en las torres abiertas (M10, M18, M36 y los antiaéreos): apuntador, cargador y jefe; si cae uno, desaparece.',
+         'Las ametralladoras de pivote se tiran desde afuera: en el Sherman, el IS-2, el TAM y otros, el tirador asoma de la escotilla mientras la usa.'],
+     en:['M10 Wolverine rebuilt: a real open-top turret with the "duckbill" counterweights, the big 3-inch gun shield, the .50 at the rear and the appliqué armor bosses on the hull.',
+         'Visible crew in open-top turrets (M10, M18, M36 and the AA vehicles): gunner, loader and commander; if one is lost, he disappears.',
+         'Pintle-mounted machine guns are fired from outside: on the Sherman, IS-2, TAM and others, the gunner pops out of the hatch while using it.']},
     {id:'2026-11-14b',fecha:'14/11/2026',
      es:['Aviones y cañones de cada país: apoyo aéreo con Ju 87 Stuka, Il-2, P-47, Typhoon y el Northrop 8A-2 argentino; paracaidistas en Ju 52, C-47, Dakota y Li-2; artillería con leFH 18, M-30, M2A1, 25 libras y los Schneider y Bofors argentinos.',
          'Cada ejército con sus armas y cascos: Kar98k, MP 40 y Stahlhelm; Mosin, PPSh y SSh-40; Garand, Thompson y M1; Lee-Enfield, Sten y Brodie; Mauser 1909 argentino. Y los civiles con poses más naturales.',

@@ -18,14 +18,23 @@ function mgUpdate(t,dt){ const L=t.mgs; if(!L||t.dead) return; const P=mgAim(t);
     M.y+=clamp(wy-M.y,-sp,sp); M.p+=clamp(wp-M.p,-sp,sp); M.yg.rotation.y=M.y; M.pg.rotation.x=-M.p;
     M.err=Math.abs(wy-M.y)+Math.abs(wp-M.p);
     if(M.rel>0) M.rel=Math.max(0,M.rel-dt); M.heat=Math.max(0,M.heat-dt*.12); if(M.lock&&M.heat<.35) M.lock=false; } }
-{ const _tf=tankFX; tankFX=function(t,dt){ const r=_tf.apply(this,arguments); try{ mgUpdate(t,dt); }catch(e){} return r; }; }
+// Quién se ve (pedido de Sebastián): el tirador de una ametralladora de pivote asoma solo mientras la usa (y 4 s más) en las torres
+// cerradas; en las abiertas está siempre. La tripulación de las torres abiertas desaparece si cae su tripulante.
+function crewVis(t){ if(t.dead) return; const now=performance.now(), ok=s=>!t.crewM||t.crewM.some(m=>m.alive&&m.seat===s);
+  if(t.crewFig) for(const c of t.crewFig) c.P.g.visible=ok(c.seat);
+  if(t.mgs) for(const M of t.mgs){ const o=M.op; if(!o) continue; o.P.g.visible=M.seat.some(ok)&&(o.always||now-(M.shotT||-1e9)<4000); if(o.P.g.visible) opPose(o.P,M); } }
+// el tirador mira hacia donde tira y gira la cintura hacia las empuñaduras (que quedan atrás del pivote)
+function opPose(P,M){ const b=M.base.position, f=P.g.position, yaw=M.base.rotation.y+M.y, gx=b.x-Math.sin(yaw)*.18, gz=b.z-Math.cos(yaw)*.18;
+  let ph=Math.atan2(gx-f.x,gz-f.z)-yaw; ph=Math.atan2(Math.sin(ph),Math.cos(ph)); ph=clamp(ph,-1.4,1.4);
+  P.g.rotation.y=yaw; P.parts.hip.rotation.y=ph; P.parts.head.rotation.y=-ph*.85; }
+{ const _tf=tankFX; tankFX=function(t,dt){ const r=_tf.apply(this,arguments); try{ mgUpdate(t,dt); crewVis(t); }catch(e){} return r; }; }
 // disparar: la coaxial (núcleo) y, en el mismo momento, cada montada que esté lista; se usa el disparo del núcleo cambiando la boca,
 // la dirección y la cinta por las de esa ametralladora
 { const _fm=fireMG; fireMG=function(t){ _fm(t); const L=t.mgs; if(!L||t.dead||!t.barrel) return;
     const sc=t.coax, sb=t.barrel, keep={h:t.mgHeat,l:t.mgLock,b:t.mgBelt,bs:t.mgBelts,r:t.mgRel,n:t.mgN};
     try{ for(const M of L){ if(!M.can||M.err>.07||!M.seat.some(s=>manned(t,s))) continue;
         t.coax=M.muz; t.barrel=M.pg; t.mgHeat=M.heat; t.mgLock=M.lock; t.mgBelt=M.belt; t.mgBelts=M.belts; t.mgRel=M.rel; t.mgN=M.n=(M.n??(L.indexOf(M)+1));   // cada una con su contador de trazadoras (antes era uno solo y las trazadoras salían todas de la misma)
-        _fm(t); M.heat=t.mgHeat; M.lock=t.mgLock; M.belt=t.mgBelt; M.belts=t.mgBelts; M.rel=t.mgRel; M.n=t.mgN; } }
+        _fm(t); M.shotT=performance.now(); M.heat=t.mgHeat; M.lock=t.mgLock; M.belt=t.mgBelt; M.belts=t.mgBelts; M.rel=t.mgRel; M.n=t.mgN; } }
     finally{ t.coax=sc; t.barrel=sb; t.mgHeat=keep.h; t.mgLock=keep.l; t.mgBelt=keep.b; t.mgBelts=keep.bs; t.mgRel=keep.r; t.mgN=keep.n; } }; }
 
 // Barra de arriba de la munición (pedido de Sebastián): solo las cintas de las ametralladoras (la munición del cañón ya está
