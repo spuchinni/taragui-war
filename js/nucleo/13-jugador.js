@@ -47,7 +47,9 @@ function updatePlayer(dt){
   const t=player;
   if(!t.dead){
     let th=(down('fwd')?1:0)-(down('back')?1:0), st=(down('left')?1:0)-(down('right')?1:0);
-    if(typeof mobAxis==='function'){ const m=mobAxis(t); if(m){ th=m[0]; st=m[1]; } }      // celular: palanca analógica (movil.js)
+    let mc=false; if(typeof mobAxis==='function'){ const m=mobAxis(t); if(m){ th=m[0]; st=m[1]; mc=typeof getManejo!=='function'||getManejo()!=='tank'; } }      // celular: palanca analógica (movil.js)
+    // Marcha atrás (pedido de Sebastián): A = la cola va para la izquierda, como un auto en reversa (el modo "hacia donde empujás" ya lo resuelve solo)
+    if(!mc&&(th<0||(th===0&&t.speed<-.5))) st=-st;
     drive(t,th,st,dt);
   }
   if(t.dead){ scopeOn=false; if(artyPick) artyMap(false); } scoped=scopeOn;

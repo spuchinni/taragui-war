@@ -256,9 +256,14 @@ function drive0(t,throttle,steer,dt){
   const a=t.air?0:(t.gP||0), cl=climbOf(T)*Math.sqrt(pw), gA=-G*Math.sin(a), dirT=Math.sign(throttle)||0, upA=a*dirT;
   let vF2=vF, vR2=vR; if(upA>0){ const f=clamp(1-Math.sin(upA)/Math.sin(cl),.08,1)**.6; if(dirT>0) vF2*=f; else vR2*=f; }
   const want=throttle>0?throttle*vF2:throttle<0?throttle*vR2:0;
-  { const d=want-t.speed, dAcc=clamp(d/dt,-(want===0?6:5),Math.sign(d)===Math.sign(t.speed)||t.speed===0?3.5*pw:6); // aceleración buscada (como en llano)
+  // Frenos (pedido de Sebastián): soltar el acelerador = rueda por inercia (resistencia de la oruga + freno motor); tecla contraria
+  // = frena con los frenos de ese tanque (brakeOf: época, clase y peso) y, ya parado, retrocede. Los bots y un tanque sin motor frenan.
+  const bot=!t.isPlayer&&!t.net, BR=brakeOf(T), slow=t.speed!==0&&Math.sign(want-t.speed)!==Math.sign(t.speed), hard=want*t.speed<0||(want===0&&(bot||!canMove(t)));
+  const dec=hard?BR:want===0||Math.abs(want)<Math.abs(t.speed)?coastOf(T):BR;
+  t.braking=slow&&hard&&Math.abs(t.speed)>.5;
+  { const d=want-t.speed, dAcc=slow?clamp(d/dt,-dec,dec):clamp(d/dt,-3.5*pw,3.5*pw); // aceleración buscada (como en llano)
     let req=dAcc-gA; // lo que tiene que hacer el motor (o los frenos) además de la gravedad
-    const cap=Math.min(dirT&&Math.sign(req)===dirT?G*Math.sin(cl)*Math.abs(throttle):6,G*MU*Math.cos(a)); // empuje del motor / frenos, y agarre de la oruga
+    const cap=Math.min(slow?Math.max(dec,BR):dirT&&Math.sign(req)===dirT?G*Math.sin(cl)*Math.abs(throttle):BR,G*MU*Math.cos(a)*(WX.snow?.7:1)); // empuje del motor / frenos, y agarre de la oruga
     t.slip=Math.abs(req)>cap&&Math.abs(a)>.12; req=clamp(req,-cap,cap); t.speed+=(req+gA)*dt;
     if(!dirT&&!t.slip&&Math.abs(t.speed)<.2) t.speed=0; }
   const gk=T.gears?.35+.65*t.crewM.filter(m=>m.alive&&m.seat.startsWith('gear')).length/2:1;
@@ -309,6 +314,12 @@ const VEL=330, G=9.8, IMMUNE=6, MU=.65; // MU: agarre de la oruga en tierra (≈
 // Pendiente máxima que sube cada tanque (rad), según potencia y peso: los de la 1ª Guerra ~22°, entreguerras ~27°, modernos ~31°
 const CLIMB_ERA={1:.38,2:.47,3:.52,4:.54,5:.55};
 const climbOf=T=>T.climb||CLIMB_ERA[T.era||5]||.55;
+// Frenos (m/s²): la 1ª Guerra frenaba con embragues y bandas (malo), la 2ª Guerra con bandas o discos mecánicos, la Guerra Fría con
+// discos hidráulicos (~0,5 g). Los pesados frenan peor (más masa con frenos parecidos). VEH[k].brake lo pisa.
+// Rueda libre: la oruga tiene mucha resistencia (y el freno motor), así que sin acelerar se para sola en unos metros.
+const BRAKE_ERA={1:1.3,2:2.6,3:3.6,4:4.4,5:5.2}, BRAKE_CLS={ligero:1.15,medio:1,pesado:.8,cazatanques:.9,'antiaéreo':1};
+const brakeOf=T=>T.brake||(BRAKE_ERA[T.era||5]||5)*(BRAKE_CLS[T.cls]||1)*(T.wheeled||T.m&&T.m.wheeled?1.1:1);
+const coastOf=T=>T.coast||((T.era||5)<=1?2.2:(T.era||5)<=3?1.9:1.6)*(WX.mud?1.4:1)*(T.wheeled||T.m&&T.m.wheeled?.6:1);
 let lastTh=false;
 const thermalOn=()=>state==='play'&&player&&!player.dead&&player.thermal;
 // Elige la munición según lo que se apunta mientras dura la recarga; una vez cargada, queda.
