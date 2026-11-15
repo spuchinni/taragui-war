@@ -1014,15 +1014,23 @@ const heightAt=(x,z)=>{ const ex=W.ex||W.bx+30, ez=W.ez||W.bz+30;
   if(x>ex||x<-ex||z>ez||z<-ez){ if(x>ex) x=2*ex-x; else if(x<-ex) x=-2*ex-x; if(z>ez) z=2*ez-z; else if(z<-ez) z=-2*ez-z; x=clamp(x,-ex,ex); z=clamp(z,-ez,ez); }
   return W.h(x,z)+(craters.length?craterH(x,z):0); };
 function findGround(){ groundMeshes=[]; worldGroup.traverse(o=>{ if(o.isMesh&&o.geometry&&o.geometry.type==='PlaneGeometry'&&(o.userData.ground||o.geometry.attributes.position.count>4000)) groundMeshes.push(o); }); }
+const craterQ=[];
+function craterDeform(C){ const r=C.r, d=C.d, R=r*1.4;
+  for(const m of groundMeshes){ const pos=m.geometry.attributes.position; if(!m.geometry.boundingBox) m.geometry.computeBoundingBox(); const bb=m.geometry.boundingBox;
+    if(C.x+R<bb.min.x+m.position.x||C.x-R>bb.max.x+m.position.x||C.z+R<bb.min.z+m.position.z||C.z-R>bb.max.z+m.position.z) continue;   // sectores que no toca: ni se recorren
+    let ch=false;
+    for(let i=0;i<pos.count;i++){ const X=pos.getX(i)+m.position.x, Z=pos.getZ(i)+m.position.z, dx=X-C.x, dz=Z-C.z; if(dx>R||dx<-R||dz>R||dz<-R) continue;
+      const q=Math.hypot(dx,dz)/r; if(q>=1.4) continue; pos.setY(i,pos.getY(i)+(q<1?-d*(1-q*q):d*.22*Math.sin((q-1)/.4*Math.PI))); ch=true; }
+    if(ch){ pos.needsUpdate=true; m.geometry.computeVertexNormals(); } } }
+function craterTick(){ if(craterQ.length) craterDeform(craterQ.shift()); }
 function addCrater(p,r,d){
   if(W&&W.onDeck&&W.onDeck(p.x,p.z)&&p.y>pH0(p.x,p.z)+2) return; // sobre el puente no se abren cráteres
   if(W&&W.deckAt){ const d=W.deckAt(p.x,p.z); if(d!==null&&p.y>d-2) return; }
   if(!W||W.water!==undefined&&W.h(p.x,p.z)<W.water+.2) return; // en el agua no queda cráter
   const C={x:p.x,z:p.z,r,d}; craters.push(C); if(craters.length>90) craters.shift();
-  for(const m of groundMeshes){ const pos=m.geometry.attributes.position, R=r*1.4; let ch=false;
-    for(let i=0;i<pos.count;i++){ const X=pos.getX(i)+m.position.x, Z=pos.getZ(i)+m.position.z, dx=X-C.x, dz=Z-C.z; if(dx>R||dx<-R||dz>R||dz<-R) continue;
-      const q=Math.hypot(dx,dz)/r; if(q>=1.4) continue; pos.setY(i,pos.getY(i)+(q<1?-d*(1-q*q):d*.22*Math.sin((q-1)/.4*Math.PI))); ch=true; }
-    if(ch){ pos.needsUpdate=true; m.geometry.computeVertexNormals(); } }
+  // el suelo dibujado se hunde después, un cráter por cuadro (craterTick): con artillería y bombas caían 8–10 juntos y cada uno
+  // recorría y recalculaba las normales de los sectores de terreno en el mismo cuadro (tirón visible). La altura del juego (craterH) ya cambia acá.
+  craterQ.push(C);
   // los tanques y soldados se acomodan al nuevo suelo
   for(const t of tanks) if(Math.hypot(t.pos.x-p.x,t.pos.z-p.z)<r*1.6) placeOnGround(t,1);
 }
