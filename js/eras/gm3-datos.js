@@ -204,6 +204,9 @@ Object.assign(FC.m4a1,{stab:1}); Object.assign(FC.m4a3e8,{stab:1}); Object.assig
   AMMO_DEF.repot=[['Carga hueca FMK-3 105 mm','heat',360,800],['Explosivo FMK-1 105 mm','he',30]];
   FC.repot={crew:4}; OPTIC.repot=[3,6];   // sin dato del aumento de la mira nueva: el de la del Firefly
   if(NATIONS.ar&&NATIONS.ar.lineup&&!NATIONS.ar.lineup.includes('repot')) NATIONS.ar.lineup.unshift('repot'); }
+// M4 Sherman repotenciado de Paraguay (ficción, `sherman`): pasa del modelo genérico de la v1 (torre redonda) al mismo modelo
+// detallado del Repotenciado argentino, con la escarapela paraguaya y el telémetro de la ficción. Datos de juego sin cambios.
+if(VEH.sherman&&VEH.repot) VEH.sherman.m=Object.assign({},VEH.repot.m,{w2:Object.assign({},VEH.repot.m.w2,{ins:'py',rf:1})});
 GUN_ERA[3]={de:'pak40',ru:'zis3',uk:'pdr6',us:'at57us',ar:'bofors37'};
 // Pendiente máxima (rad): el Churchill trepa como ninguno; los pesados alemanes y el IS-2, menos
 Object.assign(VEH.tiger1,{climb:.5}); Object.assign(VEH.is2,{climb:.5}); Object.assign(VEH.matilda2,{climb:.5}); Object.assign(VEH.t34,{climb:.6}); Object.assign(VEH.t3485,{climb:.6});
