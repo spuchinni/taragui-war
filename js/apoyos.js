@@ -171,7 +171,7 @@
   // animación una vez por partida y por equipo (pedido de Sebastián): la primera artillería y el primer avión que pide tu equipo
   // (vos o un aliado) se ven enteros; los primeros del enemigo, en versión corta con aviso. Se reinicia en cada partida.
   let CIN={arty:[0,0],air:[0,0]};
-  const cineOk=()=>player&&!player.dead&&(!tut||tut.prb)&&!net.guest&&state==='play'&&!(typeof TUT1!=='undefined'&&TUT1&&TUT1.stg<2&&PROG&&PROG.stats&&PROG.stats.battles<1);
+  const cineOk=()=>player&&!player.dead&&(!tut||tut.prb)&&state==='play'&&!(typeof TUT1!=='undefined'&&TUT1&&TUT1.stg<2&&PROG&&PROG.stats&&PROG.stats.battles<1);
   const _ca=callArtillery; callArtillery=function(by,point){ const ok=_ca.apply(this,arguments);
     try{ if(ok&&by){ if(by.isPlayer){ rb.style.display='none'; radio(point,artyDelay()); }
         const tm=by.team?1:0; if((!CIN.arty[tm]||(tut&&tut.prb))&&cineOk()){ CIN.arty[tm]=1; const enemy=player.team!==by.team, D=artyDelay(), pt=point.clone();
