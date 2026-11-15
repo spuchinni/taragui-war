@@ -72,7 +72,8 @@ function w2Turret(tur,M,I,mat){ const w=M.tw, l=M.tl, h=M.th, hw=w/2, hl=l/2;
     case 'hex': prism(tur,[[-hw*.55,hl],[hw*.55,hl],[hw,hl*.15],[hw*.8,-hl],[-hw*.8,-hl],[-hw,hl*.15]],h,.22,0,0,0,mat); break;     // T-34/76
     case 'box': prism(tur,[[-hw*.85,hl],[hw*.85,hl],[hw,hl*.6],[hw,-hl*.55],[hw*.75,-hl],[-hw*.75,-hl],[-hw,-hl*.55],[-hw,hl*.6]],h,.04,0,0,0,mat); break; // Tiger, Churchill, Cromwell
     case 'pan': prism(tur,[[-hw*.45,hl],[hw*.45,hl],[hw,hl*.2],[hw,-hl],[-hw,-hl],[-hw,hl*.2]],h,.28,0,0,0,mat); break;            // Panther, Nahuel
-    case 'open': openTurret(tur,[[-hw*.5,hl],[hw*.5,hl],[hw,hl*.1],[hw*.85,-hl],[-hw*.85,-hl],[-hw,hl*.1]],h,.2,mat); break;   // M10, M18, M36, antiaéreos: abierta arriba, hueca
+    case 'open': if(I.us==='m10') openTurret(tur,[[-hw*.66,hl*.62],[hw*.66,hl*.62],[hw,hl*.12],[hw*.94,-hl*.8],[-hw*.94,-hl*.8],[-hw,hl*.12]],h,.17,mat);   // M10: el frente lo cierra el escudo en cuña
+      else openTurret(tur,[[-hw*.5,hl],[hw*.5,hl],[hw,hl*.1],[hw*.85,-hl],[-hw*.85,-hl],[-hw,hl*.1]],h,.2,mat); break;   // M10, M18, M36, antiaéreos: abierta arriba, hueca
     case 'none': break;                                                                                                          // casamata (StuG): el cañón va en el casco
     default: prism(tur,[[-hw*.75,hl],[hw*.75,hl],[hw,hl*.35],[hw,-hl*.85],[hw*.85,-hl],[-hw*.85,-hl],[-hw,-hl*.85],[-hw,hl*.35]],h,.12,0,0,0,mat); // biselada (Pz III/IV, Crusader, Stuart)
   }
@@ -712,8 +713,8 @@ function usHull(root,M,I,mat,iw2,deck,gz,zf,zr,L){ const u=I.us, hw=M.W/2, ft=hw
     const rc=new THREE.Raycaster(), stud=(o,d)=>{ rc.set(o,d); rc.far=6; const h=rc.intersectObjects(big,false)[0]; if(!h) return;
       const n=h.face.normal.clone().transformDirection(h.object.matrixWorld), c=cyl(root,.055,.06,.07,0,0,0,8,mat);
       c.position.copy(h.point).addScaledVector(n,.02); c.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),n); };
-    for(const sx of [-1,1]) for(let i=0;i<6;i++) for(const y of [deck-.22,deck-.55]) stud(new THREE.Vector3(sx*(hw+2),y,zr+.9+i*(L-2.6)/5),new THREE.Vector3(-sx,0,0));
-    for(let i=0;i<5;i++) for(let j=0;j<2;j++) stud(new THREE.Vector3((i-2)*iw2*.38,deck-.3-j*.42,zf+3),new THREE.Vector3(0,0,-1));
+    for(const sx of [-1,1]) for(let i=0;i<8;i++) for(const y of [deck-.16,deck-.42,deck-.68]) stud(new THREE.Vector3(sx*(hw+2),y,zr+.7+i*(L-2.2)/7),new THREE.Vector3(-sx,0,0));
+    for(let i=0;i<5;i++) for(let j=0;j<3;j++) stud(new THREE.Vector3((i-2)*iw2*.38+(j%2)*iw2*.19,deck-.2-j*.32,zf+3),new THREE.Vector3(0,0,-1));
     return; }
   if(u==='m36') return;                                                                           // ya lo dibuja shermanHull
   for(const sx of [-1,1]){ const p=glacisPt(I,deck,gz,zf,.12,.1); cyl(root,.07,.07,.12,sx*iw2*.4,p.y,p.z,8,darkMat).rotation.x=Math.PI/2;   // faros con protector
@@ -734,20 +735,46 @@ function usHull(root,M,I,mat,iw2,deck,gz,zf,zr,L){ const u=I.us, hw=M.W/2, ft=hw
   if(u==='m26') box(root,iw2*.9,.45,.05,0,deck-.3,zr-.2,mat);                                                  // deflector del escape
   if(u==='m26'||u==='m24'){ const b=cyl(root,.08,.09,.18,iw2*.3,deck-gz*.35,zf-gz*.45+.12,8,mat); b.rotation.x=Math.PI/2.4; }
 }
+// ---- M10 Wolverine (referencias de Sketchfab: "M-10 Wolverine" y "M10 with full interior") ----
+// Torre abierta soldada de 5 lados con las paredes inclinadas; adelante el escudo grande del 3 in M7 en cuña con el collar del tubo;
+// atrás los contrapesos "pico de pato" (chapas gruesas en pentágono, abulonadas, que sobresalen atrás y arriba); la .50 en un pivote alto
+// en el fondo de la torre con su caja de munición; argollas de izaje. Adentro: la recámara con su guarda de retroceso (retrocede con el
+// tubo), la mira telescópica y el volante de puntería del apuntador, munición de 3 in lista en el fondo, la radio SCR-610, los asientos,
+// el matafuego y cajones; el piso de la canasta.
+const _brass=new THREE.MeshStandardMaterial({color:0xb8913c,metalness:.6,roughness:.4}), _m10In=new THREE.MeshLambertMaterial({color:0xd8d4c4}), _red=new THREE.MeshLambertMaterial({color:0xa82a20});
+function m10Turret(tur,G,M,I,mat){ const hw=M.tw/2, hl=M.tl/2, th=M.th;
+  // escudo del cañón en cuña (cuerpo trapezoidal con la cara de adelante inclinada) y collar
+  { const g=prismGeo([[-.66,-.12],[.66,-.12],[.42,.5],[-.42,.5]],.66,.18); const m=new THREE.Mesh(g,mat); m.position.set(0,-.36,0); m.castShadow=m.receiveShadow=true; G.gp.add(m);
+    for(const sx of [-1,1]){ const c=cyl(G.gp,.045,.045,.05,sx*.36,.12,.42,8,darkMat); c.rotation.x=Math.PI/2; }   // bulones de la cara
+    const c1=cyl(G.gp,.19,.21,.26,0,-.02,.62,12,mat); c1.rotation.x=Math.PI/2; const c2=cyl(G.gp,.14,.16,.16,0,-.02,.8,12,mat); c2.rotation.x=Math.PI/2; }
+  // contrapesos: chapas en pentágono a cada lado del fondo, que sobresalen atrás y arriba del borde
+  const prof=new THREE.Shape(); [[.2,-.04],[-.62,-.04],[-.86,.3],[-.66,th+.12],[.2,th+.12]].forEach(([z,y],i)=>i?prof.lineTo(-z,y):prof.moveTo(-z,y));   // (rotateY da vuelta el eje) prof.closePath();
+  const cwG=new THREE.ExtrudeGeometry(prof,{depth:.3,bevelEnabled:true,bevelThickness:.02,bevelSize:.02,bevelSegments:1}); cwG.rotateY(Math.PI/2);
+  for(const sx of [-1,1]){ const m=new THREE.Mesh(cwG,mat); m.position.set(sx*(hw*.86)-.15,0,-hl*.8); m.castShadow=m.receiveShadow=true; tur.add(m);
+    for(const [z,y] of [[-.1,.2],[-.45,.2],[-.1,.6],[-.45,.62],[-.66,.42]]){ const b=cyl(tur,.04,.045,.05,sx*(hw*.86)+sx*.17,y,-hl*.8+z,8,mat); b.rotation.z=Math.PI/2; } }   // bulones
+  for(const sx of [-1,1]){ const r=new THREE.Mesh(new THREE.TorusGeometry(.07,.016,5,10),darkMat); r.position.set(sx*hw*.62,th+.08,hl*.3); r.rotation.y=Math.PI/2; tur.add(r); }   // argollas de izaje
+  // ---- interior ----
+  const fl=prism(tur,[[-hw*.85,hl*.5],[hw*.85,hl*.5],[hw*.85,-hl*.75],[-hw*.85,-hl*.75]],.02,0,0,.03,0,_m10In); fl.castShadow=false;   // piso de la canasta (pintado de blanco)
+  { const B=G.barrel; rbox(B,.34,.3,.5,0,0,-.3,darkMat,.03);                                                            // recámara (retrocede con el tubo)
+    const gd=new THREE.Group(); gd.position.z=-.62; B.add(gd); for(const sx of [-1,1]){ box(gd,.03,.03,.7,sx*.24,-.1,0,darkMat); box(gd,.03,.25,.03,sx*.24,-.0,-.34,darkMat); }   // guarda de retroceso
+    box(gd,.5,.03,.03,0,.02,-.34,darkMat);
+    for(const sx of [-1,1]){ const r=cyl(G.gp,.05,.05,.7,sx*.13,.16,-.15,8,darkMat); r.rotation.x=Math.PI/2; } }    // cilindros del freno y recuperador
+  { const s=cyl(G.gp,.035,.035,.55,-.34,.1,-.12,8,darkMat); s.rotation.x=Math.PI/2; box(G.gp,.08,.1,.12,-.34,.1,-.42,darkMat); }   // mira telescópica M51
+  { const w=new THREE.Mesh(new THREE.TorusGeometry(.13,.015,5,14),darkMat); w.position.set(-hw*.62,.42,hl*.05); w.rotation.y=Math.PI/2; tur.add(w); box(tur,.12,.12,.12,-hw*.7,.42,hl*.05,darkMat); }   // volante de giro
+  for(let r=0;r<2;r++) for(let i=0;i<7;i++){ const x=(i-3)*.17, y=.2+r*.2; const sh=cyl(tur,.04,.04,.55,x,y,-hl*.8+.32,8,_brass); sh.rotation.x=Math.PI/2;   // munición lista en el fondo
+      const tip=cyl(tur,.012,.04,.14,x,y,-hl*.8+.66,8,darkMat); tip.rotation.x=Math.PI/2; }
+  box(tur,1.3,.05,.62,0,.08,-hl*.8+.34,_m10In); box(tur,1.3,.05,.62,0,.5,-hl*.8+.34,_m10In);                      // estantes de la munición
+  rbox(tur,.42,.3,.22,hw*.66,.62,-hl*.48,_shGreenBox,.03); for(let i=0;i<3;i++) cyl(tur,.025,.025,.02,hw*.56+i*.08,.7,-hl*.48+.12,8,darkMat).rotation.x=Math.PI/2;   // radio SCR-610
+  { const a=cyl(tur,.012,.012,2.2,hw*.78,th+1.1,-hl*.55,4,darkMat); }                                                   // antena
+  for(const [x,z] of [[-hw*.5,hl*.05],[hw*.48,-hl*.15]]){ cyl(tur,.17,.17,.06,x,.42,z,10,darkMat); cyl(tur,.03,.03,.4,x,.2,z,6,darkMat); }   // asientos
+  { const e=cyl(tur,.06,.06,.42,-hw*.8,.3,-hl*.35,8,_red); }                                                            // matafuego
+  rbox(tur,.32,.22,.5,-hw*.62,.13,-hl*.45,_shGreenBox,.02);                                                             // cajón de granadas/repuestos
+  // .50 en el pivote alto del fondo, la tira el jefe parado en la torre
+  mgMount(tur,0,th+.62,-hl*.8+.12,{post:.62,cal:12.7,...MG_AA,seat:['commander','loader']});
+  cyl(tur,.07,.08,.08,0,th+.0,-hl*.8+.12,8,darkMat); }
 function usTurret(tur,G,M,I,mat,gy){ const u=I.us, hw=M.tw/2, hl=M.tl/2, th=M.th;
   const fifty=(x,z,y=th)=>mgMount(tur,x,y+.4,z,{post:.34,cal:12.7,...MG_AA,seat:['commander','loader']});
-  if(u==='m10'){ // M10 tardío: contrapesos "pico de pato" en cuña colgados atrás a cada lado, escudo grande del 3 in M7 con su cuna,
-    // la .50 en el pivote del fondo de la torre (la tira el jefe parado adentro) y el borde de chapa con los ojales de la lona
-    for(const sx of [-1,1]){ const c=new THREE.Group(); c.position.set(sx*hw*.56,th*.08,-hl+.05); tur.add(c);
-      prism(c,[[-.3,0],[.3,0],[.27,-.62],[-.22,-.7]],th*.82,.12,0,0,0,mat);                              // cuña de contrapeso
-      const b=box(c,.62,.12,.75,0,-.02,-.33,mat); b.rotation.x=-.18;                                    // panza inclinada
-      for(const d of [-.18,.18]) cyl(c,.035,.035,.03,d,th*.5,.02,6,darkMat).rotation.x=Math.PI/2; }      // bulones
-    rbox(G.gp,1.12,.68,.2,0,.04,.36,mat,.05);                                                            // escudo del cañón, bien adelante de la torre
-    for(const sx of [-1,1]) rbox(G.gp,.1,.56,.42,sx*.5,.02,.18,mat,.03);                                // mejillas de la cuna
-    const cr=cyl(G.gp,.15,.15,.5,0,-.02,.66,10,mat); cr.rotation.x=Math.PI/2;                           // cuna del tubo
-    const rc=cyl(G.gp,.1,.12,.18,0,-.02,.96,10,mat); rc.rotation.x=Math.PI/2;                           // collar del tubo
-    for(const sx of [-1,1]) for(let i=0;i<3;i++) box(tur,.03,.03,.06,sx*hw*(.7+i*.1),th+.01,-hl*(.1+i*.28),darkMat);   // ojales de la lona
-    fifty(0,-hl+.28,th-.1); return; }
+  if(u==='m10'){ m10Turret(tur,G,M,I,mat); return; }
   if(u==='m36'){ rbox(tur,M.tw*.75,th*.7,.6,0,th*.38,-hl-.25,mat,.06); rbox(G.gp,.8,.55,.3,0,0,.1,mat,.07); fifty(hw*.55,-hl*.8,th*.8); return; }   // torre redonda abierta con cesto
   if(u==='m18'){ rbox(G.gp,.62,.45,.26,0,0,.1,mat,.05); fifty(hw*.5,-hl*.75,th*.9); box(tur,M.tw*.85,.05,.4,0,th-.02,-hl+.2,darkMat); return; }
   for(const sx of [-1,1]){ const pp=cyl(tur,.055,.055,.04,sx*(hw*.94),th*.45,-hl*.2,8,mat); pp.rotation.z=Math.PI/2; }

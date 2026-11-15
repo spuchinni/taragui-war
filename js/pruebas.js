@@ -6,7 +6,7 @@
 (function(){
   const SU=()=>!!(window.superUser&&superUser.on);
   const LSg=k=>{ try{ return localStorage.getItem(k); }catch(e){ return null; } }, LSs=(k,v)=>{ try{ localStorage.setItem(k,v); }catch(e){} };
-  const CFG=Object.assign({tank:'m4a1',map:'alamein',wx:'dia',tgt:'quietos',tgtK:'var',god:1,ammo:1,rel:0,sup:1},(()=>{ try{ return JSON.parse(LSg('tw2_prb')||'{}'); }catch(e){ return {}; } })());
+  const CFG=Object.assign({tank:'m4a1',map:'alamein',wx:'dia',tgt:'quietos',tgtK:'var',god:1,ammo:1,rel:0,sup:1,auto:0,side:'foe',addK:'var',addM:'combate',open:1},(()=>{ try{ return JSON.parse(LSg('tw2_prb')||'{}'); }catch(e){ return {}; } })());
   const save=()=>LSs('tw2_prb',JSON.stringify(CFG));
   const st=document.createElement('style'); st.textContent=`
     #prbBox{position:fixed;inset:0;z-index:70;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.72)}
@@ -65,44 +65,109 @@
     if(!L.length) L=tankList().filter(k=>eraOf(k)===e); return L[(Math.random()*L.length)|0]||tut.key; }
   function addTarget(x,z,k,noPush){ k=k||tgtKey(); const n=VEH[k].nation, c=newCrew(`Blanco · ${VEH[k].label}`,1,n,false); c.out=CFG.tgt==='quietos'; crews.push(c);
     const t=spawnCrew(c,k,{label:'',x,z}); t.dummy=CFG.tgt==='quietos'; t.prbT=1; t.immuneT=0; t.heading=Math.random()*6.28; if(!noPush) tut.pd.push({t,x,z,k}); return t; }
+  // ---- "No se rompe" de verdad (antes solo ponía immuneT: las esquirlas, el fuego, la ametralladora pesada, los tripulantes expuestos y
+  // el cañón se seguían rompiendo, y el tanque titilaba). Ahora se bloquea el daño y cada cuadro se deja todo como nuevo.
+  const godOn=t=>tut&&tut.prb&&CFG.god&&t&&t===player;
+  function heal(t){ const broke=(t.mod.barrel??100)<100; t.hp=t.T.hp; for(const k in t.mod) t.mod[k]=100; t.trkHP=[100,100]; t.trackT=t.engT=t.breechT=t.fireT=0; t.sinkT=0;
+    for(const m of t.crewM){ m.alive=true; m.hp=100; } if(t.immuneT>0&&!t.prbImm) t.immuneT=0;
+    if(broke){ try{ setBarrelLook(t); }catch(e){} } }
+  { const _d=destroy; destroy=function(t){ if(godOn(t)) return; return _d.apply(this,arguments); }; }
+  { const _dm=damage; damage=function(t){ if(godOn(t)) return; return _dm.apply(this,arguments); }; }
+  { const _ht=hitTank; hitTank=function(by,hit){ const t=hit&&hit.object&&hit.object.userData.tank; if(godOn(t)){ try{ explode(hit.point,'metal'); }catch(e){} return; } return _ht.apply(this,arguments); }; }
+  if(typeof exposedKill==='function'){ const _ek=exposedKill; exposedKill=function(t){ if(godOn(t)) return false; return _ek.apply(this,arguments); }; }
+  // ---- nada pasa solo: en pruebas los bots no piden apoyos y capturar un punto no trae refuerzos ni fortificaciones (salvo "Automático") ----
+  { const _ca=callArtillery; callArtillery=function(by){ if(tut&&tut.prb&&!CFG.auto&&by&&!by.isPlayer&&!by._prb) return false; return _ca.apply(this,arguments); }; }
+  { const _cs=callAirstrike; callAirstrike=function(by){ if(tut&&tut.prb&&!CFG.auto&&by&&!by.isPlayer&&!by._prb) return false; return _cs.apply(this,arguments); }; }
+  { const _cn=callNuke; callNuke=function(by){ if(tut&&tut.prb&&!CFG.auto&&by&&!by.isPlayer&&!by._prb) return false; return _cn.apply(this,arguments); }; }
+  if(typeof onZoneCaptured==='function'){ const _oz=onZoneCaptured; onZoneCaptured=function(){ if(tut&&tut.prb&&!CFG.auto) return; return _oz.apply(this,arguments); }; }
   // los blancos que "se mueven" no tiran
-  { const _bf=botFire; botFire=function(t){ if(tut&&tut.prb&&t&&t.prbT&&CFG.tgt!=='combate') return; return _bf.apply(this,arguments); }; }
+  { const _bf=botFire; botFire=function(t){ if(tut&&tut.prb&&t&&t.prbT&&(t.prbM?t.prbM!=='combate':CFG.tgt!=='combate')) return; return _bf.apply(this,arguments); }; }
+  { const _ua=updateAI; updateAI=function(t,dt){ if(tut&&tut.prb&&t&&t.prbM==='quieto'){ drive(t,0,0,dt); return; } return _ua.apply(this,arguments); }; }
   // cada cuadro: trucos y blancos que reaparecen
-  { const _ut=updateTutorial; updateTutorial=function(dt){ if(tut&&tut.prb&&player&&state==='play'){
-        if(!player.dead){ if(CFG.god){ player.immuneT=Math.max(player.immuneT||0,2); player.hp=Math.max(player.hp,player.T.hp*.999); }
+  // (va en el cuadro y no en updateTutorial: el envoltorio del campo de tiro de base.js no sigue la cadena con tut.range)
+  function prbTick(dt){ if(tut&&tut.prb&&player&&state==='play'){
+        if(!player.dead){ if(CFG.god) heal(player);
           if(CFG.ammo&&player.ammoCount&&player.ammoMax){ for(let i=0;i<player.ammoCount.length;i++) player.ammoCount[i]=player.ammoMax[i]; player.mgBelt=250; }
           if(CFG.rel&&player.reloadT>0) player.reloadT=0;
           if(CFG.sup){ playerCrew.sp=9999; playerCrew.artyCD=0; playerCrew.airCD=0; try{ if(typeof teamSup!=='undefined'&&teamSup[0]){ teamSup[0].arty=0; teamSup[0].air=0; } }catch(e){} } }
         for(const D of tut.pd){ if(D.t&&D.t.dead){ D.rt=(D.rt||0)+dt; if(D.rt>6){ removeTank(D.t); crews=crews.filter(c=>c!==D.t.crew); D.t=addTarget(D.x,D.z,D.k,true); D.rt=0; } } else if(D.t) D.t.spottedT=3; }
-        if((tut.barT=(tut.barT||0)+dt)>1){ tut.barT=0; paintBar(true); } }
-      return _ut.apply(this,arguments); }; }
+        if((tut.barT=(tut.barT||0)+dt)>1){ tut.barT=0; paintBar(true); } } }
   // ---- barra adentro ----
-  function paintBar(soft){ if(!(tut&&tut.prb)){ bar.style.display='none'; return; } bar.style.display='flex'; if(soft&&bar.dataset.k===tut.key+F.on+CFG.god+CFG.ammo+CFG.rel+CFG.sup) return;
-    bar.dataset.k=tut.key+F.on+CFG.god+CFG.ammo+CFG.rel+CFG.sup;
+  function paintBar(soft){ if(!(tut&&tut.prb)){ bar.style.display='none'; return; } bar.style.display='flex'; if(soft&&bar.dataset.k===tut.key+F.on+PZ.on+CFG.god+CFG.ammo+CFG.rel+CFG.sup) return;
+    bar.dataset.k=tut.key+F.on+PZ.on+CFG.god+CFG.ammo+CFG.rel+CFG.sup;
     bar.innerHTML=`<b>🧪 Pruebas</b><select id="bT" title="Cambiar de tanque">${tankOpts(tut.key)}</select>
       <div class="r"><button id="bG">🎯 Blanco adelante</button><button id="bC">🧹 Sacar blancos</button></div>
       <select id="bW">${wxOpts(wxKey)}</select>
       <div class="r"><button id="tG" class="${CFG.god?'on':''}">No se rompe</button><button id="tA" class="${CFG.ammo?'on':''}">Munición ∞</button><button id="tR" class="${CFG.rel?'on':''}">Recarga 0</button><button id="tS" class="${CFG.sup?'on':''}">Apoyos gratis</button></div>
-      <div class="r"><button id="bL" class="${F.on?'on':''}">🎥 Cámara libre (L)</button><button id="bX">⏏ Salir</button></div>`;
+      <div class="r"><button id="bL" class="${F.on?'on':''}">🎥 Cámara libre (L)</button><button id="bP" class="${PZ.on?'on':''}">${PZ.on?'▶ Seguir':'⏸ Pausa'} (P)</button><button id="bX">⏏ Salir</button></div>
+      <button id="bO">${CFG.open?'▾':'▸'} Agregar donde mirás</button>
+      <div id="bAdd" style="display:${CFG.open?'flex':'none'};flex-direction:column;gap:4px">
+        <div class="r"><button id="sF" class="${CFG.side==='foe'?'on':''}">Enemigo</button><button id="sA" class="${CFG.side==='ally'?'on':''}">Aliado</button></div>
+        <select id="aK"><option value="var">Tanque variado de la época</option>${tankOpts(CFG.addK)}</select>
+        <select id="aM">${[['quieto','Quieto'],['mueve','Se mueve, no tira'],['combate','Pelea']].map(([v,t])=>`<option value="${v}"${v===CFG.addM?' selected':''}>${t}</option>`).join('')}</select>
+        <div class="r"><button id="aT">🛡 Tanque</button><button id="aI">👥 Escuadra</button><button id="aP">🪂 Paracaidistas</button><button id="aH">🚛 Semioruga</button></div>
+        <div class="r"><button id="aA">✸ Artillería</button><button id="aB">✈ Bombardeo</button><button id="aS">🛩 Ataque P-47/A-10</button><button id="aN">☢ Nuke</button></div>
+        <div class="r"><button id="aX">🧹 Sacar todo</button><button id="aU" class="${CFG.auto?'on':''}" title="Si está prendido, los bots piden apoyos y los puntos traen refuerzos solos">Automático</button></div>
+      </div>`;
     const q=s=>bar.querySelector(s);
     q('#bT').onchange=e=>{ e.target.blur(); swapTank(e.target.value); };
     q('#bG').onclick=()=>{ const d=new THREE.Vector3(); camera.getWorldDirection(d); d.y=0; d.normalize(); const p=(F.on?F.pos:player.pos).clone().addScaledVector(d,120); addTarget(p.x,p.z); };
     q('#bC').onclick=()=>{ for(const D of tut.pd){ if(D.t){ removeTank(D.t); crews=crews.filter(c=>c!==D.t.crew); } } tut.pd.length=0; };
     q('#bW').onchange=e=>{ e.target.blur(); applyWeather(e.target.value); CFG.wx=e.target.value; save(); };
     const tg=(id,k)=>q(id).onclick=()=>{ CFG[k]=CFG[k]?0:1; save(); paintBar(); }; tg('#tG','god'); tg('#tA','ammo'); tg('#tR','rel'); tg('#tS','sup');
-    q('#bL').onclick=()=>setFree(!F.on); q('#bX').onclick=()=>{ try{ clearBattle(); mainMenu(); }catch(e){ location.reload(); } }; }
+    q('#bL').onclick=()=>setFree(!F.on); q('#bP').onclick=()=>setPause(!PZ.on);
+    q('#bO').onclick=()=>{ CFG.open=CFG.open?0:1; save(); paintBar(); };
+    q('#sF').onclick=()=>{ CFG.side='foe'; save(); paintBar(); }; q('#sA').onclick=()=>{ CFG.side='ally'; save(); paintBar(); };
+    q('#aK').value=CFG.addK in VEH?CFG.addK:'var'; q('#aK').onchange=e=>{ e.target.blur(); CFG.addK=e.target.value; save(); }; q('#aM').onchange=e=>{ e.target.blur(); CFG.addM=e.target.value; save(); };
+    q('#aT').onclick=()=>addTank(); q('#aI').onclick=()=>addSquad(); q('#aP').onclick=()=>addRef('para'); q('#aH').onclick=()=>addRef('ht');
+    q('#aA').onclick=()=>addSup('arty'); q('#aB').onclick=()=>addSup('air'); q('#aS').onclick=()=>addSup('strike'); q('#aN').onclick=()=>addSup('nuke');
+    q('#aX').onclick=clearAll; q('#aU').onclick=()=>{ CFG.auto=CFG.auto?0:1; save(); paintBar(); }; q('#bX').onclick=()=>{ try{ clearBattle(); mainMenu(); }catch(e){ location.reload(); } }; }
+  // ---- agregar cosas donde mira la cámara (pedido de Sebastián: "no debe pasar nada sin que yo lo diga") ----
+  function lookPoint(dist){ const c=F.on?cam:camera, d=new THREE.Vector3(); c.getWorldDirection(d); const o=c.position.clone();
+    for(let s=4;s<1200;s+=3){ const p=o.clone().addScaledVector(d,s); if(p.y<=heightAt(p.x,p.z)+.3){ p.y=heightAt(p.x,p.z); return p; } }
+    d.y=0; d.normalize(); const p=o.clone().addScaledVector(d,dist||120); p.y=heightAt(p.x,p.z); return p; }
+  const teamOf=()=>CFG.side==='ally'?player.team:1-player.team;
+  const sideNat=team=>{ const a=['de','it','jp'], pAx=a.includes(VEH[tut.key].nation); const ax=team===player.team?pAx:!pAx;
+    if(team===player.team) return VEH[tut.key].nation; const e=W.era||3, L=Object.keys(NATIONS).filter(n=>a.includes(n)===ax&&(()=>{ try{ return vehTreeE(n,e).length; }catch(er){ return 0; } })());
+    return L[(Math.random()*L.length)|0]||(ax?'de':'us'); };
+  function pickTank(team){ if(CFG.addK&&VEH[CFG.addK]) return CFG.addK; const n=sideNat(team); let L=[]; try{ L=vehTreeE(n,W.era||3); }catch(e){} return L[(Math.random()*L.length)|0]||tut.key; }
+  function addTank(){ const p=lookPoint(), team=teamOf(), k=pickTank(team), n=VEH[k].nation, c=newCrew(`${team===player.team?'Aliado':'Enemigo'} · ${VEH[k].label}`,team,n,false);
+    c.out=true; crews.push(c); const t=spawnCrew(c,k,{label:'',x:p.x,z:p.z}); t.prbT=1; t.prbM=CFG.addM; t.dummy=CFG.addM==='quieto'; t.immuneT=0;
+    t.heading=Math.atan2(player.pos.x-p.x,player.pos.z-p.z); (tut.add=tut.add||[]).push(t); feed(`➕ ${c.name}`,'var(--amber)'); }
+  function addSquad(){ const p=lookPoint(), team=teamOf(); ['rifle','rifle','at','hmg','rifle','eng'].forEach(k=>{ const a=Math.random()*6.28, r=2+Math.random()*5, x=p.x+Math.cos(a)*r, z=p.z+Math.sin(a)*r;
+      try{ const P=makePerson(k,team,x,z); P.prbA=1; }catch(e){ console.warn(e); } }); feed(`➕ Escuadra ${team===player.team?'aliada':'enemiga'}`,'var(--amber)'); }
+  function addRef(kind){ const p=lookPoint(), team=teamOf(), Z={x:p.x,z:p.z,r:20,id:'·',owner:0};
+    try{ if(kind==='para') paraDrop(Z,team); else halfTrack(Z,team); feed(kind==='para'?'➕ Paracaidistas en camino':'➕ Semioruga en camino','var(--amber)'); }catch(e){ console.warn(e); banner('No se pudo',e.message,2); } }
+  function fakeBy(team,p){ const d=new THREE.Vector3(p.x-player.pos.x,0,p.z-player.pos.z); if(d.lengthSq()<1) d.set(0,0,1); d.normalize();
+    const by={team,name:team===player.team?'Apoyo (pruebas)':'Enemigo (pruebas)',isPlayer:false,_prb:true,pos:p.clone().addScaledVector(d,team===player.team?-350:350),
+      crew:{sp:1e7,score:0,artyCD:0,airCD:0,infCD:0,st:null,name:'Pruebas',team}}; by.crew.tank=by; return by; }
+  function addSup(k){ const p=lookPoint(), team=teamOf(), by=fakeBy(team,p);
+    try{ if(k==='arty') callArtillery(by,p);
+      else if(k==='air'){ const S=RULE().sup, o=S.air; S.air=1; try{ callAirstrike(by,p); } finally{ S.air=o; } }
+      else if(k==='strike'){ let best=null, bd=1e9; for(const t of tanks){ if(t.dead||t.team===team) continue; const d=t.pos.distanceTo(p); if(d<bd){ bd=d; best=t; } }
+        if(best&&!godOn(best)) a10Strike(best); else banner('Ataque aéreo','No hay blanco del otro bando cerca de donde mirás'+(best&&godOn(best)?' (vos estás con "No se rompe")':''),2.5); }
+      else if(k==='nuke'){ if(nuke&&nuke.phase>=2) nuke=null; if(nuke){ banner('Nuke','Ya hay una en curso',1.5); return; }
+        const S=RULE().sup, o=S.nuke, foe=1-team, sp=W.sp[foe]; S.nuke=1; W.sp[foe]=[{x:p.x/.85,z:p.z/.85}];   // callNuke tira sobre la base enemiga: le pongo una "base" donde mirás
+        try{ callNuke(by); } finally{ S.nuke=o; W.sp[foe]=sp; } } }catch(e){ console.warn(e); banner('No se pudo',e.message,2); } }
+  function clearAll(){ for(const t of (tut.add||[])){ try{ removeTank(t); }catch(e){} crews=crews.filter(c=>c!==t.crew); } tut.add=[];
+    for(const D of tut.pd){ if(D.t){ removeTank(D.t); crews=crews.filter(c=>c!==D.t.crew); } } tut.pd.length=0;
+    for(const P of infantry.slice()) if(P.kind!=='civ'&&P.kind!=='dog') try{ removeInf(P); }catch(e){}
+    for(const t of tanks.slice()) if(t!==player&&(t.T.support||t.prbT)) try{ removeTank(t); }catch(e){} feed('🧹 Listo','var(--paper)'); }
   function swapTank(k){ if(!VEH[k]||!player) return; const pos={label:'',x:player.pos.x,z:player.pos.z}, h=player.heading; removeTank(player);
     tut.key=k; playerCrew.lineup=[k]; player=spawnCrew(playerCrew,k,pos); player.heading=h; CFG.tank=k; save(); updateHud(); banner(player.T.label,'Tanque cambiado',1.5); paintBar(); }
   // ---- cámara libre ----
-  const F={on:false,pos:new THREE.Vector3(),yaw:0,pitch:0,keys:{}}, cam=new THREE.PerspectiveCamera(60,1,.3,6000);
-  function setFree(v){ F.on=!!v; if(F.on){ F.pos.copy(camera.position); const d=new THREE.Vector3(); camera.getWorldDirection(d); F.yaw=Math.atan2(d.x,d.z); F.pitch=Math.asin(Math.max(-1,Math.min(1,d.y))); }
+  const F={on:false,pos:new THREE.Vector3(),yaw:0,pitch:0,keys:{}}, cam=new THREE.PerspectiveCamera(60,1,.3,6000), PZ={on:false};
+  function setPause(v){ PZ.on=!!v; if(PZ.on&&!F.on) setFree(true); banner(PZ.on?'⏸ Pausa':'▶ Sigue',PZ.on?'Todo quieto: recorré el mapa con la cámara libre (W A S D, Q/E, Mayús)':'',1.6); paintBar(); }
+  function setFree(v){ F.on=!!v; if(!F.on&&PZ.on) PZ.on=false; if(F.on){ F.pos.copy(camera.position); const d=new THREE.Vector3(); camera.getWorldDirection(d); F.yaw=Math.atan2(d.x,d.z); F.pitch=Math.asin(Math.max(-1,Math.min(1,d.y))); }
     F.keys={}; paintBar(); }
   document.addEventListener('keydown',e=>{ if(!(tut&&tut.prb&&state==='play')) return; if(e.target&&/INPUT|SELECT|TEXTAREA/.test(e.target.tagName)) return;
     if(e.code==='KeyL'){ setFree(!F.on); e.stopImmediatePropagation(); return; }
+    if(e.code==='KeyP'){ setPause(!PZ.on); e.stopImmediatePropagation(); return; }
     if(F.on&&e.code!=='Escape'){ F.keys[e.code]=true; e.stopImmediatePropagation(); e.preventDefault(); } },true);
   document.addEventListener('keyup',e=>{ if(F.on){ F.keys[e.code]=false; e.stopImmediatePropagation(); } },true);
   document.addEventListener('mousemove',e=>{ if(!F.on||!(tut&&tut.prb)) return; if(document.pointerLockElement||e.buttons){ F.yaw-=(e.movementX||0)*.0026; F.pitch=Math.max(-1.45,Math.min(1.45,F.pitch-(e.movementY||0)*.0026)); } },true);
-  { const _f=frame; frame=function(){ if(F.on&&tut&&tut.prb){ try{ releaseAll(); mouseDown=false; }catch(e){} } return _f.apply(this,arguments); }; }
+  { const _f=frame; frame=function(dt){ if(tut&&tut.prb&&state==='play'&&PZ.on){ try{ releaseAll(); mouseDown=false; cullUpdate(); }catch(e){} renderer.render(scene,camera); return; }   // ⏸ pausa: todo quieto, solo la cámara libre
+      if(F.on&&tut&&tut.prb){ try{ releaseAll(); mouseDown=false; }catch(e){} } const r=_f.apply(this,arguments); try{ prbTick(dt); }catch(e){ console.warn('prb',e); } return r; }; }
   let lastT=performance.now();
   const _rr=renderer.render; renderer.render=function(sc,c){
     if(F.on&&tut&&tut.prb&&state==='play'&&sc===scene&&renderer.getRenderTarget()===null){ const t=performance.now(), dt=Math.min(.1,(t-lastT)/1000); lastT=t;

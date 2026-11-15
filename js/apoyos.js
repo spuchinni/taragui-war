@@ -171,15 +171,15 @@
   // animación una vez por partida y por equipo (pedido de Sebastián): la primera artillería y el primer avión que pide tu equipo
   // (vos o un aliado) se ven enteros; los primeros del enemigo, en versión corta con aviso. Se reinicia en cada partida.
   let CIN={arty:[0,0],air:[0,0]};
-  const cineOk=()=>player&&!player.dead&&!tut&&!net.guest&&state==='play'&&!(typeof TUT1!=='undefined'&&TUT1&&TUT1.stg<2&&PROG&&PROG.stats&&PROG.stats.battles<1);
+  const cineOk=()=>player&&!player.dead&&(!tut||tut.prb)&&!net.guest&&state==='play'&&!(typeof TUT1!=='undefined'&&TUT1&&TUT1.stg<2&&PROG&&PROG.stats&&PROG.stats.battles<1);
   const _ca=callArtillery; callArtillery=function(by,point){ const ok=_ca.apply(this,arguments);
     try{ if(ok&&by){ if(by.isPlayer){ rb.style.display='none'; radio(point,artyDelay()); }
-        const tm=by.team?1:0; if(!CIN.arty[tm]&&cineOk()){ CIN.arty[tm]=1; const enemy=player.team!==by.team, D=artyDelay(), pt=point.clone();
+        const tm=by.team?1:0; if((!CIN.arty[tm]||(tut&&tut.prb))&&cineOk()){ CIN.arty[tm]=1; const enemy=player.team!==by.team, D=artyDelay(), pt=point.clone();
           supQ.push({t:now+D-(enemy?2.6:4),f:()=>{ if(cineOk()&&!CI.on) artyCine(by,pt,enemy); }}); } } }catch(e){ console.warn(e); }
     return ok; };
   const _cs=callAirstrike; callAirstrike=function(by,point){ const ok=_cs.apply(this,arguments);
     try{ if(ok&&by&&by.isPlayer) rvSay(['bombardeo']); }catch(e){}
-    try{ if(ok&&by){ const tm=by.team?1:0; if(!CIN.air[tm]&&cineOk()){ CIN.air[tm]=1; by._airCine=player.team!==by.team?2:1; } } }catch(e){} return ok; };
+    try{ if(ok&&by){ const tm=by.team?1:0; if((!CIN.air[tm]||(tut&&tut.prb))&&cineOk()){ CIN.air[tm]=1; by._airCine=player.team!==by.team?2:1; } } }catch(e){} return ok; };
   const _ap=airPass; airPass=function(by,point,dir){ const n=planes.length, r=_ap.apply(this,arguments);
     try{ if(by&&by._airCine){ const sh=by._airCine===2; by._airCine=0; if(cineOk()&&!CI.on) airCine(by,point,n,sh); } }catch(e){ console.warn(e); } return r; };
   // al salir de la batalla se corta
