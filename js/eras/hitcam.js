@@ -15,15 +15,15 @@ const hcBox=document.createElement('div'); hcBox.id='hcBox'; hcBox.innerHTML='<c
 // cilindro de A a B (para el proyectil y las esquirlas)
 function hcBeam(a,b,r,mat){ const L=a.distanceTo(b), m=new THREE.Mesh(new THREE.CylinderGeometry(r,r,1,6),mat); m.position.copy(a).add(b).multiplyScalar(.5);
   m.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),b.clone().sub(a).normalize()); m.scale.y=Math.max(.01,L); m.userData.L=L; return m; }
-function hcClear(){ if(HC.g){ hcScene.remove(HC.g); for(const e of HC.edges) e.geometry.dispose(); for(const p of HC.path) p.geometry.dispose(); } HC.g=null; HC.edges=[]; HC.path=[]; HC.mods=[]; }
+function hcClear(){ if(HC.g){ hcScene.remove(HC.g); for(const e of HC.edges) if(!(e.geometry===e.parent?.geometry?.userData?.hcE)) e.geometry.dispose(); for(const p of HC.path) p.geometry.dispose(); } HC.g=null; HC.edges=[]; HC.path=[]; HC.mods=[]; }
 function hitcamShow(t,hit,dir,res){
   if(!t||!t.root||!dir) return; hcClear(); t.root.updateMatrixWorld(true);
   const g=new THREE.Group(); HC.g=g; hcScene.add(g);
-  const ud=[]; t.root.traverse(o=>{ ud.push(o.userData); o.userData={col:!!o.userData.tank,mark:!!o.userData.mark}; });   // userData del tanque se apunta a sí mismo: no se puede copiar
+  const ud=[]; t.root.traverse(o=>{ ud.push(o.userData); o.userData={col:!!o.userData.tank,mark:!!o.userData.mark,skW:!!o.userData.skW,wr:!!o.userData.wheelReal,merged:!!o.userData.merged}; });   // userData del tanque se apunta a sí mismo: no se puede copiar
   const c=t.root.clone(true); c.traverse(o=>o.layers.set(0)); /* la copia con todo el detalle aunque el tanque esté lejos (rendimiento.js) */ { let i=0; t.root.traverse(o=>{ o.userData=ud[i++]; }); } c.position.set(0,0,0); g.add(c); let ne=0;
   // casco en rayos X: transparente con los bordes marcados
-  c.traverse(o=>{ if(!o.isMesh) return; if(o.userData.col){ o.visible=false; return; } o.userData.hcOrig=o.material; o.material=hcGhost; o.castShadow=false;
-    const gm=o.geometry; if(!gm.boundingSphere) gm.computeBoundingSphere(); if(ne<90&&gm.boundingSphere.radius>.18&&!o.userData.mark){ const e=new THREE.LineSegments(new THREE.EdgesGeometry(gm,32),hcEdge); o.add(e); HC.edges.push(e); ne++; } });
+  c.traverse(o=>{ if(o.userData.wr) o.visible=true; if(!o.isMesh) return; if(o.userData.col||o.userData.skW){ o.visible=false; return; }   // ruedas: en la copia van las de verdad, no la malla articulada (fusion.js) o.userData.hcOrig=o.material; o.material=hcGhost; o.castShadow=false;
+    const gm=o.geometry; if(!gm.boundingSphere) gm.computeBoundingSphere(); if(ne<90&&gm.boundingSphere.radius>.18&&!o.userData.mark){ const e=new THREE.LineSegments(o.userData.merged?(gm.userData.hcE||(gm.userData.hcE=new THREE.EdgesGeometry(gm,32))):new THREE.EdgesGeometry(gm,32),hcEdge); o.add(e); HC.edges.push(e); ne++; } });
   // módulos y tripulantes por dentro, con el color según el daño
   const q=t.root.quaternion, P=compPos(t), st=v=>v<=0?'dead':v<100?'dmg':'ok';
   const mod=(k,w,h,d,s)=>{ if(!P[k]) return; const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),hcM[s]); m.position.copy(P[k]).applyQuaternion(q); m.quaternion.copy(q); g.add(m); HC.mods.push(m); HC.path.push(m); };
