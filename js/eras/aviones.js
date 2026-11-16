@@ -87,24 +87,92 @@
     return done(g); }
   window.makeB17=makeB17;
 
-  // ---------------- B-29 ----------------
-  const _b29=typeof makeB29==='function'?makeB29:null;
+  // ---------------- B-29 Superfortress (30,18 × 43,05 m; 2.ª versión, pedido de Sebastián "mejorame el B-29") ----------------
+  // Chapa de aluminio con paneles y remaches (textura por código), cola que sube, trompa vidriada con la grilla de marcos y
+  // los pilotos adentro, ala de borde de fuga recto con flaps y alerones, góndolas R-3350 largas con persianas del capó,
+  // turbos y escapes, hélices Hamilton de 4 palas anchas con puntas amarillas, 4 torretas bajas con dos .50, burbujas de
+  // puntería (costados y arriba), astrodomo, puesto de cola con 2 .50 y el cañón de 20 mm, antenas, estrellas en el ala
+  // izquierda arriba y la derecha abajo, matrícula en la deriva y 2 bodegas con compuertas que se abren antes de soltar
+  // (userData.setBay(0..1)); la bomba va adentro de la bodega de adelante y desaparece al soltarla.
+  const alumTex=(()=>{ const c=document.createElement('canvas'); c.width=c.height=512; const x=c.getContext('2d'), R=mulberry0(29);
+    x.fillStyle='#c9ced3'; x.fillRect(0,0,512,512);
+    for(let j=0;j<8;j++) for(let i=0;i<4;i++){ const v=196+((R()*22)|0)-8; x.fillStyle=`rgb(${v},${v+3},${v+7})`; x.fillRect(i*128+1,j*64+1,126,62); }
+    x.strokeStyle='rgba(70,76,82,.55)'; x.lineWidth=1.4; for(let i=0;i<=4;i++){ x.beginPath(); x.moveTo(i*128,0); x.lineTo(i*128,512); x.stroke(); } for(let j=0;j<=8;j++){ x.beginPath(); x.moveTo(0,j*64); x.lineTo(512,j*64); x.stroke(); }
+    x.fillStyle='rgba(90,96,102,.35)'; for(let i=0;i<=4;i++) for(let y=0;y<512;y+=6) x.fillRect(i*128+3,y,1,1); for(let j=0;j<=8;j++) for(let xx=0;xx<512;xx+=6) x.fillRect(xx,j*64+3,1,1);
+    for(let k=0;k<70;k++){ x.fillStyle=`rgba(255,255,255,${R()*.08})`; x.fillRect(R()*512,R()*512,R()*90,2); }
+    const t=new THREE.CanvasTexture(c); t.wrapS=t.wrapT=THREE.RepeatWrapping; return t; })();
+  const alum=(rx,ry,tint=0xffffff)=>{ const t=alumTex.clone(); t.needsUpdate=true; t.repeat.set(rx,ry); return new THREE.MeshPhongMaterial({color:tint,map:t,specular:0x8a9096,shininess:38}); };
+  const serialTex=(txt=>{ const c=document.createElement('canvas'); c.width=256; c.height=64; const x=c.getContext('2d'); x.fillStyle='#16181a'; x.font='bold 46px Arial'; x.textAlign='center'; x.textBaseline='middle'; x.fillText(txt,128,34); return new THREE.CanvasTexture(c); })('486292');
+  // palas anchas tipo "paddle" (Hamilton Standard de 5,05 m) con punta amarilla
+  function propB29(g,x,y,z,R,k){ const hub=new THREE.Group(); hub.position.set(x,y,z); g.add(hub); M(hub,new THREE.SphereGeometry(R*.13,12,8,0,Math.PI*2,0,Math.PI/2),k).rotation.x=Math.PI/2;
+    const bl=new THREE.Group(); hub.add(bl); const sh=new THREE.Shape(); const W=t=>R*(.045+.085*Math.sin(Math.PI*Math.min(1,t*1.15))); sh.moveTo(-W(0),0);
+    for(let i=1;i<=10;i++){ const t=i/10; sh.lineTo(-W(t)*(t>.95?.6:1),R*t); } for(let i=10;i>=0;i--){ const t=i/10; sh.lineTo(W(t)*(t>.95?.6:1)*.8,R*t); }
+    const bg=new THREE.ExtrudeGeometry(sh,{depth:R*.018,bevelEnabled:false}), yel=mat(0xe0b820);
+    for(let i=0;i<4;i++){ const a=new THREE.Group(); a.rotation.z=i/4*Math.PI*2+.4; bl.add(a); const b=new THREE.Mesh(bg,k); b.rotation.y=.35; a.add(b); const tp=M(a,new THREE.BoxGeometry(R*.15,R*.09,R*.03),yel,0,R*.93,0); tp.rotation.y=.35; }
+    M(hub,new THREE.CircleGeometry(R,24),discM,0,0,.05); SPIN.push({g,bl,w:rand(38,46)}); }
+  // sube la cola: desplaza hacia arriba los vértices que quedan detrás de z0
+  const upsweep=(geo,z0,k)=>{ const p=geo.attributes.position; for(let i=0;i<p.count;i++){ const z=p.getZ(i); if(z<z0) p.setY(i,p.getY(i)+k*(z0-z)*(z0-z)); } geo.computeVertexNormals(); return geo; };
   window.makeB29=function(){
-    const g=new THREE.Group(), m=mat(0xc4c9ce), d=mat(0xaab0b6), k=mat(0x2a2a2a), gl=glassM({opacity:.55}), fr=mat(0x8a9096);
-    M(g,fus([[-15.1,.35],[-13.6,.85],[-10.5,1.4],[10.5,1.47],[12.4,1.42]],1,1,18),m);
-    M(g,fus([[12.35,1.42],[13.6,1.28],[14.5,.95],[15.0,.5],[15.15,.05]],1,1,18),gl);                                    // trompa redonda vidriada
-    for(const z of [12.9,13.6,14.3]){ const r=z<13?1.38:z<14?1.2:.98; M(g,new THREE.TorusGeometry(r,.025,4,24),fr,0,0,z); }
-    for(let i=0;i<6;i++){ const a=i/6*Math.PI*2; const b=M(g,new THREE.BoxGeometry(.04,.04,2.8),fr,Math.cos(a)*1.0,Math.sin(a)*1.0,13.8); b.lookAt(0,0,16); }
-    M(g,fin([[-6,1.1],[-9.5,2.5],[-12.6,6.3],[-14.1,6.6],[-15,6.0],[-14.9,1]],.35),d);                                  // deriva alta
-    M(g,plan([[-5,-11.7],[5,-12.4],[4.8,-14],[-4.8,-14]],.24),m,0,.6,0);
-    wing(g,m,{x0:1.2,span:43,cr:5.6,ct:2.0,zle:4.2,sweep:1.3,th:.5,y:-.25,dih:.045,tipR:.4});
-    for(const ex of [7.4,13.0]) for(const sd of [-1,1]){ const x=sd*ex, y=-.35+ex*.045;
-      M(g,fus([[-3.4,.3],[-1,.68],[2.2,.8],[3.3,.78]],1,1,14),d,x,y,2.9); M(g,cylZ(.8,.78,.8,16),k,x,y,6.2); prop(g,x,y,6.7,2.5,4,k); }
-    for(const [y,z] of [[1.35,8.5],[1.35,-3.8],[-1.35,6],[-1.35,-5.5]]){ M(g,new THREE.SphereGeometry(.42,10,6,0,Math.PI*2,0,Math.PI/2),fr,0,y,z).rotation.x=y<0?Math.PI:0;
-      for(const sx of [-.1,.1]) M(g,cylZ(.03,.03,1,5),k,sx,y+(y<0?-.18:.18),z+.6); }
-    M(g,new THREE.BoxGeometry(.7,.8,.7),gl,0,.2,-15.0); for(const sx of [-.12,.12]) M(g,cylZ(.035,.035,1,5),k,sx,.1,-15.6);
-    const bay=M(g,new THREE.BoxGeometry(1.6,.12,6),mat(0x3a3c40),0,-1.42,1); g.userData.bay=bay;
-    for(const sd of [-1,1]){ decal(g,usStar,4.2,2.1,sd*15,.6,.6,-Math.PI/2,0,sd>0?Math.PI:0); decal(g,usStar,2.8,1.4,sd*1.47,.1,-8.5,0,sd*Math.PI/2); }
+    const g=new THREE.Group(), fm=alum(6,10), wm=alum(.09,.16), d=alum(2,3,0xe4e6ea), k=mat(0x232323), gl=glassM({opacity:.42,color:0x8fa6b6}), fr=mat(0x9aa0a6), dk=mat(0x3a3c40), bk=mat(0x111111), ex=mat(0x6a5446);
+    // fuselaje: cilindro de 2,9 m con la cola que sube; corte limpio donde empieza la trompa
+    M(g,upsweep(fus([[-15.0,.32],[-14.2,.6],[-12.2,1.0],[-9.5,1.38],[-7,1.46],[10.6,1.46],[12.35,1.44]],1,1,28),-8.5,.0115),fm);
+    // trompa vidriada: grilla de anillos y meridianos que siguen la curva, piso, tablero, dos pilotos y el bombardero
+    const NP=[[12.3,1.44],[13.2,1.36],[13.9,1.2],[14.5,.95],[14.95,.6],[15.18,.18],[15.22,.02]]; M(g,fus(NP,1,1,28),gl);
+    const rAt=z=>{ for(let i=1;i<NP.length;i++) if(z<=NP[i][0]){ const [z0,r0]=NP[i-1],[z1,r1]=NP[i]; return r0+(r1-r0)*(z-z0)/(z1-z0); } return 0; };
+    for(const z of [12.35,13.2,13.95,14.6,15.0]) M(g,new THREE.TorusGeometry(rAt(z)+.01,.02,4,28),fr,0,0,z);
+    for(let i=0;i<14;i++){ const a=i/14*Math.PI*2; if(Math.sin(a)<-.55) continue; const pts=[]; for(let z=12.35;z<=15.15;z+=.2){ const r=rAt(z)+.012; pts.push(new THREE.Vector3(Math.cos(a)*r,Math.sin(a)*r,z)); }
+      M(g,new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts),14,.018,4),fr); }
+    M(g,new THREE.PlaneGeometry(.55,.55),mat(0x1a2228),0,-.72,14.6,Math.PI/2+.75);                                          // vidrio plano del visor de bombardeo
+    M(g,new THREE.BoxGeometry(1.7,.06,1.7),dk,0,-.55,13.0); M(g,new THREE.BoxGeometry(1.9,.45,.12),dk,0,.05,12.9);              // piso y tablero
+    for(const [px,pz] of [[-.45,12.3],[.45,12.3],[0,14.2]]){ M(g,new THREE.SphereGeometry(.15,8,6),mat(0x5a4632),px,.32,pz); M(g,new THREE.BoxGeometry(.42,.5,.3),mat(0x55603f),px,-.05,pz-.05); }
+    M(g,new THREE.SphereGeometry(.3,12,8,0,Math.PI*2,0,Math.PI/2),gl,0,1.42,10.6);                                         // astrodomo
+    // ala Boeing 117: borde de fuga casi recto, ataque con flecha; flaps Fowler adentro y alerones afuera marcados
+    wing(g,wm,{x0:1.3,span:43.05,cr:5.9,ct:1.95,zle:4.6,sweep:3.7,th:.55,y:-.45,dih:.045,tipR:.45});
+    for(const sd of [-1,1]){ const yy=x=>-.45+x*.045+.29;
+      for(const [a,b] of [[1.6,6.4],[8.2,12.2],[14.2,20.6]]){ const c=(a+b)/2, L=b-a, bx=M(g,new THREE.BoxGeometry(L,.02,.04),dk,sd*c,yy(c),-.15-(c-1.3)*.012); bx.rotation.z=sd*.045; }
+      M(g,new THREE.BoxGeometry(.04,.02,1.2),dk,sd*14.2,yy(14.2),-.7); }
+    // empenaje: deriva alta con aleta dorsal larga y timón, estabilizador de 13,4 m con puntas redondas
+    const tailY=.0115*(-8.5+12)**2;
+    M(g,fin([[-3.5,1.35],[-8.5,1.9],[-11.4,3.6],[-12.9,6.2],[-13.5,6.75],[-14.2,6.8],[-14.75,6.3],[-14.9,4.5],[-14.6,1.6]],.42),d);
+    M(g,new THREE.BoxGeometry(.44,4.6,.035),dk,0,4.1,-13.2).rotation.x=.08;                                               // línea del timón
+    decal(g,serialTex,2.4,.6,.23,4.3,-13.6,0,Math.PI/2); decal(g,serialTex,2.4,.6,-.23,4.3,-13.6,0,-Math.PI/2);
+    for(const sd of [-1,1]){ const s=M(g,plan([[0,-10.2],[2.5,-10.6],[6.3,-11.5],[6.7,-12.0],[6.6,-12.6],[6.0,-13.2],[0,-13.6]],.28),d,0,tailY*.55+.05,0); s.scale.x=sd;
+      M(g,new THREE.BoxGeometry(5.6,.02,.04),dk,sd*3.6,tailY*.55+.2,-12.5); }
+    // puesto de cola: vidrios, dos .50 y el cañón M2 de 20 mm
+    const ty=.0115*(6.5**2);
+    M(g,new THREE.SphereGeometry(.5,12,8),gl,0,ty+.05,-14.75).scale.set(1,1,1.2);
+    for(const sx of [-.16,.16]) M(g,cylZ(.035,.035,1.3,6),k,sx,ty-.25,-15.55); M(g,cylZ(.05,.05,1.1,6),k,0,ty-.4,-15.5);
+    // góndolas Wright R-3350: capó, persianas, toma del radiador de aceite abajo, turbo y escape, prolongación detrás del ala
+    for(const ex2 of [7.1,12.9]) for(const sd of [-1,1]){ const x=sd*ex2, y=-.42+ex2*.045, inb=ex2<10;
+      M(g,fus([[inb?-3.4:-2.0,.32],[inb?-2.4:-1.1,.6],[-.5,.78],[2.6,.88],[4.6,.9],[5.6,.86],[6.15,.8]],1,1.08,20),d,x,y,0);
+      M(g,cylZ(.92,.9,.35,22),dk,x,y,4.75); for(let i=0;i<16;i++){ const a=i/16*Math.PI*2; M(g,new THREE.BoxGeometry(.2,.02,.36),dk,x+Math.cos(a)*.93,y+Math.sin(a)*.98,4.72).rotation.z=a+Math.PI/2; }
+      M(g,new THREE.TorusGeometry(.78,.07,6,22),fm,x,y,6.15); M(g,new THREE.CircleGeometry(.74,22),bk,x,y,6.1);
+      for(let i=0;i<9;i++){ const a=i/9*Math.PI*2; M(g,cylZ(.08,.08,.25,6),mat(0x4a4a4a),x+Math.cos(a)*.5,y+Math.sin(a)*.5,6.0); }
+      M(g,new THREE.BoxGeometry(.75,.3,.9),d,x,y-.88,5.4); M(g,new THREE.PlaneGeometry(.62,.2),bk,x,y-.88,5.86);              // toma del radiador de aceite
+      for(const s2 of [-1,1]){ M(g,new THREE.CylinderGeometry(.22,.22,.12,14),mat(0x8d8f90),x+s2*.86,y-.1,2.2).rotation.z=Math.PI/2; M(g,cylZ(.07,.09,.7,8),ex,x+s2*.8,y-.35,1.6); } }
+    // hélices
+    for(const ex2 of [7.1,12.9]) for(const sd of [-1,1]) propB29(g,sd*ex2,-.42+ex2*.045,6.55,2.52,k);
+    // torretas bajas a control remoto con dos .50 (la de adelante arriba con cuatro) y las burbujas de puntería
+    for(const [y,z,n] of [[1.42,9.0,4],[1.42,-3.6,2],[-1.42,6.4,2],[-1.42,-6.2,2]]){ const up=y>0, t=new THREE.Group(); t.position.set(0,y,z); if(!up) t.rotation.z=Math.PI; g.add(t);
+      M(t,new THREE.CylinderGeometry(.62,.66,.16,18),fm,0,.04,0); const dm=M(t,new THREE.SphereGeometry(.55,16,8,0,Math.PI*2,0,Math.PI/2),d,0,.1,0); dm.scale.set(1,.5,1.15);
+      for(let i=0;i<n;i++){ const sx=(i%2?1:-1)*(i<2?.14:.27); M(t,cylZ(.032,.032,1.25,6),k,sx,.24,.75); M(t,cylZ(.055,.055,.25,6),k,sx,.24,.22); } }
+    for(const sd of [-1,1]){ const b=M(g,new THREE.SphereGeometry(.4,12,8,0,Math.PI*2,0,Math.PI/2),gl,sd*1.38,.25,-6.6); b.rotation.z=-sd*Math.PI/2; b.scale.set(1,.55,1); }
+    M(g,new THREE.SphereGeometry(.38,12,8,0,Math.PI*2,0,Math.PI/2),gl,0,1.42,-6.0).scale.set(1,.6,1.1);                       // burbuja de arriba (CFC)
+    for(const sd of [-1,1]) for(const z of [11.6,-5.0]) M(g,new THREE.PlaneGeometry(.32,.26),mat(0x2a3540),sd*1.465,.35,z,0,sd*Math.PI/2);   // ventanillas
+    // antenas: mástil arriba con el cable a la deriva, látigo abajo
+    M(g,new THREE.CylinderGeometry(.02,.03,.7,5),k,0,1.8,7.2); struts(g,k,[0,2.1,7.2],[0,6.5,-13.9],.008); M(g,new THREE.CylinderGeometry(.01,.015,.9,4),k,0,-1.85,-1.5).rotation.x=.4;
+    M(g,cylZ(.025,.025,.8,5),k,.6,-.2,12.6);                                                                                 // pitot
+    // bodegas: dos (adelante y atrás del larguero), cada una con dos compuertas que se abren hacia los costados
+    const doors=[]; const bayM=mat(0x2b2d30,{side:THREE.DoubleSide});
+    for(const [z0,z1] of [[4.7,9.2],[-1.5,-6.0]]){ const zc=(z0+z1)/2, L=Math.abs(z1-z0);
+      M(g,new THREE.BoxGeometry(1.3,.8,L),bayM,0,-.86,zc);
+      for(const sd of [-1,1]){ const h=new THREE.Group(); h.position.set(sd*.78,-1.3,zc); g.add(h); const dr=M(h,new THREE.BoxGeometry(.8,.05,L-.1),d,-sd*.39,-.06,0); dr.rotation.z=-sd*.22; doors.push({h,sd}); } }
+    let bomb=null; if(typeof makeFatMan==='function'){ bomb=makeFatMan(); bomb.scale.setScalar(.62); bomb.position.set(0,-.85,7.0); g.add(bomb); }
+    g.userData.bay=doors[0].h; g.userData.bomb=bomb; g.userData.bayT=0;
+    g.userData.setBay=t=>{ g.userData.bayT=t; for(const D of doors) D.h.rotation.z=D.sd*t*1.3; };
+    // insignias: estrella en el ala izquierda arriba y la derecha abajo, y a los dos costados atrás
+    decal(g,usStar,4.4,2.2,14.5,-.45+14.5*.045+.29,.3,-Math.PI/2,0,Math.PI); decal(g,usStar,4.4,2.2,-14.5,-.45+14.5*.045-.29,.3,Math.PI/2,0,Math.PI);
+    for(const sd of [-1,1]) decal(g,usStar,2.8,1.4,sd*1.475,.1,-8.0,0,sd*Math.PI/2);
     return done(g); };
 
   // ---------------- Ju 88 A-4 (14,36 × 20,08 m) ----------------
@@ -336,6 +404,11 @@
     const nat=(by&&by.crew&&by.crew.nation)||(typeof teamNation==='function'&&by?teamNation(by.team):by&&by.team===0?allyNation:foeNation), axis=['de','it','jp'].includes(nat);
     const mk=era>=5?window.makeA10:(SUPPORT_PLANE[nat]||(axis?makeJu87:makeP47)); const nm=mk();
     for(const ch of P.g.children.slice()) if(ch!==P.hit) P.g.remove(ch); for(const ch of nm.children.slice()) P.g.add(ch); };
+  // B-29 de la nuke: abre las compuertas unos 3 s antes de soltar y la bomba de adentro desaparece al caer
+  if(typeof updateNuke==='function'){ const _un=updateNuke; updateNuke=function(dt){ const PL=typeof nuke!=='undefined'&&nuke&&nuke.plane, U=PL&&PL.g.userData;
+      if(U&&U.setBay){ let want=0; if(PL.dropped) want=1; else { const r=nuke.p.clone().sub(PL.g.position); r.y=0; if(r.dot(PL.dir)<=PL.rel+PL.v*3) want=1; }
+        if(U.bayT!==want) U.setBay(Math.max(0,Math.min(1,U.bayT+Math.sign(want-U.bayT)*dt/1.6))); }
+      _un.apply(this,arguments); if(U&&PL.dropped&&U.bomb) U.bomb.visible=false; }; }
   // hélices
   const _cu=cullUpdate, t0={v:performance.now()};
   cullUpdate=function(){ _cu.apply(this,arguments); const now2=performance.now(), dt=Math.min(.1,(now2-t0.v)/1000); t0.v=now2;
