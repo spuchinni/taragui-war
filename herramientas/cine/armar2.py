@@ -39,7 +39,7 @@ for S in TOMAS:
     if S['logo']: vf += ",format=yuv420p"
     else: vf += f",drawbox=x=0:y=0:w=iw:h={BAR}:color=black:t=fill,drawbox=x=0:y=ih-{BAR}:w=iw:h={BAR}:color=black:t=fill" + cap(S['cap'], dur)
     if S['id'] == 'mk1': vf += ",fade=t=in:st=0:d=0.7"
-    if S['id'] == 'nahuel': vf += f",fade=t=out:st={dur-.3:.2f}:d=0.3"
+    if S['id'] == 'a7v': vf += f",fade=t=out:st={dur-.3:.2f}:d=0.3"   # antes del silencio del cuerno
     run(['ffmpeg', '-v', 'error', '-y', '-framerate', str(FPS), '-i', f"{D}/frames2/{S['id']}/%04d.jpg", '-vf', vf + ',format=yuv420p',
          '-t', f'{dur:.3f}', '-r', str(FPS), '-c:v', 'libx264', '-crf', '16', '-an', v])
     clips.append((S, v))
@@ -65,8 +65,9 @@ for S in TOMAS:
         if e['v'] < .15 or e['n'] not in FILES or e['n'] in ('squelch', 'static', 'idle', 'drive', 'turret', 'mgburst'): continue
         if e['t'] - last[e['n']] < .25 or e['t'] > S['ed'][1] - S['ed'][0]: continue
         last[e['n']] = e['t']; ev.append((S['ed'][0] + e['t'], e['n'], min(1, e['v']), e.get('r', 1)))
-ev.append((17.95+DX, 'nukeb', 1.0, 1)); ev.append((17.97+DX, 'expl', 1.0, .5)); ev.append((18.0+DX, 'sboom', .9, .6)); ev.append((18.7+DX, 'expl', .7, .38))   # la nuke en el último golpe
-ains = ['-i', MUS]; afl = [f"[0:a]afade=t=in:d=0.05,afade=t=out:st={17.85+DX:.2f}:d=0.3,apad=whole_dur={END}[m]"]
+NK = next(S['ed'][0] for S in TOMAS if S['id'] == 'nuke')   # la nuke estalla ~3 s después del último golpe (la bomba cae en silencio)
+ev.append((NK, 'nukeb', 1.0, 1)); ev.append((NK+.02, 'expl', 1.0, .5)); ev.append((NK+.05, 'sboom', .9, .6)); ev.append((NK+.75, 'expl', .7, .38))   # la nuke en el último golpe
+ains = ['-i', MUS]; afl = [f"[0:a]afade=t=in:d=0.05,afade=t=out:st={18.0+DX:.2f}:d=0.3,apad=whole_dur={END}[m]"]
 for i, (t, n, vol, r) in enumerate(ev):
     ains += ['-i', FILES[n]]; ms = int(t * 1000)
     afl.append(f"[{i+1}:a]atempo={max(.5, min(2, r)):.2f},volume={vol*.55:.2f},adelay={ms}|{ms}[e{i}]")
@@ -76,7 +77,7 @@ audio = f'{T}/audio.m4a'
 run(['ffmpeg', '-v', 'error', '-y', *ains, '-filter_complex', ';'.join(afl), '-map', '[a]', '-c:a', 'aac', '-b:a', '160k', '-ar', '44100', audio])
 
 # 4) cierre: fogonazo blanco de la nuke en el último golpe (17,95 s), el hongo sube y después entra la portada y se acerca despacio
-FL = 17.95 + DX; F = END - 1.5
+FL = NK; F = END - 1.5
 for lang, cov, out in (('es', 'portada-nueva.jpg', 'intro.mp4'), ('en', 'portada-en.jpg', 'intro-en.mp4')):
     d = END - F
     vfc = (f"[1:v]scale=-2:1360,crop=2400:1350,zoompan=z='1+0.035*on/{int(d*FPS)}':x='iw/2-(iw/zoom/2)':y='0':d={int(d*FPS)+1}:s={Wd}x{Hd}:fps={FPS},"
