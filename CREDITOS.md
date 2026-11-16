@@ -18,6 +18,8 @@ Recortados y comprimidos para el juego.
 |---|---|---|---|
 | cannon_0/1, expl_0, idle_0, turret_0, sboom_0 | Freesound, qubodup | CC0 / dominio público | ✅ |
 | mgburst_0, mgshot_0, siren_0, flyover_0 | Pixabay (freesound_community) | Licencia de contenido de Pixabay (uso comercial permitido dentro del juego; no se puede revender el sonido suelto) | ✅ |
+| menu_0 (tema del menú, 12,3 s del medio en bucle) | Pixabay: "Military War" de mfcc (n.º 620908) | Licencia de contenido de Pixabay | ✅ |
+| video/intro.mp4 e intro-en.mp4 (música) | Pixabay: "War Horn and Drums" de soundmarker33 (n.º 512545) | Licencia de contenido de Pixabay | ✅ |
 | drive_0, static_0, squelch_0, prop_0, plane_0, thump_0/1, metal_0/1, ric_0/1, shellin_0–3, bombw_0, nukew_0, nukeb_0, gau8_0 | **Hechos por código** para el juego (`herramientas/sonidos/sintetizar.py`, ruido y osciladores) | Propios | ✅ |
 | infamb_0, intro_0 | Mezcla hecha por código con las grabaciones CC0 de qubodup + ráfagas y viento sintéticos | Propios + CC0 | ✅ |
 

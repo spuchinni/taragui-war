@@ -3,7 +3,7 @@
 // dominio público). Pixabay/freesound_community: ametralladora .50, sirena antiaérea, paso de avión. El resto (marcha del tanque, radio,
 // avionetas, morteros, golpes de metal, rebotes, silbidos, bombas, nuke, GAU-8, ambiente y la intro) está hecho por código:
 // herramientas/sonidos/sintetizar.py (ver CREDITOS.md).
-const SND_FILES={"shellin":4,"bombw":1,"nukew":1,"nukeb":1,"plane":1,"infamb":1,"gau8":1,"cannon":2,"expl":1,"metal":2,"ric":4,"intro":1,"idle":1,"drive":1,"turret":1,"static":1,"squelch":1,"mgburst":1,"mgshot":1,"thump":2,"siren":1,"flyover":1,"prop":1,"sboom":1}; // archivos en snd/<nombre>_<n>.mp3
+const SND_FILES={"shellin":4,"bombw":1,"nukew":1,"nukeb":1,"plane":1,"infamb":1,"gau8":1,"cannon":2,"expl":1,"metal":2,"ric":4,"intro":1,"idle":1,"drive":1,"turret":1,"static":1,"squelch":1,"mgburst":1,"mgshot":1,"thump":2,"siren":1,"flyover":1,"prop":1,"sboom":1,"menu":1}; // archivos en snd/<nombre>_<n>.mp3
 // Voces de radio (TTSMaker) por idioma, 14 frases en el mismo orden en cada uno.
 const VO_LANGS=["es", "en-gb", "en-us", "de", "ru"], VO_N=14, VO_CNT={ru:11};   // ru: faltan las 3 últimas frases // archivos en voz/<idioma>/00.mp3 … 13.mp3
 // Los sonidos se bajan en segundo plano apenas carga la página (no traban el menú) y quedan en caché del navegador.
@@ -18,7 +18,7 @@ let engNodes=null; // piezas del motor sintético (realismo.js las ajusta según
 let AC,noiseBuf,eng,engGain,master,extBus,extLP,engMix,engLP,eng2,lfoG,trkSrc,trkGain,introNode=null;
 const SFX={}, VO={}; let volMaster=.8, radioOn=true;
 // Bucles grabados: largo del ciclo (s) dentro de cada archivo, que trae el ciclo repetido para empalmar sin cortes.
-const LOOP_LEN={idle:4.1,drive:2.7,turret:2.8,static:3.7,mgburst:1.7}; const LOOPS={};
+const LOOP_LEN={menu:12.308,idle:4.1,drive:2.7,turret:2.8,static:3.7,mgburst:1.7}; const LOOPS={};
 function startLoops(){
   for(const k of ['idle','drive','turret','mgburst']){ if(LOOPS[k]||!SFX[k]||!SFX[k].length) continue;
     const src=AC.createBufferSource(); src.buffer=SFX[k][0]; src.loop=true; src.loopStart=.2; src.loopEnd=.2+LOOP_LEN[k];
@@ -49,7 +49,7 @@ function initAudio(){
   trkGain=AC.createGain(); trkGain.gain.value=0; trkSrc.connect(tf).connect(trkGain).connect(engGain);
   engNodes={lfo,g2,nzg,nzf}; [eng,eng2,nz,lfo,trkSrc].forEach(n=>n.start());
   for(const [k,n] of Object.entries(SND_FILES)){ SFX[k]=[]; for(let i=0;i<n;i++) sndFetch(`snd/${k}_${i}.mp3`).then(ab=>
-    AC.decodeAudioData(ab,buf=>{ SFX[k].push(buf); if(k==='intro'&&musMode==='hangar'){ musMode=null; syncIntro(); } if(['idle','drive','turret','mgburst'].includes(k)) startLoops(); },()=>{})).catch(()=>{}); }
+    AC.decodeAudioData(ab,buf=>{ SFX[k].push(buf); if(k==='intro'&&musMode==='hangar'||k==='menu'&&musMode==='music'){ musMode=null; syncIntro(); } if(['idle','drive','turret','mgburst'].includes(k)) startLoops(); },()=>{})).catch(()=>{}); }
   for(const lang of VO_LANGS){ VO[lang]=[]; for(let i=0;i<(VO_CNT[lang]||VO_N);i++) sndFetch(`voz/${lang}/${String(i).padStart(2,'0')}.mp3`).then(ab=>
     AC.decodeAudioData(ab,buf=>{ VO[lang][i]=buf; },()=>{})).catch(()=>{}); }
 }
@@ -162,7 +162,11 @@ function musStop(){ if(!mus) return; const m=mus; mus=null; clearInterval(m.iv);
 function musStart(mode){
   const out=AC.createGain(); out.gain.setValueAtTime(0,AC.currentTime); out.gain.linearRampToValueAtTime(mode==='hangar'?.9:.5,AC.currentTime+2.5); out.connect(master);
   const m={out,nodes:[],mode}; mus=m;
-  if(mode==='music'){
+  if(mode==='music'&&SFX.menu&&SFX.menu.length){
+    // Tema del menú: "Military War" de mfcc (Pixabay), 12,3 s del medio que empalman sin corte (el archivo trae el ciclo dos veces)
+    const b=AC.createBufferSource(); b.buffer=SFX.menu[0]; b.loop=true; b.loopStart=.5; b.loopEnd=.5+LOOP_LEN.menu;
+    const g=AC.createGain(); g.gain.value=.42; b.connect(g).connect(out); b.start(AC.currentTime+.05,.5); m.nodes.push(b);
+  } else if(mode==='music'){
     // Re menor, lento: Dm - Bb - F - C con colchón, bajo, eco y tambor grave
     const dly=AC.createDelay(1); dly.delayTime.value=.42; const fb=AC.createGain(); fb.gain.value=.38; const wet=AC.createGain(); wet.gain.value=.35; dly.connect(fb).connect(dly); dly.connect(wet).connect(out);
     const CH=[[50,53,57,62],[46,50,53,58],[41,48,53,57],[48,52,55,60]], BAR=4.2, MEL=[62,65,67,69,72,74,69,67];
@@ -193,7 +197,7 @@ function musStart(mode){
 }
 function syncIntro(){
   if(!AC) return;
-  const want=['menu','summary','lobby','brief','intro'].includes(state)?(state==='menu'&&menuScreen==='hangar'?'hangar':'music'):null;
+  const want=state==='intro'&&typeof intro!=='undefined'&&intro&&(intro.vid||intro.cover)?null:['menu','summary','lobby','brief','intro'].includes(state)?(state==='menu'&&menuScreen==='hangar'?'hangar':'music'):null;
   if(want===musMode) return; musMode=want; musStop(); if(want) musStart(want);
 }
 document.addEventListener('pointerdown',()=>{ initAudio(); if(AC.state==='suspended') AC.resume(); syncIntro(); });

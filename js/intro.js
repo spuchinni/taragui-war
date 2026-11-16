@@ -9,7 +9,7 @@ const INTRO_SHOTS=[
   {k:'leo2a4',t:'Hoy',s:'Visión térmica, telémetro y estabilizador',sky:0x8d97a1,gr:0x6a6650,v:2.2,cam:'front',fire:2.6,dur:5.5}
 ].filter(S=>VEH[S.k]);
 let intro=null;
-const INTRO_ID='3';
+const INTRO_ID='4'; // 4: video filmado con el motor (herramientas/cine/filmar2.js + armar2.py)
 const introSeen=()=>{ try{ return localStorage.getItem('tw_intro_vista')===INTRO_ID; }catch(e){ return true; } };
 function introScene(){
   const sc=new THREE.Scene(); sc.fog=new THREE.Fog(0xaaaaaa,40,190); sc.background=new THREE.Color(0xaaaaaa);
@@ -47,14 +47,16 @@ function introUI(){
   $('iStart').onclick=()=>{ initAudio(); if(AC.state==='suspended') AC.resume(); introPlay(); };
   return el;
 }
-document.addEventListener('keydown',e=>{ if(state!=='intro') return; if(['Escape','Enter','Space'].includes(e.code)){ e.preventDefault(); e.stopImmediatePropagation(); if(intro&&intro.cover){ initAudio(); if(AC.state==='suspended') AC.resume(); introEnd(); return; } if(intro&&!intro.on&&e.code!=='Escape') $('iStart').click(); else introEnd(); } },true);
+document.addEventListener('keydown',e=>{ if(state!=='intro') return; if(['Escape','Enter','Space'].includes(e.code)){ e.preventDefault(); e.stopImmediatePropagation(); if(intro&&intro.cover){ initAudio(); if(AC.state==='suspended') AC.resume(); if(e.code==='Escape') introEnd(); else coverGo(); return; } if(intro&&!intro.on&&e.code!=='Escape') $('iStart').click(); else introEnd(); } },true);
 // Intro en video (video/intro.mp4, armado con los videos de Gemini): se muestra en vez de la hecha con el motor, que queda si el video no carga
-const INTRO_VIDEO='video/intro.mp4?v='+(window.GAME_V||''), INTRO_VIDEO_ON=false; // reemplazado por la portada animada (pedido de Sebastián)
+// Video con los tanques mejorados (pedido de Sebastián, 16/11/2026): sale la primera vez al tocar la portada; inglés = intro-en.mp4 (cierra en la portada "Steel Front")
+const INTRO_VIDEO_ON=false; // se prende cuando esté el video nuevo
+const introVideoSrc=()=>'video/intro'+(window.LANG==='en'?'-en':'')+'.mp4?v='+(window.GAME_V||'');
 let introVideoOk=INTRO_VIDEO_ON;
 function introVideo(){
-  const ui=introUI(); let v=$('iVid'); if(!v){ v=document.createElement('video'); v.id='iVid'; v.src=INTRO_VIDEO; v.playsInline=true; v.preload='auto'; ui.insertBefore(v,ui.firstChild); v.onended=()=>introEnd(); v.onerror=()=>{ introVideoOk=false; introEnd(); }; }
+  const ui=introUI(); let v=$('iVid'); if(!v){ v=document.createElement('video'); v.id='iVid'; v.src=introVideoSrc(); v.playsInline=true; v.preload='auto'; ui.insertBefore(v,ui.firstChild); v.onended=()=>introEnd(); v.onerror=()=>{ introVideoOk=false; introEnd(); }; }
   v.hidden=false; v.currentTime=0; $('iFade').style.opacity=0; ui.querySelectorAll('.iBar').forEach(b=>b.hidden=true);
-  if(typeof musStop==='function') musStop(); v.volume=Math.min(1,volMaster); v.play().catch(()=>{});
+  if(typeof musStop==='function') musStop(); musMode=null; v.volume=Math.min(1,volMaster); $('iSkip').hidden=false; v.play().catch(()=>introEnd());
 }
 // Arranca la intro. Sin sonido habilitado todavía (primera visita) muestra "Hacé clic para empezar": el clic habilita el audio.
 // Portada (pedido de Sebastián): la ilustración quieta (img/portada-nueva.jpg) con "Hacé clic para empezar".
@@ -68,8 +70,11 @@ function coverStart(){
   let c=$('iCover'); if(c) c.remove();
   c=document.createElement('div'); c.id='iCover'; c.className='ready'; c.innerHTML=`<div class="cvArt"><img class="cvBg" src="img/portada-nueva.jpg" alt="TaraWar: Frente de Acero"></div><div class="cvGo">Hacé clic para empezar</div>`;
   ui.appendChild(c); const bt=$('boot'); if(bt) bt.remove();
-  c.onclick=()=>{ initAudio(); if(AC.state==='suspended') AC.resume(); introEnd(); };
+  c.onclick=()=>{ initAudio(); if(AC.state==='suspended') AC.resume(); coverGo(); };
 }
+// Al tocar la portada: la primera vez (o si cambió INTRO_ID) el video; después, derecho al menú
+function coverGo(){ if(!INTRO_VIDEO_ON||!introVideoOk||introSeen()) return introEnd();
+  const c=$('iCover'); if(c) c.remove(); intro.cover=false; intro.vid=true; introVideo(); }
 function introStart(){
   if(INTRO_COVER) return coverStart();
   if(!INTRO_SHOTS.length&&!introVideoOk) return;
