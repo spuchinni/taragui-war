@@ -38,7 +38,7 @@ module.exports=[
    CAM=()=>{ const u=CAM_U, p=rel(t,lerp(2.6,2.2,u),0,lerp(12,10,u)); p.y=t.pos.y+1.5; fov(30); camera.position.copy(p); camera.lookAt(rel(t,0,2,0)); }; return true; })()`},
  // --- 10,3 s más (pedido de Sebastián): la música repite los tambores (6–16,3 s) después de 16,3 s; los golpes caen 10,3 s más tarde ---
  // dos más de la 1ª Guerra (pedido de Sebastián): un Renault FT norteamericano en Saint-Mihiel y el A7V que dispara en el golpe grande
- {id:'ft',map:'stmihiel',wx:'niebla',ed:[15.66,16.3],cap:'Renault FT · 1918',grade:'old',setup:`(()=>{ const Z=spot(1,120,true); const t=act('ftus',0,Z.x,Z.z,.4); t.cine.th=1;
+ {id:'ft',map:'stmihiel',wx:'niebla',ed:[15.66,16.3],cap:'Renault FT · 1918',grade:'old',setup:`(()=>{ const B=W.sp[0][0], Zc=zones[1], dx=Zc.x-B.x, dz=Zc.z-B.z, l=Math.hypot(dx,dz)||1, Z={x:B.x+dx/l*30,z:B.z+dz/l*30}; const t=act('ftus',0,Z.x,Z.z,Math.atan2(dx,dz)); t.cine.th=1;   // detrás de las líneas: sin trincheras
    { const a=rel(t,-3,0,-4), g=rel(t,-3,0,60); squad(0,'us',a.x,a.z,g.x,g.z,4); }
    CAM=()=>{ const u=CAM_U, p=rel(t,lerp(5.5,4.5,u),0,lerp(6,3,u)); p.y=ground(p.x,p.z)+.9; fov(40); camera.position.copy(p); camera.lookAt(rel(t,0,1.2,.5)); }; return true; })()`},
  {id:'a7v',map:'villers',wx:'niebla',ed:[16.3,17.75],hits:[.05],cap:'A7V · 1918',grade:'old',setup:`(()=>{ const Z=spot(1,-120,true); const t=act('a7v',1,Z.x,Z.z,0); t.cine.th=.5;
@@ -65,7 +65,8 @@ module.exports=[
    CAM=()=>{ const u=CAM_U, PLx=planes[planes.length-1], pg=PLx&&PLx.g?PLx.g.position:null; fov(50); camera.position.set(C.x-u*4,C.y,C.z); const tg=V3(Z.x,P.y+5,Z.z-10); if(pg) tg.lerp(pg,.3); camera.lookAt(tg); }; return true; })()`},
  {id:'puente',map:'puente',wx:'tarde',ed:[22.15,23.84],cap:'Puente General Belgrano',setup:`(()=>{ const x0=-200, zc=2.5, L=[act('tam',0,x0,zc,Math.PI/2),act('tam2c',0,x0-15,zc,Math.PI/2),act('tam',0,x0-30,zc,Math.PI/2)];   // el tablero tiene ~8 m de ancho, a z≈0–5
    for(const t of L){ const d=W.deckAt?W.deckAt(t.pos.x,t.pos.z):null; if(d!=null){ t.pos.y=d; t.root.position.y=d; } t.cine.th=.6; }
-   CAM=()=>{ const u=CAM_U, t=L[0], y=t.pos.y; fov(44); camera.position.set(t.pos.x+lerp(34,40,u),y+lerp(10,16,u),t.pos.z+lerp(-42,-50,u)); camera.lookAt(t.pos.x-14,y-2,t.pos.z); }; return true; })()`},
+   const A=osmGeo(osmData('puente'),...BELGRANO.p[0]);   // mirando hacia el pilón nuevo: los TAM van hacia él
+   CAM=()=>{ const u=CAM_U, t=L[0], y=t.pos.y; fov(46); camera.position.set(t.pos.x-lerp(26,20,u),y+lerp(9,13,u),t.pos.z-lerp(34,30,u)); camera.lookAt(lerp(t.pos.x,A.x,.55),y+lerp(12,18,u),A.z); }; return true; })()`},
  {id:'artilleria',map:'costanera',wx:'tarde',ed:[23.84,26.6],hits:[.1,.82,1.34,1.7],setup:`(()=>{ const Z=spot(1,0,false,8); const L=[act('t62m',1,Z.x,Z.z,Math.PI),act('t55',1,Z.x+3,Z.z+14,Math.PI),act('t62m',1,Z.x-3,Z.z+28,Math.PI)]; L.forEach(t=>t.cine.th=.5);
    const H=[.1,.82,1.34,1.7].map((h,i)=>({h,p:V3(Z.x+rand(-12,12),0,Z.z+i*9+rand(-4,4))}));
    ON_T=s=>{ for(const e of H) if(s>=e.h&&!e.d){ e.d=1; e.p.y=ground(e.p.x,e.p.z); boom(e.p); } if(s>=1.34&&!L[1]._f){ L[1]._f=1; destroy(L[1],null,true); } };

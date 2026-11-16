@@ -11,7 +11,7 @@ window.rel=(t,x,y,z)=>{ const s=Math.sin(t.heading), c=Math.cos(t.heading); retu
 // lugar abierto cerca de un punto (dz corre hacia el norte/sur; libre de edificios en 14 m)
 window.spot=(i,dz=0,far,clr=14)=>{ const Z=zones[Math.min(i,zones.length-1)]; let best=null;
   for(let k=0;k<200&&!best;k++){ const r=k*1.5, a=k*2.4, x=Z.x+Math.cos(a)*r, z=Z.z+dz+Math.sin(a)*r; if(W.water!=null&&ground(x,z)<(W.water||0)+.3) continue;
-    if(buildings.some(b=>b.hp>0&&Math.abs(b.x-x)<b.w/2+clr&&Math.abs(b.z-z)<b.d/2+clr)) continue; if(far&&trees.some(tr=>!tr.fallen&&Math.hypot(tr.x-x,tr.z-z)<(far===true?16:far))) continue; best={x,z}; }
+    if(buildings.some(b=>b.hp>0&&Math.abs(b.x-x)<b.w/2+clr&&Math.abs(b.z-z)<b.d/2+clr)) continue; if(W.trench&&[[0,0],[6,0],[-6,0],[0,6],[0,-6]].some(([a,b])=>W.trench(x+a,z+b))) continue; if(far&&trees.some(tr=>!tr.fallen&&Math.hypot(tr.x-x,tr.z-z)<(far===true?16:far))) continue; best={x,z}; }
   return best||{x:Z.x,z:Z.z}; };
 window.act=(k,team,x,z,h)=>{ const c=newCrew('',team,VEH[k].nation,false); c.out=true; crews.push(c); const t=spawnCrew(c,k,{label:'',x,z});
   t.pos.set(x,ground(x,z),z); t.heading=h; t.root.position.copy(t.pos); t.dummy=true; t.immuneT=0; t.cine={th:0,st:0}; t.gunPitch=0; t.turretYaw=0; t.turret.rotation.y=0; t.gunPivot.rotation.x=0; return t; };
