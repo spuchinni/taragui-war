@@ -35,6 +35,7 @@
     if(p&&Math.abs(x)<W.bx+40&&Math.abs(z)<W.bz+40){ const g=p[1]-Math.max(p[0],p[2]), lum=(p[0]+p[1]+p[2])/3; let d=clamp(g/18,0,1)*(lum<40?.3:1);
       if(d<.06&&p[0]>p[1]&&p[1]>p[2]+12&&lum>110) d=.06;                                  // arena y tierra seca: alguna mata suelta
       if(d>.04){ const h=heightAt(x,z); if(W.water!=null&&h<W.water+.3) d=0;
+        else if(W.deckAt&&W.deckAt(x,z)!=null) d=0;                                          // tableros de puentes (antes crecía pasto sobre el Belgrano)
         else if(W.trench&&W.trench(x,z)) d=0;
         else if(W.roadSegs&&W.roadSegs.some(S=>!S.city&&Math.abs(S.ax-x)<60&&segD(x,z,S)<3.6)) d=0;
         else if(gridQuery(x,z,3).some(b=>!b.dead&&obPush(x,z,.8,b))) d=0;

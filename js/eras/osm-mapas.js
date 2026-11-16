@@ -29,6 +29,7 @@ const OSM_CFG={
     spawns:{0:[{label:'Base sur, Av. Pedro Ferré',x:150,z:-655},{label:'Base sudeste, Av. Pedro Ferré',x:-350,z:-655}],
             1:[{label:'Base norte, Carlos Pellegrini',x:150,z:660},{label:'Base noreste, Plaza España',x:-350,z:660}]}},
   costanera:{label:'Costanera de Corrientes',desc:'La Avenida Costanera General San Martín a lo largo del Paraná, el Parque Camba Cuá, el Paseo Arazaty y la cabecera del Puente General Belgrano, a escala real.',
+    hitos:o=>osmBelgrano(o),   // el puente de fondo (puente-belgrano.js)
     sky:0xb8c4c8,fog:[260,820],urban:1,ground:'#8b8770',pisos:[1,1,2,2,2,3,4,6,10],fill:{p:.95,row2:.8,fr:[7,15],dp:[11,20],gap:[0,.6]},deckH:28,shoreSand:0,waterCol:[86,96,82],waterHex:0x4e5c52,
     sp:{calle:['lapacho','jacaranda','lapacho','timbo','ceibo','pindo'],parque:['lapacho','jacaranda','pindo','timbo','ceibo'],bosque:['timbo','ceibo','algarrobo']},calleArb:.35,
     zones:[{id:'A',x:560,z:-540,r:24,label:'Cabecera del puente'},{id:'B',x:450,z:0,r:22,label:'Costanera, Padre Lavagna'},{id:'C',x:-120,z:447,r:24,label:'Parque Camba Cuá'}],
@@ -85,6 +86,7 @@ const OSM_CFG={
     spawns:{east:[{label:'Puerto Argentino, Falkland College',x:-600,z:330},{label:'Puerto Argentino, oeste',x:350,z:500}],
             west:[{label:'Ladera de Sapper Hill',x:450,z:-640},{label:'Camino a Darwin',x:144,z:-692}]}},
   puente:{label:'Corrientes – Resistencia',desc:'El Puente General Belgrano real: 1,7 km sobre el Paraná entre la costanera de Corrientes y la orilla chaqueña. Es el único paso entre las dos ciudades.',
+    hitos:o=>osmBelgrano(o),   // pilones en A, obenques y defensas (puente-belgrano.js)
     bx:1120,bz:430,sky:0xb8c4c8,fog:[300,950],urban:1,ground:'#80864e',pisos:[1,1,2,2,3,4],fill:{p:.9,row2:.6,fr:[7,14],dp:[10,17],gap:[0,2]},deckH:30,shoreSand:0,waterCol:[86,96,82],waterHex:0x4e5c52,eastNat:['ar','ctes'],
     sp:{calle:['lapacho','jacaranda','timbo','ceibo','pindo'],parque:['lapacho','jacaranda','pindo','timbo','ceibo'],bosque:['timbo','ceibo','algarrobo']},calleArb:.3,
     zones:[{id:'A',x:-868,z:20,r:24,label:'Cabecera Corrientes'},{id:'B',x:0,z:0,r:16,label:'Centro del puente'},{id:'C',x:887,z:20,r:24,label:'Cabecera chaqueña'}],
@@ -158,7 +160,7 @@ function buildOSM(key){
     for(let x=Math.floor((Math.min(S.ax,S.bx)-S.hw)/16);x<=Math.floor((Math.max(S.ax,S.bx)+S.hw)/16);x++) for(let z=Math.floor((Math.min(S.az,S.bz)-S.hw)/16);z<=Math.floor((Math.max(S.az,S.bz)+S.hw)/16);z++){ const k=x*7919+z; if(!DG.has(k)) DG.set(k,[]); DG.get(k).push(S); } }
   const deckAt=(x,z)=>{ const L=DG.get(dk(x,z)); if(!L) return null; let best=null; for(const S of L){ const dx=S.bx-S.ax, dz=S.bz-S.az, l=dx*dx+dz*dz; let t=l?((x-S.ax)*dx+(z-S.az)*dz)/l:0; t=clamp(t,0,1);
       if(Math.hypot(x-S.ax-dx*t,z-S.az-dz*t)<S.hw){ const y=S.ya+(S.yb-S.ya)*t; if(best===null||y>best) best=y; } } return best; };
-  W.deckAt=decks.length?deckAt:null;
+  W.deckAt=decks.length?deckAt:null; W._decks=decks;
   W.h=(x,z)=>{ const g=hg(x,z); if(!decks.length) return g; const d=deckAt(x,z); return d!==null&&d>g?d:g; };
   W.under=decks.length?(x,z,y)=>{ const d=deckAt(x,z); if(d===null) return null; const g=hg(x,z)+(craters.length?craterH(x,z):0); return d-g>3.4&&y<d-3.2?g:null; }:null;
   W.groundH=hg;
