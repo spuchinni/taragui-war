@@ -56,6 +56,7 @@ window.boom=p=>{ try{ explode(p,'ground',1.3); try{ groundHit(p,{kind:'he',sc:1.
    await p.evaluate(([u,tt])=>{ REC=tt; CAM_U=u; CAM_T=tt; if(window.ON_T) ON_T(tt); frame(1/30); },[f/(n-1),tt]);
    if(!idx||idx.includes(f)){ const d=await p.evaluate(()=>shot()); fs.writeFileSync(`${D}/frames2/${T.id}/${String(f).padStart(4,'0')}.jpg`,Buffer.from(d.split(',')[1],'base64')); }
   }
+  if(process.env.DBG) console.log(await p.evaluate(()=>{ CAM(); camera.updateMatrixWorld(); const rc=new THREE.Raycaster(); rc.setFromCamera({x:.5,y:.5},camera); const h=rc.intersectObjects(scene.children,true).slice(0,3); return JSON.stringify({cam:camera.position,hits:h.map(x=>({d:x.distance.toFixed(1),t:x.object.type,g:x.object.geometry&&x.object.geometry.type,c:x.object.material&&x.object.material.color&&x.object.material.color.getHexString(),p:x.object.parent&&x.object.parent.type}))}); }));
   const L=await p.evaluate(()=>{ REC=null; return LOG.splice(0); }); snd.push({id:T.id,log:L});
   console.log('toma',T.id,k,n,'cuadros, sonidos',L.length);
  }

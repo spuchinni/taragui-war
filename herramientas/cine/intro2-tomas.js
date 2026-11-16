@@ -36,12 +36,13 @@ module.exports=[
    ON_T=s=>{ if(s>=.31&&!t._f){ t._f=1; shoot(t); } };
    CAM=()=>{ const u=CAM_U, p=rel(t,lerp(2.6,2.2,u),0,lerp(12,10,u)); p.y=t.pos.y+1.5; fov(30); camera.position.copy(p); camera.lookAt(rel(t,0,2,0)); }; return true; })()`},
  // --- cierre: el B-29 pasa sobre los tanques y suelta la bomba (16,99 s); la nuke estalla en el último golpe (17,95 s) y después entra la portada ---
- {id:'final',map:'itati',wx:'tarde',ed:[16.3,17.6],setup:`(()=>{ const Z=spot(0), H=Math.PI, dir=V3(0,0,-1); const L=[act('tam',0,Z.x,Z.z,H),act('tam2c',0,Z.x+8,Z.z+7,H),act('repot',0,Z.x-8,Z.z+8,H)]; L.forEach(t=>t.cine.th=.45);
+ {id:'final',map:'itati',wx:'tarde',ed:[16.3,17.6],setup:`(()=>{ const Z=spot(0), H=Math.PI, dir=V3(0,0,-1); const L=[act('tam',0,Z.x,Z.z,H),act('tam2c',0,Z.x+8,Z.z+7,H),act('repot',0,Z.x-8,Z.z+8,H)]; L.forEach(t=>t.cine.th=0);   // quietos mientras se espera al avión (si no, la cámara terminaba adentro de una casa)
    { const a=rel(L[0],-4,0,-3), g=rel(L[0],-4,0,-80); squad(0,'ar',a.x,a.z,g.x,g.z,5); }
    const P=L[0].pos.clone().addScaledVector(dir,608); P.y=ground(P.x,P.z); nukeAt(L[0],P,dir); window._NK={P,dir,L,Z};
    const PL=()=>nuke&&nuke.plane; while(PL()&&!PL().dropped&&P.clone().sub(PL().g.position).setY(0).dot(dir)-PL().rel>PL().v*(.69+20/30)){ REC=null; frame(1/30); }
-   CAM=()=>{ const t=L[0], p=rel(t,4,0,26); p.y=ground(p.x,p.z)+1.2; fov(60); camera.position.copy(p); const a=rel(t,0,4,-6), pl=nuke&&nuke.plane?nuke.plane.g.position:null, b=nuke&&nuke.bomb?nuke.bomb.m.position:pl;   // la cámara sigue al B-29 y a la bomba
-     camera.lookAt(b?a.clone().lerp(b.clone().add(V3(0,-25,0)),.62):a); }; return true; })()`},
+   L.forEach(t=>t.cine.th=.3); ON_T=()=>{ if(nuke&&nuke.bomb) nuke.bomb.m.scale.setScalar(3); };   // la bomba un poco más grande para que se vea caer for(const P of infantry) if(!P.dead&&P.goal) P.pos.set(P.pos.x,P.pos.y,P.pos.z);
+   CAM=()=>{ const t=L[0], p=rel(t,3,0,12); p.y=ground(p.x,p.z)+1.2; fov(60); camera.position.copy(p); const a=rel(t,0,4,-6), pl=nuke&&nuke.plane?nuke.plane.g.position:null, b=nuke&&nuke.bomb?nuke.bomb.m.position:pl;   // la cámara sigue al B-29 y a la bomba
+     const tg=b?a.clone().lerp(b.clone().add(V3(0,-25,0)),.62):a, d=tg.clone().sub(p), hz=Math.hypot(d.x,d.z); if(d.y>hz*1.6) d.y=hz*1.6; camera.lookAt(p.clone().add(d)); }; return true; })()`},   // sin mirar derecho para arriba
  {id:'nuke',map:'itati',wx:'tarde',keep:1,ed:[17.6,22.4],logo:1,setup:`(()=>{ const N=window._NK; if(!N||!nuke) return false; window.WARM=0;
    const ttl=()=>{ const B=nuke.bomb; if(!B) return 0; const gh=ground(B.m.position.x,B.m.position.z)+30, y=B.m.position.y, vy=B.v.y; return (vy+Math.sqrt(Math.max(0,vy*vy+2*G*(y-gh))))/G; };
    for(let i=0;i<600&&(nuke.plane&&!nuke.plane.dropped||ttl()>.35);i++){ REC=null; frame(1/30); }
