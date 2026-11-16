@@ -38,6 +38,9 @@ function w2Insignia(parent,kind,x,y,z,ry,s=1){
 
 // Inclina los costados: los vértices por encima de y0 se acercan al eje x (k = cuánto se cierra arriba, 0 a .4)
 function slopeX(geo,y0,y1,k){ const p=geo.attributes.position; for(let i=0;i<p.count;i++){ const y=p.getY(i), f=clamp((y-y0)/Math.max(.01,y1-y0),0,1); p.setX(i,p.getX(i)*(1-k*f)); } geo.computeVertexNormals(); return geo; }
+// Costado inclinado (slopeX sobre la parte alta del casco): x de la chapa a la altura y y su inclinación, para pegar cosas encima
+function sideX(M,I,y){ const top=(I.cover?M.W-.1:M.W-.02)/2, deck=I.deck, yb=deck-(I.sideH??.6), k=I.slope||0, f=clamp((y-yb)/Math.max(.01,deck-yb),0,1); return top*(1-k*f); }
+function sideA(M,I,y){ const top=(I.cover?M.W-.1:M.W-.02)/2, deck=I.deck, yb=deck-(I.sideH??.6); return y<yb||y>deck?0:Math.atan(top*(I.slope||0)/Math.max(.01,deck-yb)); }
 // Prisma de planta (x,z) extruido en y con los costados que se cierran hacia arriba (torres, casamatas)
 function prismGeo(plan,h,taper=0){ const sh=new THREE.Shape(); plan.forEach(([x,z],i)=>i?sh.lineTo(x,-z):sh.moveTo(x,-z)); sh.closePath();
   const g=new THREE.ExtrudeGeometry(sh,{depth:h,bevelEnabled:true,bevelThickness:.03,bevelSize:.03,bevelSegments:1}); g.rotateX(-Math.PI/2);
@@ -145,7 +148,7 @@ function buildW2(t,M,mat,root,lkL,lkR){ shTurMG.t=t;
   if(I.tanks) for(const sx of [-1,1]) cyl(root,.2,.2,.9,sx*(M.W/2-.2),deck+.18,zr+.7,10,mat).rotation.x=Math.PI/2;           // tanques de combustible externos (T-34)
   if(!I.det) box(root,.12,.12,1.1,(M.W/2-.25),deck+.06,zr+L*.42,darkMat); if(!I.det) box(root,.08,.08,1.4,-(M.W/2-.25),deck+.05,zr+L*.45,_wdMat); // herramientas: gato y pala
   if(I.spare) for(let i=0;i<4;i++) box(root,iw2*.7,.05,.16,0,deck-gz*.3+i*.06,zf-gz*.55+i*.12,trackMat);                      // eslabones de repuesto en el glacis
-  if(I.ins) for(const sx of [-1,1]) w2Insignia(root,I.ins,sx*(M.W/2+.01-(I.slope?I.slope*M.W*.25:0)),deck-.3,zr+L*.3,sx>0?0:Math.PI,.9);
+  if(I.ins) for(const sx of [-1,1]){ const iy=deck-.3, sl=I.slope&&!I.castHull, g=w2Insignia(root,I.ins,sx*((sl?sideX(M,I,iy):M.W/2)+.01),iy,zr+L*(I.insZ??.3),sx>0?0:Math.PI,.9); if(sl&&g) g.rotation.z=sideA(M,I,iy); }   // pegada a la chapa (con costados inclinados quedaba en el aire)
   // ---- torre (o mantelete de la casamata) ----
   const tur=new THREE.Group(); tur.position.set(I.tx||0,I.case?deck+I.case.h*.35:deck,M.tz); root.add(tur);
   const gy=I.case?0:w2Turret(tur,M,I,mat);
@@ -602,19 +605,21 @@ function nahuelHull(root,M,I,mat,iw2,deck,gz,zf,zr,L){
     box(hb,.24,.22,.03,0,0,.155,darkMat); const ln=new THREE.Mesh(_shLens,_shHead); ln.scale.setScalar(.9); ln.position.set(0,0,.17); hb.add(ln); }
   // manijas: fila sobre el borde de arriba del frente y a lo largo de los costados inclinados
   { const p=glacisPt(I,deck,gz,zf,.04,.03); for(const x of [-.55,-.38,.38,.55]){ const hd=box(root,.14,.05,.04,x*iw2,p.y+.02,p.z,darkMat); hd.rotation.x=p.a; } }
-  for(const sx of [-1,1]) for(let k=0;k<4;k++){ const hd=box(root,.04,.05,.16,sx*(hw-.13),deck-.18,zf-gz-.6-k*.75,darkMat); hd.rotation.z=sx*.25; }
+  const SX=y=>sideX(M,I,y), SA=y=>sideA(M,I,y);                                                                            // la chapa del costado está inclinada: todo lo de los costados va pegado a ella
+  for(const sx of [-1,1]) for(let k=0;k<4;k++){ const y=deck-.18, hd=box(root,.04,.05,.16,sx*(SX(y)+.02),y,zf-gz-.6-k*.75,darkMat); hd.rotation.z=sx*SA(y); }
   { const p=glacisPt(I,deck,gz,zf,.55,.05); for(const dx of [.12,.24]) mgMount(root,iw2*.3+dx,p.y,p.z,{yaw:[0,0],pitch:[-.08,.1],len:.3,box:false,seat:['mg1','codriver','driver']}); }  // dos Madsen fijas del ayudante (tiran derecho)
   for(const sx of [-1,1]){ const q=glacisPt(I,deck,gz,zf,.98,.04), k=new THREE.Mesh(_tgShackle,darkMat); k.scale.setScalar(.75); k.position.set(sx*iw2*.38,q.y-.08,q.z+.04); k.rotation.y=Math.PI/2; root.add(k);
     const r=new THREE.Mesh(_tgShackle,darkMat); r.scale.setScalar(.75); r.position.set(sx*iw2*.38,.62,zr-.03); r.rotation.y=Math.PI/2; root.add(r); }   // 4 ganchos de remolque
-  for(const sx of [-1,1]){ const gx=sx*(hw+.005);                                                                        // rejilla del radiador al costado (bajo la torre)
-    box(root,.03,.42,1.25,gx,deck-.32,-.15,darkMat); for(let i=0;i<6;i++) box(root,.05,.04,1.2,gx,deck-.5+i*.07,-.15,mat); }
+  for(const sx of [-1,1]){                                                                                                // rejilla del radiador al costado (bajo la torre)
+    { const y=deck-.32, b=box(root,.03,.42,1.25,sx*(SX(y)+.005),y,-.15,darkMat); b.rotation.z=sx*SA(y); }
+    for(let i=0;i<6;i++){ const y=deck-.5+i*.07, b=box(root,.05,.04,1.2,sx*(SX(y)+.02),y,-.15,mat); b.rotation.z=sx*SA(y); } }
   for(const sx of [-1,1]){ const h=rbox(root,iw2*.4,.05,1.0,sx*iw2*.23,deck+.03,zr+1.0,mat,.02);                        // dos tapas grandes del motor atrás, con sus manijas en cruz
     box(h,iw2*.3,.04,.05,0,.04,0,darkMat); box(h,.05,.04,.8,0,.04,0,darkMat); }
-  { const sx=-1, X=sx*(hw+.03), y=deck-.3;                                                                                // pico, hacha y pala atrás a la izquierda
-    box(root,.05,.05,1.05,X,y+.12,zr+1.2,_wdMat); box(root,.04,.38,.06,X,y+.12,zr+.7,darkMat);                            // pico
-    box(root,.05,.05,.85,X,y-.08,zr+1.0,_wdMat); box(root,.04,.16,.12,X,y-.08,zr+.6,darkMat);                             // hacha
-    box(root,.05,.05,.95,X,y+.02,zr+1.85,_wdMat); box(root,.04,.22,.2,X,y+.02,zr+2.4,darkMat); }                          // pala
-  for(const sx of [-1,1]) rivetsRow(root,sx*(hw+.005),deck-.15,zr+.1,zr+1.0,6);                                           // popa remachada
+  { const sx=-1, y=deck-.3, X=yy=>sx*(SX(yy)+.035), T=(o,yy)=>{ o.rotation.z=sx*SA(yy); return o; };                   // pico, hacha y pala atrás a la izquierda, sobre la chapa inclinada
+    T(box(root,.05,.05,1.05,X(y+.12),y+.12,zr+.85,_wdMat),y+.12); T(box(root,.04,.38,.06,X(y+.12)+sx*.01,y+.12,zr+.35,darkMat),y+.12);   // pico
+    T(box(root,.05,.05,.85,X(y-.08),y-.08,zr+.8,_wdMat),y-.08); T(box(root,.04,.16,.12,X(y-.08)+sx*.01,y-.08,zr+.4,darkMat),y-.08);    // hacha
+    T(box(root,.05,.05,.8,X(y+.02),y+.02,zr+.8,_wdMat),y+.02); T(box(root,.04,.22,.2,X(y+.02)+sx*.01,y+.02,zr+1.28,darkMat),y+.02); } // pala (atrás de la escarapela)
+  for(const sx of [-1,1]) rivetsRow(root,sx*(SX(deck-.15)+.005),deck-.15,zr+.1,zr+1.0,6);                                           // popa remachada
   for(let i=0;i<10;i++){ const r=cyl(root,.025,.025,.03,-iw2*.42+i*iw2*.093,deck-.3,zr-.005,5,darkMat); r.rotation.x=Math.PI/2; }
   box(root,iw2*.65,.03,.85,0,deck+.02,zr+.75,darkMat); for(let i=0;i<5;i++) box(root,iw2*.65,.04,.04,0,deck+.04,zr+.42+i*.16,mat);   // rejilla del motor
   rbox(root,.7,.06,.6,0,deck+.03,zr+1.55,mat,.03);
