@@ -101,6 +101,8 @@ module.exports=[
  {id:'nuke',map:'itati',wx:'tarde',keep:1,ed:[36.5,41.35],logo:1,setup:`(()=>{ const N=window._NK; if(!N||!nuke) return false; window.WARM=0;
    const ttl=()=>{ const B=nuke.bomb; if(!B) return 0; const gh=ground(B.m.position.x,B.m.position.z)+30, y=B.m.position.y, vy=B.v.y; return (vy+Math.sqrt(Math.max(0,vy*vy+2*G*(y-gh))))/G; };
    for(let i=0;i<600&&(nuke.plane&&!nuke.plane.dropped||ttl()>.04);i++){ REC=null; frame(1/30); }
+   if(nuke.plane){ try{ scene.remove(nuke.plane.g); if(nuke.plane.snd&&nuke.plane.snd.stop) nuke.plane.snd.stop(); }catch(e){} nuke.plane.g.visible=false; }   // el B-29 ya se fue: de lejos quedaba quieto sobre el hongo
+   scene.children.forEach(o=>{ if(o.type==='Group'&&o.position.y>80&&o.children.length>100) o.visible=false; });
    const C=V3(N.Z.x-120,0,N.Z.z+70); C.y=ground(C.x,C.z)+45;   // de costado y alto: la basílica a la izquierda y el hongo sobre la ciudad
    CAM=()=>{ const u=ease(CAM_U); fov(46); camera.position.set(C.x-u*12,C.y+u*8,C.z+u*10); camera.lookAt(N.P.x,N.P.y+lerp(70,150,u),N.P.z); }; return true; })()`},
 ];
