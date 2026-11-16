@@ -4,6 +4,13 @@
 import json, subprocess, sys, os, collections
 D = os.path.dirname(os.path.abspath(__file__)); REPO = os.path.dirname(os.path.dirname(D)); T = D + '/tmp2'; os.makedirs(T, exist_ok=True)
 MUS = sys.argv[1]; FPS = 30; Wd, Hd = 1280, 720; BAR = 52   # franjas de cine (1280×616 ≈ 2,08:1)
+# música estirada (pedido de Sebastián: 10 s más): después de 16,3 s se repiten los tambores desde el golpe de 6,0 s (empalme corto en el golpe)
+CUT, BACK = 16.3, 6.0; DX = CUT - BACK
+MUSX = T + '/musica.wav'
+subprocess.run(['ffmpeg', '-v', 'error', '-y', '-i', MUS, '-i', MUS, '-i', MUS, '-filter_complex',
+    f"[0:a]atrim=0:{CUT},asetpts=PTS-STARTPTS,afade=t=out:st={CUT-.02:.2f}:d=0.02[a];[1:a]atrim={BACK}:{CUT},asetpts=PTS-STARTPTS,afade=t=in:d=0.01,afade=t=out:st={DX-.02:.2f}:d=0.02[b];"
+    f"[2:a]atrim={CUT},asetpts=PTS-STARTPTS,afade=t=in:d=0.01[c];[a][b][c]concat=n=3:v=0:a=1[m]", '-map', '[m]', MUSX], check=True)
+MUS = MUSX
 FONT = '/usr/share/fonts/opentype/inter/Inter-ExtraBold.otf'
 TOMAS = json.loads(subprocess.run(['node', '-e', f"console.log(JSON.stringify(require('{D}/intro2-tomas.js').map(t=>({{id:t.id,ed:t.ed,cap:t.cap||'',grade:t.grade||'',logo:!!t.logo}}))))"], capture_output=True, text=True, check=True).stdout)
 END = TOMAS[-1]['ed'][1]
@@ -52,8 +59,8 @@ for S in TOMAS:
         if e['v'] < .15 or e['n'] not in FILES or e['n'] in ('squelch', 'static', 'idle', 'drive', 'turret', 'mgburst'): continue
         if e['t'] - last[e['n']] < .25 or e['t'] > S['ed'][1] - S['ed'][0]: continue
         last[e['n']] = e['t']; ev.append((S['ed'][0] + e['t'], e['n'], min(1, e['v']), e.get('r', 1)))
-ev.append((17.95, 'nukeb', 1.0, 1)); ev.append((17.97, 'expl', 1.0, .5)); ev.append((18.0, 'sboom', .9, .6)); ev.append((18.7, 'expl', .7, .38))   # la nuke en el último golpe
-ains = ['-i', MUS]; afl = [f"[0:a]afade=t=in:d=0.05,afade=t=out:st=17.85:d=0.3,apad=whole_dur={END}[m]"]
+ev.append((17.95+DX, 'nukeb', 1.0, 1)); ev.append((17.97+DX, 'expl', 1.0, .5)); ev.append((18.0+DX, 'sboom', .9, .6)); ev.append((18.7+DX, 'expl', .7, .38))   # la nuke en el último golpe
+ains = ['-i', MUS]; afl = [f"[0:a]afade=t=in:d=0.05,afade=t=out:st={17.85+DX:.2f}:d=0.3,apad=whole_dur={END}[m]"]
 for i, (t, n, vol, r) in enumerate(ev):
     ains += ['-i', FILES[n]]; ms = int(t * 1000)
     afl.append(f"[{i+1}:a]atempo={max(.5, min(2, r)):.2f},volume={vol*.55:.2f},adelay={ms}|{ms}[e{i}]")
@@ -63,7 +70,7 @@ audio = f'{T}/audio.m4a'
 run(['ffmpeg', '-v', 'error', '-y', *ains, '-filter_complex', ';'.join(afl), '-map', '[a]', '-c:a', 'aac', '-b:a', '160k', '-ar', '44100', audio])
 
 # 4) cierre: fogonazo blanco de la nuke en el último golpe (17,95 s), el hongo sube y después entra la portada y se acerca despacio
-FL = 17.95; F = END - 1.5
+FL = 17.95 + DX; F = END - 1.5
 for lang, cov, out in (('es', 'portada-nueva.jpg', 'intro.mp4'), ('en', 'portada-en.jpg', 'intro-en.mp4')):
     d = END - F
     vfc = (f"[1:v]scale=-2:1360,crop=2400:1350,zoompan=z='1+0.035*on/{int(d*FPS)}':x='iw/2-(iw/zoom/2)':y='0':d={int(d*FPS)+1}:s={Wd}x{Hd}:fps={FPS},"

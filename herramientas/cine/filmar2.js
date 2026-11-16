@@ -37,7 +37,7 @@ window.boom=p=>{ try{ explode(p,'ground',1.3); try{ groundHit(p,{kind:'he',sc:1.
   window.RENDER=renderer.render.bind(renderer); renderer.render=()=>{};
   window.setMap=(map,wx)=>{ startBattle(true,map); const g=document.getElementById('briefGo'); if(g) g.click(); for(const t of [...tanks]) removeTank(t);
     if(typeof infantry!=='undefined') for(const P of [...infantry]) try{ removeInf(P); }catch(e){}
-    applyWeather(wx||'dia'); { const M=new Set(zones.map(Z=>Z.mat)); worldGroup.children.forEach(o=>{ if(M.has(o.material)||zones.some(Z=>Math.abs(o.position.x-Z.x)<.01&&Math.abs(o.position.z-Z.z)<.01)) o.visible=false; }); } aerial=false; window.CAM=null; spectatorCam=()=>{ if(CAM) CAM(); return true; };
+    applyWeather(wx||'dia'); { const M=new Set(zones.map(Z=>Z.mat)); worldGroup.children.forEach(o=>{ if(M.has(o.material)||(o.geometry&&o.geometry.type==='CylinderGeometry'&&zones.some(Z=>Math.abs(o.position.x-Z.x)<.01&&Math.abs(o.position.z-Z.z)<.01))) o.visible=false; }); } aerial=false; window.CAM=null; spectatorCam=()=>{ if(CAM) CAM(); return true; };
     renderer.setPixelRatio(1); renderer.setSize(RW,RH,false); camera.aspect=16/9; camera.updateProjectionMatrix(); return builtKey; };
   window.shot=()=>{ CAM(); RENDER(scene,camera); return renderer.domElement.toDataURL('image/jpeg',.92); };
  },{RW:W,RH:H,HELP});
