@@ -43,11 +43,11 @@ function introUI(){
     <div class="iStart" id="iStart"><span>Hacé clic para empezar</span></div>
     <button class="iSkip" id="iSkip">Saltar intro ⏭</button>`;
   document.body.appendChild(el);
-  $('iSkip').onclick=e=>{ e.stopPropagation(); introEnd(); };
+  $('iSkip').onclick=e=>{ e.stopPropagation(); if(intro&&intro.vid) afterVideo(); else introEnd(); };
   $('iStart').onclick=()=>{ initAudio(); if(AC.state==='suspended') AC.resume(); introPlay(); };
   return el;
 }
-document.addEventListener('keydown',e=>{ if(state!=='intro') return; if(['Escape','Enter','Space'].includes(e.code)){ e.preventDefault(); e.stopImmediatePropagation(); if(intro&&intro.cover){ initAudio(); if(AC.state==='suspended') AC.resume(); if(e.code==='Escape') introEnd(); else coverGo(); return; } if(intro&&!intro.on&&e.code!=='Escape') $('iStart').click(); else introEnd(); } },true);
+document.addEventListener('keydown',e=>{ if(state!=='intro') return; if(['Escape','Enter','Space'].includes(e.code)){ e.preventDefault(); e.stopImmediatePropagation(); if(intro&&intro.vid){ if(introSeen()) afterVideo(); else vidSound(); return; } if(intro&&intro.cover){ initAudio(); if(AC.state==='suspended') AC.resume(); if(e.code==='Escape') introEnd(); else coverGo(); return; } if(intro&&!intro.on&&e.code!=='Escape') $('iStart').click(); else introEnd(); } },true);
 // Intro en video (video/intro.mp4, armado con los videos de Gemini): se muestra en vez de la hecha con el motor, que queda si el video no carga
 // Video con los tanques mejorados (pedido de Sebastián, 16/11/2026): sale la primera vez al tocar la portada; inglés = intro-en.mp4 (cierra en la portada "Steel Front")
 const INTRO_VIDEO_ON=true;
@@ -72,11 +72,28 @@ function coverStart(){
   ui.appendChild(c); const bt=$('boot'); if(bt) bt.remove();
   c.onclick=()=>{ initAudio(); if(AC.state==='suspended') AC.resume(); coverGo(); };
 }
-// Al tocar la portada: la primera vez (o si cambió INTRO_ID) el video; después, derecho al menú
-function coverGo(){ if(!INTRO_VIDEO_ON||!introVideoOk||introSeen()) return introEnd();
-  const c=$('iCover'); if(c) c.remove(); intro.cover=false; intro.vid=true; introVideo(); }
+// Pedido de Sebastián: siempre primero el video y después la portada; la primera vez (o si cambió INTRO_ID) no se puede saltear.
+// Sin un toque previo el navegador no deja arrancar con sonido: arranca mudo y "Tocá para el sonido" lo prende (no lo saltea).
+function coverGo(){ introEnd(); }
+function videoFirst(){
+  if(document.pointerLockElement) document.exitPointerLock();
+  stopAllLoops(); state='intro'; intro=intro||{fx:[]}; intro.cover=false; intro.on=false; intro.vid=true;
+  const ui=introUI(); ui.hidden=false; document.body.classList.add('intro');
+  ui.querySelectorAll('.iBar,.iFade,.iTxt,.iLogo,#iSkip,#iStart').forEach(e=>e.hidden=true);
+  let v=$('iVid'); if(!v){ v=document.createElement('video'); v.id='iVid'; v.playsInline=true; v.preload='auto'; ui.insertBefore(v,ui.firstChild); }
+  v.src=introVideoSrc(); v.hidden=false; v.onended=()=>afterVideo(); v.onerror=()=>{ introVideoOk=false; afterVideo(); };
+  v.style.pointerEvents='auto'; v.onclick=()=>vidSound();
+  let snd=$('iSnd'); if(!snd){ snd=document.createElement('button'); snd.id='iSnd'; snd.className='iSkip iSnd'; snd.textContent='🔊 Tocá para el sonido'; snd.onclick=e=>{ e.stopPropagation(); vidSound(); }; ui.appendChild(snd); }
+  snd.hidden=true; $('iSkip').hidden=!introSeen();
+  const bt=$('boot'); if(bt) bt.remove();
+  if(typeof musStop==='function'&&AC) musStop(); musMode=null; v.currentTime=0; v.muted=false; v.volume=Math.min(1,volMaster);
+  v.play().catch(()=>{ v.muted=true; snd.hidden=false; v.play().catch(()=>afterVideo()); });
+}
+function vidSound(){ const v=$('iVid'); try{ initAudio(); if(AC.state==='suspended') AC.resume(); }catch(e){} if(v&&v.muted){ v.muted=false; v.volume=Math.min(1,volMaster); } const s=$('iSnd'); if(s) s.hidden=true; }
+function afterVideo(){ if(!intro||!intro.vid) return; intro.vid=false; try{ localStorage.setItem('tw_intro_vista',INTRO_ID); }catch(e){}
+  const v=$('iVid'); if(v){ v.pause(); v.hidden=true; v.onclick=null; } const s=$('iSnd'); if(s) s.hidden=true; coverStart(); }
 function introStart(){
-  if(INTRO_COVER) return coverStart();
+  if(INTRO_COVER) return INTRO_VIDEO_ON&&introVideoOk?videoFirst():coverStart();
   if(!INTRO_SHOTS.length&&!introVideoOk) return;
   if(document.pointerLockElement) document.exitPointerLock();
   stopAllLoops(); state='intro'; intro=intro||introScene(); intro.on=false; intro.i=-1; intro.t=0;

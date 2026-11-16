@@ -80,7 +80,9 @@
       const sk=skinWheels(t); t._fu={sk,ms:performance.now()-t0,made}; t._vp=vp; t._lod=null; }
     catch(e){ console.warn('fusion',e); t._fu={err:1}; } }
   { const _tf=tankFX; tankFX=function(t){ const r=_tf.apply(this,arguments); try{ skinSync(t); }catch(e){} return r; }; }
-  const _mt=makeTank; makeTank=function(){ const t=_mt.apply(this,arguments); try{ if(window.FUSION!==false) fuse(t); }catch(e){ console.warn('fusion',e); } return t; };
+  const _mt=makeTank; makeTank=function(){ const t=_mt.apply(this,arguments);
+    try{ if(t.T&&t.T.m&&t.T.m.ww1==='w2'&&typeof snapSides==='function') snapSides(t,t.root,t.T.m,t.T.m.w2); }catch(e){ console.warn('snapSides',e); }   // otra pasada con todo ya puesto (insignias y piezas que suman otros archivos después de buildW2)
+    try{ if(window.FUSION!==false) fuse(t); }catch(e){ console.warn('fusion',e); } return t; };
   window.fuseTank=fuse;
 
   // ---- rendimiento.js: las mallas unidas chicas siguen siendo "detalle"; las ruedas de verdad de cerca y la copia de lejos ----

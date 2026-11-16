@@ -96,6 +96,30 @@ function w2Turret(tur,M,I,mat){ const w=M.tw, l=M.tl, h=M.th, hw=w/2, hl=l/2;
     box(tur,(hw+o)*2-.5,sh,.025,0,y,zb-.02,mat); }
   return h*.48; }
 
+// Pega a la chapa lo que quedó flotando al costado del casco (pedido de Sebastián: en el Nahuel y "muchos otros" había manijas,
+// rejillas, herramientas, remaches e insignias en el aire, sobre todo con costados inclinados o cascos fundidos redondeados).
+// Toma cada pieza chica del casco (no la torre, ni el tren de rodaje, ni lo marcado 'stand' como los faldones), tira un rayo hacia adentro
+// y si entre la pieza y la chapa del costado quedan más de 3 cm, la arrima y la inclina como la chapa.
+function snapSides(t,root,M,I){
+  const P0=root.position.clone(), Q0=root.quaternion.clone(), S0=root.scale.clone(), par=root.parent; if(par) par.remove(root); root.position.set(0,0,0); root.quaternion.identity(); root.scale.set(1,1,1);
+  try{ snapSides0(t,root,M,I); } finally{ root.position.copy(P0); root.quaternion.copy(Q0); root.scale.copy(S0); if(par) par.add(root); root.updateMatrixWorld(true); } }
+function snapSides0(t,root,M,I){
+  root.updateMatrixWorld(true); const tur=t.turret, fy=Math.max(I.trF||.9,I.trR||.9)+.12;
+  const isBig=o=>{ if(!o.isMesh||!o.visible||!o.geometry) return false; if(!o.geometry.boundingSphere) o.geometry.computeBoundingSphere(); return o.geometry.boundingSphere.radius*Math.max(o.scale.x,o.scale.y,o.scale.z)>1.1; };
+  const big=root.children.filter(o=>o!==tur&&isBig(o)&&!(o.userData&&o.userData.tank)); if(!big.length) return;
+  const rc=new THREE.Raycaster(), bb=new THREE.Box3(), c=new THREE.Vector3(), sz=new THREE.Vector3(), dir=new THREE.Vector3(), q=new THREE.Quaternion();
+  for(const o of root.children.slice()){
+    if(o===tur||big.includes(o)||o.userData.stand||o.userData.tank||!o.visible) continue;
+    let vis=false; o.traverse(m=>{ if(m.isMesh&&m.visible&&!(m.userData&&m.userData.tank)) vis=true; }); if(!vis) continue;
+    bb.setFromObject(o); if(bb.isEmpty()) continue; bb.getCenter(c); bb.getSize(sz);
+    if(Math.max(sz.x,sz.y,sz.z)>1.6||Math.abs(c.x)<.4||c.y<fy||c.y>I.deck+.3) continue;
+    const sx=Math.sign(c.x); rc.set(c.clone(),dir.set(-sx,0,0)); rc.far=1.2; const h=rc.intersectObjects(big,false)[0]; if(!h) continue;
+    const n=h.face.normal.clone().transformDirection(h.object.matrixWorld); if(Math.abs(n.x)<.55) continue;
+    const gap=h.distance-sz.x/2; if(gap<=.03||gap>.8) continue;
+    o.position.x-=sx*(gap-.005);
+    const a=Math.atan2(n.y,Math.abs(n.x)); if(Math.abs(a)>.05&&Math.abs(o.rotation.x)<.01&&Math.abs(o.rotation.y%Math.PI)<.01){ q.setFromAxisAngle(new THREE.Vector3(0,0,1),sx*a); o.quaternion.premultiply(q); }
+    o.updateMatrixWorld(true); }
+}
 function buildW2(t,M,mat,root,lkL,lkR){ shTurMG.t=t;
   const I=M.w2, L=M.L, hw=M.W/2, tw=I.trW, tx=hw-tw/2-(I.cover?.06:0), H=I.trH, zf=L/2, zr=-L/2;
   // ---- tren de rodaje ----
@@ -117,10 +141,11 @@ function buildW2(t,M,mat,root,lkL,lkR){ shTurMG.t=t;
     const rear=I.rearDrive??['uk','ru'].includes(t.T.nation);
     sprocketT(root,x,(rear?I.trR:I.trF)*.62,rear?zr+.36:zf-.33,.26,13,mat); dWheel(root,x,(rear?I.trF:I.trR)*.62,rear?zf-.33:zr+.36,.24,mat,{rim:.75}); }
     if(I.skirt) profMesh(root,[[zf-.55,H*I.skirt+.08],[zr+.45,H*I.skirt+.08],[zr+.5,H*.28],[zf-.6,H*.28]],.05,x+s*(tw/2+.06),t.mud||mat); // faldón
-    if(I.schurz){ const top=I.schTop??(I.deck-.08), h=I.schH??.62, n=I.schN||6, z0=zr+.55, len=L-1.1, xo=x+s*(tw/2+.14);   // Schürzen: planchas de 5 mm colgadas de un riel
+    if(I.schurz){ const n0=root.children.length, top=I.schTop??(I.deck-.08), h=I.schH??.62, n=I.schN||6, z0=zr+.55, len=L-1.1, xo=x+s*(tw/2+.14);   // Schürzen: planchas de 5 mm colgadas de un riel
       box(root,.05,.05,len+.1,xo-s*.03,top+.02,z0+len/2,darkMat);                                                                  // riel
       for(let k=0;k<n;k++){ const z=z0+(k+.5)*len/n, P=box(root,.025,h,len/n-.07,xo+s*.03,top-h/2,z,mat); P.rotation.z=-s*.05; P.rotation.y=(k%2?1:-1)*.012;   // levemente abiertas y desparejas
-        for(const d of [-.3,.3]) box(root,.06,.12,.05,xo,top-.03,z+d*len/n,darkMat); } }                                             // ganchos
+        for(const d of [-.3,.3]) box(root,.06,.12,.05,xo,top-.03,z+d*len/n,darkMat); }
+      for(let q=n0;q<root.children.length;q++) root.children[q].userData.stand=1; }   // los faldones van separados del casco a propósito (snapSides no los toca)                                             // ganchos
     if(I.chur) profMesh(root,[[zf-.35,H+.06],[zr+.35,H+.06],[zr+.1,H*.8],[zf-.1,H*.8]],tw+.08,x,mat);        // techo de la oruga envuelta
     else if(!I.noTrk) box(root,tw+.08,.04,L-.25,x,Math.max(I.trF,I.trR)+.04,-.04,t.mud||mat);                          // guardabarros
   }
@@ -185,6 +210,7 @@ function buildW2(t,M,mat,root,lkL,lkR){ shTurMG.t=t;
     mg1:V3(iw2*.22,deck-.45,zf-gz-.3),mg2:V3(-iw2*.25,deck-.4,zf-gz-.1),engine:V3(0,deck*.55,zr+L*.2),trans:V3(0,deck*.4,I.rearDrive?zr+.5:zf-.6),
     ammo:V3(iw2*.25,deck*.5,M.tz),breech:tp(0,gy,M.tl*.15)};
   if(I.engF){ t.seatPos.engine=V3(iw2*.2,deck*.55,zf-1.3); t.seatPos.trans=V3(0,deck*.35,zf-.6); }                     // TAM: motor adelante a la derecha
+  snapSides(t,root,M,I);
 }
 const _wdMat=new THREE.MeshLambertMaterial({color:0x6b5236});
 

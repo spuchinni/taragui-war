@@ -17,6 +17,7 @@ module.exports=[
    CAM=()=>{ const u=CAM_U, p=rel(t,lerp(6.5,7.2,u),0,lerp(9,10,u)); p.y=t.pos.y+1.2; fov(40); camera.position.copy(p); camera.lookAt(rel(t,0,2,3.5)); }; return true; })()`},
  {id:'t34',map:'prokhorovka',wx:'dia',ed:[7.45,8.8],hits:[.42],setup:`(()=>{ const Z=spot(1); const t=act('t3485',0,Z.x,Z.z,0); t.cine.th=1; for(let i=0;i<20;i++){ t.speed=Math.min(t.T.maxF,9); }
    const c=V3(0,0,0).copy(rel(t,5.5,0,24)); c.y=ground(c.x,c.z)+.5;
+   { const a=rel(t,-4,0,-2), g=rel(t,-4,0,70), b=rel(t,4.5,0,-6), h=rel(t,4.5,0,70); squad(0,'ru',a.x,a.z,g.x,g.z,4); squad(0,'ru',b.x,b.z,h.x,h.z,4); }   // infantería que corre con el tanque
    ON_T=s=>{ t.speed=Math.max(t.speed,Math.min(t.T.maxF,10)); if(s>=.42&&!t._f){ t._f=1; shoot(t); } };
    CAM=()=>{ fov(40); camera.position.copy(c); camera.lookAt(t.pos.x,t.pos.y+1.6,t.pos.z); }; return true; })()`},
  {id:'sherman',map:'normandia',wx:'tarde',ed:[8.8,9.9],hits:[.33],setup:`(()=>{ const Z=spot(1,-40); const t=act('m4a1',0,Z.x,Z.z,1.5); t.cine.th=.5;
@@ -34,7 +35,16 @@ module.exports=[
  {id:'tam2c',map:'itati',wx:'tarde',ed:[14.88,16.3],hits:[.31],setup:`(()=>{ const Z=spot(2); const t=act('tam2c',0,Z.x,Z.z,0);
    ON_T=s=>{ if(s>=.31&&!t._f){ t._f=1; shoot(t); } };
    CAM=()=>{ const u=CAM_U, p=rel(t,lerp(2.6,2.2,u),0,lerp(12,10,u)); p.y=t.pos.y+1.5; fov(30); camera.position.copy(p); camera.lookAt(rel(t,0,2,0)); }; return true; })()`},
- // --- cierre: el logo sobre un campo que se aleja ---
- {id:'final',map:'itati',wx:'tarde',ed:[16.3,20.6],logo:1,setup:`(()=>{ const Z=spot(1); const L=[act('tam',0,Z.x,Z.z,0),act('tam2c',0,Z.x+9,Z.z-7,0),act('repot',0,Z.x-9,Z.z-8,0)]; L.forEach(t=>t.cine.th=.5);
-   CAM=()=>{ const u=ease(CAM_U), t=L[0], p=rel(t,lerp(3,8,u),0,lerp(18,40,u)); p.y=ground(p.x,p.z)+lerp(2,16,u); fov(40); camera.position.copy(p); camera.lookAt(rel(t,0,1.5,-4)); }; return true; })()`},
+ // --- cierre: el B-29 pasa sobre los tanques y suelta la bomba (16,99 s); la nuke estalla en el último golpe (17,95 s) y después entra la portada ---
+ {id:'final',map:'itati',wx:'tarde',ed:[16.3,17.6],setup:`(()=>{ const Z=spot(0), H=Math.PI, dir=V3(0,0,-1); const L=[act('tam',0,Z.x,Z.z,H),act('tam2c',0,Z.x+8,Z.z+7,H),act('repot',0,Z.x-8,Z.z+8,H)]; L.forEach(t=>t.cine.th=.45);
+   { const a=rel(L[0],-4,0,-3), g=rel(L[0],-4,0,-80); squad(0,'ar',a.x,a.z,g.x,g.z,5); }
+   const P=L[0].pos.clone().addScaledVector(dir,608); P.y=ground(P.x,P.z); nukeAt(L[0],P,dir); window._NK={P,dir,L,Z};
+   const PL=()=>nuke&&nuke.plane; while(PL()&&!PL().dropped&&P.clone().sub(PL().g.position).setY(0).dot(dir)-PL().rel>PL().v*(.69+20/30)){ REC=null; frame(1/30); }
+   CAM=()=>{ const t=L[0], p=rel(t,4,0,26); p.y=ground(p.x,p.z)+1.2; fov(60); camera.position.copy(p); const a=rel(t,0,4,-6), pl=nuke&&nuke.plane?nuke.plane.g.position:null, b=nuke&&nuke.bomb?nuke.bomb.m.position:pl;   // la cámara sigue al B-29 y a la bomba
+     camera.lookAt(b?a.clone().lerp(b.clone().add(V3(0,-25,0)),.62):a); }; return true; })()`},
+ {id:'nuke',map:'itati',wx:'tarde',keep:1,ed:[17.6,22.4],logo:1,setup:`(()=>{ const N=window._NK; if(!N||!nuke) return false; window.WARM=0;
+   const ttl=()=>{ const B=nuke.bomb; if(!B) return 0; const gh=ground(B.m.position.x,B.m.position.z)+30, y=B.m.position.y, vy=B.v.y; return (vy+Math.sqrt(Math.max(0,vy*vy+2*G*(y-gh))))/G; };
+   for(let i=0;i<600&&(nuke.plane&&!nuke.plane.dropped||ttl()>.35);i++){ REC=null; frame(1/30); }
+   const C=V3(N.Z.x-120,0,N.Z.z+70); C.y=ground(C.x,C.z)+45;   // de costado y alto: la basílica a la izquierda y el hongo sobre la ciudad
+   CAM=()=>{ const u=ease(CAM_U); fov(46); camera.position.set(C.x-u*12,C.y+u*8,C.z+u*10); camera.lookAt(N.P.x,N.P.y+lerp(70,150,u),N.P.z); }; return true; })()`},
 ];

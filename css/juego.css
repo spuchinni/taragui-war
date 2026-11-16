@@ -133,6 +133,7 @@ body.intro #overlay,body.intro #acct{display:none!important}
 #introUI .iStart{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;background:#0b0c0d;color:var(--paper);cursor:pointer;pointer-events:auto}
 #introUI .iStart[hidden]{display:none} #introUI .iStart{background:#0b0c0d url(../img/portada-nueva.jpg) center/cover no-repeat;justify-content:flex-end;padding-bottom:12vh} #introUI .iStart span{font-size:22px;color:var(--khaki);animation:pressP 1.6s infinite}
 #introUI .iSkip{position:absolute;right:16px;bottom:calc(9vh + 16px);pointer-events:auto;font:700 16px system-ui,sans-serif;padding:9px 16px;color:var(--paper);background:rgba(20,18,14,.7);border:1px solid rgba(239,231,210,.45);cursor:pointer}
+#introUI .iSnd{right:auto;left:50%;transform:translateX(-50%);bottom:calc(9vh + 16px)} #introUI .iSnd[hidden],#introUI .iSkip[hidden]{display:none}
 #introUI .iSkip:hover{background:rgba(60,55,40,.9)}
 /* Cuenta: botón en el inicio y ventana para entrar con Google o con mail */
 .acctB{position:fixed;z-index:10;top:calc(16px + env(safe-area-inset-top,0px));right:122px;height:46px;max-width:min(260px,calc(100vw - 140px));padding:0 16px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;

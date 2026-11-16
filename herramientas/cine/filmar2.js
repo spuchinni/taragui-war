@@ -16,6 +16,10 @@ window.spot=(i,dz=0,far,clr=14)=>{ const Z=zones[Math.min(i,zones.length-1)]; le
 window.act=(k,team,x,z,h)=>{ const c=newCrew('',team,VEH[k].nation,false); c.out=true; crews.push(c); const t=spawnCrew(c,k,{label:'',x,z});
   t.pos.set(x,ground(x,z),z); t.heading=h; t.root.position.copy(t.pos); t.dummy=true; t.immuneT=0; t.cine={th:0,st:0}; t.gunPitch=0; t.turretYaw=0; t.turret.rotation.y=0; t.gunPivot.rotation.x=0; return t; };
 window.shoot=t=>{ t.reloadT=0; t.ammo&&t.ammo.forEach&&0; try{ fireGun(t); }catch(e){ console.warn('shoot',e.message); } };
+window.squad=(team,nat,x,z,gx,gz,n=6)=>{ const L=[]; for(let i=0;i<n;i++){ const P=makePerson(i===1?'at':'rifle',team,x+rand(-5,5),z+rand(-5,5)); P.goal={x:gx+rand(-4,4),z:gz+rand(-4,4)}; P.noEmb=now+99; L.push(P); } return L; };
+// nuke: el B-29 entra por 'dir' y la bomba cae en p (como callNuke, sin costo ni regla de época)
+window.nukeAt=(by,p,dir)=>{ const S=RULE().sup, o=S.nuke, foe=1-by.team, a=W.sp[foe], h=W.sp[by.team]; S.nuke=1; by.crew.sp=1e6;
+  W.sp[foe]=[{x:p.x/.85,z:p.z/.85}]; W.sp[by.team]=[{x:p.x-dir.x*600,z:p.z-dir.z*600}]; nuke=null; try{ callNuke(by); } finally{ S.nuke=o; W.sp[foe]=a; W.sp[by.team]=h; } return nuke; };
 window.boom=p=>{ try{ explode(p,'ground',1.3); try{ groundHit(p,{kind:'he',sc:1.6}); }catch(e){} for(let i=0;i<5;i++) puff(p.clone().add(V3(rand(-3,3),rand(.5,3),rand(-3,3))),0x6e5e48,rand(5,8),rand(1.5,2.5),1.6,.8); sfx('expl',p,1.2,{rate:rand(.8,1)}); if(typeof addCrater==='function') addCrater(p,3); }catch(e){ console.warn('boom',e.message); } };
 `;
 (async()=>{
@@ -25,8 +29,8 @@ window.boom=p=>{ try{ explode(p,'ground',1.3); try{ groundHit(p,{kind:'he',sc:1.
  await p.addInitScript(()=>{ try{ localStorage.setItem('tw_settings',JSON.stringify({gfx:'alta'})); }catch(e){} });
  await p.route(/^https?:\/\/(?!localhost)/,r=>r.abort());
  await p.goto('http://localhost:8771/?lang=es&evento=1',{waitUntil:'load',timeout:120000}); await p.waitForTimeout(4000);
- await p.evaluate(({W,H,HELP})=>{ eval(HELP); introEnd(); PROG.train=0; PROG.stats.battles=20; window.requestAnimationFrame=()=>0; initAudio();
-  markZone=()=>{}; groundDecal=()=>{}; window._addCr=addCrater; addCrater=()=>{}; // los calcos de cráter salen como cuñas negras de costado con swiftshader
+ await p.evaluate(({RW,RH,HELP})=>{ eval(HELP); introEnd(); PROG.train=0; PROG.stats.battles=20; window.requestAnimationFrame=()=>0; initAudio();
+  markZone=()=>{}; finish=()=>{}; banner=()=>{}; hitMsg=()=>{}; groundDecal=()=>{}; window._addCr=addCrater; addCrater=()=>{}; // los calcos de cráter salen como cuñas negras de costado con swiftshader
   if(typeof whistle==='function') whistle=()=>{};
   window.LOG=[]; window.REC=null; const sf=sfx; sfx=function(n,pos,v=1,o={}){ if(REC!=null){ const d=pos?pos.distanceTo(camera.position):0; LOG.push({t:REC,n,v:v*(o.near||!pos?1:Math.min(1,25/Math.max(25,d))),r:o.rate||1}); } return sf.apply(this,arguments); };
   const _dr=drive; drive=function(t,th,st,dt){ if(t.cine){ th=t.cine.th; st=t.cine.st; } return _dr.call(this,t,th,st,dt); };
@@ -34,17 +38,17 @@ window.boom=p=>{ try{ explode(p,'ground',1.3); try{ groundHit(p,{kind:'he',sc:1.
   window.setMap=(map,wx)=>{ startBattle(true,map); const g=document.getElementById('briefGo'); if(g) g.click(); for(const t of [...tanks]) removeTank(t);
     if(typeof infantry!=='undefined') for(const P of [...infantry]) try{ removeInf(P); }catch(e){}
     applyWeather(wx||'dia'); { const M=new Set(zones.map(Z=>Z.mat)); worldGroup.children.forEach(o=>{ if(M.has(o.material)||zones.some(Z=>Math.abs(o.position.x-Z.x)<.01&&Math.abs(o.position.z-Z.z)<.01)) o.visible=false; }); } aerial=false; window.CAM=null; spectatorCam=()=>{ if(CAM) CAM(); return true; };
-    renderer.setPixelRatio(1); renderer.setSize(W,H,false); camera.aspect=16/9; camera.updateProjectionMatrix(); return builtKey; };
+    renderer.setPixelRatio(1); renderer.setSize(RW,RH,false); camera.aspect=16/9; camera.updateProjectionMatrix(); return builtKey; };
   window.shot=()=>{ CAM(); RENDER(scene,camera); return renderer.domElement.toDataURL('image/jpeg',.92); };
- },{W,H,HELP});
+ },{RW:W,RH:H,HELP});
  const snd=[]; let cur=null;
  for(const T of TOMAS){
   const dur=T.ed[1]-T.ed[0], n=Math.round(dur*FPS)+1;
   // un mapa nuevo por toma: así cada una arranca limpia (sin humo, cráteres ni restos de la anterior)
-  const k=await p.evaluate(({m,w})=>setMap(m,w),{m:T.map,w:T.wx}); cur=T.map;
-  const ok=await p.evaluate(`(()=>{ window.ON_T=null; window.CAM_U=0; window.CAM_T=0; const r=${T.setup}; for(let i=0;i<20;i++){ window.REC=null; frame(1/30); } return r; })()`);
+  const k=T.keep?cur:await p.evaluate(({m,w})=>setMap(m,w),{m:T.map,w:T.wx}); cur=T.map;   // keep: sigue la misma simulación de la toma anterior (la nuke)
+  const ok=await p.evaluate(`(()=>{ window.ON_T=null; window.CAM_U=0; window.CAM_T=0; const r=${T.setup}; for(let i=0;i<(window.WARM??20);i++){ window.REC=null; frame(1/30); } window.WARM=null; return r; })()`);
   if(!ok){ console.log('toma',T.id,'falló'); continue; }
-  fs.mkdirSync(`${D}/frames2/${T.id}`,{recursive:true});
+  fs.rmSync(`${D}/frames2/${T.id}`,{recursive:true,force:true}); fs.mkdirSync(`${D}/frames2/${T.id}`,{recursive:true});
   const idx=MODE==='preview'?[0,Math.floor(n/2),n-1]:null;
   await p.evaluate(()=>{ LOG.length=0; });
   for(let f=0;f<n;f++){
