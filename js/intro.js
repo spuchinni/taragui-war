@@ -9,7 +9,7 @@ const INTRO_SHOTS=[
   {k:'leo2a4',t:'Hoy',s:'Visión térmica, telémetro y estabilizador',sky:0x8d97a1,gr:0x6a6650,v:2.2,cam:'front',fire:2.6,dur:5.5}
 ].filter(S=>VEH[S.k]);
 let intro=null;
-const INTRO_ID='4'; // 4: video filmado con el motor (herramientas/cine/filmar2.js + armar2.py)
+const INTRO_ID='5'; // 4: video filmado con el motor (herramientas/cine/filmar2.js + armar2.py)
 const introSeen=()=>{ try{ return localStorage.getItem('tw_intro_vista')===INTRO_ID; }catch(e){ return true; } };
 function introScene(){
   const sc=new THREE.Scene(); sc.fog=new THREE.Fog(0xaaaaaa,40,190); sc.background=new THREE.Color(0xaaaaaa);
