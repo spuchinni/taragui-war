@@ -4,12 +4,18 @@
 import json, subprocess, sys, os, collections
 D = os.path.dirname(os.path.abspath(__file__)); REPO = os.path.dirname(os.path.dirname(D)); T = D + '/tmp2'; os.makedirs(T, exist_ok=True)
 MUS = sys.argv[1]; FPS = 30; Wd, Hd = 1280, 720; BAR = 52   # franjas de cine (1280×616 ≈ 2,08:1)
-# música estirada (pedido de Sebastián: 10 s más): después de 16,3 s se repiten los tambores desde el golpe de 6,0 s (empalme corto en el golpe)
-CUT, BACK = 16.3, 6.0; DX = CUT - BACK
+# música estirada (pedidos de Sebastián): 0–16,3 s, los tambores otra vez (6,0–16,3), el cuerno otra vez para la llegada del B-29 (0–5,3)
+# y el final (16,3 s en adelante, con el golpe de la nuke). Empalmes cortos en los golpes.
+SEG = [(0, 16.3), (6.0, 16.3), (0, 5.3), (16.3, None)]
+DX = sum(b - a for a, b in SEG[:-1]) - 16.3          # cuánto se corre el final: 10,3 + 5,3 = 15,6 s
 MUSX = T + '/musica.wav'
-subprocess.run(['ffmpeg', '-v', 'error', '-y', '-i', MUS, '-i', MUS, '-i', MUS, '-filter_complex',
-    f"[0:a]atrim=0:{CUT},asetpts=PTS-STARTPTS,afade=t=out:st={CUT-.02:.2f}:d=0.02[a];[1:a]atrim={BACK}:{CUT},asetpts=PTS-STARTPTS,afade=t=in:d=0.01,afade=t=out:st={DX-.02:.2f}:d=0.02[b];"
-    f"[2:a]atrim={CUT},asetpts=PTS-STARTPTS,afade=t=in:d=0.01[c];[a][b][c]concat=n=3:v=0:a=1[m]", '-map', '[m]', MUSX], check=True)
+_ins, _fl = [], []
+for i, (a, b) in enumerate(SEG):
+    _ins += ['-i', MUS]; tr = f"atrim={a}:{b}" if b else f"atrim={a}"
+    fo = f",afade=t=out:st={b-a-.02:.2f}:d=0.02" if b else ''
+    _fl.append(f"[{i}:a]{tr},asetpts=PTS-STARTPTS,afade=t=in:d=0.01{fo}[s{i}]")
+_fl.append(''.join(f'[s{i}]' for i in range(len(SEG))) + f"concat=n={len(SEG)}:v=0:a=1[m]")
+subprocess.run(['ffmpeg', '-v', 'error', '-y', *_ins, '-filter_complex', ';'.join(_fl), '-map', '[m]', MUSX], check=True)
 MUS = MUSX
 FONT = '/usr/share/fonts/opentype/inter/Inter-ExtraBold.otf'
 TOMAS = json.loads(subprocess.run(['node', '-e', f"console.log(JSON.stringify(require('{D}/intro2-tomas.js').map(t=>({{id:t.id,ed:t.ed,cap:t.cap||'',grade:t.grade||'',logo:!!t.logo}}))))"], capture_output=True, text=True, check=True).stdout)

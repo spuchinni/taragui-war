@@ -61,8 +61,10 @@ function trackLoop(parent,prof,w,x0,linkMat,sideMat,th=.1){
   g.setAttribute('position',new THREE.Float32BufferAttribute(all.flatMap(q=>[q[0],q[1],q[2]]),3)); g.setAttribute('uv',new THREE.Float32BufferAttribute(all.flatMap(q=>[q[3],q[4]]),2));
   g.addGroup(0,grpA.length,0); g.addGroup(grpA.length,grpB.length,1); g.computeVertexNormals();
   const m=new THREE.Mesh(g,[linkMat,sideMat]); m.position.x=x0; m.castShadow=m.receiveShadow=true; parent.add(m); return m; }
-function ww1Tracks(t){ // materiales de oruga con eslabones que se desplazan (los dos costados avanzan igual)
-  const mk=()=>new THREE.MeshStandardMaterial({map:linkTex(),roughness:.85,metalness:.4,side:THREE.DoubleSide});
+const WW1_TYPES={rhombo:1,ft:1,a7v:1,schneider:1,stchamond:1,whippet:1,lk2:1};
+function ww1Tracks(t,type){ // materiales de oruga con eslabones que se desplazan (los dos costados avanzan igual)
+  const lt=()=>{ if(!WW1_TYPES[type]) return linkTex(); const x=new THREE.CanvasTexture(ww1LinkCanvas); x.wrapS=x.wrapT=THREE.RepeatWrapping; x.anisotropy=4; return x; };
+  const mk=()=>new THREE.MeshStandardMaterial({map:lt(),roughness:.85,metalness:.4,side:THREE.DoubleSide});
   const L=mk(), R=mk(); t.trk={sideP:L,sideN:{map:{offset:{x:0}}},top:R,mats:[L,R]}; return [L,R]; }
 const sideTrkMat=new THREE.MeshStandardMaterial({color:0x2a2825,roughness:.85,metalness:.35,side:THREE.DoubleSide});
 function collider(parent,w,h,d,x,y,z,t,zone){ const c=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),darkMat); c.position.set(x,y,z); c.visible=false; c.userData={tank:t,zone}; parent.add(c); colliders.push(c); return c; }
@@ -74,6 +76,61 @@ function ironCross(parent,x,y,z,ry,s=1){ const g=new THREE.Group(); g.position.s
   box(g,.02,.62*s,.2*s,0,0,0,_wMat); box(g,.02,.2*s,.62*s,0,0,0,_wMat); box(g,.03,.5*s,.1*s,0,0,0,_kMat); box(g,.03,.1*s,.5*s,0,0,0,_kMat); return g; }
 // Franjas blanca-roja-blanca de reconocimiento (tanques británicos de 1918)
 function wrw(parent,x,y,z,ry,h=.7){ const g=new THREE.Group(); g.position.set(x,y,z); g.rotation.y=ry; parent.add(g); [-.2,0,.2].forEach((dz,i)=>box(g,.02,h,.2,0,0,dz,i===1?_rMat:_wMat)); return g; }
+// ---- Detalles (2.ª tanda, 16/11/2026, referencias de Sketchfab, hecho por código) ----
+// Oruga de la 1ª Guerra: tejas anchas de ~30 cm con nervio, remaches y barro (la de siempre tenía eslabones de 60 cm)
+const ww1LinkCanvas=(()=>{ const c=document.createElement('canvas'); c.width=256; c.height=48; const x=c.getContext('2d');
+  x.fillStyle='#161512'; x.fillRect(0,0,256,48);
+  for(let i=0;i<8;i++){ const X=i*32, g=x.createLinearGradient(X,0,X+32,0);
+    g.addColorStop(0,'#2b2823'); g.addColorStop(.18,'#5b564c'); g.addColorStop(.5,'#4a463e'); g.addColorStop(.85,'#38352f'); g.addColorStop(1,'#201e1a');
+    x.fillStyle=g; x.fillRect(X+1,2,29,44);
+    x.fillStyle='#716b60'; x.fillRect(X+12,2,3,44); x.fillStyle='#1c1a17'; x.fillRect(X+15,2,2,44);      // nervio
+    x.fillStyle='#1e1c19'; for(const y of [7,19,29,41]){ x.beginPath(); x.arc(X+5,y,1.7,0,7); x.fill(); x.beginPath(); x.arc(X+25,y,1.7,0,7); x.fill(); }
+    x.globalAlpha=.4; x.fillStyle=i%2?'#5a4a33':'#4a3c2a'; x.fillRect(X+1,(i*13)%30,29,10+(i*7)%12); x.globalAlpha=1;
+    x.fillStyle='#0b0a09'; x.fillRect(X+30,0,2,48); }
+  x.fillStyle='#0e0d0b'; x.fillRect(0,0,256,2); x.fillRect(0,46,256,2); return c; })();
+// Remaches siguiendo una línea (z,y) sobre el plano x (cerrada si closed)
+function rivetsAlong(parent,P,x,step,mat,closed=true){ const Q=closed?P.concat([P[0]]):P; let L=0; const S=[0];
+  for(let i=1;i<Q.length;i++){ L+=Math.hypot(Q[i][0]-Q[i-1][0],Q[i][1]-Q[i-1][1]); S.push(L); }
+  const n=Math.max(2,Math.round(L/step)); let i=1;
+  for(let k=0;k<n;k++){ const s=L*k/n; while(i<S.length-1&&S[i]<s) i++; const f=(s-S[i-1])/((S[i]-S[i-1])||1);
+    const r=cyl(parent,.022,.026,.035,x,Q[i-1][1]+(Q[i][1]-Q[i-1][1])*f,Q[i-1][0]+(Q[i][0]-Q[i-1][0])*f,5,mat); r.rotation.z=Math.PI/2; } }
+// Remaches en una línea recta en el espacio (para techos y frentes); axis = eje de la cabeza ('x','y','z')
+function rivetsLine(parent,a,b,n,axis,mat){ for(let k=0;k<n;k++){ const f=n>1?k/(n-1):.5;
+  const r=cyl(parent,.022,.026,.035,a[0]+(b[0]-a[0])*f,a[1]+(b[1]-a[1])*f,a[2]+(b[2]-a[2])*f,5,mat);
+  if(axis==='x') r.rotation.z=Math.PI/2; else if(axis==='z') r.rotation.x=Math.PI/2; } }
+// Rótula de ametralladora con camisa de enfriamiento (local +z = hacia afuera)
+function ballMG(parent,x,y,z,ry,mat,jk=true){ const g=new THREE.Group(); g.position.set(x,y,z); g.rotation.y=ry; parent.add(g);
+  const ring=cyl(g,.15,.16,.05,0,0,0,12,mat); ring.rotation.x=Math.PI/2;
+  const b=new THREE.Mesh(new THREE.SphereGeometry(.11,10,8),mat); b.scale.z=.7; b.position.z=.03; b.castShadow=true; g.add(b);
+  const br=cyl(g,.02,.02,.42,0,0,.3,6,darkMat); br.rotation.x=Math.PI/2;
+  if(jk){ const j=cyl(g,.048,.048,.3,0,0,.24,8,darkMat); j.rotation.x=Math.PI/2; } return g; }
+// Visera del conductor/comandante: chapa abisagrada arriba con su ranura
+function visor(parent,x,y,z,ry,w,h,mat,open=.18){ const g=new THREE.Group(); g.position.set(x,y,z); g.rotation.y=ry; parent.add(g);
+  box(g,w+.06,h+.06,.025,0,0,-.01,darkMat);
+  const f=new THREE.Group(); f.position.set(0,h/2,0); f.rotation.x=-open; g.add(f); box(f,w,h,.04,0,-h/2,.025,mat);
+  box(f,w*.7,.03,.02,0,-h*.45,.05,darkMat); cyl(g,.025,.025,w*.9,0,h/2,.02,6,mat).rotation.z=Math.PI/2; return g; }
+// Puerta con bisagras y manija (local +z = hacia afuera)
+function hDoor(parent,x,y,z,ry,w,h,mat){ const g=new THREE.Group(); g.position.set(x,y,z); g.rotation.y=ry; parent.add(g);
+  box(g,w,h,.04,0,0,.02,mat); box(g,w+.04,h+.04,.015,0,0,0,darkMat);
+  for(const yy of [h*.32,-h*.32]){ const hg=cyl(g,.03,.03,.12,-w/2,yy,.04,6,mat); }
+  box(g,.12,.025,.03,w*.3,0,.06,darkMat); rivetsLine(g,[-w/2+.05,h/2-.05,.045],[w/2-.05,h/2-.05,.045],Math.max(2,Math.round(w/.12)),'z',mat);
+  rivetsLine(g,[-w/2+.05,-h/2+.05,.045],[w/2-.05,-h/2+.05,.045],Math.max(2,Math.round(w/.12)),'z',mat); return g; }
+// Rejilla de persianas (sobre un techo, centrada en x,y,z)
+function louvres(parent,w,d,n,x,y,z,mat,ry=0){ const g=new THREE.Group(); g.position.set(x,y,z); g.rotation.y=ry; parent.add(g);
+  box(g,w+.08,.05,d+.08,0,0,0,mat); box(g,w,.02,d,0,.03,0,darkMat);
+  for(let i=0;i<n;i++){ const s=box(g,w-.04,.015,d/n*.85,0,.05,-d/2+(i+.5)*d/n,mat); s.rotation.x=.55; } return g; }
+// Rueda de rayos (eje x)
+function spokeWheelX(parent,x,y,z,r,n,mat,w=.12){ const g=new THREE.Group(); g.position.set(x,y,z); parent.add(g);
+  const rim=new THREE.Mesh(new THREE.TorusGeometry(r*.93,r*.08,6,24),mat); rim.rotation.y=Math.PI/2; rim.scale.z=w/(r*.16); rim.castShadow=true; g.add(rim);
+  const tire=new THREE.Mesh(new THREE.CylinderGeometry(r,r,w,24,1,true),mat); tire.rotation.z=Math.PI/2; g.add(tire);
+  for(let i=0;i<n;i++){ const sp=box(g,w*.5,r*1.75,.05,0,0,0,mat); sp.rotation.x=i/n*Math.PI; }
+  const hub=cyl(g,r*.2,r*.2,w+.08,0,0,0,10,mat); hub.rotation.z=Math.PI/2; return g; }
+// Riel tubular por una lista de puntos (x,y,z)
+function tubeRail(parent,pts,r,mat){ const cv=new THREE.CatmullRomCurve3(pts.map(p=>new THREE.Vector3(...p)),false,'catmullrom',.1);
+  const m=new THREE.Mesh(new THREE.TubeGeometry(cv,Math.max(8,pts.length*6),r,6,false),mat); m.castShadow=true; parent.add(m); return m; }
+// Gancho de remolque (local +z afuera)
+function towHook(parent,x,y,z,ry,mat){ const g=new THREE.Group(); g.position.set(x,y,z); g.rotation.y=ry; parent.add(g);
+  box(g,.1,.16,.08,0,0,.04,mat); const t=new THREE.Mesh(new THREE.TorusGeometry(.07,.02,5,10,Math.PI*1.4),darkMat); t.position.z=.12; t.rotation.y=Math.PI/2; g.add(t); return g; }
 // Cañón: grupo que gira (mount), pivote de elevación, tubo, boca y coaxial
 function gunMount(t,parent,x,y,z,gl,gr,mat,opt={}){
   const mount=new THREE.Group(); mount.position.set(x,y,z); parent.add(mount);
@@ -104,7 +161,7 @@ const V3=(x,y,z)=>new THREE.Vector3(x,y,z);
 
 // ---- Constructor principal ----
 function buildWW1(t,M,mat){
-  const root=t.root, [lkL,lkR]=M.ww1==='gun'||M.ww1==='aa'?[null,null]:ww1Tracks(t), type=M.ww1;
+  const root=t.root, [lkL,lkR]=M.ww1==='gun'||M.ww1==='aa'?[null,null]:ww1Tracks(t,M.ww1), type=M.ww1;
   t.ant=null; t.ww1=type;
   if(type==='rhombo') return buildRhombo(t,M,mat,root,lkL,lkR);
   if(type==='ft') return buildFT(t,M,mat,root,lkL,lkR);
@@ -120,80 +177,129 @@ function buildWW1(t,M,mat){
 }
 
 // Mark I, Mark IV (macho y hembra), Mark V y el Beutepanzer
+// 2.ª tanda (16/11/2026, referencias de Sketchfab): bastidores con dos hileras de remaches y juntas, cabina con viseras y ametralladora,
+// barbetas con remaches, puerta y Hotchkiss/Lewis atrás, rieles de la viga sobre las orugas, persianas del radiador, cola de rayos del Mark I.
 function buildRhombo(t,M,mat,root,lkL,lkR){
   const v=M.var, fem=v==='mk4f', mk1=v==='mk1', mk5=v==='mk5', beute=v==='beute', hw=M.W/2;
   // perfil de la oruga (antihorario desde arriba adelante): el romboide clásico
   const prof=[[2.75,2.45],[-3.35,2.45],[-3.85,2.2],[-4.02,1.55],[-3.8,.95],[-3.15,.22],[-2.55,0],[1.95,0],[2.65,.38],[3.6,1.15],[4.02,1.62],[3.85,2.15]];
-  const fr=insetPoly(chaikin(prof,2),.16);
-  for(const s of [-1,1]){ const x=s*(hw-.28);
+  const sm=chaikin(prof,2), fr=insetPoly(sm,.16);
+  for(const s of [-1,1]){ const x=s*(hw-.28), xo=s*(hw-.01);
     profMesh(root,fr,.5,x,mat);                               // bastidor lateral (los "cuernos")
     trackLoop(root,prof,.54,x,s>0?lkR:lkL,sideTrkMat,.12);       // oruga alrededor de todo el casco
-    rivetsRow(root,s*(hw-.02),1.95,-2.9,2.3,14); rivetsRow(root,s*(hw-.02),.55,-2.2,1.6,11);
-    // rodillos tensores asomando por los costados
-    for(let i=0;i<4;i++) wheel(root,s*(hw-.28),.32,-1.8+i*1.15,.18);
+    rivetsAlong(root,insetPoly(sm,.25),xo,.21,mat);              // borde del bastidor
+    rivetsAlong(root,insetPoly(sm,.6),xo,.3,mat);                // segunda hilera (refuerzo interior)
+    for(const [z,y0,y1] of [[-3.05,.75,2.1],[-1.8,.42,2.12],[2.3,.5,2.12],[3.5,1.15,1.95]]){   // juntas verticales de las chapas
+      box(root,.02,y1-y0,.08,xo+s*.01,(y0+y1)/2,z,mat); rivetsLine(root,[xo+s*.025,y0+.05,z],[xo+s*.025,y1-.05,z],Math.round((y1-y0)/.16),'x',mat); }
+    for(let i=0;i<4;i++) wheel(root,s*(hw-.28),.32,-1.8+i*1.15,.18);   // rodillos tensores asomando por los costados
   }
-  // casco central, cabina adelante y escape
-  box(root,M.W-1.08,1.75,6.2,0,1.35,-.35,mat);
+  // casco central, techo con remaches, escotilla y persianas
+  const cw=M.W-1.08; box(root,cw,1.75,6.2,0,1.35,-.35,mat);
+  for(const s of [-1,1]) rivetsLine(root,[s*(cw/2-.06),2.235,-3.3],[s*(cw/2-.06),2.235,2.5],26,'y',mat);
+  box(root,.7,.06,.62,0,2.26,-.55,mat); box(root,.12,.04,.04,0,2.31,-.55,darkMat);
+  if(!mk1) louvres(root,cw-.25,.75,6,0,2.25,-2.75,mat);
+  // cabina adelante: viseras del conductor y del jefe, ametralladora en el medio (salvo el Mark I) y escotilla
   const cab=new THREE.Group(); cab.position.set(0,0,2.45); root.add(cab);
   profMesh(cab,[[.45,2.55],[-.55,2.55],[-.55,1.35],[.45,1.35],[.62,1.7]],1.5,0,mat);
-  slits(cab,3,0,2.15,.53,0,.16); box(cab,.5,.32,.06,-.4,2.1,.55,mat); box(cab,.5,.32,.06,.4,2.1,.55,mat);
+  for(const sx of [-.42,.42]){ const vz=visor(cab,sx,2.12,.54,0,.36,.26,mat); vz.rotation.x=-.2; }
+  if(!mk1){ const b=ballMG(cab,0,2.05,.57,0,mat); b.rotation.x=-.2; } else slits(cab,1,0,2.15,.55,0,.16);
+  rivetsLine(cab,[-.7,2.56,.4],[.7,2.56,.4],10,'y',mat); rivetsLine(cab,[-.7,2.56,-.5],[.7,2.56,-.5],10,'y',mat);
+  box(cab,.55,.05,.42,0,2.58,-.08,mat); box(cab,.1,.03,.03,0,2.62,-.08,darkMat);
+  towHook(root,-.42,.95,3.0,0,mat); towHook(root,.42,.95,3.0,0,mat);
   cyl(root,.09,.09,1.6,.3,2.45,-2.1,8,darkMat).rotation.x=Math.PI/2;            // caño de escape
-  cyl(root,.18,.18,.7,.3,2.5,-1.0,10,darkMat).rotation.x=Math.PI/2;             // silenciador
-  if(!mk1){ // tanque de combustible blindado atrás y viga de desatasco sobre rieles
-    box(root,1.0,.7,.55,0,1.25,-3.65,mat);
-    for(const s of [-1,1]) box(root,.1,.1,6.6,s*.55,2.6,-.4,darkMat);
-    const beam=cyl(root,.17,.17,M.W-.6,0,2.78,-2.6,10,new THREE.MeshLambertMaterial({color:0x5a4630})); beam.rotation.z=Math.PI/2;
-    for(const s of [-1,1]){ const ch=box(root,.04,.04,.9,s*.9,2.7,-2.2,darkMat); ch.rotation.x=.5; } }
-  else { // Mark I: cola de dos ruedas para ayudar a girar y techo de malla contra granadas
+  if(!mk1) cyl(root,.18,.18,.7,.3,2.5,-1.0,10,darkMat).rotation.x=Math.PI/2;    // silenciador (el Mark I largaba el escape abierto)
+  else cyl(root,.11,.09,.5,.3,2.55,-.9,8,darkMat);
+  if(!mk1){ // tanque de combustible blindado atrás, rieles de la viga sobre las orugas y la viga de desatasco
+    box(root,1.0,.7,.55,0,1.25,-3.65,mat); rivetsLine(root,[-.45,1.57,-3.93],[.45,1.57,-3.93],7,'z',mat); rivetsLine(root,[-.45,.93,-3.93],[.45,.93,-3.93],7,'z',mat);
+    const rx=hw-.42;
+    for(const s of [-1,1]){ const x=s*rx;
+      tubeRail(root,[[x,2.6,-3.55],[x,2.7,-2.6],[x,2.72,0],[x,2.7,2.3],[x,2.55,3.1],[x,2.3,3.55]],.045,darkMat);
+      for(const z of [-3.1,-1.4,.4,2.1]) box(root,.06,.22,.06,x,2.58,z,darkMat); }
+    const beam=cyl(root,.17,.17,2*rx+.25,0,2.9,-2.6,10,new THREE.MeshLambertMaterial({color:0x5a4630})); beam.rotation.z=Math.PI/2;
+    for(const s of [-1,1]){ box(root,.05,.36,.05,s*(rx-.25),2.9,-2.6,darkMat); const ch=box(root,.04,.04,.9,s*(rx+.05),2.72,-2.2,darkMat); ch.rotation.x=.5; } }
+  else { // Mark I: cola de dos ruedas de rayos para ayudar a girar y techo de malla contra granadas
     const tail=new THREE.Group(); tail.position.set(0,0,-4.0); root.add(tail);
-    box(tail,.12,.12,1.6,-.6,.8,-.6,darkMat); box(tail,.12,.12,1.6,.6,.8,-.6,darkMat);
-    for(const s of [-1,1]){ const wl=cyl(tail,.62,.62,.14,s*.6,.62,-1.3,16,darkMat); wl.rotation.z=Math.PI/2; }
+    box(tail,.12,.12,1.6,-.6,.8,-.6,darkMat); box(tail,.12,.12,1.6,.6,.8,-.6,darkMat); box(tail,1.3,.1,.1,0,.75,-1.3,darkMat);
+    cyl(tail,.06,.06,.9,0,1.2,-.3,6,darkMat).rotation.x=.9;                                   // pistón hidráulico
+    for(const s of [-1,1]) spokeWheelX(tail,s*.6,.62,-1.3,.62,12,darkMat,.14);
     const wire=new THREE.MeshBasicMaterial({color:0x3a3a34,wireframe:true});
-    for(const sd of [-1,1]){ const gR=new THREE.Group(); gR.position.set(0,2.95,.4); gR.rotation.z=-sd*.55; root.add(gR); const roof=new THREE.Mesh(new THREE.PlaneGeometry(1.0,3.6,3,9),wire); roof.rotation.x=-Math.PI/2; roof.position.x=sd*.5; gR.add(roof); } }
-  if(mk5){ // cúpula de observación atrás
-    box(root,1.1,.55,1.0,0,2.75,-1.3,mat); slits(root,2,0,2.85,-.79,0,.2); }
+    for(const sd of [-1,1]){ const gR=new THREE.Group(); gR.position.set(0,2.95,.4); gR.rotation.z=-sd*.55; root.add(gR); const roof=new THREE.Mesh(new THREE.PlaneGeometry(1.0,3.6,3,9),wire); roof.rotation.x=-Math.PI/2; roof.position.x=sd*.5; gR.add(roof); }
+    for(const z of [-1.3,.4,2.1]) for(const s of [-1,1]){ const p=box(root,.05,.75,.05,s*.55,2.55,z,darkMat); p.rotation.z=-s*.5; } }
+  if(mk5){ // cúpula de observación atrás con escotilla
+    box(root,1.1,.55,1.0,0,2.75,-1.3,mat); slits(root,2,0,2.85,-.79,0,.2); for(const s of [-1,1]) slits(root,1,s*.56,2.85,-1.3,Math.PI/2,.22);
+    box(root,.7,.05,.6,0,3.05,-1.35,mat); rivetsLine(root,[-.5,3.03,-.83],[.5,3.03,-.83],7,'y',mat); }
   if(v==='mk4'||mk5){ wrw(root,hw+.01,1.6,3.0,0); wrw(root,-hw-.01,1.6,3.0,Math.PI); }
   if(beute){ for(const s of [-1,1]) ironCross(root,s*(hw+.01),1.5,-1.6,0,1.1); ironCross(root,0,2.25,3.25,Math.PI/2,.8); }
   // barbetas
   const spW=M.spW, S={};
   for(const s of [-1,1]){ const g=new THREE.Group(); g.position.set(s*hw,0,.55); root.add(g);
     const plan=fem?[[-.75,0],[.75,0],[.42,s*spW],[-.42,s*spW]]:[[-1.0,0],[1.0,0],[.55,s*spW],[-.6,s*spW]];
-    planMesh(g,plan,fem?.95:1.0,fem?.82:.75,mat);
-    box(g,.06,.5,.4,s*(spW*.6),1.25,-.45,mat);                                   // puerta de la barbeta
+    const y0=fem?.82:.75, h=fem?.95:1.0;
+    planMesh(g,plan,h,y0,mat);
+    // remaches arriba y abajo en las caras de afuera, y una hilera en cada esquina
+    for(let i=1;i<plan.length;i++){ const a=plan[i], b=plan[(i+1)%plan.length]; if(i===plan.length-1&&Math.abs(b[1])<.01&&Math.abs(a[1])<.01) continue;
+      const n=Math.max(2,Math.round(Math.hypot(b[0]-a[0],b[1]-a[1])/.15));
+      rivetsLine(g,[a[1],y0+h+.03,a[0]],[b[1],y0+h+.03,b[0]],n,'y',mat); }
+    for(const p of plan.slice(2)) rivetsLine(g,[p[1]*1.01,y0+.1,p[0]],[p[1]*1.01,y0+h-.1,p[0]],5,'x',mat);
+    // cara de atrás: puerta y ametralladora (Hotchkiss en el macho, la segunda Lewis en la hembra)
+    const A=plan[3], B=plan[0], cz=(A[0]+B[0])/2, cx=(A[1]+B[1])/2;
+    const dz=A[0]-B[0], dx=A[1]-B[1]; let nz=-dx, nx=dz; if(nz>0){ nz=-nz; nx=-nx; } const nl=Math.hypot(nz,nx); nz/=nl; nx/=nl; const ry=Math.atan2(nx,nz);
+    hDoor(g,cx+nx*.02,y0+h*.42,cz+nz*.02,ry,fem?.36:.42,h*.62,mat);
+    const fM=.72, mx=B[1]+(A[1]-B[1])*fM, mz=B[0]+(A[0]-B[0])*fM; ballMG(g,mx+nx*.02,y0+h*.78,mz+nz*.02,ry,mat,true);
     collider(g,spW,1.0,fem?1.5:2.0,s*spW/2,1.25,0,t,'turret');
-    const G=gunMount(t,g,s*(spW-.08),1.3,fem?.15:.42,M.gl,M.gr,mat,{jacket:fem,shR:fem?.16:.26});
+    const G=gunMount(t,g,s*(spW-.08),1.3,fem?.15:.42,M.gl,M.gr,mat,{jacket:fem,shR:fem?.16:.28});
     G.mount.rotation.y=s*.55; S[s]=G; }
   t.sponsons=S; t.spSide=1; useGun(t,S[1]);
   collider(root,M.W,2.45,8.0,0,1.22,0,t,'hull');
   t.hTop=2.45; t.topH=2.9; t.aimH=1.4; t.glL=1.2;
-  const sx=(sd)=>sd;
   t.seatPos={driver:V3(-.35,1.75,2.3),commander:V3(.35,1.75,2.3),
     gunner:(sd)=>V3(sd*(hw+.35),1.3,.75),loader:(sd)=>V3(sd*(hw-.2),1.2,.2),mg1:(sd)=>V3(-sd*(hw+.3),1.3,.6),mg2:V3(0,1.35,-1.6),mg3:V3(0,1.6,-1.2),
     gear1:V3(-.45,1.1,-2.6),gear2:V3(.45,1.1,-2.6),mech1:V3(0,1.1,-2.4),engine:V3(0,1.1,-.6),trans:V3(0,.85,-2.9),ammo:(sd)=>V3(sd*.45,1.0,1.0),ammo2:(sd)=>V3(-sd*.45,1.0,-.2),
     breech:(sd)=>V3(sd*(hw+.4),1.3,.95)};
 }
 
-// Renault FT: torre giratoria, motor atrás, rueda tensora grande adelante y cola
+// Renault FT: torre giratoria remachada, motor atrás, tensora grande de rayos adelante, viga del ballestón y cola
 function buildFT(t,M,mat,root,lkL,lkR){
   const prof=[[1.75,1.22],[-1.6,.9],[-2.0,.68],[-2.08,.3],[-1.6,0],[1.25,0],[1.95,.32],[2.22,.78],[2.08,1.1]];
-  for(const s of [-1,1]){ const x=s*.7;
+  const sl=Math.atan2(1.22-.9,1.75+1.6);
+  for(const s of [-1,1]){ const x=s*.7, xo=s*.9;
     profMesh(root,insetPoly(chaikin(prof,2),.12),.08,s*.52,mat);            // bastidor interior
     trackLoop(root,prof,.32,x,s>0?lkR:lkL,sideTrkMat,.09);
-    profMesh(root,insetPoly(chaikin(prof,2),.14),.05,s*.88,mat);            // chapa exterior
-    wheel(root,s*.7,.78,1.75,.4); for(let i=0;i<5;i++) wheel(root,s*.88,.17,-1.2+i*.55,.14); }
+    // viga de arriba (tapa el ballestón y apoya el tramo de retorno) con remaches
+    const beam=box(root,.07,.26,3.3,xo,1.0,.0,mat); beam.rotation.x=-sl;
+    const yb=z=>1.0+z*Math.tan(sl);
+    rivetsLine(root,[xo+s*.04,yb(-1.55)+.08,-1.55],[xo+s*.04,yb(1.55)+.08,1.55],16,'x',mat);
+    rivetsLine(root,[xo+s*.04,yb(-1.55)-.08,-1.55],[xo+s*.04,yb(1.55)-.08,1.55],16,'x',mat);
+    // cajas de los bogies abajo, con los resortes a la vista
+    box(root,.06,.24,2.7,xo,.36,-.3,mat); rivetsLine(root,[xo+s*.035,.44,-1.55],[xo+s*.035,.44,.95],12,'x',mat);
+    for(const z of [-1.3,-.3,.7]){ cyl(root,.045,.045,.42,xo-s*.05,.68,z,6,darkMat); box(root,.08,.04,.16,xo-s*.05,.48,z,darkMat); }
+    spokeWheelX(root,s*.7,.78,1.75,.42,10,mat,.2);                        // tensora grande de rayos
+    spokeWheelX(root,s*.7,.58,-1.7,.3,8,darkMat,.2);                      // motriz atrás
+    for(let i=0;i<5;i++) wheel(root,s*.82,.17,-1.2+i*.55,.14); }
   // casco: frente inclinado (escotillas del conductor), techo y caja del motor atrás
   profMesh(root,[[1.25,1.55],[-.6,1.55],[-1.9,1.12],[-2.0,.42],[1.2,.38],[1.75,.8]],1.04,0,mat);
-  box(root,.5,.06,.4,-.24,1.35,1.42,mat).rotation.x=-.85; box(root,.5,.06,.4,.24,1.35,1.42,mat).rotation.x=-.85;
-  slits(root,2,0,1.38,1.52,0,.14);
-  box(root,.7,.05,.9,0,1.42,-1.2,darkMat).rotation.x=.35;                      // rejilla del motor
-  // cola para cruzar trincheras
+  for(const s of [-1,1]){ rivetsLine(root,[s*.53,1.5,-.55],[s*.53,1.5,1.2],10,'x',mat); rivetsLine(root,[s*.53,.48,-1.9],[s*.53,.48,1.15],16,'x',mat);
+    rivetsLine(root,[s*.53,.62,1.3],[s*.53,1.38,1.3],5,'x',mat); }
+  // escotilla del conductor en tres piezas: tapa del frente con visor y dos puertas laterales
+  const fh=visor(root,0,1.33,1.43,0,.44,.3,mat,.25); fh.rotation.x=-.75;
+  for(const s of [-1,1]){ const d=box(root,.04,.32,.4,s*.3,1.42,1.32,mat); d.rotation.x=-.3; cyl(root,.02,.02,.4,s*.32,1.6,1.25,6,mat).rotation.x=Math.PI/2-.3; }
+  rivetsLine(root,[-.45,.9,1.62],[.45,.9,1.62],7,'z',mat);
+  // persianas del motor sobre la cubierta inclinada, silenciador a la izquierda y cola para cruzar trincheras
+  const lv=louvres(root,.72,.85,6,0,1.38,-1.25,mat); lv.rotation.x=-.32;
+  const sil=cyl(root,.09,.09,.75,-.6,1.15,-1.25,10,darkMat); sil.rotation.x=Math.PI/2; cyl(root,.04,.04,.4,-.6,1.2,-1.75,6,darkMat).rotation.x=Math.PI/2;
   for(const s of [-1,1]){ const r=box(root,.07,.07,1.0,s*.4,.55,-2.35,darkMat); r.rotation.x=-.35; } box(root,.9,.07,.07,0,.38,-2.8,darkMat);
-  // torre octogonal con hongo de ventilación
+  towHook(root,0,.6,-2.0,Math.PI,mat);
+  // torre octogonal remachada con hongo de ventilación
   const tur=new THREE.Group(); tur.position.set(0,1.55,M.tz); root.add(tur);
   const oct=cyl(tur,.5,.56,.72,0,.36,0,8,mat); oct.rotation.y=Math.PI/8;
   const mush=new THREE.Mesh(new THREE.SphereGeometry(.2,10,6,0,Math.PI*2,0,Math.PI/2),mat); mush.position.y=.82; mush.scale.y=.6; tur.add(mush); cyl(tur,.12,.14,.1,0,.74,0,8,mat);
-  slits(tur,2,0,.55,.5,0,.14); box(tur,.4,.32,.05,0,.38,-.54,mat);            // escotilla trasera
+  for(let i=0;i<8;i++){ const fg=new THREE.Group(); fg.rotation.y=i*Math.PI/4; tur.add(fg);
+    rivetsLine(fg,[-.16,.64,.472],[.16,.64,.472],3,'z',mat); rivetsLine(fg,[-.18,.1,.515],[.18,.1,.515],3,'z',mat);
+    if(i===1||i===7||i===3||i===5) box(fg,.14,.03,.02,0,.5,.49,darkMat); }
+  box(tur,.62,.04,.62,0,.72,0,mat);
+  slits(tur,2,0,.55,.5,0,.14); box(tur,.4,.32,.05,0,.38,-.54,mat); cyl(tur,.02,.02,.3,-.2,.38,-.57,6,mat);   // escotilla trasera
   const G=gunMount(t,tur,0,.42,.5,M.gl,M.gr,mat,{shR:.17}); G.mount.position.set(0,.42,.48);
+  box(tur,.34,.3,.06,0,.4,.5,mat);                                         // marco de la rótula
   // en el FT gira toda la torre: el grupo de la torre hace de "mount"
   t.turret=tur; t.gunPivot=G.gp; t.barrel=G.barrel; t.muzzle=G.muzzle; t.coax=G.coax; t.barrelMesh=G.bm;
   collider(tur,1.1,.8,1.1,0,.4,0,t,'turret'); collider(root,1.74,1.55,4.4,0,.78,0,t,'hull');
@@ -202,42 +308,67 @@ function buildFT(t,M,mat,root,lkL,lkR){
   t.seatPos={driver:V3(0,.95,1.2),gunner:tp(0,.25,0),engine:V3(0,.9,-1.25),trans:V3(0,.6,-1.7),ammo:V3(.3,.75,.35),breech:tp(0,.42,.3)};
 }
 
-// A7V: caja enorme sobre orugas bajas, 57 mm en la proa y cúpula de mando arriba
+// A7V: caja enorme sobre orugas bajas con faldones, 57 mm en la proa, 6 Maxim en rótulas, cúpula de mando y persianas de los motores
 function buildA7V(t,M,mat,root,lkL,lkR){
   const prof=[[2.6,.85],[-2.6,.85],[-3.02,.45],[-2.7,0],[2.7,0],[3.02,.45]];
   for(const s of [-1,1]){ trackLoop(root,prof,.5,s*1.05,s>0?lkR:lkL,sideTrkMat,.1); for(let i=0;i<8;i++) wheel(root,s*1.05,.2,-2.3+i*.66,.16); }
   const body=[[2.9,2.55],[-2.9,2.55],[-3.67,2.0],[-3.67,1.25],[-3.05,.55],[3.05,.55],[3.67,1.25],[3.67,2.0]];
   profMesh(root,body,3.06,0,mat);
-  for(const s of [-1,1]){ rivetsRow(root,s*1.54,2.4,-2.8,2.8,16); rivetsRow(root,s*1.54,.7,-2.9,2.9,16); rivetsRow(root,s*1.54,1.6,-3.4,3.4,18);
-    for(const z of [1.9,-.1,-2.0]){ const p=cyl(root,.09,.09,.12,s*1.56,1.7,z,8,darkMat); p.rotation.z=Math.PI/2; }      // troneras de ametralladora
-    ironCross(root,s*1.545,1.6,.9,0,1.15); }
-  for(const z of [-3.68]){ for(const x of [-.7,.7]){ const p=cyl(root,.09,.09,.12,x,1.7,z,8,darkMat); p.rotation.x=Math.PI/2; } }
+  for(const s of [-1,1]){ const xo=s*1.545;
+    rivetsAlong(root,insetPoly(body,.07),xo,.22,mat); rivetsRow(root,s*1.54,1.6,-3.4,3.4,18);
+    for(const z of [-2.4,-1.3,2.3]){ box(root,.02,1.75,.08,xo+s*.01,1.55,z,mat); rivetsLine(root,[xo+s*.03,.75,z],[xo+s*.03,2.4,z],10,'x',mat); }
+    // faldón bajo que tapa la mitad de la oruga
+    box(root,.06,.34,6.1,s*1.5,.42,0,mat); rivetsLine(root,[s*1.535,.5,-2.9],[s*1.535,.5,2.9],22,'x',mat);
+    for(const z of [1.8,-1.6]) ballMG(root,s*1.56,1.7,z,s*Math.PI/2,mat);      // dos Maxim por costado
+    hDoor(root,xo+s*.02,1.32,-.55,s*Math.PI/2,.62,.85,mat);                    // puerta lateral
+    ironCross(root,s*1.57,1.6,.9,0,1.15);
+    towHook(root,s*.95,.85,3.15,0,mat); towHook(root,s*.95,.85,-3.15,Math.PI,mat); }
+  for(const x of [-.7,.7]) ballMG(root,x,1.7,-3.69,Math.PI,mat);                 // dos Maxim atrás
   ironCross(root,0,2.2,3.5,Math.PI/2,.8);
-  // cúpula del conductor y del comandante
+  rivetsLine(root,[-1.4,2.0,3.69],[1.4,2.0,3.69],12,'z',mat); rivetsLine(root,[-1.4,1.27,3.69],[1.4,1.27,3.69],12,'z',mat);
+  // cúpula del conductor y del comandante, con viseras y escotillas
   const cup=new THREE.Group(); cup.position.set(0,2.55,.3); root.add(cup);
   profMesh(cup,[[.85,.65],[-.85,.65],[-.95,0],[.95,0]],1.6,0,mat); slits(cup,3,0,.45,.9,0,.2); slits(cup,3,0,.45,-.9,0,.2);
   for(const s of [-1,1]) slits(cup,2,s*.81,.45,0,Math.PI/2,.25);
-  box(root,.9,.06,.6,0,2.6,-2.3,darkMat);                                       // rejillas de los motores
+  for(const sx of [-.45,.45]){ const vz=visor(cup,sx,.36,.93,0,.3,.18,mat,.3); vz.rotation.x=-.1; }
+  for(const sx of [-.4,.4]){ box(cup,.55,.05,.6,sx,.68,-.15,mat); box(cup,.1,.03,.03,sx,.72,-.15,darkMat); }
+  rivetsLine(cup,[-.75,.66,.82],[.75,.66,.82],8,'y',mat); rivetsLine(cup,[-.75,.66,-.82],[.75,.66,-.82],8,'y',mat);
+  louvres(root,1.3,.7,7,0,2.58,-2.2,mat); louvres(root,1.3,.6,6,0,2.58,1.95,mat);   // persianas de los dos Daimler
+  for(const s of [-1,1]) for(const z of [-2.7,2.7]){ const e=new THREE.Mesh(new THREE.TorusGeometry(.07,.02,5,10),darkMat); e.position.set(s*1.3,2.62,z); root.add(e); }
   const G=gunMount(t,root,0,1.65,3.62,M.gl,M.gr,mat,{shR:.3}); useGun(t,G);
+  box(root,.95,.08,.08,0,2.0,3.7,mat); box(root,.95,.08,.08,0,1.3,3.7,mat); for(const s of [-1,1]) box(root,.08,.7,.08,s*.47,1.65,3.7,mat);   // marco de la tronera
   collider(root,3.06,2.6,7.34,0,1.4,0,t,'hull'); collider(root,1.4,.9,.5,0,1.65,3.55,t,'turret');
   t.hTop=2.6; t.topH=3.4; t.aimH=1.6; t.glL=.6;
   t.seatPos={driver:V3(-.3,2.75,.3),commander:V3(.3,2.85,.4),gunner:V3(0,1.6,3.0),loader:V3(.45,1.4,2.6),mg1:V3(-1.25,1.6,1.8),mg2:V3(1.25,1.6,1.8),mg3:V3(-1.25,1.6,-1.6),mg4:V3(1.25,1.6,-1.6),
     mech1:V3(-.55,1.05,0),mech2:V3(.55,1.05,0),engine:V3(0,1.0,-.1),trans:V3(0,.8,-.7),ammo:V3(0,1.0,2.0),ammo2:V3(0,1.0,-2.1),breech:V3(0,1.65,3.25)};
 }
 
-// Schneider CA1: caja con proa cortaalambres y el 75 mm a la derecha
+// Schneider CA1: caja con proa cortaalambres, el 75 mm a la derecha, Hotchkiss en rótulas, puertas dobles atrás y cola
 function buildSchneider(t,M,mat,root,lkL,lkR){
   const prof=[[1.6,.75],[-1.7,.75],[-2.0,.4],[-1.7,0],[1.5,0],[1.95,.4]];
   for(const s of [-1,1]){ trackLoop(root,prof,.36,s*.8,s>0?lkR:lkL,sideTrkMat,.09); for(let i=0;i<6;i++) wheel(root,s*.8,.17,-1.4+i*.55,.14); }
-  profMesh(root,[[1.6,1.95],[-2.4,1.95],[-2.6,1.7],[-2.6,.55],[2.0,.45],[3.15,.72],[2.6,1.5]],1.85,0,mat);
-  box(root,1.7,.06,.3,0,.72,3.0,darkMat).rotation.x=.25;                        // filo cortaalambres
-  for(const s of [-1,1]){ rivetsRow(root,s*.93,1.8,-2.3,1.4,10); rivetsRow(root,s*.93,.62,-2.4,1.8,11); }
+  const body=[[1.6,1.95],[-2.4,1.95],[-2.6,1.7],[-2.6,.55],[2.0,.45],[3.15,.72],[2.6,1.5]];
+  profMesh(root,body,1.85,0,mat);
+  // proa cortaalambres: filo abajo, nervio en la trompa y dos tirantes
+  box(root,1.7,.06,.3,0,.72,3.0,darkMat).rotation.x=.25;
+  const rib=box(root,.12,.95,.07,0,1.11,2.9,mat); rib.rotation.x=-.62;
+  for(const s of [-1,1]){ const st=box(root,.05,.05,1.0,s*.5,.62,2.6,darkMat); st.rotation.x=-.25; st.rotation.y=-s*.2; }
+  for(const s of [-1,1]){ const xo=s*.935; rivetsAlong(root,insetPoly(body,.07),xo,.22,mat);
+    for(const z of [-1.4,.4]){ box(root,.02,1.3,.07,xo+s*.01,1.2,z,mat); rivetsLine(root,[xo+s*.025,.6,z],[xo+s*.025,1.85,z],8,'x',mat); }
+    ballMG(root,s*.95,1.35,-.1,s*Math.PI/2,mat); }                        // Hotchkiss a los costados
   // cúpula del conductor (izquierda) y barbeta del 75 a la derecha
-  box(root,.55,.4,.6,-.45,2.15,1.0,mat); slits(root,2,-.45,2.2,1.31,0,.12);
+  box(root,.55,.4,.6,-.45,2.15,1.0,mat); slits(root,2,-.45,2.2,1.31,0,.12); box(root,.45,.04,.45,-.45,2.37,.95,mat);
+  const vz=visor(root,-.45,2.12,1.31,0,.4,.18,mat,.25);
   planMesh(root,[[.9,.0],[2.1,.0],[2.1,.42],[.9,.42]].map(([z,x])=>[z,x+.75]),.7,.95,mat);
-  // salidas de ametralladora a los costados
-  for(const s of [-1,1]){ const h=cyl(root,.12,.12,.15,s*.95,1.35,-.1,8,mat); h.rotation.z=Math.PI/2; }
+  rivetsLine(root,[1.18,1.68,.95],[1.18,1.68,2.05],7,'y',mat);
+  // techo: ventilador y escotilla; atrás: puertas dobles, tanques de combustible y cola
+  cyl(root,.2,.24,.14,.25,2.02,-.6,10,mat); const cap=new THREE.Mesh(new THREE.SphereGeometry(.2,10,5,0,Math.PI*2,0,Math.PI/2),mat); cap.position.set(.25,2.09,-.6); cap.scale.y=.5; root.add(cap);
+  box(root,.55,.05,.5,-.3,1.98,-1.6,mat);
+  for(const s of [-1,1]) hDoor(root,s*.31,1.15,-2.61,Math.PI,.56,.95,mat);
+  for(const s of [-1,1]){ const ft=cyl(root,.17,.17,.55,s*.55,1.75,-2.75,10,mat); ft.rotation.x=Math.PI/2; box(root,.04,.04,.4,s*.55,1.93,-2.75,darkMat); }
+  cyl(root,.05,.05,.9,-.75,1.0,-2.3,6,darkMat).rotation.x=Math.PI/2;
   for(const s of [-1,1]){ const r=box(root,.07,.07,.9,s*.5,.55,-2.95,darkMat); r.rotation.x=-.3; }   // cola
+  box(root,1.1,.07,.07,0,.42,-3.35,darkMat);
   const G=gunMount(t,root,.95,1.3,2.1,M.gl,M.gr,mat,{shR:.22}); G.mount.rotation.y=M.arcC||0; useGun(t,G); t.turretBase=0;
   collider(root,2.05,1.95,6.0,0,1.0,.2,t,'hull'); collider(root,.5,.7,1.2,.95,1.3,1.5,t,'turret');
   t.hTop=1.95; t.topH=2.6; t.aimH=1.2; t.glL=1.0;
@@ -245,48 +376,74 @@ function buildSchneider(t,M,mat,root,lkL,lkR){
     engine:V3(-.3,1.0,.6),trans:V3(0,.8,-1.7),ammo:V3(.3,1.0,-.6),breech:V3(.85,1.3,1.75)};
 }
 
-// Saint-Chamond: casco larguísimo, 75 mm en la proa y dos cúpulas
+// Saint-Chamond: casco larguísimo de techo a dos aguas, 75 mm en la proa, dos cúpulas, Hotchkiss en rótulas y puertas laterales
 function buildStChamond(t,M,mat,root,lkL,lkR){
   const prof=[[2.0,.72],[-2.1,.72],[-2.45,.38],[-2.1,0],[1.9,0],[2.35,.38]];
-  for(const s of [-1,1]){ trackLoop(root,prof,.42,s*1.0,s>0?lkR:lkL,sideTrkMat,.1); for(let i=0;i<7;i++) wheel(root,s*1.0,.18,-1.7+i*.56,.15); }
-  profMesh(root,[[3.6,1.85],[-3.7,1.85],[-4.4,1.3],[-4.4,.75],[-3.6,.5],[3.7,.5],[4.45,.8],[4.45,1.4]],2.62,0,mat);
-  for(const s of [-1,1]){ rivetsRow(root,s*1.32,1.72,-3.6,3.5,18); rivetsRow(root,s*1.32,.62,-3.5,3.6,18);
-    const h=cyl(root,.1,.1,.12,s*1.33,1.2,s>0?.0:2.4,8,darkMat); h.rotation.z=Math.PI/2; }
+  for(const s of [-1,1]){ trackLoop(root,prof,.42,s*1.0,s>0?lkR:lkL,sideTrkMat,.1); for(let i=0;i<7;i++) wheel(root,s*1.0,.18,-1.7+i*.56,.15);
+    for(const z of [-1.4,0,1.4]){ box(root,.1,.22,.5,s*.82,.66,z,darkMat); cyl(root,.05,.05,.25,s*.82,.88,z,6,darkMat); } }
+  const body=[[3.6,1.85],[-3.7,1.85],[-4.4,1.3],[-4.4,.75],[-3.6,.5],[3.7,.5],[4.45,.8],[4.45,1.4]];
+  profMesh(root,body,2.62,0,mat);
+  for(const s of [-1,1]){ const xo=s*1.32;
+    rivetsAlong(root,insetPoly(body,.07),xo,.24,mat);
+    for(const z of [-2.5,-.9,.9,2.6]){ box(root,.02,1.2,.08,xo+s*.01,1.17,z,mat); rivetsLine(root,[xo+s*.03,.6,z],[xo+s*.03,1.75,z],7,'x',mat); }
+    const ed=box(root,.55,.05,7.1,s*1.08,1.86,0,mat); ed.rotation.z=s*.32;                  // techo a dos aguas
+    hDoor(root,xo+s*.02,1.1,-1.7,s*Math.PI/2,.6,.72,mat);
+    cyl(root,.06,.06,1.4,s*1.36,1.55,-3.0,6,darkMat).rotation.x=Math.PI/2;              // escape
+    towHook(root,s*.8,.75,4.47,0,mat); towHook(root,s*.8,.75,-4.42,Math.PI,mat); }
+  ballMG(root,-1.33,1.2,2.4,-Math.PI/2,mat); ballMG(root,1.33,1.2,0,Math.PI/2,mat); ballMG(root,0,1.2,-4.42,Math.PI,mat);
+  ballMG(root,-.75,1.15,4.47,0,mat);                                                     // Hotchkiss del frente, al lado del 75
+  rivetsLine(root,[-1.2,1.4,4.47],[1.2,1.4,4.47],11,'z',mat); rivetsLine(root,[-1.2,.82,4.47],[1.2,.82,4.47],11,'z',mat);
   // cúpulas: conductor adelante a la izquierda, comandante atrás a la derecha
-  cyl(root,.32,.34,.42,-.65,2.05,3.1,8,mat); slits(root,2,-.65,2.12,3.42,0,.12);
-  cyl(root,.32,.34,.42,.65,2.05,-3.2,8,mat);
-  box(root,1.2,.06,1.2,0,1.88,0,darkMat);                                        // rejilla del generador
+  for(const [x,z] of [[-.65,3.1],[.65,-3.2]]){ cyl(root,.32,.34,.42,x,2.05,z,8,mat); box(root,.42,.04,.42,x,2.28,z,mat); box(root,.08,.03,.03,x,2.31,z,darkMat); }
+  slits(root,2,-.65,2.12,3.42,0,.12); slits(root,2,.65,2.12,-3.52,0,.12); for(const s of [-1,1]) slits(root,1,-.65+s*.33,2.12,3.1,Math.PI/2,.14);
+  louvres(root,1.2,1.2,7,0,1.88,0,mat);                                                 // rejilla del generador
   const G=gunMount(t,root,0,1.12,4.42,M.gl,M.gr,mat,{shR:.26}); useGun(t,G);
+  box(root,.7,.06,.06,0,1.45,4.48,mat); box(root,.7,.06,.06,0,.8,4.48,mat);
   collider(root,2.67,1.85,8.9,0,1.15,0,t,'hull'); collider(root,1.0,.9,.6,0,1.12,4.2,t,'turret');
   t.hTop=1.85; t.topH=2.45; t.aimH=1.2; t.glL=.6;
   t.seatPos={driver:V3(-.65,1.6,3.1),commander:V3(.65,1.6,-3.2),gunner:V3(0,1.15,3.8),loader:V3(.45,1.05,3.2),mg1:V3(-1.05,1.2,2.4),mg2:V3(1.05,1.2,0),mg3:V3(0,1.2,-3.6),
     mech1:V3(-.3,1.0,.6),mech2:V3(.3,1.0,-1.0),engine:V3(0,1.0,.4),trans:V3(0,.8,-.9),ammo:V3(0,1.0,2.4),breech:V3(0,1.12,4.0)};
 }
 
-// Whippet (y LK II): orugas largas y bajas, motor adelante, casamata atrás
+// Whippet (y LK II): orugas largas con bocas para el barro, motor adelante, casamata atrás con cantos achaflanados
 function buildWhippet(t,M,mat,root,lkL,lkR,lk){
-  const prof=lk?[[1.9,.95],[-2.2,.95],[-2.5,.5],[-2.15,0],[1.7,0],[2.4,.5]]:[[2.6,1.15],[-2.7,1.15],[-3.05,.7],[-2.6,0],[2.4,0],[3.05,.65]];
+  const prof=lk?[[1.9,.95],[-2.2,.95],[-2.5,.5],[-2.15,0],[1.7,0],[2.4,.5]]:[[2.5,1.45],[-2.6,1.45],[-3.05,.9],[-2.6,0],[2.4,0],[3.05,.8]];
   const tx=lk?.78:1.06;
   for(const s of [-1,1]){ trackLoop(root,prof,lk?.38:.5,s*tx,s>0?lkR:lkL,sideTrkMat,.1);
-    if(!lk) profMesh(root,insetPoly(chaikin(prof,2),.14),.46,s*tx,mat); else box(root,.05,.55,4.3,s*(tx+.24),.75,-.1,mat);   // bastidor / faldón
+    if(!lk){ const sm=chaikin(prof,2); profMesh(root,insetPoly(sm,.14),.46,s*tx,mat); const xo=s*(tx+.235);
+      rivetsAlong(root,insetPoly(sm,.22),xo,.22,mat);
+      for(let i=0;i<6;i++) box(root,.02,.26,.34,xo+s*.005,.72,-1.85+i*.74,darkMat);        // bocas para el barro
+      for(const z of [-1.5,1.5]) rivetsLine(root,[xo+s*.01,.3,z],[xo+s*.01,1.2,z],6,'x',mat); }
+    else { box(root,.05,.55,4.3,s*(tx+.24),.75,-.1,mat); rivetsLine(root,[s*(tx+.27),.97,-2.1],[s*(tx+.27),.97,1.9],18,'x',mat); rivetsLine(root,[s*(tx+.27),.53,-2.1],[s*(tx+.27),.53,1.9],18,'x',mat); }
     for(let i=0;i<6;i++) wheel(root,s*tx,.2,-1.9+i*.72,.15); }
   const hw=lk?.65:.78;
-  // capó del motor con rejillas y tanque de combustible adelante
-  profMesh(root,[[2.45,1.15],[.2,1.35],[.2,.5],[2.6,.5]],hw*2,0,mat);
-  for(let i=0;i<5;i++) box(root,hw*1.6,.04,.08,0,1.2+i*.03,1.9-i*.32,darkMat);
-  // casamata (pelea) atrás
-  const z0=lk?-.2:-.5, z1=lk?-2.4:-2.6, H=lk?2.25:2.6;
-  profMesh(root,[[z0,H],[z1,H],[z1,.5],[z0+.25,.5],[z0+.25,1.3]],lk?1.7:2.0,0,mat);
-  for(const s of [-1,1]) slits(root,2,s*(lk?.86:1.01),H-.45,(z0+z1)/2,Math.PI/2,.22);
+  // capó del motor con persianas y, adelante, el tanque de combustible blindado (Whippet) o el radiador (LK II)
+  const hk=lk?0:.22; profMesh(root,[[2.45,1.15+hk],[.2,1.35+hk],[.2,.5],[2.6,.5]],hw*2,0,mat);
+  for(let i=0;i<5;i++) box(root,hw*1.6,.04,.08,0,1.2+hk+i*.03,1.9-i*.32,darkMat);
+  for(const s of [-1,1]) rivetsLine(root,[s*(hw-.05),1.2+hk,2.4],[s*(hw-.05),1.37+hk,.3],10,'y',mat);
+  if(!lk){ box(root,hw*2,.62,.32,0,.88,2.72,mat); rivetsLine(root,[-hw+.08,1.15,2.89],[hw-.08,1.15,2.89],9,'z',mat); cyl(root,.06,.06,.06,.3,1.22,2.72,8,darkMat);
+    const ex=cyl(root,.055,.055,2.3,-hw-.02,1.45,.9,6,darkMat); ex.rotation.x=Math.PI/2; }
+  else { for(let i=0;i<9;i++) box(root,.03,.55,.03,-hw*.8+i*hw*.2,.8,2.62,darkMat); box(root,hw*1.9,.06,.1,0,1.1,2.6,mat); box(root,hw*1.9,.06,.1,0,.52,2.62,mat); }
+  // casamata (pelea) atrás, con los cantos achaflanados
+  const z0=lk?-.2:-.5, z1=lk?-2.4:-2.6, H=lk?2.25:2.6, CW=lk?1.7:2.0, c=.2;
+  const plan=(w,d)=>[[z0-d,-w/2+c],[z0-d,w/2-c],[z0-d-c,w/2],[z1+d+c,w/2],[z1+d,w/2-c],[z1+d,-w/2+c],[z1+d+c,-w/2],[z0-d-c,-w/2]];
+  planMesh(root,plan(CW,0),H-.62,.5,mat); planMesh(root,plan(CW-.16,.08),.14,H-.14,mat);
+  const zc=(z0+z1)/2;
+  for(const s of [-1,1]){ slits(root,2,s*(CW/2+.01),H-.45,zc,Math.PI/2,.22);
+    rivetsLine(root,[s*(CW/2+.01),H-.17,z0-.25],[s*(CW/2+.01),H-.17,z1+.25],8,'x',mat); rivetsLine(root,[s*(CW/2+.01),.65,z0-.25],[s*(CW/2+.01),.65,z1+.25],8,'x',mat);
+    if(!lk){ const r=cyl(root,.14,.15,.05,s*(CW/2+.01),H-.75,zc+.35,12,mat); r.rotation.z=Math.PI/2; } }   // troneras de las Hotchkiss
   slits(root,2,0,H-.45,z0+.02,0,.2);
+  hDoor(root,lk?0:.42,1.25,z1-.02,Math.PI,.55,.95,mat);
+  if(!lk){ const r=cyl(root,.14,.15,.05,-.45,H-.75,z1-.01,12,mat); r.rotation.x=Math.PI/2; }
+  box(root,.5,.05,.45,0,H+.02,zc-.2,mat); box(root,.1,.03,.03,0,H+.06,zc-.2,darkMat);
+  towHook(root,0,.65,lk?2.45:2.95,0,mat);
   // el arma asoma por la casamata y gira alrededor de su centro (cuatro troneras en el Whippet)
-  const tur=new THREE.Group(); tur.position.set(0,H-.75,(z0+z1)/2); root.add(tur);
+  const tur=new THREE.Group(); tur.position.set(0,H-.75,zc); root.add(tur);
   const R=(z0-z1)/2+.02, G=gunMount(t,tur,0,0,R,M.gl,M.gr,mat,{jacket:!lk,shR:lk?.22:.14});
   t.turret=tur; t.gunPivot=G.gp; t.barrel=G.barrel; t.muzzle=G.muzzle; t.coax=G.coax; t.barrelMesh=G.bm;
-  collider(root,M.W,1.2,M.L,0,.75,0,t,'hull'); collider(root,lk?1.7:2.0,H-.5,z0-z1,0,(H+.5)/2,(z0+z1)/2,t,'turret');
+  collider(root,M.W,lk?1.2:1.5,M.L,0,.75,0,t,'hull'); collider(root,CW,H-.5,z0-z1,0,(H+.5)/2,zc,t,'turret');
   if(lk){ for(const s of [-1,1]) ironCross(root,s*(hw+.01),.95,1.3,0,.7); }
   t.hTop=H; t.topH=H+.4; t.aimH=1.3; t.glL=1.2;
-  const zc=(z0+z1)/2;
   t.seatPos={driver:V3(-.4,1.7,z0-.4),commander:V3(.4,1.8,zc-.4),gunner:V3(0,1.6,zc),mg1:V3(.5,1.6,z1+.4),engine:V3(0,.9,1.4),trans:V3(0,.75,.3),ammo:V3(0,1.0,zc-.4),breech:V3(0,H-.75,zc+R*.7)};
 }
 

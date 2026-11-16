@@ -37,7 +37,15 @@ module.exports=[
    ON_T=s=>{ if(s>=.31&&!t._f){ t._f=1; shoot(t); } };
    CAM=()=>{ const u=CAM_U, p=rel(t,lerp(2.6,2.2,u),0,lerp(12,10,u)); p.y=t.pos.y+1.5; fov(30); camera.position.copy(p); camera.lookAt(rel(t,0,2,0)); }; return true; })()`},
  // --- 10,3 s más (pedido de Sebastián): la música repite los tambores (6–16,3 s) después de 16,3 s; los golpes caen 10,3 s más tarde ---
- {id:'para',map:'normandia',wx:'tarde',ed:[15.66,17.75],setup:`(()=>{ const Z=zones[1]; paraDrop(Z,0); const T=transports[transports.length-1]; if(!T) return false;
+ // dos más de la 1ª Guerra (pedido de Sebastián): un Renault FT norteamericano en Saint-Mihiel y el A7V que dispara en el golpe grande
+ {id:'ft',map:'stmihiel',wx:'niebla',ed:[15.66,16.3],cap:'Renault FT · 1918',grade:'old',setup:`(()=>{ const Z=spot(1,120,true); const t=act('ftus',0,Z.x,Z.z,.4); t.cine.th=1;
+   { const a=rel(t,-3,0,-4), g=rel(t,-3,0,60); squad(0,'us',a.x,a.z,g.x,g.z,4); }
+   CAM=()=>{ const u=CAM_U, p=rel(t,lerp(5.5,4.5,u),0,lerp(6,3,u)); p.y=ground(p.x,p.z)+.9; fov(40); camera.position.copy(p); camera.lookAt(rel(t,0,1.2,.5)); }; return true; })()`},
+ {id:'a7v',map:'villers',wx:'niebla',ed:[16.3,17.75],hits:[.05],cap:'A7V · 1918',grade:'old',setup:`(()=>{ const Z=spot(1,-120,true); const t=act('a7v',1,Z.x,Z.z,0); t.cine.th=.5;
+   ON_T=s=>{ if(s>=.05&&!t._f){ t._f=1; shoot(t); } };
+   CAM=()=>{ const u=CAM_U, p=rel(t,lerp(7,8,u),0,lerp(11,12,u)); p.y=ground(p.x,p.z)+1.4; fov(40); camera.position.copy(p); camera.lookAt(rel(t,0,1.6,2)); }; return true; })()`},
+ // --- cuerno otra vez (26,6–31,9 s): paracaidistas, civiles y el B-29 que llega sobre el Paraná ---
+ {id:'para',map:'normandia',wx:'tarde',ed:[26.6,28.0],setup:`(()=>{ const Z=zones[1]; paraDrop(Z,0); const T=transports[transports.length-1]; if(!T) return false;
    for(let i=0;i<900&&T.left>5;i++){ REC=null; frame(1/30); }
    const O=spot(1,-30,true,22), C=V3(O.x,0,O.z); C.y=ground(C.x,C.z)+1.6; squad(0,'us',O.x-6,O.z-4,Z.x,Z.z,4);   // cámara en campo abierto (antes caía junto a una casa)
    CAM=()=>{ fov(52); camera.position.copy(C); const ch=chutes.filter(c=>!c.dead).map(c=>c.g.position); const tg=T.g.position.clone(); if(ch.length){ const m=V3(0,0,0); ch.forEach(p=>m.add(p)); m.multiplyScalar(1/ch.length); tg.lerp(m,.55); }
@@ -58,28 +66,34 @@ module.exports=[
  {id:'puente',map:'puente',wx:'tarde',ed:[22.15,23.84],cap:'Puente General Belgrano',setup:`(()=>{ const x0=-200, zc=2.5, L=[act('tam',0,x0,zc,Math.PI/2),act('tam2c',0,x0-15,zc,Math.PI/2),act('tam',0,x0-30,zc,Math.PI/2)];   // el tablero tiene ~8 m de ancho, a z≈0–5
    for(const t of L){ const d=W.deckAt?W.deckAt(t.pos.x,t.pos.z):null; if(d!=null){ t.pos.y=d; t.root.position.y=d; } t.cine.th=.6; }
    CAM=()=>{ const u=CAM_U, t=L[0], y=t.pos.y; fov(44); camera.position.set(t.pos.x+lerp(34,40,u),y+lerp(10,16,u),t.pos.z+lerp(-42,-50,u)); camera.lookAt(t.pos.x-14,y-2,t.pos.z); }; return true; })()`},
- {id:'artilleria',map:'costanera',wx:'tarde',ed:[23.84,25.96],hits:[.1,.82,1.34,1.7],setup:`(()=>{ const Z=spot(1,0,false,8); const L=[act('t62m',1,Z.x,Z.z,Math.PI),act('t55',1,Z.x+3,Z.z+14,Math.PI),act('t62m',1,Z.x-3,Z.z+28,Math.PI)]; L.forEach(t=>t.cine.th=.5);
+ {id:'artilleria',map:'costanera',wx:'tarde',ed:[23.84,26.6],hits:[.1,.82,1.34,1.7],setup:`(()=>{ const Z=spot(1,0,false,8); const L=[act('t62m',1,Z.x,Z.z,Math.PI),act('t55',1,Z.x+3,Z.z+14,Math.PI),act('t62m',1,Z.x-3,Z.z+28,Math.PI)]; L.forEach(t=>t.cine.th=.5);
    const H=[.1,.82,1.34,1.7].map((h,i)=>({h,p:V3(Z.x+rand(-12,12),0,Z.z+i*9+rand(-4,4))}));
    ON_T=s=>{ for(const e of H) if(s>=e.h&&!e.d){ e.d=1; e.p.y=ground(e.p.x,e.p.z); boom(e.p); } if(s>=1.34&&!L[1]._f){ L[1]._f=1; destroy(L[1],null,true); } };
    const C=V3(Z.x+30,0,Z.z-26); C.y=ground(C.x,C.z)+9;
    CAM=()=>{ const u=CAM_U; fov(44); camera.position.set(C.x,C.y,C.z+u*4); camera.lookAt(Z.x,ground(Z.x,Z.z)+2,Z.z+12); }; return true; })()`},
  // civiles que escapan por la calle y soldados que van para el otro lado (pedido de Sebastián)
- {id:'civ',map:'itati',wx:'tarde',ed:[25.96,27.29],setup:`(()=>{ const Z=spot(1,0,false,6); const C=V3(Z.x,0,Z.z); C.y=ground(C.x,C.z);
+ {id:'civ',map:'itati',wx:'tarde',ed:[28.0,29.3],setup:`(()=>{ const Z=spot(1,0,false,6); const C=V3(Z.x,0,Z.z); C.y=ground(C.x,C.z);
    for(let i=0;i<12;i++){ const P=makePerson('civ',-1,C.x+rand(-5,5),C.z-7-rand(0,13)); P.flee=true; P.cower=0; P.goal={x:C.x+rand(-5,5),z:C.z+60}; P.noEmb=now+99; }
    squad(0,'ar',C.x+4,C.z+2,C.x+4,C.z-80,5);
    CAM=()=>{ const u=CAM_U; fov(46); camera.position.set(C.x+1,C.y+1.6,C.z+4-u*2); camera.lookAt(C.x,C.y+1.3,C.z-10); }; return true; })()`},
- // --- cierre: el B-29 pasa sobre los tanques y suelta la bomba (16,99 s); la nuke estalla en el último golpe (17,95 s) y después entra la portada ---
- {id:'final',map:'itati',wx:'tarde',ed:[27.29,28.25],setup:`(()=>{ const Z=spot(0), H=Math.PI, dir=V3(0,0,-1); const L=[act('tam',0,Z.x,Z.z,H),act('tam2c',0,Z.x+8,Z.z+7,H),act('repot',0,Z.x-8,Z.z+8,H)]; L.forEach(t=>t.cine.th=0);   // quietos mientras se espera al avión (si no, la cámara terminaba adentro de una casa)
+ // el B-29 llega bajo sobre el Paraná y pasa por arriba de un pilón del Puente General Belgrano (pedido de Sebastián: más largo lo del avión)
+ {id:'approach',map:'puente',wx:'tarde',ed:[29.3,31.9],setup:`(()=>{ const A=osmGeo(osmData('puente'),...BELGRANO.p[0]); const y0=(W.deckAt&&W.deckAt(A.x,A.z+2))||42;
+   const g=makeB29(); scene.add(g); const v=110, alt=150, dir=V3(1,0,0); const start=V3(A.x-v*2.2,alt,A.z+18); g.position.copy(start); g.lookAt(start.clone().add(dir));
+   ON_T=s=>{ g.position.copy(start).addScaledVector(dir,v*s); if(!g._s){ g._s=1; sfx('flyover',null,1.1,{near:true,rate:.75}); } };
+   const C=V3(A.x+26,y0+3,A.z-22);
+   CAM=()=>{ const u=CAM_U; fov(54); camera.position.copy(C); const tg=V3(A.x,y0+38,A.z).lerp(g.position,.55+u*.25); camera.lookAt(tg); }; return true; })()`},
+ // --- cierre: la cámara sigue al B-29 cuando suelta la bomba (golpe de 16,99 s → 32,59 s) y la nuke estalla en el último golpe (17,95 s → 33,55 s) ---
+ {id:'final',map:'itati',wx:'tarde',ed:[31.9,33.55],setup:`(()=>{ const Z=spot(0), H=Math.PI, dir=V3(0,0,-1); const L=[act('tam',0,Z.x,Z.z,H),act('tam2c',0,Z.x+8,Z.z+7,H),act('repot',0,Z.x-8,Z.z+8,H)]; L.forEach(t=>t.cine.th=0);   // quietos mientras se espera al avión (si no, la cámara terminaba adentro de una casa)
    { const a=rel(L[0],-4,0,-3), g=rel(L[0],-4,0,-80); squad(0,'ar',a.x,a.z,g.x,g.z,5); }
    const P=L[0].pos.clone().addScaledVector(dir,608); P.y=ground(P.x,P.z); nukeAt(L[0],P,dir); window._NK={P,dir,L,Z};
-   const PL=()=>nuke&&nuke.plane; while(PL()&&!PL().dropped&&P.clone().sub(PL().g.position).setY(0).dot(dir)-PL().rel>PL().v*(.25+20/30)){ REC=null; frame(1/30); }
+   const PL=()=>nuke&&nuke.plane; while(PL()&&!PL().dropped&&P.clone().sub(PL().g.position).setY(0).dot(dir)-PL().rel>PL().v*(.69+20/30)){ REC=null; frame(1/30); }
    L.forEach(t=>t.cine.th=.3); ON_T=()=>{ if(nuke&&nuke.bomb) nuke.bomb.m.scale.setScalar(3); };   // la bomba un poco más grande para que se vea caer for(const P of infantry) if(!P.dead&&P.goal) P.pos.set(P.pos.x,P.pos.y,P.pos.z);
    window._dropT=null; const _on=ON_T; ON_T=s=>{ _on(s); if(nuke&&nuke.bomb&&_dropT==null) _dropT=s; };
    CAM=()=>{ const PLn=nuke&&nuke.plane; if(!PLn) return; const g=PLn.g.position, d=PLn.dir, sd=V3(d.z,0,-d.x);   // la cámara sigue al B-29 desde atrás y abajo, y baja la vista a la bomba
      fov(46); camera.position.copy(g).addScaledVector(d,-42).addScaledVector(sd,16).add(V3(0,-7,0));
      const look=g.clone().addScaledVector(d,12), B=nuke.bomb, k=_dropT==null?0:Math.min(1,(CAM_T-_dropT)/.45);
      camera.lookAt(B?look.lerp(B.m.position.clone().add(V3(0,-6,0)),k*.75):look); }; return true; })()`},   // sin mirar derecho para arriba
- {id:'nuke',map:'itati',wx:'tarde',keep:1,ed:[28.25,33.1],logo:1,setup:`(()=>{ const N=window._NK; if(!N||!nuke) return false; window.WARM=0;
+ {id:'nuke',map:'itati',wx:'tarde',keep:1,ed:[33.55,38.4],logo:1,setup:`(()=>{ const N=window._NK; if(!N||!nuke) return false; window.WARM=0;
    const ttl=()=>{ const B=nuke.bomb; if(!B) return 0; const gh=ground(B.m.position.x,B.m.position.z)+30, y=B.m.position.y, vy=B.v.y; return (vy+Math.sqrt(Math.max(0,vy*vy+2*G*(y-gh))))/G; };
    for(let i=0;i<600&&(nuke.plane&&!nuke.plane.dropped||ttl()>.04);i++){ REC=null; frame(1/30); }
    const C=V3(N.Z.x-120,0,N.Z.z+70); C.y=ground(C.x,C.z)+45;   // de costado y alto: la basílica a la izquierda y el hongo sobre la ciudad
