@@ -7,7 +7,7 @@
   const LS=(k,v)=>{ try{ if(v===undefined) return localStorage.getItem(k); localStorage.setItem(k,v); }catch(e){ return null; } };
   const NOV=[
     {id:'2026-11-15',fecha:'15/11/2026',
-     es:['Intro nueva: un video de 22 s filmado con el juego, de la 1ª Guerra al TAM y la nuke, con música de cuerno y tambores. Sale antes de la portada; desde la segunda vez se saltea con Esc.','Música nueva en el menú.',
+     es:['Intro nueva: un video de 33 s filmado con el juego, de la 1ª Guerra al TAM, el Puente General Belgrano y la nuke, con música de cuerno y tambores. Sale antes de la portada; desde la segunda vez se saltea con Esc.','Música nueva en el menú.',
          'Luces de freno en los tanques de la Guerra Fría y chirrido de los frenos al frenar (cada tanque con su tono).',
          'Manejo: frenos por tanque (la 1ª Guerra frena mal, la Guerra Fría con discos hidráulicos; los pesados frenan peor), soltar el acelerador deja rodar unos metros y la S frena; en marcha atrás la A lleva la cola a la izquierda, como un auto.',
          'Guerra Fría, segunda tanda: M1 Abrams, Leopard 2A4, Centurion, Chieftain, M113, M551 Sheridan, Scorpion, PT-76B, Marder 1A3, Ru 251, EE-9 Cascavel (con sus 6 ruedas y el bogie boomerang), Tiran-5Sh y el M3 Stuart paraguayo rehechos con el modelo detallado, comparados con modelos de Sketchfab.',
@@ -24,7 +24,7 @@
          'Guerra Fría: ahora se puede pedir infantería (B): llega un M113 que baja la escuadra en el punto.',
          'Las animaciones de la artillería y del bombardeo salen en todos los mapas y épocas, también si entrás a la partida de otro.',
          'M10 Wolverine, segunda versión: escudo del cañón en cuña, contrapesos en pentágono atrás, la .50 bien alta en su pivote y el interior de la torre (recámara, munición, radio, mira, asientos).'],
-     en:['New intro: a 22-second video filmed in the game, from WWI to the TAM and the nuke, with horn and drum music. It plays before the cover; from the second time on, Esc skips it.','New menu music.',
+     en:['New intro: a 33-second video filmed in the game, from WWI to the TAM, the General Belgrano Bridge and the nuke, with horn and drum music. It plays before the cover; from the second time on, Esc skips it.','New menu music.',
          'Brake lights on Cold War tanks and brake squeal when braking (each tank with its own pitch).',
          'Driving: brakes per tank (WWI tanks brake poorly, Cold War ones have hydraulic discs; heavies brake worse), releasing the throttle lets the tank roll a few metres and S brakes; in reverse, A swings the tail to the left, like a car.',
          'Cold War, second batch: M1 Abrams, Leopard 2A4, Centurion, Chieftain, M113, M551 Sheridan, Scorpion, PT-76B, Marder 1A3, Ru 251, EE-9 Cascavel (with its 6 wheels and boomerang bogie), Tiran-5Sh and the Paraguayan M3 Stuart rebuilt with the detailed model, compared against Sketchfab models.',
