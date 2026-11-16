@@ -38,9 +38,9 @@ module.exports=[
    CAM=()=>{ const u=CAM_U, p=rel(t,lerp(2.6,2.2,u),0,lerp(12,10,u)); p.y=t.pos.y+1.5; fov(30); camera.position.copy(p); camera.lookAt(rel(t,0,2,0)); }; return true; })()`},
  // civiles que escapan por la calle y soldados que van para el otro lado (pedido de Sebastián)
  {id:'civ',map:'itati',wx:'tarde',ed:[15.66,16.99],setup:`(()=>{ const Z=spot(1,0,false,6); const C=V3(Z.x,0,Z.z); C.y=ground(C.x,C.z);
-   for(let i=0;i<12;i++){ const P=makePerson('civ',-1,C.x+rand(-6,6),C.z-18-rand(0,16)); P.flee=true; P.cower=0; P.goal={x:C.x+rand(-5,5),z:C.z+60}; P.noEmb=now+99; }
-   squad(0,'ar',C.x+7,C.z+4,C.x+7,C.z-80,5);
-   CAM=()=>{ const u=CAM_U; fov(44); camera.position.set(C.x-2.5,C.y+1.5,C.z+6-u*2.5); camera.lookAt(C.x,C.y+1.3,C.z-14); }; return true; })()`},
+   for(let i=0;i<12;i++){ const P=makePerson('civ',-1,C.x+rand(-5,5),C.z-7-rand(0,13)); P.flee=true; P.cower=0; P.goal={x:C.x+rand(-5,5),z:C.z+60}; P.noEmb=now+99; }
+   squad(0,'ar',C.x+4,C.z+2,C.x+4,C.z-80,5);
+   CAM=()=>{ const u=CAM_U; fov(46); camera.position.set(C.x+1,C.y+1.6,C.z+4-u*2); camera.lookAt(C.x,C.y+1.3,C.z-10); }; return true; })()`},
  // --- cierre: el B-29 pasa sobre los tanques y suelta la bomba (16,99 s); la nuke estalla en el último golpe (17,95 s) y después entra la portada ---
  {id:'final',map:'itati',wx:'tarde',ed:[16.99,17.95],setup:`(()=>{ const Z=spot(0), H=Math.PI, dir=V3(0,0,-1); const L=[act('tam',0,Z.x,Z.z,H),act('tam2c',0,Z.x+8,Z.z+7,H),act('repot',0,Z.x-8,Z.z+8,H)]; L.forEach(t=>t.cine.th=0);   // quietos mientras se espera al avión (si no, la cámara terminaba adentro de una casa)
    { const a=rel(L[0],-4,0,-3), g=rel(L[0],-4,0,-80); squad(0,'ar',a.x,a.z,g.x,g.z,5); }
