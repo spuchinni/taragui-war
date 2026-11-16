@@ -66,6 +66,7 @@ for S in TOMAS:
         if e['t'] - last[e['n']] < .25 or e['t'] > S['ed'][1] - S['ed'][0]: continue
         last[e['n']] = e['t']; ev.append((S['ed'][0] + e['t'], e['n'], min(1, e['v']), e.get('r', 1)))
 NK = next(S['ed'][0] for S in TOMAS if S['id'] == 'nuke')   # la nuke estalla ~3 s después del último golpe (la bomba cae en silencio)
+ev.append((NK-2.7, 'bombw', 1.0, .8));   # el silbido de la bomba mientras cae en silencio (2,1 s × 1/0,8)
 ev.append((NK, 'nukeb', 1.0, 1)); ev.append((NK+.02, 'expl', 1.0, .5)); ev.append((NK+.05, 'sboom', .9, .6)); ev.append((NK+.75, 'expl', .7, .38))   # la nuke en el último golpe
 ains = ['-i', MUS]; afl = [f"[0:a]afade=t=in:d=0.05,afade=t=out:st={18.0+DX:.2f}:d=0.3,apad=whole_dur={END}[m]"]
 for i, (t, n, vol, r) in enumerate(ev):
