@@ -50,7 +50,7 @@ function introUI(){
 document.addEventListener('keydown',e=>{ if(state!=='intro') return; if(['Escape','Enter','Space'].includes(e.code)){ e.preventDefault(); e.stopImmediatePropagation(); if(intro&&intro.cover){ initAudio(); if(AC.state==='suspended') AC.resume(); if(e.code==='Escape') introEnd(); else coverGo(); return; } if(intro&&!intro.on&&e.code!=='Escape') $('iStart').click(); else introEnd(); } },true);
 // Intro en video (video/intro.mp4, armado con los videos de Gemini): se muestra en vez de la hecha con el motor, que queda si el video no carga
 // Video con los tanques mejorados (pedido de Sebastián, 16/11/2026): sale la primera vez al tocar la portada; inglés = intro-en.mp4 (cierra en la portada "Steel Front")
-const INTRO_VIDEO_ON=false; // se prende cuando esté el video nuevo
+const INTRO_VIDEO_ON=true;
 const introVideoSrc=()=>'video/intro'+(window.LANG==='en'?'-en':'')+'.mp4?v='+(window.GAME_V||'');
 let introVideoOk=INTRO_VIDEO_ON;
 function introVideo(){

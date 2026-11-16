@@ -66,11 +66,11 @@ run(['ffmpeg', '-v', 'error', '-y', *ains, '-filter_complex', ';'.join(afl), '-m
 F = 17.95
 for lang, cov, out in (('es', 'portada-nueva.jpg', 'intro.mp4'), ('en', 'portada-en.jpg', 'intro-en.mp4')):
     d = END - F
-    vfc = (f"[1:v]scale=2400:-2,crop=2400:1350,zoompan=z='1+0.035*on/{int(d*FPS)}':x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':d={int(d*FPS)+1}:s={Wd}x{Hd}:fps={FPS},"
+    vfc = (f"[1:v]scale=-2:1360,crop=2400:1350,zoompan=z='1+0.035*on/{int(d*FPS)}':x='iw/2-(iw/zoom/2)':y='0':d={int(d*FPS)+1}:s={Wd}x{Hd}:fps={FPS},"
            f"setpts=PTS-STARTPTS+{F}/TB,format=yuva420p,fade=t=in:st={F}:d=0.35:alpha=1[cv];"
            f"[0:v][cv]overlay=eof_action=pass,"
            f"geq=lum='min(255,lum(X,Y)+255*max(0,1-abs(T-{F+.05})/.18))':cb='cb(X,Y)':cr='cr(X,Y)'[v]")  # sin fundido a negro: el menú aparece sobre la misma portada
-    run(['ffmpeg', '-v', 'error', '-y', '-i', base, '-loop', '1', '-i', f'{REPO}/img/{cov}', '-i', audio, '-filter_complex', vfc,
+    run(['ffmpeg', '-v', 'error', '-y', '-i', base, '-i', f'{REPO}/img/{cov}', '-i', audio, '-filter_complex', vfc,
          '-map', '[v]', '-map', '2:a', '-t', f'{END}', '-r', str(FPS), '-c:v', 'libx264', '-crf', '25', '-maxrate', '3000k', '-bufsize', '6000k',
          '-preset', 'slow', '-profile:v', 'high', '-pix_fmt', 'yuv420p', '-c:a', 'copy', '-movflags', '+faststart', f'{REPO}/video/{out}'])
     print('listo', out, os.path.getsize(f'{REPO}/video/{out}') // 1024, 'KB')
