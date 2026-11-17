@@ -83,6 +83,8 @@ function w2Turret(tur,M,I,mat){ const w=M.tw, l=M.tl, h=M.th, hw=w/2, hl=l/2;
     case 'pan': prism(tur,[[-hw*.45,hl],[hw*.45,hl],[hw,hl*.2],[hw,-hl],[-hw,-hl],[-hw,hl*.2]],h,.28,0,0,0,mat); break;            // Panther, Nahuel
     case 'open': if(I.us==='m10') openTurret(tur,[[-hw*.66,hl*.62],[hw*.66,hl*.62],[hw,hl*.12],[hw*.94,-hl*.8],[-hw*.94,-hl*.8],[-hw,hl*.12]],h,.17,mat);   // M10: el frente lo cierra el escudo en cuña
       else openTurret(tur,[[-hw*.5,hl],[hw*.5,hl],[hw,hl*.1],[hw*.85,-hl],[-hw*.85,-hl],[-hw,hl*.1]],h,.2,mat); break;   // M10, M18, M36, antiaéreos: abierta arriba, hueca
+    case 'stu': { const P=[]; for(let i=0;i<28;i++){ const a=i/28*Math.PI*2; P.push([hw*Math.cos(a),Math.min(hl*.8,hl*Math.sin(a))]); }   // M3A1: torre soldada en herradura, frente plano
+      prism(tur,P,h,.1,0,0,0,mat); break; }
     case 'none': break;                                                                                                          // casamata (StuG): el cañón va en el casco
     default: prism(tur,[[-hw*.75,hl],[hw*.75,hl],[hw,hl*.35],[hw,-hl*.85],[hw*.85,-hl],[-hw*.85,-hl],[-hw,-hl*.85],[-hw,hl*.35]],h,.12,0,0,0,mat); // biselada (Pz III/IV, Crusader, Stuart)
   }
@@ -178,7 +180,7 @@ function buildW2(t,M,mat,root,lkL,lkR){ shTurMG.t=t;
   const tur=new THREE.Group(); tur.position.set(I.tx||0,I.case?deck+I.case.h*.35:deck,M.tz); root.add(tur);
   const gy=I.case?0:w2Turret(tur,M,I,mat);
   if(I.cup) { cyl(tur,.28,.3,.25,I.cupX??-M.tw*.2,M.th+.12,-M.tl*.22,12,mat); slits(tur,3,I.cupX??-M.tw*.2,M.th+.16,-M.tl*.22+.29,0,.08); }
-  else if(!I.case&&I.tur!=='open'&&!shCast(I)) rbox(tur,.5,.06,.5,-M.tw*.18,M.th+.03,-M.tl*.15,mat,.02);
+  else if(!I.case&&I.tur!=='open'&&I.tur!=='stu'&&!shCast(I)) rbox(tur,.5,.06,.5,-M.tw*.18,M.th+.03,-M.tl*.15,mat,.02);
   if(I.ins&&I.tur!=='none'&&I.tur!=='tiger'&&!I.case&&['ru','us','ar','py','de','jp','cn','fr'].includes(I.ins)) for(const sx of [-1,1]) w2Insignia(tur,I.ins,sx*(M.tw/2*.92+.01),gy+.05,-M.tl*.1,sx>0?0:Math.PI,.65);
   const G=gunMount(t,tur,0,gy,I.case?.0:M.tl/2-.08,M.gl,M.gr,mat,{shR:Math.max(.16,M.gr*3.4)});
   // mantelete
@@ -764,6 +766,7 @@ function usHull(root,M,I,mat,iw2,deck,gz,zf,zr,L){ const u=I.us, hw=M.W/2, ft=hw
     for(let i=0;i<5;i++) for(let j=0;j<3;j++) stud(new THREE.Vector3((i-2)*iw2*.38+(j%2)*iw2*.19,deck-.2-j*.32,zf+3),new THREE.Vector3(0,0,-1));
     return; }
   if(u==='m36') return;                                                                           // ya lo dibuja shermanHull
+  if(u==='stuart'){ stuartHull(root,M,I,mat,iw2,deck,gz,zf,zr,L); return; }
   for(const sx of [-1,1]){ const p=glacisPt(I,deck,gz,zf,.12,.1); cyl(root,.07,.07,.12,sx*iw2*.4,p.y,p.z,8,darkMat).rotation.x=Math.PI/2;   // faros con protector
     const g=new THREE.Mesh(_shGuard,darkMat); g.position.set(sx*iw2*.4,p.y+.02,p.z+.05); root.add(g);
     const q=glacisPt(I,deck,gz,zf,.97,.05), k=new THREE.Mesh(_tgShackle,darkMat); k.scale.setScalar(.75); k.position.set(sx*iw2*.35,q.y,q.z); k.rotation.y=Math.PI/2; root.add(k); }
@@ -826,6 +829,7 @@ function usTurret(tur,G,M,I,mat,gy){ const u=I.us, hw=M.tw/2, hl=M.tl/2, th=M.th
   if(u==='m18'){ rbox(G.gp,.62,.45,.26,0,0,.1,mat,.05); fifty(hw*.5,-hl*.75,th*.9); box(tur,M.tw*.85,.05,.4,0,th-.02,-hl+.2,darkMat); return; }
   for(const sx of [-1,1]){ const pp=cyl(tur,.055,.055,.04,sx*(hw*.94),th*.45,-hl*.2,8,mat); pp.rotation.z=Math.PI/2; }
   box(tur,.12,.07,.1,hw*.3,th+.05,hl*.3,darkMat); box(tur,.12,.07,.1,-hw*.2,th+.05,hl*.35,darkMat);
+  if(u==='stuart'){ stuartTurret(tur,G,M,I,mat,gy); return; }
   if(u==='stuart'||u==='stuart3'){ rbox(G.gp,.4,.32,.2,0,0,.06,mat,.05); cyl(G.gp,.025,.025,.35,.18,-.03,.3,6,darkMat).rotation.x=Math.PI/2;   // mantelete chico y coaxial
     if(u==='stuart') for(const sx of [-1,1]) rivetsRow(tur,sx*(hw*.97),th*.5,-hl*.7,hl*.6,6);
     cyl(tur,.24,.24,.06,-hw*.2,th+.02,-hl*.1,12,mat); return; }
@@ -834,6 +838,62 @@ function usTurret(tur,G,M,I,mat,gy){ const u=I.us, hw=M.tw/2, hl=M.tl/2, th=M.th
     cyl(tur,.26,.26,.06,hw*.38,th+.02,-hl*.1,12,mat); fifty(-hw*.3,-hl*.35); const a=cyl(tur,.012,.012,1.8,hw*.6,th+.9,-hl*.7,4,darkMat); }
 }
 DET.us={gear:usGear,hull:usHull,tur:usTurret};
+// ---- M3A1 Stuart (referencia: "Light Tank M3A1 Stuart (War Thunder)" de Sketchfab, pedido de Sebastián 17/11/2026) ----
+// Casco bajo y largo: trompa redonda de la transmisión en 3 piezas con bridas, glacis corto y la chapa del conductor casi vertical con las
+// dos escotillas de visión; techo plano con las escotillas del conductor y del ayudante; costados remachados sobre las orugas.
+// Atrás, la cubierta del motor radial con rejillas, los escapes y la estiba (mantas enrolladas, lona y bidones). Torre en herradura
+// (soldada, sin cúpula) con escudo del cañón rectangular, el 37 mm M6 con su manguito, coaxial, mira, troneras y la .30 en pivote.
+const _lonaMat=new THREE.MeshLambertMaterial({color:0x7d7253}), _mantaMat=new THREE.MeshLambertMaterial({color:0x6a5a3e}), _bidonMat=new THREE.MeshLambertMaterial({color:0x5f6442});
+function stuartHull(root,M,I,mat,iw2,deck,gz,zf,zr,L){ const hw=M.W/2, fy=Math.max(I.trF,I.trR)+.06, W=M.W-.02;
+  // trompa: carcasa de la transmisión redondeada con las bridas abulonadas que la dividen en 3
+  { const n=cyl(root,.33,.33,iw2*.98,0,.7,zf-.3,16,mat); n.rotation.z=Math.PI/2;
+    for(const x of [-iw2*.17,iw2*.17]){ const f=cyl(root,.345,.345,.05,x,.7,zf-.3,16,mat); f.rotation.z=Math.PI/2;
+      for(let k=0;k<6;k++){ const a=-.4+k*.42, b=cyl(root,.022,.022,.07,x,.7+Math.sin(a)*.35,zf-.3+Math.cos(a)*.35,5,darkMat); b.rotation.z=Math.PI/2; } } }
+  // glacis corto y chapa del conductor casi vertical (todo el ancho, encima de las orugas)
+  profMesh(root,[[zf-.55,1.06],[zf-.4,1.12],[zf-.12,.98],[zf-.1,.8],[zf-.55,.8]],iw2,0,mat);
+  profMesh(root,[[zf-1.0,deck],[zf-.46,deck],[zf-.4,1.1],[zf-1.0,1.1]],W,0,mat);
+  for(const sx of [-1,1]) for(let i=0;i<7;i++){ const r=cyl(root,.022,.022,.03,sx*(.1+i*.13),1.13,zf-.41,5,darkMat); r.rotation.x=Math.PI/2; }
+  // escotillas de visión del conductor (izq.) y del ayudante (der.) con su ranura, y bisagras
+  for(const sx of [-1,1]){ const h=rbox(root,.46,.22,.06,sx*iw2*.27,deck-.16,zf-.42,mat,.02); box(h,.3,.03,.03,0,0,.03,darkMat);
+    for(const d of [-.15,.15]) cyl(root,.025,.025,.08,sx*iw2*.27+d,deck-.03,zf-.42,6,darkMat).rotation.z=Math.PI/2; }
+  // techo: escotillas del conductor y del ayudante con periscopio
+  for(const sx of [-1,1]){ const h=rbox(root,.5,.05,.5,sx*iw2*.27,deck+.02,zf-.78,mat,.02); box(h,.12,.09,.08,sx*-.12,.06,.16,darkMat); cyl(h,.02,.02,.46,0,.03,-.25,5,darkMat).rotation.z=Math.PI/2; }
+  // faros con su protector y argollas de remolque en la trompa
+  for(const sx of [-1,1]){ const f=cyl(root,.07,.08,.12,sx*(hw-.28),fy+.12,zf-.32,8,darkMat); f.rotation.x=Math.PI/2;
+    const g=new THREE.Mesh(_shGuard,darkMat); g.position.set(sx*(hw-.28),fy+.14,zf-.27); root.add(g);
+    const k=new THREE.Mesh(_tgShackle,darkMat); k.scale.setScalar(.7); k.position.set(sx*iw2*.36,.46,zf-.08); k.rotation.y=Math.PI/2; root.add(k); }
+  // costados remachados (dos hileras) y chapas contra la arena
+  for(const sx of [-1,1]){ rivetsRow(root,sx*(hw-.005),deck-.08,zr+.3,zf-.5,12); rivetsRow(root,sx*(hw-.005),fy+.12,zr+.3,zf-.5,12);
+    box(root,.03,.28,L-1.1,sx*(hw+.03),fy-.12,-.1,mat); for(let i=0;i<4;i++) box(root,.035,.3,.03,sx*(hw+.04),fy-.12,zr+.7+i*(L-1.8)/3,darkMat); }
+  // cubierta del motor: rejillas y tapas
+  box(root,iw2*.8,.03,1.0,0,deck+.02,zr+.85,darkMat); for(let i=0;i<7;i++) box(root,iw2*.8,.04,.04,0,deck+.04,zr+.42+i*.14,mat);
+  rbox(root,iw2*.55,.05,.45,0,deck+.03,zr+1.6,mat,.02);
+  // popa: chapa trasera con los escapes y su deflector, gancho de remolque
+  for(const sx of [-1,1]){ const e=cyl(root,.075,.075,.38,sx*iw2*.24,deck-.42,zr-.09,10,darkMat); e.rotation.z=Math.PI/2; }
+  box(root,iw2*.9,.04,.22,0,deck-.2,zr-.1,mat); { const k=new THREE.Mesh(_tgShackle,darkMat); k.scale.setScalar(.8); k.position.set(0,.55,zr-.05); root.add(k); }
+  // estiba: mantas enrolladas y lona sobre la cubierta del motor, bidones y cajón en los guardabarros traseros, herramientas a un costado
+  for(let i=0;i<3;i++){ const r=cyl(root,.13,.13,iw2*.85,0,deck+.17,zr+.4+i*.25,10,i===1?_lonaMat:_mantaMat); r.rotation.z=Math.PI/2;
+    for(const sx of [-1,1]){ const c=cyl(root,.135,.135,.03,sx*iw2*.25,deck+.17,zr+.4+i*.25,10,darkMat); c.rotation.z=Math.PI/2; } }   // correas
+  for(const sx of [-1,1]){ for(let k=0;k<2;k++) { const b=rbox(root,.13,.34,.25,sx*(hw-.15),fy+.2,zr+.3+k*.28,_bidonMat,.02); box(b,.02,.05,.08,sx*.07,.1,0,darkMat); } }
+  rbox(root,.24,.22,.6,hw-.17,fy+.13,zr+1.25,_shGreenBox,.02);
+  box(root,.08,.08,1.2,-(hw-.12),fy+.06,-.2,_wdMat); box(root,.1,.1,.9,-(hw-.12),fy+.06,.9,darkMat);
+  { const a=cyl(root,.012,.012,2.0,-(hw-.25),deck+1.0,zr+.25,4,darkMat); }                                                     // antena en la popa
+}
+function stuartTurret(tur,G,M,I,mat,gy){ const hw=M.tw/2, hl=M.tl/2, th=M.th;
+  // escudo del cañón (montaje M44): chapa rectangular de bordes redondeados, con el manguito del 37 mm, coaxial y mira
+  rbox(G.gp,.7,.42,.16,0,-.02,.05,mat,.07);
+  { const s=cyl(G.barrel,.075,.075,.42,0,0,.3,12,mat); s.rotation.x=Math.PI/2; const r=cyl(G.barrel,.055,.055,.12,0,0,.56,10,darkMat); r.rotation.x=Math.PI/2; }
+  { const c=cyl(G.gp,.022,.022,.32,.21,-.04,.24,6,darkMat); c.rotation.x=Math.PI/2; cyl(G.gp,.045,.045,.06,.21,-.04,.14,8,darkMat).rotation.x=Math.PI/2; }
+  { const m=cyl(G.gp,.035,.035,.06,-.2,.07,.14,8,darkMat); m.rotation.x=Math.PI/2; }
+  // troneras de pistola y visores a los costados, ranuras de visión adelante
+  for(const sx of [-1,1]){ const pp=cyl(tur,.07,.07,.05,sx*hw*.97,th*.45,-hl*.15,10,mat); pp.rotation.z=Math.PI/2; box(tur,.06,.05,.14,sx*hw*.96,th*.62,hl*.32,darkMat); }
+  // techo: escotilla redonda del jefe, periscopios del apuntador y del jefe, ventilador
+  cyl(tur,.27,.28,.06,-hw*.18,th+.03,-hl*.25,16,mat); cyl(tur,.04,.04,.06,-hw*.18+.22,th+.07,-hl*.25,6,darkMat);
+  for(const [x,z] of [[hw*.35,hl*.35],[-hw*.35,hl*.38]]){ const p=rbox(tur,.14,.1,.18,x,th+.06,z,mat,.02); box(p,.1,.05,.02,0,.01,.09,_shLensMat()); }
+  cyl(tur,.1,.1,.06,hw*.35,th+.03,-hl*.35,10,darkMat);
+  // .30 Browning en el pivote del costado derecho de la torre
+  cyl(tur,.05,.06,.18,hw*.98,th*.6,-hl*.25,8,darkMat);
+  mgMount(tur,hw+.07,th+.36,-hl*.25,{post:.45,...MG_AA,seat:['commander','loader']}); }
 
 // ---- Soviéticos más fieles (m.w2.det='ru', I.ru = 't70'|'kv1'|'kv2'|'su100'|'bt7'|'t26'|'zsu37') ----
 // KV: 6 ruedas chicas, 3 rodillos de retorno, motriz atrás, guardabarros anchos con cajones. T-70, ZSU-37 (chasis del SU-76M): ruedas con goma
