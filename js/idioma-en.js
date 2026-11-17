@@ -1660,7 +1660,9 @@ I18N.add({
 "🔊 Tocá para el sonido": "🔊 Tap for sound",
 "Puente General Belgrano": "General Belgrano Bridge",
 "Puente General Belgrano rehecho: pilones en A de 84 m, obenques en abanico y defensas en el mapa del puente, y se ve de fondo desde la Costanera.": "General Belgrano Bridge rebuilt: 84 m A-shaped pylons, fan stay cables and pier fenders on the bridge map, and it shows in the distance from the Costanera.",
-"Intro nueva: un video de 41 s filmado con el juego, de la 1ª Guerra al TAM, el Puente General Belgrano y la nuke, con música de cuerno y tambores. Sale antes de la portada; desde la segunda vez se saltea con Esc.": "New intro: a 41-second video filmed in the game, from WWI to the TAM, the General Belgrano Bridge and the nuke, with horn and drum music. It plays before the cover; from the second time on, Esc skips it."
+"Intro nueva: un video de 41 s filmado con el juego, de la 1ª Guerra al TAM, el Puente General Belgrano y la nuke, con música de cuerno y tambores. Sale antes de la portada; desde la segunda vez se saltea con Esc.": "New intro: a 41-second video filmed in the game, from WWI to the TAM, the General Belgrano Bridge and the nuke, with horn and drum music. It plays before the cover; from the second time on, Esc skips it.",
+"Celular: el selector de tanques entra en la pantalla sin bajar, los carteles del entrenamiento son más chicos, el botón ☰ Menú (para abandonar) está siempre a mano y ya no se traba la 1ª batalla si cerrás el juego en el medio.": "Mobile: the tank picker fits on screen without scrolling, the training cards are smaller, the ☰ Menu button (to leave) is always at hand and the 1st battle no longer gets stuck if you close the game halfway.",
+"☰ Menú": "☰ Menu"
 });
 I18N.words({
 "Perforante sólido": "Solid AP",

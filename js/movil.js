@@ -22,7 +22,7 @@ if(MOVIL){
   // ---- controles en pantalla ----
   const ui=document.createElement('div'); ui.id='tch';
   ui.innerHTML=`<div id="tStick"><i></i></div>
-    <button data-t="menu" class="tb tMenu" aria-label="Pausa">☰</button>
+    <button data-t="menu" class="tb tMenu" aria-label="Menú">☰ Menú</button>
     <button data-t="tab" class="tb tTab" aria-label="Jugadores">👥</button>
     <button data-t="ping" class="tb tPing" aria-label="Marcar">❗</button>
     <button data-t="fire" class="tb tFire" aria-label="Disparar">🔥</button>
@@ -37,7 +37,8 @@ if(MOVIL){
   // tocar una tecla = mandar el mismo evento que el teclado (así sirve igual online y en el tutorial)
   const tapKey=a=>{ const c=binds[a]; if(!c) return; document.dispatchEvent(new KeyboardEvent('keydown',{code:c,bubbles:true})); setTimeout(()=>document.dispatchEvent(new KeyboardEvent('keyup',{code:c,bubbles:true})),60); };
   const SLOT={a0:'ammo1',a1:'ammo2',a2:'ammo3',auto:'ammoAuto',arty:'arty',air:'air',inf:'inf',nuke:'nuke',rep:'repair',crew:'crewSwap',smk:'smoke',ext:'ext',th:'thermal',tr:'troops'};
-  function pauseMenu(){ if(state!=='play') return; stickOff(); pauseOpen(); }
+  function pauseMenu(){ if(state==='lesson'){ const o=document.getElementById('pLesOk'); if(o) o.click(); }   // con un cartel abierto: se cierra y se abre el menú (para poder abandonar)
+    if(state!=='play') return; stickOff(); pauseOpen(); }
   function press(b,on){ const t=b.dataset.t; if(t==='zoom'){ if(on) rightDown=!rightDown; b.classList.toggle('on',rightDown); return; } b.classList.toggle('on',on);
     if(t==='fire') mouseDown=on; else if(t==='mg') setKey('mg',on);
     else if(!on) return; else if(t==='scope'){ if(player&&!player.dead) scopeOn=!scopeOn; }

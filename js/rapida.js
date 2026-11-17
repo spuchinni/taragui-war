@@ -31,6 +31,9 @@
     #tkPick .c b{display:block;font:800 26px 'Saira Condensed',system-ui,sans-serif;color:#ffd24a;margin-top:4px}
     #tkPick .c i{display:block;font-style:normal;opacity:.7;font-size:15px;letter-spacing:.06em;text-transform:uppercase}
     #tkPick .c span{display:block;margin-top:6px;font-size:17px;opacity:.92}
+    @media (max-height:560px){ #tkPick{gap:6px;padding:8px} #tkPick h2{font-size:26px} #tkPick .sub{font-size:14px;margin-top:-4px}
+      #tkPick .row{flex-wrap:nowrap;gap:8px} #tkPick .c{width:31vw;padding:4px 6px 8px} #tkPick .c img{max-height:30vh}
+      #tkPick .c b{font-size:19px;margin-top:0} #tkPick .c i{font-size:11px} #tkPick .c span{font-size:13px;margin-top:2px} }
     #tkPick .x{position:absolute;top:14px;right:16px;font-size:26px;background:none;border:0;color:#fff;cursor:pointer;opacity:.7}
     .homeTank{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(76px + env(safe-area-inset-bottom,0px));z-index:6;display:flex;gap:8px;align-items:center;
       background:rgba(16,20,26,.8);border:1px solid rgba(232,200,120,.45);border-radius:8px;padding:6px 8px 6px 14px;font:600 17px 'Saira Condensed',system-ui,sans-serif;color:#f2e6c8}
@@ -68,6 +71,7 @@
 
   // ---- arranque directo de una batalla (sin hangar, sin resumen del mapa ni despliegue) ----
   function directBattle(){
+    fixNation();
     if(PROG&&PROG.train&&battles()<1&&window.coachQuickStart){ try{ localStorage.removeItem('tw2_coach'); }catch(e){} return coachQuickStart(); }   // la 1ª otra vez desde el principio, con el entrenador
     try{ initAudio(); if(AC&&AC.state==='suspended') AC.resume(); }catch(e){}
     if(typeof netName!=='undefined'&&!netName){ netName=(EN()?'Player':'Jugador')+(1000+((Math.random()*9000)|0)); LS('tw-name',netName); }
@@ -79,7 +83,12 @@
 
   // ---- 2) menú simple las primeras 3 batallas ----
   const _mm=mainMenu;
-  mainMenu=function(){ const r=_mm.apply(this,arguments);
+  // al recargar el juego chosenNation no se guarda: en el entrenamiento vuelve a la del tanque prestado; si el garaje
+  // de la nación elegida quedó vacío, se pasa a una que tenga tanques (si no, la batalla decía "Sin vehículos")
+  function fixNation(){ try{ const L=PROG&&PROG.loan; if(L&&!L.done&&owned(L.k)){ chosenNation=L.n; curEra=3; applyEraNations(3); return; }
+    if(curEra===3&&!(garRef(chosenNation,3)||[]).some(k=>VEH[k]&&owned(k))){ const n=eraNations(3).find(n=>(garRef(n,3)||[]).some(k=>VEH[k]&&owned(k))); if(n) chosenNation=n; } }catch(e){} }
+  window.fixNation=fixNation;
+  mainMenu=function(){ fixNation(); const r=_mm.apply(this,arguments);
     const b=document.getElementById('playB'); if(!b||!document.body.classList.contains('home')) return r;
     const L=EN(), nb=battles();
     if((PROG.train?!PROG.loan:!LS('tw2_elegido'))&&nb<1){ const orig=b.onclick; b.onclick=()=>picker(orig); return r; }   // la primera vez: elegir el tanque y después la batalla con el entrenador

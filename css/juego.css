@@ -394,3 +394,12 @@ body.novato #ammoSlots .gap,body.novato #ammoSlots .gap~.as{display:none!importa
 #hcBox.kill{left:50%;right:auto;top:46%;transform:translate(-50%,-50%);width:min(680px,90vw);height:min(420px,58vh);border-color:#e0402a;box-shadow:0 0 0 2px rgba(224,64,42,.4),0 8px 40px rgba(0,0,0,.8)}
 #hcBox.kill b{font-size:18px;color:#ffd0c8}
 body.deploy #hcBox.kill{display:block}
+
+/* celular: los carteles del entrenamiento y Novedades tapaban toda la pantalla (pedido de Sebastián) */
+body.movil #pLesson{z-index:29}
+body.movil #pLesson .card{zoom:.6;max-height:150vh;overflow:auto}
+body.movil #pLesson.top{padding-top:4px}
+body.movil #coachCard{transform:translateX(-50%) scale(.62)!important;transform-origin:top center}
+body.movil #novBox .card{zoom:.62;max-height:150vh}
+body.movil #tch .tMenu{width:auto;min-width:40px;padding:0 10px;border-radius:20px;font:700 15px 'Saira Condensed',system-ui,sans-serif}
+body.movil #tch .tTab{left:calc(104px + env(safe-area-inset-left,0px))} body.movil #tch .tPing{left:calc(150px + env(safe-area-inset-left,0px))}
