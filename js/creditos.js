@@ -2,7 +2,7 @@
 // de OpenStreetMap, el aviso "© colaboradores de OpenStreetMap" junto al minimapa (lo exige la licencia ODbL).
 (function(){
   const ROWS=[['Motor 3D','three.js (MIT)'],['Partidas online','PeerJS (MIT) · Firebase (Google)'],['Tipografía','Saira Condensed (SIL Open Font License)'],
-    ['Civiles detallados','Ultimate Modular Men / Women — Quaternius (CC0)'],['Sonidos','Cañones, explosión, motor y torre: qubodup (CC0) · ametralladora, sirena y paso de avión: Pixabay (licencia de contenido de Pixabay) · el resto, hechos por código para el juego'],
+    ['Civiles detallados','Ultimate Modular Men / Women — Quaternius (CC0)'],['Sonidos','Cañones, explosión, motor y torre: qubodup (CC0) · ametralladora, sirena y paso de avión: Pixabay (licencia de contenido de Pixabay) · el resto, hechos por código para el juego · subfusil, escotillas y tanque que pasa: Sound effects from https://gfxsounds.com'],
     ['Voces de radio','TTSMaker'],['Mapas reales','© colaboradores de OpenStreetMap (ODbL) · relieve: Terrarium (Mapzen)'],['Datos de los tanques','Tank Encyclopedia y manuales de época'],
     ['Modelos, mapas y texturas','Hechos por código para TaraWar']];
   function show(){ const box=document.getElementById('hgModal')||document.getElementById('panel'); const host=document.createElement('div');
