@@ -4,11 +4,13 @@
      1 colonial blanca: muros encalados, ventanas hondas con rejas, puertas de madera, zócalo gris (España, norte de África, Corrientes vieja)
      2 ladrillo: ladrillo a la vista, ventanas con arco de ladrillo o dintel de piedra, vidriera de negocio abajo (Berlín, Stalingrado)
      3 moderna: revoque liso, ventanas anchas de aluminio, balcones con baranda, cortina metálica abajo (mapas de la Guerra Fría)
+     4 barrio (Sor Asunta): casa baja revocada o de ladrillo a la vista, ventana con persiana y reja, puerta de madera (barrio.js)
    El estilo sale del mapa (facadeStyle); dentro de cada edificio las ventanas se mezclan con balcones según un sorteo por edificio y por
    columna, y la puerta va en la columna del medio de la planta baja. Cada piso mide 3 m y cada columna ~3,5 m. Las texturas son claras: el
    color de cada edificio (instanceColor) las tiñe, así que se respetan los colores de pared de cada mapa. */
 const FAC_T=128;
-const facadeAtlas=(()=>{ const T=FAC_T, c=document.createElement('canvas'); c.width=T*8; c.height=T*2; const x=c.getContext('2d');
+const FAC_N=12;   // casillas del atlas (6 estilos × 2)
+const facadeAtlas=(()=>{ const T=FAC_T, c=document.createElement('canvas'); c.width=T*FAC_N; c.height=T*2; const x=c.getContext('2d');
   const R=(cx,cy,w,h,col)=>{ x.fillStyle=col; x.fillRect(cx,cy,w,h); };
   const glass=(gx,gy,w,h,dark='#26333d')=>{ R(gx,gy,w,h,dark); const g=x.createLinearGradient(gx,gy,gx+w,gy+h); g.addColorStop(0,'rgba(170,200,220,.42)'); g.addColorStop(.5,'rgba(60,80,95,.05)'); g.addColorStop(1,'rgba(150,180,200,.28)'); x.fillStyle=g; x.fillRect(gx,gy,w,h); };
   const bars=(gx,gy,w,h,n,col='#2a2622')=>{ for(let i=1;i<n;i++) R(gx+i*w/n-1,gy,2,h,col); R(gx,gy+h*.33,w,2,col); R(gx,gy+h*.66,w,2,col); };
@@ -46,9 +48,39 @@ const facadeAtlas=(()=>{ const T=FAC_T, c=document.createElement('canvas'); c.wi
     for(let k=0;k<12;k++) R(20+k*8,96,2,18,'#5a5e62'); R(18,94,92,3,'#5a5e62'); R(18,112,92,3,'#5a5e62'); });   // balcón con baranda
   tile(6,1,()=>{ plaster(0,0,'#f3f3f1',P3); R(10,26,108,92,'#7a7e82'); for(let k=0;k<22;k++) R(12,28+k*4,104,2,'#9a9ea2'); R(8,20,112,6,'#5a5e62'); });   // cortina metálica
   tile(7,1,()=>{ plaster(0,0,'#f3f3f1',P3); R(36,20,56,T-20,'#8a8e92'); glass(40,24,48,T-24,'#2c3640'); R(63,24,2,T-24,'#b8bcc0'); R(30,14,68,6,'#5a5e62'); });
+  // estilo 4: casa de barrio de Corrientes (Sor Asunta). La planta baja se dibuja de 0 a 3 m sobre el suelo (el shader corre 1 m la fila):
+  // zócalo, ventana de aluminio con persiana de enrollar a medio bajar y reja de planchuela, puerta de madera con tablero y aplique.
+  // Casillas 8–9 revocadas y 10–11 de ladrillo a la vista con viga de encadenado y dintel de hormigón (las casas sin revocar del barrio).
+  const M=128/3, Y=m=>128-m*M;   // metros sobre el suelo → píxel en la casilla
+  const P4=['#dedbd3','#ecebe5','#d2cec5'];
+  const zocalo=()=>{ R(0,Y(.45),T,T-Y(.45),'#b9b3a7'); R(0,Y(.45)-2,T,2,'rgba(0,0,0,.12)'); for(let i=0;i<70;i++){ x.fillStyle='rgba(60,50,40,.18)'; x.fillRect(Math.random()*T,Y(.45)+Math.random()*18,rand(1,3),rand(1,2)); } };
+  const reja=(gx,gy,w,h)=>{ const c='#2b2724'; R(gx-2,gy-2,w+4,3,c); R(gx-2,gy+h-1,w+4,3,c); R(gx-2,gy,3,h,c); R(gx+w-1,gy,3,h,c);
+    for(let i=1;i<6;i++) R(gx+i*w/6-1,gy,2,h,c); x.strokeStyle=c; x.lineWidth=1.6; for(let i=0;i<3;i++){ x.beginPath(); x.arc(gx+w/6*(1+i*2),gy+h*.18,w/12,0,Math.PI*2); x.stroke(); } R(gx,gy+h*.36,w,2,c); };
+  const ventana=(brick)=>{ const x0=40,x1=88,y0=Y(2.2),y1=Y(1.0);
+    if(brick) R(x0-6,y0-9,x1-x0+12,9,'#9d9a93'); else R(x0-4,y0-5,x1-x0+8,5,'#cfcac0');         // dintel
+    R(x0,y0,x1-x0,y1-y0,'#8f9396'); glass(x0+3,y0+3,x1-x0-6,y1-y0-6,'#2a3640'); R(63,y0+3,2,y1-y0-6,'#a9adb0');
+    const pb=(y1-y0)*.42; R(x0+3,y0+3,x1-x0-6,pb,'#c9c4b6'); for(let k=0;k<pb/3;k++) R(x0+3,y0+4+k*3,x1-x0-6,1,'rgba(0,0,0,.18)');   // persiana a medio bajar
+    R(x0-5,y1,x1-x0+10,5,brick?'#a7a49d':'#d8d3c8'); R(x0-5,y1+5,x1-x0+10,2,'rgba(0,0,0,.25)');                                 // alféizar
+    reja(x0-1,y0-1,x1-x0+2,y1-y0+2); };
+  const puerta=(brick)=>{ const x0=46,x1=82,y0=Y(2.08);
+    if(brick) R(x0-6,y0-9,x1-x0+12,9,'#9d9a93'); else R(x0-4,y0-5,x1-x0+8,5,'#cfcac0');
+    R(x0,y0,x1-x0,T-y0,'#7a6a58'); const wood=brick?'#5d6a72':'#7a4e2e', wd=brick?'#4b575e':'#5f3a20'; R(x0+3,y0+3,x1-x0-6,T-y0-3,wood);
+    for(const [a,b] of [[.08,.42],[.5,.92]]){ R(x0+7,y0+3+(T-y0)*a,x1-x0-14,(T-y0)*(b-a)-4,wd); R(x0+9,y0+5+(T-y0)*a,x1-x0-18,(T-y0)*(b-a)-8,wood); }
+    glass(x0+9,y0+8,x1-x0-18,12,'#26323a'); R(x1-9,Y(1.0),3,6,'#c9b27a');                                                         // mirilla y picaporte
+    R(x0-12,T-6,x1-x0+24,6,'#a8a398'); R(x1+5,Y(2.2)-6,6,9,'#3a3a36'); R(x1+6,Y(2.2)+2,4,4,'#f2ecd0'); };                          // umbral y aplique
+  const ladrillo=()=>{ R(0,0,T,T,'#e9ddd2'); for(let r=0;r<T/6;r++) for(let k=-1;k<T/14+1;k++){ const bx=k*14+(r%2)*7, by=r*6; x.fillStyle=['#efe1d4','#e3d2c4','#d9c6b8','#f2e6da'][(r*5+k*3)&3]; x.fillRect(Math.max(0,bx+1),by+1,Math.min(12,T-bx-1),4); } };
+  tile(8,0,()=>{ plaster(0,0,'#f4f2ec',P4); R(0,Y(.2),T,6,'#d6d1c6'); R(0,Y(.2)+6,T,2,'rgba(0,0,0,.14)'); R(40,Y(2.0),48,Y(.9)-Y(2.0),'#8f9396'); glass(43,Y(2.0)+3,42,Y(.9)-Y(2.0)-6,'#2a3640'); });
+  tile(9,0,()=>{ plaster(0,0,'#f4f2ec',P4); R(0,Y(.2),T,6,'#d6d1c6'); R(0,Y(.2)+6,T,2,'rgba(0,0,0,.14)'); });
+  tile(10,0,()=>{ ladrillo(); R(0,Y(.3),T,T-Y(.3),'#a9a59e'); R(0,Y(.3),T,2,'rgba(0,0,0,.2)'); });                                   // viga de encadenado
+  tile(11,0,()=>{ ladrillo(); R(0,Y(.3),T,T-Y(.3),'#a9a59e'); R(0,Y(.3),T,2,'rgba(0,0,0,.2)'); for(let i=0;i<3;i++) R(20+i*40,Y(.3)+4,3,8,'rgba(90,60,40,.35)'); });
+  tile(8,1,()=>{ plaster(0,0,'#f4f2ec',P4); zocalo(); ventana(false); });
+  tile(9,1,()=>{ plaster(0,0,'#f4f2ec',P4); zocalo(); puerta(false); });
+  tile(10,1,()=>{ ladrillo(); R(0,Y(.35),T,T-Y(.35),'#a3a099'); ventana(true); });
+  tile(11,1,()=>{ ladrillo(); R(0,Y(.35),T,T-Y(.35),'#a3a099'); puerta(true); });
   const t=new THREE.CanvasTexture(c); t.wrapS=t.wrapT=THREE.ClampToEdgeWrapping; t.anisotropy=ANISO; return t; })();
 // estilo según el mapa: Guerra Fría y Corrientes = moderna; ciudades en ruinas de ladrillo; España, norte de África, Pacífico y Chaco = colonial
 function facadeStyle(){ const k=typeof builtKey==='string'?builtKey:'', w=WORLDS[k]||{}, era=w.era||5;
+  if(k==='sor') return 4;   // barrio de casas bajas (barrio.js)
   if(era>=4) return 3;
   if(['stalingrado','berlin','shanghai'].includes(k)) return 2;
   if(['alamein','kasserine','okinawa','saipan','chaco','jarama','sesena','ebro'].includes(k)||/chaco|nanawa|jarama|sese|ebro/.test(k)) return 1;
@@ -64,16 +96,25 @@ facadeMat=function(){ const m=new THREE.MeshLambertMaterial({map:facadeAtlas}), 
       if(abs(normal.y)>.5){ vTop=1.; vUv=vec2(.5,.5); }
       else { float w=abs(normal.x)>.5?sc.z:sc.x; vFw=max(1.,floor(w/3.5+.5)); vUv=vec2(uv.x*vFw,uv.y*sc.y/3.); }
     #endif`);
-    sh.fragmentShader='uniform float uStyle; uniform float uBal;\n'+V+sh.fragmentShader.replace('#include <map_fragment>',`
+    sh.fragmentShader='uniform float uStyle; uniform float uBal;\n#define FAC_W '+(FAC_T*FAC_N)+'.\n#define FAC_H '+(FAC_T*2)+'.\n'+V+sh.fragmentShader.replace('#include <map_fragment>',`
     #ifdef USE_MAP
-      vec4 texelColor;
-      if(vTop>.5) texelColor=texture2D(map,vec2(.003,.003));
-      else { float col=floor(vUv.x), fl=floor(vUv.y); vec2 f=fract(vUv);
-        float h=fract(sin(vVar*91.7+col*12.9898+fl*78.233)*43758.5453);
-        float tx; float base;
-        if(fl<.5){ tx=uStyle*2.+(abs(col-floor(vFw*.5))<.5?1.:0.); base=0.; }
-        else { tx=uStyle*2.+(h<uBal+vVar*.25?1.:0.); base=.5; }
-        texelColor=texture2D(map,vec2((tx+.02+f.x*.96)/8.,base+(.01+f.y*.98)*.5)); }
+      // una sola lectura de la textura, fuera de los "if" y con las derivadas de la coordenada continua: si se lee dentro de una rama,
+      // la placa no sabe qué detalle (mip) usar y en algunas (y en swiftshader) la pared salía llena de puntitos
+      vec2 q=vUv; if(uStyle>3.5) q.y-=1./3.;                      // barrio: la planta baja arranca en el suelo (el muro empieza 1 m abajo)
+      float fw=floor(vFw+.5), col=floor(q.x), fl=floor(q.y); vec2 f=fract(q); if(fl<0.){ fl=0.; f.y=.02; }   // fw redondeado: el varying llega como 2,9999 en algunos píxeles
+      float h=fract(sin(vVar*91.7+col*12.9898+fl*78.233)*43758.5453);
+      float tx=uStyle*2.+((uStyle>3.5&&vVar<.28)?2.:0.); float base;
+      if(fl<.5){ tx+=(abs(col-floor(fw*.5))<.5?1.:0.); base=0.; }
+      else { tx+=(uStyle>3.5)?(abs(col-floor(fw*.5))<.5?1.:0.):(h<uBal+vVar*.25?1.:0.); base=.5; }
+      vec2 uvT=vec2((tx+.02+f.x*.96)/${FAC_N}., base+(.01+f.y*.98)*.5);
+      if(vTop>.5) uvT=vec2(.003,.003);
+      #if __VERSION__ >= 300
+        vec2 gx=dFdx(vUv)*vec2(.96*FAC_W/${FAC_N}.,.49*FAC_H), gy=dFdy(vUv)*vec2(.96*FAC_W/${FAC_N}.,.49*FAC_H);   // en texeles
+        float lod=clamp(.5*log2(max(dot(gx,gx),dot(gy,gy))),0.,8.);
+        vec4 texelColor=textureLod(map,uvT,lod);
+      #else
+        vec4 texelColor=texture2D(map,uvT);
+      #endif
       texelColor=mapTexelToLinear(texelColor); diffuseColor*=texelColor;
     #endif`); };
   m.customProgramCacheKey=()=>'fachada'+st; return m; };
