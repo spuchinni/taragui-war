@@ -11,7 +11,7 @@
 //  prop_0 (avioneta a hélice, en bucle) ............. Freesound #648720, itinerantmonk108, bi-plane flyby CC0
 //  mgburst_0, mgshot_0, siren_0, flyover_0 .......... Pixabay (freesound_community) ...... licencia de contenido de Pixabay
 //  menu_0 ........................................... Pixabay #620908, mfcc, "Military War" ... licencia de contenido de Pixabay
-//  smg_0, hatcho_0, hatchc_0, pass_0 ................ GFXSounds (cuenta gratis) ... con crédito en Ajustes → Créditos
+//  smg_0, hatcho_0, hatchc_0, pass_0, mag_0, magshot_0 ... GFXSounds (cuenta gratis; mag = M240B) ... con crédito en Ajustes → Créditos
 //  ric_2/3, shellin_0–3, bombw_0, nukew_0, nukeb_0, plane_0, gau8_0 ... hechos por código (herramientas/sonidos/sintetizar.py)
 //  infamb_0, intro_0 ................................ mezcla por código con grabaciones CC0 de qubodup
 const SND_FILES={"shellin":4,"bombw":1,"nukew":1,"nukeb":1,"plane":1,"infamb":1,"gau8":1,"cannon":2,"expl":1,"metal":2,"ric":4,"intro":1,"idle":1,"drive":1,"turret":1,"static":1,"squelch":1,"mgburst":1,"mgshot":1,"thump":4,"siren":1,"flyover":1,"prop":1,"sboom":1,"menu":1}; // archivos en snd/<nombre>_<n>.mp3

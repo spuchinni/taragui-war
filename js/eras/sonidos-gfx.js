@@ -1,16 +1,30 @@
 /* ---------- Sonidos de GFXSounds (17/11/2026, pedido de Sebastián; licencia gratis con crédito: "Sound effects from https://gfxsounds.com") ----------
    · Escotillas: se abre cuando el mecánico baja a reparar (t.mech) y se cierra cuando vuelve a subir (hatcho / hatchc).
    · Subfusiles (MP 40, PPSh, Thompson, Sten): ráfaga grabada en vez del chasquido sintético del fusil (smg).
-   · Pasada: un tanque que pasa cerca de la cámara a más de 3 m/s suena con sus orugas (pass, con su efecto Doppler). */
+   · Pasada: un tanque que pasa cerca de la cámara a más de 3 m/s suena con sus orugas (pass, con su efecto Doppler).
+   · MAG (FN MAG 7,62 mm; la grabación es de una M240B, que es la misma arma): en el TAM, TAM 2C, VCTP, SK-105 y Patagón la ráfaga
+     del jugador usa el bucle mag_0 (3 ciclos iguales de 1,44 s = 10 disparos cada 0,144 s; se repite el del medio, así el retardo
+     del mp3 no corta el empalme) y los disparos de los demás usan magshot_0. 19/11/2026, pedido de Sebastián. */
 (function(){
-  if(typeof SND_FILES!=='undefined') Object.assign(SND_FILES,{smg:1,hatcho:1,hatchc:1,pass:1});
+  if(typeof SND_FILES!=='undefined') Object.assign(SND_FILES,{smg:1,hatcho:1,hatchc:1,pass:1,mag:1,magshot:1});
   const ready=()=>{ if(typeof AC==='undefined'||!AC||typeof SFX==='undefined') return false;
-    for(const k of ['smg','hatcho','hatchc','pass']) if(!SFX[k]){ SFX[k]=[]; sndFetch(`snd/${k}_0.mp3`).then(ab=>AC.decodeAudioData(ab)).then(b=>SFX[k].push(b)).catch(()=>{}); }
+    for(const k of ['smg','hatcho','hatchc','pass','mag','magshot']) if(!SFX[k]){ SFX[k]=[]; sndFetch(`snd/${k}_0.mp3`).then(ab=>AC.decodeAudioData(ab)).then(b=>SFX[k].push(b)).catch(()=>{}); }
     return true; };
   const SMG={mp40:1,ppsh:1,thompson:1,sten:1};
+  const MAG={tam:1,tam2c:1,vctp:1,sk105:1,patagon:1}, MAG_LEN=1.44;
+  const isMag=t=>t&&MAG[t.key];
+  let magLoop=null, origLoop=null, curMG=null;
+  function magSwap(){ if(typeof LOOPS==='undefined'||!LOOPS.mgburst&&!origLoop) return;
+    if(!magLoop&&SFX.mag&&SFX.mag.length){ const src=AC.createBufferSource(); src.buffer=SFX.mag[0]; src.loop=true; src.loopStart=.3; src.loopEnd=.3+MAG_LEN;
+      const g=AC.createGain(); g.gain.value=0; src.connect(g).connect(master); src.start(0,.3); magLoop={src,g}; }
+    if(!origLoop) origLoop=LOOPS.mgburst;
+    const want=(typeof player!=='undefined'&&player&&isMag(player)&&magLoop)?magLoop:origLoop;
+    if(want&&LOOPS.mgburst!==want){ try{ LOOPS.mgburst.g.gain.setTargetAtTime(0,AC.currentTime,.02); }catch(e){} LOOPS.mgburst=want; } }
+  const _fm=fireMG; fireMG=function(t){ const p=curMG; curMG=t; try{ return _fm.apply(this,arguments); } finally{ curMG=p; } };
+  const _sf=sfx; sfx=function(n){ if(n==='mgshot'&&isMag(curMG)&&SFX.magshot&&SFX.magshot.length){ const a=[...arguments]; a[0]='magshot'; return _sf.apply(this,a); } return _sf.apply(this,arguments); };
   let passG=-99;
   const _tf=tankFX; tankFX=function(t,dt){ const r=_tf.apply(this,arguments);
-    try{ if(!ready()||t.dead) return r;
+    try{ if(ready()&&t.isPlayer) magSwap(); if(!ready()||t.dead) return r;
       const hm=!!t.mech; if(hm!==!!t._hm){ t._hm=hm; sfx(hm?'hatcho':'hatchc',t.pos,.9,{ref:10}); }
       if(!t.isPlayer&&!t.T.static&&Math.abs(t.speed||0)>3&&now-passG>4&&now-(t._passT||-99)>15){
         const d=t.pos.distanceTo(camera.position); if(d<38&&d>6){ t._passT=passG=now; sfx('pass',t.pos,1,{ref:18}); } } }catch(e){}

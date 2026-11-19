@@ -1672,7 +1672,9 @@ I18N.add({
 "rebote: cedarstudios (CC0)": "ricochet: cedarstudios (CC0)",
 "Grabaciones reales para los cañonazos lejanos de la artillería (4 distintos) y para la avioneta.": "Real recordings for distant artillery fire (4 different ones) and the propeller plane.",
 "cañonazos lejanos: danlucaz, qvantor y kostrava (CC0)": "distant cannon fire: danlucaz, qvantor and kostrava (CC0)",
-"avioneta: itinerantmonk108 (CC0)": "propeller plane: itinerantmonk108 (CC0)"
+"avioneta: itinerantmonk108 (CC0)": "propeller plane: itinerantmonk108 (CC0)",
+"La ametralladora MAG del TAM, TAM 2C, VCTP, SK-105 y Patagón suena con su grabación propia.": "The MAG machine gun on the TAM, TAM 2C, VCTP, SK-105 and Patagón has its own recording.",
+"subfusil, escotillas, tanque que pasa y MAG: Sound effects from https://gfxsounds.com": "submachine gun, hatches, passing tank and MAG: Sound effects from https://gfxsounds.com"
 });
 I18N.words({
 "Perforante sólido": "Solid AP",
