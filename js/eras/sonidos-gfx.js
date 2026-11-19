@@ -4,11 +4,13 @@
    · Pasada: un tanque que pasa cerca de la cámara a más de 3 m/s suena con sus orugas (pass, con su efecto Doppler).
    · MAG (FN MAG 7,62 mm; la grabación es de una M240B, que es la misma arma): en el TAM, TAM 2C, VCTP, SK-105 y Patagón la ráfaga
      del jugador usa el bucle mag_0 (3 ciclos iguales de 1,44 s = 10 disparos cada 0,144 s; se repite el del medio, así el retardo
-     del mp3 no corta el empalme) y los disparos de los demás usan magshot_0. 19/11/2026, pedido de Sebastián. */
+     del mp3 no corta el empalme) y los disparos de los demás usan magshot_0. 19/11/2026, pedido de Sebastián.
+   · Mecánico (19/11/2026, pedido de Sebastián): mientras repara afuera (t.mech) suenan herramientas cada 1,6–3 s donde está parado:
+     cadenas (chain_0) si arregla la oruga, herramienta a aire (tool_0, la "clavadora") si arregla el motor o el cañón; a veces la otra. */
 (function(){
-  if(typeof SND_FILES!=='undefined') Object.assign(SND_FILES,{smg:1,hatcho:1,hatchc:1,pass:1,mag:1,magshot:1});
+  if(typeof SND_FILES!=='undefined') Object.assign(SND_FILES,{smg:1,hatcho:1,hatchc:1,pass:1,mag:1,magshot:1,tool:1,chain:1});
   const ready=()=>{ if(typeof AC==='undefined'||!AC||typeof SFX==='undefined') return false;
-    for(const k of ['smg','hatcho','hatchc','pass','mag','magshot']) if(!SFX[k]){ SFX[k]=[]; sndFetch(`snd/${k}_0.mp3`).then(ab=>AC.decodeAudioData(ab)).then(b=>SFX[k].push(b)).catch(()=>{}); }
+    for(const k of ['smg','hatcho','hatchc','pass','mag','magshot','tool','chain']) if(!SFX[k]){ SFX[k]=[]; sndFetch(`snd/${k}_0.mp3`).then(ab=>AC.decodeAudioData(ab)).then(b=>SFX[k].push(b)).catch(()=>{}); }
     return true; };
   const SMG={mp40:1,ppsh:1,thompson:1,sten:1};
   const MAG={tam:1,tam2c:1,vctp:1,sk105:1,patagon:1}, MAG_LEN=1.44;
@@ -26,6 +28,9 @@
   const _tf=tankFX; tankFX=function(t,dt){ const r=_tf.apply(this,arguments);
     try{ if(ready()&&t.isPlayer) magSwap(); if(!ready()||t.dead) return r;
       const hm=!!t.mech; if(hm!==!!t._hm){ t._hm=hm; sfx(hm?'hatcho':'hatchc',t.pos,.9,{ref:10}); }
+      if(hm&&now>(t._toolT||0)){ t._toolT=now+rand(1.6,3); const p=t.mech.g.position;
+        if(p.distanceTo(camera.position)<70){ const trk=t.trackT>0||(t.trkHP&&(t.trkHP[0]<100||t.trkHP[1]<100));
+          sfx((trk?Math.random()<.75:Math.random()<.25)?'chain':'tool',p,.75,{ref:8}); } }
       if(!t.isPlayer&&!t.T.static&&Math.abs(t.speed||0)>3&&now-passG>4&&now-(t._passT||-99)>15){
         const d=t.pos.distanceTo(camera.position); if(d<38&&d>6){ t._passT=passG=now; sfx('pass',t.pos,1,{ref:18}); } } }catch(e){}
     return r; };

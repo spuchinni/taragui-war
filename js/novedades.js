@@ -7,14 +7,14 @@
   const LS=(k,v)=>{ try{ if(v===undefined) return localStorage.getItem(k); localStorage.setItem(k,v); }catch(e){ return null; } };
   const NOV=[
     {id:'2026-11-19',fecha:'19/11/2026',
-     es:['B° Sor Asunta rehecho: casas de barrio con techo de chapa, de tejas o losa con parapeto, tanque de agua, antena, aire acondicionado y galería; frentes con tapial y reja, alambrado o muro, con portón.',
+     es:['El mecánico que baja a reparar ahora suena: cadenas si arregla la oruga, herramientas si arregla el motor o el cañón.','B° Sor Asunta rehecho: casas de barrio con techo de chapa, de tejas o losa con parapeto, tanque de agua, antena, aire acondicionado y galería; frentes con tapial y reja, alambrado o muro, con portón.',
          'Postes de madera de la luz con cruceta, aisladores, transformador y farol de brazo que se prende de noche, cables con comba y acometidas a las casas; si se cae un poste, sus cables quedan en el suelo. Carteles con el nombre de las calles en las esquinas.',
          'Calles de tierra con huellas, charcos y cunetas; Las Margaritas de hormigón con juntas y cordón cuneta; veredas y entradas de autos.',
          'Vehículos nuevos en el tránsito de Corrientes: la Chevrolet C-10, el colectivo urbano con su cartel de línea y una moto clásica.',
          'Las casas de los mapas reales de Corrientes (Itatí, Laguna Brava, Paso de la Patria, el centro y los demás) también pasan a ser casas de barrio, con sus techos, tanques, rejas y cercos.',
          'Trincheras de la 1ª Guerra rehechas: parapeto de sacos terreros trabados, revestimiento de tablones y chapa acanalada, pasarelas de listones, cajones de munición, barriles y escaleras de asalto.',
          'Arreglado: las paredes de los edificios salían llenas de puntitos en algunas placas de video (en todos los mapas).'],
-     en:['Sor Asunta neighborhood rebuilt: houses with corrugated metal, tiled or flat roofs with parapets, water tanks, TV antennas, air conditioners and porches; front walls with railings, chain-link or brick, with gates.',
+     en:['The mechanic who climbs out to repair now makes sound: chains when fixing the track, tools when fixing the engine or the gun.','Sor Asunta neighborhood rebuilt: houses with corrugated metal, tiled or flat roofs with parapets, water tanks, TV antennas, air conditioners and porches; front walls with railings, chain-link or brick, with gates.',
          'Wooden power poles with crossarms, insulators, transformers and street lights that turn on at night, sagging wires and service drops to the houses; if a pole falls, its wires drop to the ground. Street name signs on the corners.',
          'Dirt streets with tire ruts, puddles and ditches; Las Margaritas paved in concrete with joints and curbs; sidewalks and driveways.',
          'New vehicles in Corrientes traffic: the Chevrolet C-10 pickup, the city bus with its route sign and a classic motorcycle.',
