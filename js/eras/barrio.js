@@ -13,7 +13,11 @@
 //    en Las Margaritas; entradas de autos y veredas frente a las casas.
 // Todo instanciado (una llamada de dibujo por tipo de pieza) y con sorteo fijo por casa (mulberry0): igual en todas las PCs.
 (function(){
-  const ON=()=>typeof W!=='undefined'&&W===WORLDS.sor;
+  // 'sor' = el barrio completo; 'osm' = mapas reales (Itatí, Laguna Brava, Paso de la Patria, Corrientes…): solo las casas bajas,
+  // sin galerías, postes, carteles ni suelo propio, y todo partido en sectores de 260 m que se apagan de lejos (cullAdd)
+  const MODE=()=>typeof W==='undefined'?null:W===WORLDS.sor?'sor':W.osm?'osm':null, ON=()=>!!MODE();
+  const SMALL=b=>isFinite(b.max)&&b.max<1e8&&b.top-b.base<=6.4&&b.w*b.d<=280&&b.w>2.5&&b.d>2.5;
+  const FENCE_MAX=2000;
   const merge=a=>THREE.BufferGeometryUtils.mergeBufferGeometries(a.map(g=>g.index?g.toNonIndexed():g));
   const bx=(w,h,d,x,y,z)=>new THREE.BoxGeometry(w,h,d).translate(x,y,z);
   const cy=(r0,r1,h,y,s=8)=>{ const g=new THREE.CylinderGeometry(r0,r1,h,s); g.translate(0,y+h/2,0); return g; };
@@ -44,7 +48,7 @@
   const G={ box:new THREE.BoxGeometry(1,1,1),
     wedge:prism([[-.5,0],[.5,0],[.5,1]]),          // relleno debajo de la chapa (alto adelante)
     gable:prism([[-.5,0],[.5,0],[0,1]]),           // hastial del techo a dos aguas
-    tank:(()=>{ const P=[[0,0],[.52,0],[.56,.08],[.56,.3],[.585,.33],[.56,.36],[.56,.62],[.585,.65],[.56,.68],[.56,.9],[.42,1.04],[.22,1.12],[.22,1.2],[0,1.2]].map(([r,y])=>new THREE.Vector2(r,y)); return new THREE.LatheGeometry(P,10); })(),   // ~260 triángulos (con los dos anillos en el perfil)
+    tank:(()=>{ const P=[[0,0],[.52,0],[.56,.08],[.56,.3],[.585,.33],[.56,.36],[.56,.62],[.585,.65],[.56,.68],[.56,.9],[.42,1.04],[.22,1.12],[.22,1.2],[0,1.2]].map(([r,y])=>new THREE.Vector2(r,y)); return new THREE.LatheGeometry(P,8); })(),   // ~260 triángulos (con los dos anillos en el perfil)
     antenna:merge([cy(.025,.025,3.2,0,5),bx(1.6,.03,.03,0,2.9,0),...[-.6,-.3,0,.3,.6].map(x=>bx(.02,.02,.9-Math.abs(x)*.6,x,2.9,0)),bx(1.1,.025,.025,0,2.4,0),...[-.4,0,.4].map(x=>bx(.02,.02,.6,x,2.4,0))]),
     ac:merge([bx(.84,.56,.28,0,0,0)]), acGrill:new THREE.CircleGeometry(.2,12).translate(-.12,0,.141), pillar:merge([bx(.42,1.35,.32,0,.675,0),bx(.46,.06,.36,0,1.38,0)]),
     meter:merge([bx(.3,.38,.12,0,1.0,.2),bx(.22,.12,.02,0,1.05,.265)]) };
@@ -66,23 +70,23 @@
   const IRON=[0x1e1e1e,0x1e1e1e,0x2a3a2a,0xe8e6e0,0x3a2a22];
 
   // ---------- planificación (antes de dibujar las casas: se agranda la caja de choque de las galerías) ----------
-  function plan(list){ H={B:{},houses:[],fences:[],park:[]};
+  function plan(list){ const osm=MODE()==='osm'; H={B:{},houses:[],fences:[],park:[],osm};
     for(const b of list){ const R=mulberry0(1013+b.i*7919), r=()=>R();
       const c=Math.cos(b.a), s=Math.sin(b.a); let best=1e9, side='+z';
       for(const [lx,lz,n] of [[b.w/2,0,'+x'],[-b.w/2,0,'-x'],[0,b.d/2,'+z'],[0,-b.d/2,'-z']]){ const d=nearestSeg(b.x+lx*c+lz*s,b.z-lx*s+lz*c,streetSegs).d; if(d<best){ best=d; side=n; } }
       const F=frame(b,side), gap=best-3.3, hs={b,F,side,gap,r:R,parts:[]};
       hs.roof=r()<.44?'chapa':r()<.4?'teja':'losa'; if(b.w*b.d>140&&hs.roof==='teja') hs.roof='losa';
-      hs.dF=gap>=2.1?Math.min(gap-1.3,6.5):0;                             // frente del lote (cerco) a dF del frente de la casa
-      hs.gd=(hs.dF>=2.2&&r()<.8)?Math.min(2.6,hs.dF-.7):0;                 // galería
+      hs.dF=gap>=2.1&&gap<16?Math.min(gap-1.3,6.5):0;                             // frente del lote (cerco) a dF del frente de la casa
+      hs.gd=(!osm&&hs.dF>=2.2&&r()<.8)?Math.min(2.6,hs.dF-.7):0;                 // galería
       hs.gw=hs.gd?F.W*(r()<.5?1:.55+r()*.3):0; hs.gx=hs.gd&&hs.gw<F.W?(r()<.5?-1:1)*(F.W-hs.gw)/2:0;
       if(hs.gd){ const o=b.box.ob, ext=hs.gd; if(side[1]==='z'){ o.hd+=ext/2; const k=side[0]==='+'?1:-1; o.cx+=s*ext/2*k; o.cz+=c*ext/2*k; } else { o.hw+=ext/2; const k=side[0]==='+'?1:-1; o.cx+=c*ext/2*k; o.cz-=s*ext/2*k; }
         // la caja de la grilla vuelve a cubrir las cuatro esquinas
         let a=1e9,A=-1e9,e=1e9,E=-1e9; for(const [lx,lz] of [[-o.hw,-o.hd],[o.hw,-o.hd],[o.hw,o.hd],[-o.hw,o.hd]]){ const x=o.cx+lx*o.c+lz*o.s, z=o.cz-lx*o.s+lz*o.c; a=Math.min(a,x); A=Math.max(A,x); e=Math.min(e,z); E=Math.max(E,z); }
         b.box.min.x=a; b.box.max.x=A; b.box.min.z=e; b.box.max.z=E; }
-      hs.fence=hs.dF?['tr','tr','r','a','m','tr'][(r()*6)|0]:null;
+      hs.fence=hs.dF&&(!osm||r()<.7)?['tr','tr','r','a','m','tr'][(r()*6)|0]:null;
       hs.col=WALLS[(r()*WALLS.length)|0]; hs.brick=frac(b.x*.1371+b.z*.3113)<.28;   // mismo sorteo que fachadas.js (casilla de ladrillo)
       H.houses.push(hs); }
-    grid=new Map(); houseBoxes.forEach(gridAdd); }
+    if(!osm){ grid=new Map(); houseBoxes.forEach(gridAdd); } }
 
   // ---------- las casas ----------
   function buildHouses(){
@@ -109,7 +113,7 @@
       else { const ph=.32+r()*.3; for(const [x,z,sx,sz] of [[0,D/2-.08,Wd,.16],[0,-D/2+.08,Wd,.16],[Wd/2-.08,0,.16,D],[-Wd/2+.08,0,.16,D]]) put('box',hs,'r',mat(F,x,top+.24+ph/2,z,sx,ph,sz),wall);
         put('box',hs,'r',mat(F,-Wd/2-.12,top-.2,-D/2+.6,.14,.1,.4),0x8a8a86); }                                                    // gárgola
       // ---- tanque de agua sobre su base de ladrillos ----
-      if(r()<.85){ const tx=(r()-.5)*Wd*.4, tz=-D/2+1.1+r()*.6, bh=hs.roof==='losa'?.35+r()*.4:hs.roof==='chapa'?1.1+r()*.5:1.6+r()*.4, by=top+(hs.roof==='losa'?.24:0);
+      if(r()<(H.osm?.55:.85)){ const tx=(r()-.5)*Wd*.4, tz=-D/2+1.1+r()*.6, bh=hs.roof==='losa'?.35+r()*.4:hs.roof==='chapa'?1.1+r()*.5:1.6+r()*.4, by=top+(hs.roof==='losa'?.24:0);
         put('box',hs,'r',mat(F,tx,by+bh/2,tz,1.3,bh,1.3),hs.brick||r()<.5?0xb4806a:wall); put('box',hs,'r',mat(F,tx,by+bh+.04,tz,1.42,.08,1.42),0xa8a49c);
         put('tank',hs,'r',mat(F,tx,by+bh+.08,tz,1,1,1),r()<.62?0x1d1d1d:r()<.6?0xd6c9a4:0x4a7aa8); }
       if(r()<.38) put('antenna',hs,'r',mat(F,(r()-.5)*Wd*.5,top+(hs.roof==='teja'?D/2*Math.tan(.42)*.6:.3),r()*D*.3,1,1,1,0,r()*3,0),0x3a3c3e);
@@ -130,16 +134,21 @@
       if(hs.fence) planFence(hs); }
     wallsIM.instanceColor.needsUpdate=true; roofsIM.instanceMatrix.needsUpdate=true; if(rtankIM) rtankIM.instanceMatrix.needsUpdate=true;
     // a mallas instanciadas
-    for(const k in H.B){ const B=H.B[k]; if(!B.list.length) continue; const im=new THREE.InstancedMesh(B.geo,B.mat,B.list.length); B.im=im;
-      B.list.forEach((e,i)=>{ im.setMatrixAt(i,e.m); im.setColorAt(i,_c.set(e.c)); e.h.parts.push([B,i,e.tag]); });
-      im.castShadow=B.shadow; im.receiveShadow=true; im.frustumCulled=false; im.instanceMatrix.needsUpdate=true; im.instanceColor.needsUpdate=true; worldGroup.add(im); }
+    // a mallas instanciadas: en el barrio una por tipo; en los mapas reales una por tipo y por sector de 260 m (las chicas se apagan a 260 m)
+    const SMALLK={tank:1,antenna:1,ac:1,acg:1,pillar:1,meter:1};
+    for(const k in H.B){ const B=H.B[k]; if(!B.list.length) continue;
+      const groups=H.osm?[...cells(B.list,260,e=>e.h.b.x,e=>e.h.b.z).values()]:[B.list];
+      for(const L of groups){ const im=new THREE.InstancedMesh(B.geo,B.mat,L.length); let cx=0,cz=0,y=0;
+        L.forEach((e,i)=>{ im.setMatrixAt(i,e.m); im.setColorAt(i,_c.set(e.c)); e.h.parts.push([im,i,e.tag]); cx+=e.h.b.x; cz+=e.h.b.z; y+=e.h.b.top; });
+        im.castShadow=B.shadow&&(k==='chapa'||k==='teja'||k==='gable'||k==='wedge'||(!H.osm&&(k==='box'||k==='tank')));   // en los mapas reales solo los techos hacen sombra im.receiveShadow=true; im.frustumCulled=false; im.instanceMatrix.needsUpdate=true; im.instanceColor.needsUpdate=true; worldGroup.add(im);
+        if(H.osm){ cx/=L.length; cz/=L.length; y/=L.length; const r=Math.max(...L.map(e=>Math.hypot(e.h.b.x-cx,e.h.b.z-cz)))+14; cullAdd(im,cx,y,cz,r,SMALLK[k]?260:0); } } }
     for(const hs of H.houses) hs.b.hs=hs;
-    driveways(); }
+    if(!H.osm)     driveways(); }
 
   // cercos del frente: tramos de 2 m a lo largo de la línea del lote, con portón o puerta, y vueltas hacia la casa
   function planFence(hs){ const {b,F}=hs, r=hs.r, z=F.D/2+hs.dF, ext=.6+r()*1.2, x0=-F.W/2-ext, x1=F.W/2+ext, L=x1-x0;
     const gw=F.W>=7&&r()<.6?3:1.1, gc=(r()-.5)*(F.W-gw-1), ty=hs.fence, wc=hs.brick?0xb4806a:r()<.6?hs.col:0xe8e4dc, ic=IRON[(r()*IRON.length)|0];
-    const add=(k,lx,lz,a,len)=>{ const [x,zz]=F.P(lx,lz); if(nearestSeg(x,zz,streetSegs).d<3.9) return; if(gridQuery(x,zz,3).some(o=>!o.dead&&obPush(x,zz,.35,o))) return;
+    const add=(k,lx,lz,a,len)=>{ if(H.osm&&H.fences.length>=FENCE_MAX) return; const [x,zz]=F.P(lx,lz); if(nearestSeg(x,zz,streetSegs).d<3.9) return; if(gridQuery(x,zz,3).some(o=>!o.dead&&obPush(x,zz,.35,o))) return;
       H.fences.push({k,x,z:zz,a,wc,ic,len}); };
     for(let u=x0;u<x1-.2;u+=2){ const m=u+1; if(Math.abs(m-gc)<gw/2+.4){ continue; } add(ty,m,z,F.a,2); }
     add(gw>2?'g':'gp',gc,z,F.a,gw);
@@ -156,16 +165,16 @@
     for(const o of worldGroup.children) if(o.material&&o.material.map&&o.material.map.image===groundCanvas) o.material.map.needsUpdate=true; }
 
   // ---------- esconder piezas al derrumbarse ----------
-  function hideParts(b,tags){ const hs=b&&b.hs; if(!hs) return; const touched=new Set(); for(const [B,i,tag] of hs.parts){ if(!tags.includes(tag)) continue; B.im.setMatrixAt(i,Z0); touched.add(B.im); } touched.forEach(im=>im.instanceMatrix.needsUpdate=true); }
+  function hideParts(b,tags){ const hs=b&&b.hs; if(!hs) return; const touched=new Set(); for(const [im,i,tag] of hs.parts){ if(!tags.includes(tag)) continue; im.setMatrixAt(i,Z0); touched.add(im); } touched.forEach(im=>im.instanceMatrix.needsUpdate=true); }
   function sagParts(b){ const hs=b&&b.hs; if(!hs||hs.sagged) return; hs.sagged=1; const R=mulberry0(b.i*13+5), T=new THREE.Matrix4(), c=new THREE.Vector3(b.x,b.top,b.z), touched=new Set();
     T.makeTranslation(c.x,c.y-.25,c.z).multiply(new THREE.Matrix4().makeRotationFromEuler(new THREE.Euler((R()-.5)*.2,0,(R()-.5)*.2))).multiply(new THREE.Matrix4().makeTranslation(-c.x,-c.y,-c.z));
-    for(const [B,i,tag] of hs.parts){ if(tag!=='r') continue; B.im.getMatrixAt(i,_m); _m.premultiply(T); B.im.setMatrixAt(i,_m); touched.add(B.im); } touched.forEach(im=>im.instanceMatrix.needsUpdate=true); }
+    for(const [im,i,tag] of hs.parts){ if(tag!=='r') continue; im.getMatrixAt(i,_m); _m.premultiply(T); im.setMatrixAt(i,_m); touched.add(im); } touched.forEach(im=>im.instanceMatrix.needsUpdate=true); }
   const _db=damageBuilding;
   damageBuilding=function(b,dmg,fromNet){ const was=b?b.hp:0; const r=_db.apply(this,arguments); try{ if(b&&b.hs&&b.hp<was){ if(b.hp<=0) hideParts(b,['r','g']); else if(b.hp<b.max*.45) sagParts(b); } }catch(e){ console.warn('barrio',e); } return r; };
   if(typeof ruTopsOff==='function'){ const _rt=ruTopsOff; ruTopsOff=function(b){ const r=_rt.apply(this,arguments); try{ hideParts(b,['r']); }catch(e){} return r; }; }
 
   const _fb=finalizeBuildings;
-  finalizeBuildings=function(){ if(!ON()||!bList.length) return _fb.apply(this,arguments); const list=bList.slice();
+  finalizeBuildings=function(){ if(!ON()||!bList.length) return _fb.apply(this,arguments); const list=MODE()==='osm'?bList.filter(SMALL):bList.slice();
     try{ plan(list); }catch(e){ console.warn('barrio plan',e); H=null; }
     const r=_fb.apply(this,arguments); try{ if(H) buildHouses(); }catch(e){ console.warn('barrio casas',e); } return r; };
 
@@ -206,7 +215,7 @@
     g:{w:merge([bx(.36,1.85,.36,-1.68,.925,0),bx(.36,1.85,.36,1.68,.925,0)]),i:merge([bx(3,.06,.05,0,.12,0),bx(3,.06,.05,0,1.68,0),bx(.06,1.6,.06,0,.9,0),bx(.05,1.6,.05,-1.47,.9,0),bx(.05,1.6,.05,1.47,.9,0)]),p:reja(2.92,.15,1.65)},
     gp:{w:merge([bx(.3,1.85,.3,-.7,.925,0),bx(.3,1.85,.3,.7,.925,0)]),i:merge([bx(1.1,.05,.04,0,.12,0),bx(1.1,.05,.04,0,1.72,0)]),p:reja(1.06,.12,1.7)} };
   const REJA=new THREE.MeshLambertMaterial({map:rejaTex,alphaTest:.5,side:THREE.DoubleSide});
-  const ALAM=new THREE.MeshLambertMaterial({map:alamTex,transparent:true,alphaTest:.35,side:THREE.DoubleSide,depthWrite:true}); alamTex.repeat.set(1,1);
+  const ALAM=new THREE.MeshLambertMaterial({map:alamTex,transparent:true,alphaTest:.35,side:THREE.DoubleSide,depthWrite:true}); alamTex.repeat.set(9,6);   // rombos de ~10 cm
   const signTex=(()=>{ const names=[...new Set(SOR_STREETS.map(s=>s.n).filter(Boolean))], c=document.createElement('canvas'); c.width=512; c.height=64*names.length; const x=c.getContext('2d');
     names.forEach((n,i)=>{ const y=i*64; x.fillStyle='#1d4f93'; x.fillRect(0,y,512,64); x.strokeStyle='#f2f2f2'; x.lineWidth=4; x.strokeRect(6,y+6,500,52);
       x.fillStyle='#f6f6f2'; x.font='bold 38px "Saira Condensed",Arial,sans-serif'; x.textAlign='center'; x.textBaseline='middle'; x.fillText(n.toUpperCase(),256,y+34,470); });
@@ -222,20 +231,23 @@
 
   function barrioProps(){
     // fuera los postes genéricos y los autos de caja: los autos pasan a ser vehículos de verdad estacionados
-    const park=[]; for(const P of props) if(P.kind==='car') park.push({x:P.x,z:P.z,a:P.a});
+    const osm=H.osm, park=[]; if(!osm) for(const P of props) if(P.kind==='car') park.push({x:P.x,z:P.z,a:P.a});
+    if(!osm){
     props=props.filter(P=>P.kind!=='post'&&P.kind!=='car'); propGrid=new Map(); for(const P of props){ const k=pk(P.x,P.z); let a=propGrid.get(k); if(!a){a=[];propGrid.set(k,a);} a.push(P); }
     for(const k of ['post','lamp','lens','car','cab','wheels']) if(propIM[k]) propIM[k].count=0;
-    W._sorPark=park;
-    // ---- cercos ----
-    const byK={}; for(const f of H.fences) (byK[f.k]=byK[f.k]||[]).push(f);
-    for(const k in byK){ const L=byK[k], g=FG[k], ims=[];
-      const wm=mkIM(g.w,new THREE.MeshLambertMaterial({color:0xffffff}),L.length,k==='m'||k==='g'); ims.push(wm);
+    W._sorPark=park; } else W._sorPark=null;
+    // ---- cercos (en los mapas reales, por sector) ----
+    const byK={}; for(const f of H.fences){ const key=f.k+(osm?'|'+Math.floor(f.x/260)+','+Math.floor(f.z/260):''); (byK[key]=byK[key]||[]).push(f); }
+    for(const key in byK){ const L=byK[key], k=key.split('|')[0], g=FG[k], ims=[];
+      const wm=mkIM(g.w,new THREE.MeshLambertMaterial({color:0xffffff}),L.length,!osm&&(k==='m'||k==='g')); ims.push(wm);
       const iim=g.i?mkIM(g.i,new THREE.MeshLambertMaterial({color:0xffffff}),L.length,false):null; if(iim) ims.push(iim);
       const mm=g.m?mkIM(g.m,ALAM,L.length,false):null; if(mm) ims.push(mm);
       const pm=g.p?mkIM(g.p,REJA,L.length,false):null; if(pm) ims.push(pm);
       L.forEach((f,i)=>{ wm.setColorAt(i,_c.set(k==='a'?0xb8b6ae:f.wc)); if(iim) iim.setColorAt(i,_c.set(k==='a'?0x9a9e9a:f.ic)); if(pm) pm.setColorAt(i,_c.set(f.ic));
         const P={kind:'street',ims,i,x:f.x,z:f.z,y:heightAt(f.x,f.z)-.03,a:f.a,r:f.len/2,t:0,fence:1}; addProp(P); setPropMatrix(P); });
-      ims.forEach(im=>{ if(im.instanceColor) im.instanceColor.needsUpdate=true; }); }
+      ims.forEach(im=>{ if(im.instanceColor) im.instanceColor.needsUpdate=true; });
+      if(osm){ let cx=0,cz=0; L.forEach(f=>{ cx+=f.x; cz+=f.z; }); cx/=L.length; cz/=L.length; const r=Math.max(...L.map(f=>Math.hypot(f.x-cx,f.z-cz)))+3; ims.forEach(im=>cullAdd(im,cx,heightAt(cx,cz)+1,cz,r,230)); } }
+    if(osm){ W._barrio={casas:H.houses.length,cercos:H.fences.length}; return; }
     // ---- postes de la red eléctrica a lo largo de cada calle, siempre del mismo lado ----
     const runs=[]; SOR_STREETS.forEach((S,si)=>{ const w=S.p.map(q=>toW(...q)), R=mulberry0(500+si*17), sd=R()<.5?1:-1, off=(S.pav?3.6:3.25)+.7; let acc=R()*20, run=[];
       for(let i=0;i<w.length-1;i++){ const A=w[i], B=w[i+1], L=Math.hypot(B.x-A.x,B.z-A.z), ux=(B.x-A.x)/L, uz=(B.z-A.z)/L; let d=acc;
@@ -282,7 +294,7 @@
     W._barrio={casas:H.houses.length,cercos:H.fences.length,postes:flat.length,cables:pts.length/6,carteles:sg.length,cordon:curbs.length,estacionados:park.length};
   }
   const _bp=buildProps;
-  buildProps=function(){ const r=_bp.apply(this,arguments); wireGeo=null; try{ if(ON()&&H) barrioProps(); }catch(e){ console.warn('barrio props',e); } return r; };
+  buildProps=function(){ const r=_bp.apply(this,arguments); wireGeo=null; try{ if(ON()&&H&&H.osm===(MODE()==='osm')) barrioProps(); }catch(e){ console.warn('barrio props',e); } return r; };
 
   // de noche se prenden las luminarias
   const _cu=cullUpdate;
@@ -313,7 +325,7 @@
 
   // ---------- vehículos estacionados en lugar de los autos de caja ----------
   const _ir=initRefuerzos;
-  initRefuerzos=function(){ const r=_ir.apply(this,arguments); try{ if(ON()&&!net.guest&&W._sorPark) parkCars(); }catch(e){ console.warn('barrio autos',e); } return r; };
+  initRefuerzos=function(){ const r=_ir.apply(this,arguments); try{ if(MODE()==='sor'&&!net.guest&&W._sorPark) parkCars(); }catch(e){ console.warn('barrio autos',e); } return r; };
   function parkCars(){ const keys=['c10','c10','sedan','falcon','fiat600','hatch','c10','pickup','falcon','sedan','moto2','van'], idx=k=>VTYPES.findIndex(v=>v.k===k);
     const pav=SOR_STREETS.filter(S=>S.pav).map(S=>{ const w=S.p.map(q=>toW(...q)); const segs=[]; for(let i=0;i<w.length-1;i++) segs.push({ax:w[i].x,az:w[i].z,bx:w[i+1].x,bz:w[i+1].z}); return segs; }).flat();
     W._sorPark.forEach((o,n)=>{ const ti=idx(keys[n%keys.length]); if(ti<0) return; const s=pav.length?nearestSeg0(o.x,o.z,pav):null;

@@ -85,27 +85,28 @@ function facadeStyle(){ const k=typeof builtKey==='string'?builtKey:'', w=WORLDS
   if(['stalingrado','berlin','shanghai'].includes(k)) return 2;
   if(['alamein','kasserine','okinawa','saipan','chaco','jarama','sesena','ebro'].includes(k)||/chaco|nanawa|jarama|sese|ebro/.test(k)) return 1;
   return 0; }
-facadeMat=function(){ const m=new THREE.MeshLambertMaterial({map:facadeAtlas}), st=facadeStyle();
-  m.onBeforeCompile=sh=>{ sh.uniforms.uStyle={value:st}; sh.uniforms.uBal={value:st===2?.0:.3};
-    const V='varying float vFw; varying float vVar; varying float vTop;\n';
+facadeMat=function(){ const m=new THREE.MeshLambertMaterial({map:facadeAtlas}), st=facadeStyle(), small=st===3&&typeof W!=='undefined'&&!!W.osm;
+  m.onBeforeCompile=sh=>{ sh.uniforms.uStyle={value:st}; sh.uniforms.uBal={value:st===2?.0:.3}; sh.uniforms.uSmall={value:small?1:0};
+    const V='varying float vFw; varying float vVar; varying float vTop; varying float vH;\n';
     sh.vertexShader=V+sh.vertexShader.replace('#include <uv_vertex>',`#include <uv_vertex>
-    vTop=0.; vFw=1.; vVar=0.;
+    vTop=0.; vFw=1.; vVar=0.; vH=99.;
     #ifdef USE_INSTANCING
       vec3 sc=vec3(length(instanceMatrix[0].xyz),length(instanceMatrix[1].xyz),length(instanceMatrix[2].xyz));
-      vVar=fract(instanceMatrix[3].x*.1371+instanceMatrix[3].z*.3113);
+      vVar=fract(instanceMatrix[3].x*.1371+instanceMatrix[3].z*.3113); vH=sc.y;
       if(abs(normal.y)>.5){ vTop=1.; vUv=vec2(.5,.5); }
       else { float w=abs(normal.x)>.5?sc.z:sc.x; vFw=max(1.,floor(w/3.5+.5)); vUv=vec2(uv.x*vFw,uv.y*sc.y/3.); }
     #endif`);
-    sh.fragmentShader='uniform float uStyle; uniform float uBal;\n#define FAC_W '+(FAC_T*FAC_N)+'.\n#define FAC_H '+(FAC_T*2)+'.\n'+V+sh.fragmentShader.replace('#include <map_fragment>',`
+    sh.fragmentShader='uniform float uStyle; uniform float uBal; uniform float uSmall;\n#define FAC_W '+(FAC_T*FAC_N)+'.\n#define FAC_H '+(FAC_T*2)+'.\n'+V+sh.fragmentShader.replace('#include <map_fragment>',`
     #ifdef USE_MAP
       // una sola lectura de la textura, fuera de los "if" y con las derivadas de la coordenada continua: si se lee dentro de una rama,
       // la placa no sabe qué detalle (mip) usar y en algunas (y en swiftshader) la pared salía llena de puntitos
-      vec2 q=vUv; if(uStyle>3.5) q.y-=1./3.;                      // barrio: la planta baja arranca en el suelo (el muro empieza 1 m abajo)
+      float st=uStyle; if(uSmall>.5&&st>2.5&&st<3.5&&vH<6.45) st=4.;   // mapas reales de Corrientes: las casas bajas con la fachada de barrio
+      vec2 q=vUv; if(st>3.5) q.y-=1./3.;                      // barrio: la planta baja arranca en el suelo (el muro empieza 1 m abajo)
       float fw=floor(vFw+.5), col=floor(q.x), fl=floor(q.y); vec2 f=fract(q); if(fl<0.){ fl=0.; f.y=.02; }   // fw redondeado: el varying llega como 2,9999 en algunos píxeles
       float h=fract(sin(vVar*91.7+col*12.9898+fl*78.233)*43758.5453);
-      float tx=uStyle*2.+((uStyle>3.5&&vVar<.28)?2.:0.); float base;
+      float tx=st*2.+((st>3.5&&vVar<.28)?2.:0.); float base;
       if(fl<.5){ tx+=(abs(col-floor(fw*.5))<.5?1.:0.); base=0.; }
-      else { tx+=(uStyle>3.5)?(abs(col-floor(fw*.5))<.5?1.:0.):(h<uBal+vVar*.25?1.:0.); base=.5; }
+      else { tx+=(st>3.5)?1.:(h<uBal+vVar*.25?1.:0.); base=.5; }   // barrio: arriba de la planta baja, pared lisa con la moldura
       vec2 uvT=vec2((tx+.02+f.x*.96)/${FAC_N}., base+(.01+f.y*.98)*.5);
       if(vTop>.5) uvT=vec2(.003,.003);
       #if __VERSION__ >= 300
@@ -117,4 +118,4 @@ facadeMat=function(){ const m=new THREE.MeshLambertMaterial({map:facadeAtlas}), 
       #endif
       texelColor=mapTexelToLinear(texelColor); diffuseColor*=texelColor;
     #endif`); };
-  m.customProgramCacheKey=()=>'fachada'+st; return m; };
+  m.customProgramCacheKey=()=>'fachada'+st+(small?'c':''); return m; };
