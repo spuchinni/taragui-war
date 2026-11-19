@@ -4,7 +4,7 @@
 //  drive_0 (tanque en marcha) ....................... Freesound #329800, greatmganga, t26_moving_01.wav .. CC0
 //  static_0 / squelch_0 (radio) ..................... Freesound #524204 / #524205, JovianSounds ......... CC0
 //  metal_0 / metal_1 (impacto en el blindaje) ....... Freesound #264889 / #267284, EpicWizard ........... CC0
-//  ric_0 (rebote) ................................... Freesound #148840, cedarstudios .................. CC0
+//  ric_0 / ric_1 (rebote) ........................... Freesound #148840 / #148827, cedarstudios ....... CC0
 //  thump_0 (cañonazo lejano) ........................ Freesound #517747, danlucaz, distant explosion ... CC0
 //  thump_1 .......................................... Freesound #879283, qvantor, distant explosion .... CC0
 //  thump_2 / thump_3 ................................ Freesound #320788, kostrava, distant explosions .. CC0
@@ -12,7 +12,7 @@
 //  mgburst_0, mgshot_0, siren_0, flyover_0 .......... Pixabay (freesound_community) ...... licencia de contenido de Pixabay
 //  menu_0 ........................................... Pixabay #620908, mfcc, "Military War" ... licencia de contenido de Pixabay
 //  smg_0, hatcho_0, hatchc_0, pass_0 ................ GFXSounds (cuenta gratis) ... con crédito en Ajustes → Créditos
-//  ric_1–3, shellin_0–3, bombw_0, nukew_0, nukeb_0, plane_0, gau8_0 ... hechos por código (herramientas/sonidos/sintetizar.py)
+//  ric_2/3, shellin_0–3, bombw_0, nukew_0, nukeb_0, plane_0, gau8_0 ... hechos por código (herramientas/sonidos/sintetizar.py)
 //  infamb_0, intro_0 ................................ mezcla por código con grabaciones CC0 de qubodup
 const SND_FILES={"shellin":4,"bombw":1,"nukew":1,"nukeb":1,"plane":1,"infamb":1,"gau8":1,"cannon":2,"expl":1,"metal":2,"ric":4,"intro":1,"idle":1,"drive":1,"turret":1,"static":1,"squelch":1,"mgburst":1,"mgshot":1,"thump":4,"siren":1,"flyover":1,"prop":1,"sboom":1,"menu":1}; // archivos en snd/<nombre>_<n>.mp3
 // Voces de radio (TTSMaker) por idioma, 14 frases en el mismo orden en cada uno.
