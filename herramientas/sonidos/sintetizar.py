@@ -1,4 +1,4 @@
-# OJO (19/11/2026): drive_0, static_0, squelch_0, metal_0/1 y ric_0 volvieron a ser las grabaciones originales CC0 de Freesound: no regenerarlos con este script.
+# OJO (19/11/2026): drive_0, static_0, squelch_0, metal_0/1, ric_0, thump_0–3 y prop_0 son a ser las grabaciones originales CC0 de Freesound: no regenerarlos con este script.
 # Sonidos hechos por código (pedido de Sebastián para publicar en CrazyGames: que todo lo del juego sea propio o de licencia
 # segura). Reemplazan las grabaciones de Freesound/Pixabay cuya licencia no se pudo confirmar. Todo sale de ruido y
 # osciladores con numpy; los ambientes mezclan además grabaciones CC0 de qubodup que ya estaban en snd/.

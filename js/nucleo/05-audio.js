@@ -1,9 +1,20 @@
 /* ---------- Audio ---------- */
-// Grabaciones CC0 de Freesound (recortadas y comprimidas): qubodup (cañones de tanque, explosión, ralentí de motor y torreta, estampido sónico,
-// dominio público). Pixabay/freesound_community: ametralladora .50, sirena antiaérea, paso de avión. El resto (marcha del tanque, radio,
-// avionetas, morteros, golpes de metal, rebotes, silbidos, bombas, nuke, GAU-8, ambiente y la intro) está hecho por código:
-// herramientas/sonidos/sintetizar.py (ver CREDITOS.md).
-const SND_FILES={"shellin":4,"bombw":1,"nukew":1,"nukeb":1,"plane":1,"infamb":1,"gau8":1,"cannon":2,"expl":1,"metal":2,"ric":4,"intro":1,"idle":1,"drive":1,"turret":1,"static":1,"squelch":1,"mgburst":1,"mgshot":1,"thump":2,"siren":1,"flyover":1,"prop":1,"sboom":1,"menu":1}; // archivos en snd/<nombre>_<n>.mp3
+// Fuente y licencia de cada sonido (detalle en CREDITOS.md; verificadas en Freesound por Sebastián el 19/11/2026):
+//  cannon_0/1, expl_0, idle_0, turret_0, sboom_0 ... Freesound, qubodup ............................. CC0
+//  drive_0 (tanque en marcha) ....................... Freesound #329800, greatmganga, t26_moving_01.wav .. CC0
+//  static_0 / squelch_0 (radio) ..................... Freesound #524204 / #524205, JovianSounds ......... CC0
+//  metal_0 / metal_1 (impacto en el blindaje) ....... Freesound #264889 / #267284, EpicWizard ........... CC0
+//  ric_0 (rebote) ................................... Freesound #148840, cedarstudios .................. CC0
+//  thump_0 (cañonazo lejano) ........................ Freesound #517747, danlucaz, distant explosion ... CC0
+//  thump_1 .......................................... Freesound #879283, qvantor, distant explosion .... CC0
+//  thump_2 / thump_3 ................................ Freesound #320788, kostrava, distant explosions .. CC0
+//  prop_0 (avioneta a hélice, en bucle) ............. Freesound #648720, itinerantmonk108, bi-plane flyby CC0
+//  mgburst_0, mgshot_0, siren_0, flyover_0 .......... Pixabay (freesound_community) ...... licencia de contenido de Pixabay
+//  menu_0 ........................................... Pixabay #620908, mfcc, "Military War" ... licencia de contenido de Pixabay
+//  smg_0, hatcho_0, hatchc_0, pass_0 ................ GFXSounds (cuenta gratis) ... con crédito en Ajustes → Créditos
+//  ric_1–3, shellin_0–3, bombw_0, nukew_0, nukeb_0, plane_0, gau8_0 ... hechos por código (herramientas/sonidos/sintetizar.py)
+//  infamb_0, intro_0 ................................ mezcla por código con grabaciones CC0 de qubodup
+const SND_FILES={"shellin":4,"bombw":1,"nukew":1,"nukeb":1,"plane":1,"infamb":1,"gau8":1,"cannon":2,"expl":1,"metal":2,"ric":4,"intro":1,"idle":1,"drive":1,"turret":1,"static":1,"squelch":1,"mgburst":1,"mgshot":1,"thump":4,"siren":1,"flyover":1,"prop":1,"sboom":1,"menu":1}; // archivos en snd/<nombre>_<n>.mp3
 // Voces de radio (TTSMaker) por idioma, 14 frases en el mismo orden en cada uno.
 const VO_LANGS=["es", "en-gb", "en-us", "de", "ru"], VO_N=14, VO_CNT={ru:11};   // ru: faltan las 3 últimas frases // archivos en voz/<idioma>/00.mp3 … 13.mp3
 // Los sonidos se bajan en segundo plano apenas carga la página (no traban el menú) y quedan en caché del navegador.
