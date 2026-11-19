@@ -17,15 +17,19 @@ Recortados y comprimidos para el juego.
 | Archivo | Origen | Licencia | Estado |
 |---|---|---|---|
 | cannon_0/1, expl_0, idle_0, turret_0, sboom_0 | Freesound, qubodup | CC0 / dominio público | ✅ |
+| drive_0 (tanque en marcha) | Freesound: greatmganga, "t26_moving_01.wav" | CC0 | ✅ (verificado por Sebastián, 19/11/2026) |
+| static_0, squelch_0 (radio) | Freesound: JovianSounds, "Radio Static" y "Radio Sign Off / Squelch" | CC0 | ✅ (verificado 19/11/2026) |
+| metal_0/1 (impacto en el blindaje) | Freesound: EpicWizard, "Metal Shed Door" | CC0 | ✅ (verificado 19/11/2026) |
+| ric_0 (rebote) | Freesound: cedarstudios, "ricochet.mp3" / ".22 ricochet.mp3" | CC0 | ✅ (verificado 19/11/2026) |
 | mgburst_0, mgshot_0, siren_0, flyover_0 | Pixabay (freesound_community) | Licencia de contenido de Pixabay (uso comercial permitido dentro del juego; no se puede revender el sonido suelto) | ✅ |
 | menu_0 (tema del menú, 12,3 s del medio en bucle) | Pixabay: "Military War" de mfcc (n.º 620908) | Licencia de contenido de Pixabay | ✅ |
 | smg_0 (subfusil Sterling), hatcho_0 / hatchc_0 (escotilla), pass_0 (tanque que pasa) | GFXSounds (cuenta gratis) | Licencia estándar de GFXSounds: uso permitido con crédito y link a https://gfxsounds.com; no se pueden repartir los sonidos sueltos | ✅ (crédito en el juego: Ajustes → Créditos) |
 | video/intro.mp4 e intro-en.mp4 (música) | Pixabay: "War Horn and Drums" de soundmarker33 (n.º 512545) | Licencia de contenido de Pixabay | ✅ |
-| drive_0, static_0, squelch_0, prop_0, plane_0, thump_0/1, metal_0/1, ric_0/1, shellin_0–3, bombw_0, nukew_0, nukeb_0, gau8_0 | **Hechos por código** para el juego (`herramientas/sonidos/sintetizar.py`, ruido y osciladores) | Propios | ✅ |
+| prop_0, plane_0, thump_0/1, ric_1–3, shellin_0–3, bombw_0, nukew_0, nukeb_0, gau8_0 | **Hechos por código** para el juego (`herramientas/sonidos/sintetizar.py`, ruido y osciladores) | Propios | ✅ |
 | infamb_0, intro_0 | Mezcla hecha por código con las grabaciones CC0 de qubodup + ráfagas y viento sintéticos | Propios + CC0 | ✅ |
 
-Antes (hasta noviembre de 2026) varios de esos eran grabaciones de Freesound/Pixabay (greatmganga, JovianSounds, PWLPL, TommyLynn,
-EpicWizard, cedarstudios y otros) cuya licencia no se pudo confirmar; se reemplazaron para poder publicar y cobrar sin dudas.
+Hasta noviembre de 2026 varios de esos eran grabaciones de Freesound/Pixabay (greatmganga, JovianSounds, PWLPL, TommyLynn,
+EpicWizard, cedarstudios y otros) cuya licencia no se pudo confirmar; se reemplazaron para poder publicar y cobrar sin dudas. El 19/11/2026 Sebastián confirmó en Freesound que greatmganga, JovianSounds, EpicWizard y cedarstudios son CC0 y esas grabaciones volvieron (el ric_1 original estaba casi mudo y quedó el hecho por código). Faltan verificar PWLPL (avioneta, perfil no encontrado) y TommyLynn (artillería lejana).
 Si se agrega un sonido nuevo, anotarlo acá con su página y licencia (solo CC0 o licencias que permitan uso comercial).
 
 ## Voces de radio (`voz/`)

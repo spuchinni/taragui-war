@@ -1664,7 +1664,12 @@ I18N.add({
 "Celular: el selector de tanques entra en la pantalla sin bajar, los carteles del entrenamiento son más chicos, el botón ☰ Menú (para abandonar) está siempre a mano y ya no se traba la 1ª batalla si cerrás el juego en el medio.": "Mobile: the tank picker fits on screen without scrolling, the training cards are smaller, the ☰ Menu button (to leave) is always at hand and the 1st battle no longer gets stuck if you close the game halfway.",
 "☰ Menú": "☰ Menu",
 "Sonidos nuevos: la escotilla cuando el mecánico baja a reparar y vuelve a subir, la ráfaga de los subfusiles (MP 40, PPSh, Thompson, Sten) y las orugas de los tanques que te pasan cerca.": "New sounds: the hatch when the mechanic climbs out to repair and back in, submachine gun bursts (MP 40, PPSh, Thompson, Sten) and the tracks of tanks that pass close by.",
-"subfusil, escotillas y tanque que pasa: Sound effects from https://gfxsounds.com": "submachine gun, hatches and passing tank: Sound effects from https://gfxsounds.com"
+"subfusil, escotillas y tanque que pasa: Sound effects from https://gfxsounds.com": "submachine gun, hatches and passing tank: Sound effects from https://gfxsounds.com",
+"Vuelven las grabaciones reales del tanque en marcha (motor y orugas), la radio, el impacto en el blindaje y el rebote.": "The real recordings are back for the moving tank (engine and tracks), the radio, armor hits and ricochets.",
+"tanque en marcha: greatmganga (CC0)": "moving tank: greatmganga (CC0)",
+"radio: JovianSounds (CC0)": "radio: JovianSounds (CC0)",
+"impacto: EpicWizard (CC0)": "armor hit: EpicWizard (CC0)",
+"rebote: cedarstudios (CC0)": "ricochet: cedarstudios (CC0)"
 });
 I18N.words({
 "Perforante sólido": "Solid AP",
