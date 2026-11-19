@@ -133,6 +133,7 @@ function buildWW1Map(key){
   const SB=new Map(), sb=(x,z)=>Math.floor(x/10)*10007+Math.floor(z/10);
   for(const S of segs){ const x0=Math.min(S.ax,S.bx)-S.w, x1=Math.max(S.ax,S.bx)+S.w, z0=Math.min(S.az,S.bz)-S.w, z1=Math.max(S.az,S.bz)+S.w;
     for(let x=Math.floor(x0/10);x<=Math.floor(x1/10);x++) for(let z=Math.floor(z0/10);z<=Math.floor(z1/10);z++){ const k=x*10007+z; if(!SB.has(k)) SB.set(k,[]); SB.get(k).push(S); } }
+  W.trenchSegs=segs;
   W.trench=(x,z)=>{ const L=SB.get(sb(x,z)); if(!L) return null; let best=null; for(const S of L){ const q=segDistW(x,z,S); if(q<S.w/2&&(!best||S.w>best.w)) best=S; }
     if(!best) return null; const d=ww1Depth(G,x,z); return d>.05?{d,w:best.w}:null; };
   W.wire=(x,z)=>{ for(const B of belts) if(z>B.z0&&z<B.z1&&!B.gaps.some(g=>Math.abs(x-g)<6)&&!B.cut.some(c=>Math.abs(x-c)<2.5)) return true; return false; };
@@ -288,28 +289,57 @@ function paintWW1Ground(x,S,C,R,o){
   x.globalAlpha=1;
 }
 
-// Revestimiento de las trincheras (instanciado: miles de piezas, pocas llamadas de dibujo)
+// Revestimiento de las trincheras (instanciado: miles de piezas, pocas llamadas de dibujo).
+// 2.ª versión (19/11/2026, pedido de Sebastián con el "3D trench system pack" de Sketchfab como referencia; hecho por código):
+// parapeto de sacos terreros continuo y trabado (dos o tres hileras del lado enemigo, de arpillera), revestimiento de tablones
+// con postes y estacas, a tramos chapa acanalada; pasarelas de listones; cajones de munición, barriles y escaleras de asalto.
+const TRENCH_TEX=(()=>{ const mk=(w,h,f)=>{ const c=document.createElement('canvas'); c.width=w; c.height=h; f(c.getContext('2d'),w,h); const t=new THREE.CanvasTexture(c); t.anisotropy=ANISO; return t; };
+  return { burlap:mk(64,32,(x,w,h)=>{ x.fillStyle='#e6dcc4'; x.fillRect(0,0,w,h); for(let i=0;i<w;i+=2){ x.fillStyle=`rgba(90,70,40,${.08+Math.random()*.1})`; x.fillRect(i,0,1,h); } for(let j=0;j<h;j+=2){ x.fillStyle=`rgba(90,70,40,${.06+Math.random()*.1})`; x.fillRect(0,j,w,1); }
+      x.fillStyle='rgba(60,45,25,.35)'; x.fillRect(0,0,w,2); x.fillRect(0,h-3,w,3); x.fillRect(w-5,0,5,h); for(let i=0;i<30;i++){ x.fillStyle=`rgba(70,55,35,${Math.random()*.25})`; x.beginPath(); x.ellipse(Math.random()*w,Math.random()*h,2+Math.random()*6,1+Math.random()*3,0,0,7); x.fill(); } }),
+    planks:mk(64,128,(x,w,h)=>{ const n=6; for(let k=0;k<n;k++){ const y=k*h/n, v=200+((k*53)%40); x.fillStyle=`rgb(${v},${v*.86|0},${v*.68|0})`; x.fillRect(0,y,w,h/n);
+        for(let g=0;g<14;g++){ x.fillStyle=`rgba(80,55,30,${.1+Math.random()*.15})`; x.fillRect(0,y+Math.random()*h/n,w,1); } x.fillStyle='rgba(20,14,8,.85)'; x.fillRect(0,y,w,2.5); }
+      for(let i=0;i<12;i++){ x.fillStyle='rgba(40,30,20,.25)'; x.fillRect(Math.random()*w,Math.random()*h,2,2); } }),
+    corr:mk(32,64,(x,w,h)=>{ for(let i=0;i<w;i++){ const v=150+60*Math.sin(i/w*Math.PI*2*3); x.fillStyle=`rgb(${v},${v*.95|0},${v*.9|0})`; x.fillRect(i,0,1,h); } for(let i=0;i<40;i++){ x.fillStyle=`rgba(120,60,25,${Math.random()*.35})`; x.fillRect(Math.random()*w,Math.random()*h,2+Math.random()*4,2+Math.random()*10); } }),
+    duck:mk(64,64,(x,w,h)=>{ x.fillStyle='#2a2016'; x.fillRect(0,0,w,h); for(let k=0;k<8;k++){ const y=k*8+1, v=170+((k*37)%40); x.fillStyle=`rgb(${v},${v*.82|0},${v*.6|0})`; x.fillRect(0,y,w,6); x.fillStyle='rgba(60,40,20,.3)'; x.fillRect(0,y+5,w,1); } x.fillStyle='rgba(50,35,20,.6)'; x.fillRect(6,0,4,h); x.fillRect(w-10,0,4,h); }),
+    crate:mk(64,64,(x,w,h)=>{ x.fillStyle='#b4925e'; x.fillRect(0,0,w,h); for(let k=0;k<4;k++){ x.fillStyle='rgba(40,25,10,.5)'; x.fillRect(0,k*16,w,1.5); } x.strokeStyle='#6e522e'; x.lineWidth=5; x.strokeRect(2,2,w-4,h-4); x.beginPath(); x.moveTo(4,4); x.lineTo(w-4,h-4); x.stroke(); x.fillStyle='rgba(30,30,30,.7)'; x.font='bold 11px Arial'; x.fillText('.303',20,36); }) }; })();
 function dressTrenches(segs,G,R){
-  const bag=[], board=[], duck=[], post=[], rr=(a,b)=>a+R()*(b-a);
-  for(const S of segs){ const dx=S.bx-S.ax, dz=S.bz-S.az, L=Math.hypot(dx,dz); if(L<.5||S.kind==='ditch') continue; const ux=dx/L, uz=dz/L, nx=-uz, nz=ux, ang=Math.atan2(ux,uz);
-    for(let t=.5,ti=0;t<L;t+=1.25,ti++){ const cx=S.ax+ux*t, cz=S.az+uz*t;
-      for(const sd of [-1,1]){ const ex=cx+nx*sd*(S.w/2+.35), ez=cz+nz*sd*(S.w/2+.35), y=ww1Sample(W,ex,ez);
-        const front=S.az<0?nz*sd>0:nz*sd<0; // parapeto (del lado enemigo) con dos hileras; atrás, una suelta
-        if(front||R()<.25) bag.push([ex,y+.1,ez,ang+rr(-.15,.15)]);
-        if(front&&S.kind!=='com'&&R()<.45) bag.push([ex+nx*sd*.04,y+.3,ez+nz*sd*.04,ang+rr(-.25,.25)]);
-        const wx=cx+nx*sd*(S.w/2-.08), wz=cz+nz*sd*(S.w/2-.08), fy=ww1Sample(W,cx,cz); if(ti%2===0) board.push([wx,fy+S.d*.45,wz,ang,S.d*.85]);
-        if(ti%2===1) post.push([wx,fy+S.d*.5,wz,S.d+.2]); }
-      duck.push([cx,ww1Sample(W,cx,cz)+.06,cz,ang]); } }
-  const M4=new THREE.Matrix4(), q=new THREE.Quaternion(), up=new THREE.Vector3(0,1,0), sc=new THREE.Vector3(), p=new THREE.Vector3();
-  const mkOne=(geo,mat,list,f)=>{ if(!list.length) return; const im=new THREE.InstancedMesh(geo,mat,list.length); list.forEach((e,i)=>{ f(e); im.setMatrixAt(i,M4); }); im.castShadow=true; im.receiveShadow=true; im.frustumCulled=false; worldGroup.add(im);
+  const bag=[], board=[], corr=[], duck=[], post=[], crate=[], barrel=[], ladder=[], rr=(a,b)=>a+R()*(b-a);
+  for(const S of segs){ const dx=S.bx-S.ax, dz=S.bz-S.az, L=Math.hypot(dx,dz); if(L<.5||S.kind==='ditch') continue; const ux=dx/L, uz=dz/L, nx=-uz, nz=ux, ang=Math.atan2(ux,uz), com=S.kind==='com';
+    // parapeto: sacos de 0,62 m trabados como ladrillos, cada uno siguiendo el suelo
+    for(const sd of [-1,1]){ const front=S.az<0?nz*sd>0:nz*sd<0, rows=front&&!com?(R()<.3?3:2):(R()<.35?1:0);
+      for(let r=0;r<rows;r++) for(let t=.3+(r%2)*.31;t<L-.2;t+=.62){ if(r>0&&R()<.12) continue; if(!front&&R()<.4) continue;
+        const off=S.w/2+.32+(r===2?.12:0)-r*.03, ex=S.ax+ux*t+nx*sd*off, ez=S.az+uz*t+nz*sd*off, y=ww1Sample(W,ex,ez);
+        bag.push([ex,y+.1+r*.2,ez,ang+rr(-.07,.07),R()]); } }
+    // revestimiento: un panel cada 2,5 m (tablones, o chapa acanalada en 1 de cada 4), postes entre paneles
+    for(let t=1.25,ti=0;t<L;t+=2.5,ti++){ const cx=S.ax+ux*t, cz=S.az+uz*t, fy=ww1Sample(W,cx,cz);
+      for(const sd of [-1,1]){ const wx=cx+nx*sd*(S.w/2-.08), wz=cz+nz*sd*(S.w/2-.08);
+        (R()<.25?corr:board).push([wx,fy+S.d*.45,wz,ang,S.d*.9]);
+        const px=wx-ux*1.25, pz=wz-uz*1.25; post.push([px,fy+S.d*.45,pz,S.d*.9+.1]); }
+      // cajones, barriles y escaleras de asalto contra la pared del lado enemigo
+      const en=S.az<0?(nz>0?1:-1):(nz>0?-1:1), k=R();
+      if(!com&&k<.12) crate.push([cx+nx*en*(S.w/2-.38),fy+.2,cz+nz*en*(S.w/2-.38),ang+rr(-.3,.3)]);
+      else if(!com&&k<.18) barrel.push([cx+nx*en*(S.w/2-.4),fy,cz+nz*en*(S.w/2-.4)]);
+      else if(!com&&k<.24) ladder.push([cx+nx*en*(S.w/2-.25),fy,cz+nz*en*(S.w/2-.25),ang,S.d]); }
+    for(let t=.5;t<L;t+=1.25){ const cx=S.ax+ux*t, cz=S.az+uz*t; duck.push([cx,ww1Sample(W,cx,cz)+.06,cz,ang]); } }
+  const M4=new THREE.Matrix4(), q=new THREE.Quaternion(), q2=new THREE.Quaternion(), up=new THREE.Vector3(0,1,0), sc=new THREE.Vector3(), p=new THREE.Vector3(), ax=new THREE.Vector3(1,0,0);
+  const mkOne=(geo,mat,list,f,shadow=true)=>{ if(!list.length) return; const im=new THREE.InstancedMesh(geo,mat,list.length); list.forEach((e,i)=>{ f(e,i); im.setMatrixAt(i,M4); }); im.castShadow=shadow; im.receiveShadow=true; im.frustumCulled=false; worldGroup.add(im);
     if(W.cfg&&W.cfg.big){ let cx=0,cz=0; list.forEach(e=>{cx+=e[0];cz+=e[2];}); cx/=list.length; cz/=list.length; cullAdd(im,cx,list[0][1],cz,Math.max(...list.map(e=>Math.hypot(e[0]-cx,e[2]-cz)))+4,320); } return im; };
-  const mk=(geo,mat,list,f)=>{ const out=[]; for(const L of cells(list,150,e=>e[0],e=>e[2]).values()) out.push(mkOne(geo,mat,L,f)); return out; };
-  const bagG=new THREE.BoxGeometry(.7,.22,.4); { const P=bagG.attributes.position; for(let i=0;i<P.count;i++){ const y=P.getY(i); P.setX(i,P.getX(i)*(y>0?.9:1)); P.setZ(i,P.getZ(i)*(y>0?.8:1)); } bagG.computeVertexNormals(); }
-  { const ims=mk(bagG,new THREE.MeshLambertMaterial({color:0xffffff}),bag,e=>{ q.setFromAxisAngle(up,e[3]+Math.PI/2); M4.compose(p.set(e[0],e[1],e[2]),q,sc.set(rr(.9,1.1),1,1)); });
-    const c=new THREE.Color(); for(const im of ims){ for(let i=0;i<im.count;i++) im.setColorAt(i,c.set(R()<.5?0x9a8a66:R()<.5?0x8a7b5a:0xa89a74)); im.instanceColor.needsUpdate=true; } }
-  mk(new THREE.BoxGeometry(.06,1,2.52),new THREE.MeshLambertMaterial({color:0x5e4a34}),board,e=>{ q.setFromAxisAngle(up,e[3]); M4.compose(p.set(e[0],e[1],e[2]),q,sc.set(1,e[4],1)); });
-  mk(new THREE.BoxGeometry(.7,.06,.95),new THREE.MeshLambertMaterial({color:0x6e5a40}),duck,e=>{ q.setFromAxisAngle(up,e[3]); M4.compose(p.set(e[0],e[1],e[2]),q,sc.set(1,1,1)); });
-  mk(new THREE.CylinderGeometry(.06,.07,1,4,1,true),new THREE.MeshLambertMaterial({color:0x4a3a2a}),post,e=>{ q.identity(); M4.compose(p.set(e[0],e[1],e[2]),q,sc.set(1,e[3],1)); });
+  const mk=(geo,mat,list,f,shadow)=>{ const out=[]; for(const L of cells(list,150,e=>e[0],e=>e[2]).values()) out.push(mkOne(geo,mat,L,f,shadow)); return out; };
+  // saco: caja con la panza abultada y la boca atada más angosta (12 caras, sigue siendo barato)
+  const bagG=new THREE.BoxGeometry(.62,.2,.36,2,1,1); { const P=bagG.attributes.position; for(let i=0;i<P.count;i++){ const x=P.getX(i), y=P.getY(i), z=P.getZ(i), mid=Math.abs(x)<.01;
+      P.setZ(i,z*(y>0?.78:1)*(mid?1.12:1)); P.setX(i,x*(y>0?.92:1)); P.setY(i,y*(mid?1.15:1)); } bagG.computeVertexNormals(); }
+  { const ims=mk(bagG,new THREE.MeshLambertMaterial({map:TRENCH_TEX.burlap}),bag,e=>{ q.setFromAxisAngle(up,e[3]+Math.PI/2); M4.compose(p.set(e[0],e[1],e[2]),q,sc.set(rr(.92,1.08),rr(.9,1.1),1)); });
+    const c=new THREE.Color(); for(const im of ims){ for(let i=0;i<im.count;i++){ const v=R(); im.setColorAt(i,c.set(v<.4?0xb8a47e:v<.7?0xa4916c:v<.9?0x8f7e5c:0x7a6a4c)); } im.instanceColor.needsUpdate=true; } }
+  mk(new THREE.BoxGeometry(.06,1,2.48),new THREE.MeshLambertMaterial({map:TRENCH_TEX.planks,color:0x9a8266}),board,e=>{ q.setFromAxisAngle(up,e[3]); M4.compose(p.set(e[0],e[1],e[2]),q,sc.set(1,e[4],1)); });
+  mk(new THREE.BoxGeometry(.04,1,2.48),new THREE.MeshLambertMaterial({map:TRENCH_TEX.corr,color:0xe0dcd4}),corr,e=>{ q.setFromAxisAngle(up,e[3]); M4.compose(p.set(e[0],e[1],e[2]),q,sc.set(1,e[4],1)); });
+  mk(new THREE.BoxGeometry(.72,.07,1.0),new THREE.MeshLambertMaterial({map:TRENCH_TEX.duck,color:0xa08a6c}),duck,e=>{ q.setFromAxisAngle(up,e[3]); M4.compose(p.set(e[0],e[1],e[2]),q,sc.set(1,1,1)); },false);
+  { const pg=THREE.BufferGeometryUtils.mergeBufferGeometries([new THREE.BoxGeometry(.11,1,.11),new THREE.BoxGeometry(.05,.3,.05).translate(0,.62,0)]);
+    mk(pg,new THREE.MeshLambertMaterial({color:0x4a3a2a}),post,e=>{ q.identity(); M4.compose(p.set(e[0],e[1],e[2]),q,sc.set(1,e[3],1)); }); }
+  mk(new THREE.BoxGeometry(.75,.4,.45),new THREE.MeshLambertMaterial({map:TRENCH_TEX.crate}),crate,e=>{ q.setFromAxisAngle(up,e[3]); M4.compose(p.set(e[0],e[1],e[2]),q,sc.set(1,1,1)); });
+  { const bg=new THREE.CylinderGeometry(.28,.28,.85,10); bg.translate(0,.425,0); mk(bg,new THREE.MeshLambertMaterial({color:0x5a5040}),barrel,e=>{ q.identity(); M4.compose(p.set(e[0],e[1],e[2]),q,sc.set(1,1,1)); }); }
+  { const rails=[-.22,.22].map(x=>new THREE.BoxGeometry(.06,1,.05).translate(x,.5,0)), rungs=[]; for(let k=0;k<5;k++) rungs.push(new THREE.BoxGeometry(.44,.04,.04).translate(0,.12+k*.2,0));
+    const lg=THREE.BufferGeometryUtils.mergeBufferGeometries([...rails,...rungs].map(g=>g.toNonIndexed()));
+    mk(lg,new THREE.MeshLambertMaterial({color:0x6a5236}),ladder,e=>{ q.setFromAxisAngle(up,e[3]+Math.PI/2); q2.setFromAxisAngle(ax,.32); q.multiply(q2); M4.compose(p.set(e[0],e[1],e[2]),q,sc.set(1,e[4]+.5,1)); }); }
 }
 
 // Casas en ruinas desde el arranque: techo hundido y paredes ennegrecidas, o derrumbe completo con escombros
