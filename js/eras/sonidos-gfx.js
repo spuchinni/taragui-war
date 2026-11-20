@@ -9,11 +9,14 @@
      cadenas (chain_0) si arregla la oruga, herramienta a aire (tool_0, la "clavadora") si arregla el motor o el cañón; a veces la otra.
    · Semiorugas (20/11/2026, pedido de Sebastián): el Sd.Kfz. 251, el M3 y el M16 que no maneja el jugador suenan con un motor de
      camión en bucle (truck_0: ciclo de 15,284 s con fundido, 0,3 s de margen a cada lado por el retardo del mp3), con posición,
-     a menos de 220 m de la cámara; el tono sube con la velocidad. */
+     a menos de 220 m de la cámara; el tono sube con la velocidad.
+   · Aviones de apoyo de las épocas 3–4 (20/11/2026, pedido de Sebastián): el ataque aéreo pedido (Ju 87, Il-2, P-47, Typhoon,
+     Northrop) y el P-47 que castiga usan fighter_0: el tramo a plena potencia de un despegue de caza de la 2ª Guerra (Pixabay,
+     scottishperson #333260), en bucle de 3,15 s con 0,3 s de margen. La Guerra Fría (A-10) y los transportes no cambian. */
 (function(){
-  if(typeof SND_FILES!=='undefined') Object.assign(SND_FILES,{smg:1,hatcho:1,hatchc:1,pass:1,mag:1,magshot:1,tool:1,chain:1,truck:1});
+  if(typeof SND_FILES!=='undefined') Object.assign(SND_FILES,{smg:1,hatcho:1,hatchc:1,pass:1,mag:1,magshot:1,tool:1,chain:1,truck:1,fighter:1});
   const ready=()=>{ if(typeof AC==='undefined'||!AC||typeof SFX==='undefined') return false;
-    for(const k of ['smg','hatcho','hatchc','pass','mag','magshot','tool','chain','truck']) if(!SFX[k]){ SFX[k]=[]; sndFetch(`snd/${k}_0.mp3`).then(ab=>AC.decodeAudioData(ab)).then(b=>SFX[k].push(b)).catch(()=>{}); }
+    for(const k of ['smg','hatcho','hatchc','pass','mag','magshot','tool','chain','truck','fighter']) if(!SFX[k]){ SFX[k]=[]; sndFetch(`snd/${k}_0.mp3`).then(ab=>AC.decodeAudioData(ab)).then(b=>SFX[k].push(b)).catch(()=>{}); }
     return true; };
   const SMG={mp40:1,ppsh:1,thompson:1,sten:1};
   const MAG={tam:1,tam2c:1,vctp:1,sk105:1,patagon:1}, MAG_LEN=1.44;
@@ -28,6 +31,20 @@
   const _fm=fireMG; fireMG=function(t){ const p=curMG; curMG=t; try{ return _fm.apply(this,arguments); } finally{ curMG=p; } };
   const _sf=sfx; sfx=function(n){ if(n==='mgshot'&&isMag(curMG)&&SFX.magshot&&SFX.magshot.length){ const a=[...arguments]; a[0]='magshot'; return _sf.apply(this,a); } return _sf.apply(this,arguments); };
   let passG=-99;
+  const FIGHTER_LEN=3.15; let fighterNext=false;
+  const _ml=movingLoop; movingLoop=function(name,vol,o){ if(!fighterNext||!AC||!SFX.fighter||!SFX.fighter.length) return _ml.apply(this,arguments);
+    o=o||{}; const ref=o.ref||60, lp=o.lp||6000;
+    const src=AC.createBufferSource(); src.buffer=SFX.fighter[0]; src.loop=true; src.loopStart=.3; src.loopEnd=.3+FIGHTER_LEN; src.playbackRate.value=rand(.95,1.05);
+    const f=AC.createBiquadFilter(); f.type='lowpass'; f.frequency.value=lp; const g=AC.createGain(); g.gain.value=vol*.9;
+    const pn=AC.createPanner(); pn.panningModel='equalpower'; pn.distanceModel='inverse'; pn.refDistance=ref; pn.rolloffFactor=1;
+    src.connect(f).connect(g).connect(pn).connect(extBus); src.start(0,.3+Math.random()*FIGHTER_LEN);
+    const L={dead:false, fighter:1, set(p){ if(pn.positionX){pn.positionX.value=p.x;pn.positionY.value=p.y;pn.positionZ.value=p.z;} else pn.setPosition(p.x,p.y,p.z);
+        const d=p.distanceTo(camera.position); f.frequency.value=Math.max(500,lp*Math.exp(-d/500)); },
+      stop(){ if(L.dead) return; L.dead=true; liveLoops.delete(L); try{ g.gain.setTargetAtTime(0,AC.currentTime,.4); src.stop(AC.currentTime+2); }catch(e){} }};
+    liveLoops.add(L); return L; };
+  const propEra=()=>{ const e=(typeof W!=='undefined'&&W&&W.era)||5; return e>=3&&e<5; };
+  for(const fn of ['airPass','a10Strike']) if(typeof window[fn]==='function'){ const _o=window[fn];
+    window[fn]=function(){ const p=fighterNext; fighterNext=propEra(); try{ return _o.apply(this,arguments); } finally{ fighterNext=p; } }; }
   const HT={ht_de:1,ht_al:1,m16mgmc:1}, TRUCK_LEN=15.284, trucks=new Map();
   function truckLoop(){ const src=AC.createBufferSource(); src.buffer=SFX.truck[0]; src.loop=true; src.loopStart=.3; src.loopEnd=.3+TRUCK_LEN;
     const f=AC.createBiquadFilter(); f.type='lowpass'; f.frequency.value=5000; const g=AC.createGain(); g.gain.value=0;

@@ -11,6 +11,7 @@
 //  prop_0 (avioneta a hélice, en bucle) ............. Freesound #648720, itinerantmonk108, bi-plane flyby CC0
 //  mgburst_0, mgshot_0, siren_0, flyover_0 .......... Pixabay (freesound_community) ...... licencia de contenido de Pixabay
 //  menu_0 ........................................... Pixabay #620908, mfcc, "Military War" ... licencia de contenido de Pixabay
+//  fighter_0 (caza a hélice, épocas 3–4) ............ Pixabay #333260, scottishperson, WW2 fighter plane takeoff ... licencia de contenido de Pixabay
 //  smg_0, hatcho_0, hatchc_0, pass_0, mag_0, magshot_0, tool_0, chain_0, truck_0 ... GFXSounds (cuenta gratis; mag = M240B, tool = clavadora, chain = cadenas, truck = motor de camión) ... con crédito en Ajustes → Créditos
 //  ric_2/3, shellin_0–3, bombw_0, nukew_0, nukeb_0, plane_0, gau8_0 ... hechos por código (herramientas/sonidos/sintetizar.py)
 //  infamb_0, intro_0 ................................ mezcla por código con grabaciones CC0 de qubodup
