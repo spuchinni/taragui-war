@@ -26,33 +26,75 @@
     for(let k=0;k<n;k++){ const heavy=k<(front||0); rbox(root,heavy?.12:.05,h,L-.03,so+(heavy?s*.03:0),y-h/2,z0-(k+.5)*L,mat,.015); } };
 
   // ================= M1 Abrams (det 'abr') =================
-  // 7 ruedas con barras de torsión, 2 rodillos, motriz atrás; faldones con las 3 primeras placas gruesas. Casco en cuña chato, conductor
-  // al medio, rejilla grande de la turbina en la popa. Torre soldada de caras planas (blindaje Chobham) muy ancha y con el cesto atrás;
-  // 105 mm M68 con manga térmica y evacuador, visor GPS a la derecha, cúpula del jefe con la .50, M240 del cargador, lanzahumos M250.
-  function abrGear(root,I,x,s,tw,zf,zr,mat){ const r=.32, zs=span(zf-1.15,zr+1.1,7);
-    wheelsAt(root,x,r,zs,mat,{rim:.78,holes:6}); rollers(root,x,I.trF-.05,[zs[1]-.3,zs[4]+.2],mat);
-    sprocketT(root,x,I.trR*.62,zr+.36,.32,11,mat); dWheel(root,x,I.trF*.62,zf-.4,.3,mat,{rim:.75});
-    skirtPanels(root,x,s,tw,I.trF+.1,.72,zf-.3,zr+.35,7,mat,3); }
+  // 2.ª versión (20/11/2026, pedido de Sebastián con modelos de Sketchfab de referencia: M1A1/M1A2 de varios autores; hecho por código).
+  // M1 de 105 mm: casco bajo (techo a ~1,46 m) y torre grande y chata (~0,92 m) casi tan ancha como el casco, que llega hasta el borde del
+  // glacis. Torre soldada de caras planas: mejillas en cuña con el frente muy inclinado, costados rectos, cesto de caños detrás del bustle con
+  // bolsas y cajones, cajones a los costados del bustle, paneles de alivio en el techo, pasamanos, cúpula del jefe con la .50 (CWS), M240 del
+  // cargador en su aro, visor GPS en su "casita" a la derecha, sensor de viento, M250 en las mejillas. Tren: 7 ruedas, 2 rodillos, motriz atrás;
+  // faldones que bajan hasta la mitad de las ruedas (se ve la mitad de abajo), con las 3 primeras placas gruesas y la de punta recortada.
+  const bagM=new THREE.MeshLambertMaterial({color:0x5c5a3a}), canvM=new THREE.MeshLambertMaterial({color:0x7d7352}), boxM=new THREE.MeshLambertMaterial({color:0x4a4a36});
+  function abrGear(root,I,x,s,tw,zf,zr,mat){ const r=.32, zs=span(zf-1.2,zr+1.12,7);
+    wheelsAt(root,x,r,zs,mat,{rim:.78,holes:6}); rollers(root,x,I.trF-.05,[zs[1]-.25,zs[4]+.25],mat);
+    sprocketT(root,x,I.trR*.62,zr+.36,.32,11,mat); dWheel(root,x,I.trF*.62,zf-.42,.3,mat,{rim:.75});
+    // faldones: de la línea del techo del casco hasta la mitad de las ruedas
+    const so=x+s*(tw/2+.07), top=I.deck-.03, bot=.56, z0=zf-.12, z1=zr+.3, n=7, Lp=(z0-z1)/n, n0=root.children.length;
+    for(let k=0;k<n;k++){ const a=z0-k*Lp, b=a-Lp+.025, heavy=k<3, th=heavy?.13:.05, xb=so+s*(heavy?.04:0);
+      const P=k===0?[[a-.02,top],[b,top],[b,bot-.06],[a-.42,bot-.06],[a-.02,bot+.32]]:[[a,top],[b,top],[b,bot],[a,bot]];   // la de punta, recortada abajo adelante
+      profMesh(root,P,th,xb,mat);
+      if(heavy) for(const yy of [top-.1,bot+.12]) for(const zz of [a-.15,b+.15]) cyl(root,.025,.025,.03,xb+s*th/2,yy,zz,6,darkMat).rotation.z=Math.PI/2; }   // bulones
+    box(root,.05,.05,z0-z1,so+s*.02,top+.02,(z0+z1)/2,darkMat);                                                                   // borde de arriba
+    for(let q=n0;q<root.children.length;q++) root.children[q].userData.stand=1; }
   function abrHull(root,M,I,mat,iw2,deck,gz,zf,zr,L){ const hw=M.W/2, fy=Math.max(I.trF,I.trR)+.06;
-    { const p=glacisPt(I,deck,gz,zf,.08,.04); hatchP(root,0,p.y,p.z-.25,.26,3,mat,.28); }                                        // conductor al medio
-    for(const sx of [-1,1]){ lights(root,sx*(hw-.3),fy+.12,zf-.18); box(root,I.trW*.95,.03,.35,sx*(hw-I.trW/2),fy-.02,zf-.05,rubM); }  // faros y guardabarros
-    shackles(root,iw2*.32,.62,zf+.02);
-    grille(root,iw2*.85,2.3,0,deck,zr+1.3,mat,12);                                                                             // rejillas del motor
-    { const g=rbox(root,iw2*.6,.42,.08,0,deck-.32,zr-.02,darkMat,.02); for(let i=0;i<6;i++) box(g,iw2*.58,.03,.03,0,-.16+i*.065,.05,mat); }   // escape de la turbina
-    for(const sx of [-1,1]){ const c=tube(root,.03,L*.55,sx*(hw-.06),deck-.1,-.3,darkMat,6); } }
+    { const p=glacisPt(I,deck,gz,zf,.08,.04); hatchP(root,0,p.y,p.z-.25,.27,3,mat,.29); }                                        // conductor al medio con 3 periscopios
+    for(const sx of [-1,1]){ const h=rbox(root,.34,.2,.22,sx*(hw-.32),fy+.16,zf-.22,mat,.03);                                     // faros en su caja sobre el guardabarros
+      for(const dx of [-.08,.08]) cyl(h,.05,.05,.04,dx,.01,.11,10,lens()).rotation.x=Math.PI/2;
+      box(root,I.trW*.9,.03,.4,sx*(hw-I.trW/2),fy-.02,zf-.02,rubM); }                                                            // guardabarros de goma
+    shackles(root,iw2*.3,.6,zf+.02);
+    { const g=new THREE.Mesh(new THREE.TorusGeometry(.09,.025,6,10),darkMat); g.position.set(0,.5,zf+.04); root.add(g); }            // gancho de la trompa
+    // techo del motor: dos tapas grandes con rejillas y manijas
+    for(const [z,l] of [[zr+2.5,1.3],[zr+1.1,1.4]]){ box(root,iw2*.9,.02,l,0,deck+.01,z,darkMat); rbox(root,iw2*.88,.04,l-.06,0,deck+.03,z,mat,.01);
+      grille(root,iw2*.38,l*.7,-iw2*.22,deck+.05,z,mat,7); grille(root,iw2*.38,l*.7,iw2*.22,deck+.05,z,mat,7);
+      for(const sx of [-1,1]) box(root,.18,.04,.04,sx*iw2*.4,deck+.09,z,darkMat); }
+    // popa: rejilla grande del escape de la turbina, luces, gancho de remolque, teléfono
+    { const g=rbox(root,iw2*.7,.5,.08,0,deck-.36,zr-.02,darkMat,.02); for(let i=0;i<8;i++) box(g,iw2*.68,.025,.03,0,-.2+i*.057,.05,mat); }
+    for(const sx of [-1,1]){ const l=rbox(root,.22,.16,.08,sx*(hw-.35),deck-.18,zr-.03,darkMat,.02); box(l,.08,.06,.02,-.04,0,-.05,_tlRed); box(l,.08,.06,.02,.05,0,-.05,lens()); }
+    { const p=cyl(root,.07,.07,.12,0,.62,zr-.08,8,darkMat); p.rotation.x=Math.PI/2; box(root,.12,.12,.12,0,.62,zr-.03,darkMat); }
+    rbox(root,.2,.26,.12,hw-.55,deck-.55,zr-.05,mat,.02);                                                                         // caja del teléfono de la infantería
+    for(const sx of [-1,1]) box(root,I.trW*.9,.35,.02,sx*(hw-I.trW/2),.95,zr+.05,rubM);                                           // barreros
+    for(const sx of [-1,1]) tube(root,.03,L*.5,sx*(hw-.08),deck-.08,-.4,darkMat,6); }                                             // cables de remolque
+  const _tlRed=new THREE.MeshBasicMaterial({color:0x7a1010});
   function abrTurret(tur,G,M,I,mat,gy){ const hw=M.tw/2, hl=M.tl/2, th=M.th;
-    prism(tur,plan(hw,hl,[[-.3,1],[.3,1],[.96,.5],[1,-.55],[.9,-1],[-.9,-1],[-1,-.55],[-.96,.5]]),th,.1,0,0,0,mat);           // caras planas, frente en cuña
-    rbox(G.gp,.62,.5,.4,0,0,.05,mat,.04);                                                                                     // mantelete hundido
-    tube(G.barrel,M.gr*1.3,M.gl*.72,0,0,M.gl*.42+.15,mat); tube(G.barrel,M.gr*1.8,.55,0,0,M.gl*.48,mat,12);                // manga térmica y evacuador
-    tube(G.gp,.025,.35,-.28,-.05,.32,darkMat,6);
-    { const b=rbox(tur,.55,.38,.6,hw*.5,th+.17,hl*.45,mat,.04); box(b,.38,.2,.02,0,.04,.31,lens()); }                          // visor GPS del apuntador
-    cupola(tur,hw*.45,th,-hl*.05,.36,.3,6,mat);                                                                             // cúpula del jefe
-    mgMount(tur,hw*.45,th+.62,hl*.1,{post:.3,cal:12.7,...MG_AA,seat:['commander']});                                          // .50 M2
-    cyl(tur,.3,.3,.06,-hw*.42,th+.03,-hl*.1,14,mat); mgMount(tur,-hw*.42,th+.45,hl*.05,{post:.3,...MG_AA,seat:['loader']});   // M240 del cargador
-    for(const sx of [-1,1]) smoke(tur,sx*hw*.93,th*.55,hl*.42,3,sx,2);                                                       // M250: 6 por lado
-    basket(tur,M.tw*.82,.45,.7,th*.65,-hl-.32,true);                                                                        // cesto
-    cyl(tur,.02,.02,.5,0,th+.25,-hl*.85,4,darkMat); cyl(tur,.06,.06,.08,0,th+.52,-hl*.85,8,darkMat);                          // sensor de viento cruzado
-    antennas(tur,[[-hw*.7,th,-hl*.8],[hw*.7,th,-hl*.8]]); }
+    { const m=prism(tur,plan(hw,hl,[[-.17,1],[.17,1],[.98,.42],[1,-.62],[.93,-1],[-.93,-1],[-1,-.62],[-.98,.42]]),th,0,0,0,0,mat), P=m.geometry.attributes.position;
+      for(let i=0;i<P.count;i++){ const f=clamp(P.getY(i)/th,0,1), z=P.getZ(i); P.setX(i,P.getX(i)*(1-.05*f));                       // costados apenas hacia adentro
+        if(z>hl*.1) P.setZ(i,z-f*.62*(z-hl*.1)/(hl*.9)); else if(z<-hl*.8) P.setZ(i,z+f*.08); }                                       // frente muy inclinado
+      m.geometry.computeVertexNormals(); }
+    rbox(G.gp,.56,.46,.42,0,0,.0,mat,.03);                                                                                        // escudo del cañón, hundido entre las mejillas
+    tube(G.barrel,M.gr*1.32,M.gl*.66,0,0,M.gl*.48+.2,mat); tube(G.barrel,M.gr*1.85,.5,0,0,M.gl*.44,mat,12);                       // manga térmica y evacuador
+    for(let k=1;k<4;k++) tube(G.barrel,M.gr*1.42,.04,0,0,M.gl*.18+k*M.gl*.2,darkMat,10);                                          // abrazaderas de la manga
+    tube(G.barrel,M.gr*1.15,.12,0,0,M.gl-.06,darkMat,10);                                                                          // boca
+    tube(G.gp,.025,.35,-.26,-.05,.3,darkMat,6);                                                                                    // coaxial
+    { const b=rbox(tur,.62,.42,.66,hw*.52,th+.19,hl*.36,mat,.04); box(b,.46,.22,.02,0,.04,.34,lens()); box(b,.66,.04,.7,0,.23,0,mat); }   // GPS
+    cyl(tur,.12,.12,.36,-hw*.55,th+.18,hl*.38,8,darkMat); { const g=rbox(tur,.26,.2,.3,-hw*.55,th+.42,hl*.38,mat,.03); box(g,.16,.1,.02,0,0,.16,lens()); }   // GAS/visor del cargador... (mira auxiliar)
+    cupola(tur,hw*.45,th,-hl*.08,.38,.3,6,mat); mgMount(tur,hw*.45,th+.62,hl*.06,{post:.3,cal:12.7,...MG_AA,seat:['commander']});  // cúpula y .50
+    cyl(tur,.36,.36,.06,-hw*.42,th+.03,-hl*.18,16,darkMat); cyl(tur,.31,.33,.07,-hw*.42,th+.07,-hl*.18,16,mat);                      // aro del cargador
+    mgMount(tur,-hw*.42,th+.45,-hl*.05,{post:.3,...MG_AA,seat:['loader']});                                                         // M240
+    // techo: paneles de alivio del bustle (munición), argollas, pasamanos
+    for(const sx of [-1,1]){ const z=-hl*.68, w=hw*.62; box(tur,w,.025,hl*.42,sx*hw*.38,th+.03,z,mat);
+      for(const [dx,dz,ww,ll] of [[0,hl*.21,w,.02],[0,-hl*.21,w,.02],[w/2,0,.02,hl*.42],[-w/2,0,.02,hl*.42]]) box(tur,ww,.03,ll,sx*hw*.38+dx,th+.045,z+dz,darkMat); }
+    for(const sx of [-1,1]) for(const z of [hl*.25,-hl*.85]){ const e=new THREE.Mesh(_tgShackle,darkMat); e.scale.setScalar(.6); e.position.set(sx*hw*.82,th+.04,z); tur.add(e); }
+    for(const sx of [-1,1]){ const x=sx*(hw+.04); tube(tur,.018,hl*1.0,x,th*.82,-hl*.3,darkMat,6); for(const z of [hl*.15,-hl*.75]) box(tur,.06,.03,.03,x-sx*.03,th*.82,z,darkMat); }
+    for(const sx of [-1,1]) smoke(tur,sx*hw*.9,th*.62,hl*.32,3,sx,2);                                                              // M250: 6 por lado en las mejillas
+    for(const sx of [-1,1]){ const b=rbox(tur,.32,th*.55,1.3,sx*(hw+.1),th*.45,-hl*.62,mat,.03); for(const z of [-.3,.3]) box(b,.03,.06,.12,sx*.17,th*.12,z,darkMat); box(b,.36,.03,1.32,0,th*.29,0,mat); }   // cajones del bustle con tapa y trabas
+    // cesto: caños alrededor y carga adentro
+    { const g=new THREE.Group(); g.position.set(0,th*.55,-hl-.42); tur.add(g); const w=M.tw*.86, l=.8, h=.42;
+      box(g,w,.03,l,0,-h/2,0,darkMat);
+      for(const y of [h/2,0]){ tube(g,.022,l,-w/2,y,0,darkMat,6); tube(g,.022,l,w/2,y,0,darkMat,6); cyl(g,.022,.022,w,0,y,-l/2,6,darkMat).rotation.z=Math.PI/2; }
+      for(const xx of [-w/2,-w/4,0,w/4,w/2]) cyl(g,.02,.02,h,xx,0,-l/2,6,darkMat); for(const sx of [-1,1]) cyl(g,.02,.02,h,sx*w/2,0,0,6,darkMat);
+      const bag=(x,y,z,r,len,m,ry)=>{ const c=cyl(g,r,r,len,x,y,z,10,m); c.rotation.set(0,ry||0,Math.PI/2); };
+      bag(-w*.28,-.06,.08,.17,w*.4,bagM); bag(w*.22,-.08,.12,.15,w*.42,canvM,.12); bag(-w*.05,.1,-.12,.13,w*.5,bagM,-.08);
+      rbox(g,.5,.28,.36,w*.34,-.07,-.18,boxM,.02); rbox(g,.42,.22,.3,-w*.36,-.1,-.2,canvM,.03); rbox(g,.3,.2,.26,0,-.1,.22,boxM,.02); }
+    cyl(tur,.02,.02,.55,0,th+.27,-hl*.88,4,darkMat); cyl(tur,.06,.06,.08,0,th+.56,-hl*.88,8,darkMat);                                // sensor de viento
+    antennas(tur,[[-hw*.72,th,-hl*.84],[hw*.72,th,-hl*.84]]); }
   DET.abr={gear:abrGear,hull:abrHull,tur:abrTurret};
 
   // ================= Leopard 2A4 (det 'leo2') =================
@@ -322,7 +364,7 @@
   // ---- los modelos nuevos (los datos de juego no cambian) ----
   const set=(k,m)=>{ if(VEH[k]){ const o=VEH[k].m||{}; if(o.wheeled) m.wheeled=1; VEH[k].m=m; } };
   const W=(o)=>Object.assign({trH:.95,lowF:.45,sideH:.55,tur:'none',ins:0,coax:0},o);
-  set('abrams',{ww1:'w2',L:7.92,W:3.66,H:2.44,tz:-.3,tw:3.45,th:.78,tl:4.7,gl:5.2,gr:.07,w2:W({trW:.64,trF:.95,trR:.95,deck:1.6,glacis:1.9,lowF:.48,nW:7,wR:.32,ret:2,rearDrive:true,det:'abr'})});
+  set('abrams',{ww1:'w2',L:7.92,W:3.66,H:2.44,tz:-.42,tw:3.56,th:.94,tl:4.9,gl:5.3,gr:.07,w2:W({trW:.64,trF:.95,trR:.95,deck:1.38,glacis:1.9,lowF:.48,nW:7,wR:.32,ret:2,rearDrive:true,det:'abr'})});
   set('leo2a4',{ww1:'w2',L:7.72,W:3.7,H:2.79,tz:-.25,tw:3.35,th:.82,tl:4.4,gl:5.3,gr:.075,w2:W({trW:.64,trF:1.0,trR:.95,deck:1.65,glacis:1.6,lowF:.5,nW:7,wR:.35,ret:4,rearDrive:true,det:'leo2'})});
   set('centurion',{ww1:'w2',L:7.6,W:3.39,H:3.0,tz:.2,tw:2.75,th:.85,tl:3.7,gl:5.3,gr:.07,w2:W({trW:.6,trF:1.05,trR:1.05,deck:1.75,glacis:1.25,sideH:.6,nW:6,wR:.31,ret:6,rearDrive:true,det:'cent'})});
   set('chieftain',{ww1:'w2',L:7.52,W:3.5,H:2.9,tz:-.1,tw:3.0,th:.85,tl:3.9,gl:6.2,gr:.075,w2:W({trW:.6,trF:1.0,trR:1.0,deck:1.6,glacis:2.1,lowF:.4,nW:6,wR:.3,ret:4,rearDrive:true,det:'chief'})});
