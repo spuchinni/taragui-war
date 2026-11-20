@@ -40,7 +40,7 @@
       <label>Tanque de los blancos</label><select id="pK"><option value="var">Variados (de la época del mapa, bando contrario)</option>${tankOpts(CFG.tgtK)}</select>
       <div class="ck"><label><input type="checkbox" id="cG" ${CFG.god?'checked':''}> No se rompe</label><label><input type="checkbox" id="cA" ${CFG.ammo?'checked':''}> Munición infinita</label>
         <label><input type="checkbox" id="cR" ${CFG.rel?'checked':''}> Recarga al instante</label><label><input type="checkbox" id="cS" ${CFG.sup?'checked':''}> Apoyos gratis</label></div>
-      <p class="s" style="margin-top:8px">Adentro: barra arriba a la izquierda (cambiar tanque, poner blancos, clima, trucos) · L = cámara libre (W A S D, Q/E, Mayús rápido, mouse mira) · Esc → Abandonar para volver.</p>
+      <p class="s" style="margin-top:8px">Adentro: barra arriba a la izquierda (cambiar tanque, poner blancos, clima, trucos) · L = cámara libre (W A S D, Q/E, Mayús rápido, mouse mira) · Esc = pausa con el menú (cambiar mapa, Abandonar).</p>
       <div class="row"><button class="go" id="pGo">Entrar</button><button class="go alt" id="pX">Cerrar</button></div></div>`;
     box.style.display='flex'; const v=id=>box.querySelector(id).value, c=id=>box.querySelector(id).checked?1:0;
     box.querySelector('#pK').value=CFG.tgtK in VEH?CFG.tgtK:'var';
@@ -59,7 +59,7 @@
     player=spawnCrew(playerCrew,key,sp); tut.start=player.pos.clone();
     if(CFG.tgt!=='ninguno') [150,260,400,550,750].forEach((d,i)=>addTarget(sp.x+tut.u[0]*d+(-tut.u[1])*(i%2?-1:1)*(20+i*10),sp.z+tut.u[1]*d+tut.u[0]*(i%2?-1:1)*(20+i*10)));
     camYaw=player.heading; camPitch=.02; camDist=14; state='play'; $('overlay').style.display='none'; document.body.classList.remove('deploy','menu','home'); document.body.classList.add('tut','prb');
-    lock(); updateHud(); banner(player.T.label,'🧪 Modo de pruebas · Esc → Abandonar para volver',3); paintBar(); }
+    lock(); updateHud(); banner(player.T.label,'🧪 Modo de pruebas · Esc = pausa y menú (cambiar mapa)',3); paintBar(); }
   function tgtKey(){ if(CFG.tgtK&&VEH[CFG.tgtK]) return CFG.tgtK; const e=W.era||3, side=(n)=>['de','it','jp'].includes(n);
     const myAx=side(VEH[tut.key].nation), nats=Object.keys(NATIONS).filter(n=>side(n)!==myAx); let L=[]; for(const n of nats) try{ L=L.concat(vehTreeE(n,e)); }catch(e){}
     if(!L.length) L=tankList().filter(k=>eraOf(k)===e); return L[(Math.random()*L.length)|0]||tut.key; }
@@ -80,9 +80,26 @@
   { const _cs=callAirstrike; callAirstrike=function(by){ if(tut&&tut.prb&&!CFG.auto&&by&&!by.isPlayer&&!by._prb) return false; return _cs.apply(this,arguments); }; }
   { const _cn=callNuke; callNuke=function(by){ if(tut&&tut.prb&&!CFG.auto&&by&&!by.isPlayer&&!by._prb) return false; return _cn.apply(this,arguments); }; }
   if(typeof onZoneCaptured==='function'){ const _oz=onZoneCaptured; onZoneCaptured=function(){ if(tut&&tut.prb&&!CFG.auto) return; return _oz.apply(this,arguments); }; }
-  // los blancos que "se mueven" no tiran
-  { const _bf=botFire; botFire=function(t){ if(tut&&tut.prb&&t&&t.prbT&&(t.prbM?t.prbM!=='combate':CFG.tgt!=='combate')) return; return _bf.apply(this,arguments); }; }
-  { const _ua=updateAI; updateAI=function(t,dt){ if(tut&&tut.prb&&t&&t.prbM==='quieto'){ drive(t,0,0,dt); return; } return _ua.apply(this,arguments); }; }
+  // los blancos que "se mueven" (o están quietos) no tiran NADA: ni el cañón apuntado (botFire), ni la explosiva que la IA tira directo
+  // con fireGun, ni la ametralladora (fireMG). Antes solo se cortaba botFire y te seguían pegando con la explosiva y la ametralladora.
+  const noFire=t=>!!(tut&&tut.prb&&t&&t!==player&&t.prbT&&(t.prbM?t.prbM!=='combate':CFG.tgt!=='combate'));
+  { const _bf=botFire; botFire=function(t){ if(noFire(t)) return; return _bf.apply(this,arguments); }; }
+  { const _fg=fireGun; fireGun=function(t){ if(noFire(t)) return; return _fg.apply(this,arguments); }; }
+  { const _fm=fireMG; fireMG=function(t){ if(noFire(t)) return; return _fm.apply(this,arguments); }; }
+  // "Se mueve, no tira": antes la IA veía al jugador, frenaba para apuntar y se quedaba clavada esperando un tiro que nunca salía.
+  // Ahora no busca blancos: recorre la zona donde se lo puso (puntos al azar a 40–140 m), sin perseguir a nadie.
+  const prbMode=t=>t.prbM||(CFG.tgt==='mueven'?'mueve':CFG.tgt==='quietos'?'quieto':'combate');
+  function wander(t,dt){ t.target=null; t.infT=null; t.thinkT=1; if(!t.prbHome) t.prbHome=t.pos.clone();
+    const G=t.prbGo; if(!G||Math.hypot(G.x-t.pos.x,G.z-t.pos.z)<8||now>t.prbGoT){ const a=Math.random()*6.283, r=40+Math.random()*100, bx=(W.bx||700)-40, bz=(W.bz||700)-40;
+      t.prbGo={x:clamp(t.prbHome.x+Math.sin(a)*r,-bx,bx),z:clamp(t.prbHome.z+Math.cos(a)*r,-bz,bz)}; t.prbGoT=now+25; }
+    const mv=steerTo(t,t.prbGo,dt); let th=mv.throttle*.7, st=mv.steer;
+    if(t.revT>0){ t.revT-=dt; th=-.8; st=t.revSteer||1; }
+    else if(Math.abs(th)>.4&&(t.moved||0)<1.2){ t.stuckT=(t.stuckT||0)+dt; if(t.stuckT>1.5){ t.revT=1.4; t.revSteer=Math.random()<.5?-1:1; t.stuckT=0; t.prbGo=null; } }
+    else t.stuckT=0;
+    aimAt(t,new THREE.Vector3(t.pos.x+Math.sin(t.heading)*100,t.pos.y+2,t.pos.z+Math.cos(t.heading)*100),dt);
+    drive(t,th,st,dt); }
+  { const _ua=updateAI; updateAI=function(t,dt){ if(tut&&tut.prb&&t&&t.prbT&&t!==player){ const m=prbMode(t); if(m==='quieto'&&t.prbM){ drive(t,0,0,dt); return; } if(m==='mueve'){ wander(t,dt); return; } }
+      return _ua.apply(this,arguments); }; }
   // cada cuadro: trucos y blancos que reaparecen
   // (va en el cuadro y no en updateTutorial: el envoltorio del campo de tiro de base.js no sigue la cadena con tut.range)
   function prbTick(dt){ if(tut&&tut.prb&&player&&state==='play'){
@@ -166,17 +183,28 @@
     if(F.on&&e.code!=='Escape'){ F.keys[e.code]=true; e.stopImmediatePropagation(); e.preventDefault(); } },true);
   document.addEventListener('keyup',e=>{ if(F.on){ F.keys[e.code]=false; e.stopImmediatePropagation(); } },true);
   document.addEventListener('mousemove',e=>{ if(!F.on||!(tut&&tut.prb)) return; if(document.pointerLockElement||e.buttons){ F.yaw-=(e.movementX||0)*.0026; F.pitch=Math.max(-1.45,Math.min(1.45,F.pitch-(e.movementY||0)*.0026)); } },true);
-  { const _f=frame; frame=function(dt){ if(tut&&tut.prb&&state==='play'&&PZ.on){ try{ releaseAll(); mouseDown=false; cullUpdate(); }catch(e){} renderer.render(scene,camera); return; }   // ⏸ pausa: todo quieto, solo la cámara libre
+  { const _f=frame; frame=function(dt){ if(tut&&tut.prb&&((state==='play'&&PZ.on)||state==='paused')){ try{ releaseAll(); mouseDown=false; cullUpdate(); }catch(e){} renderer.render(scene,camera); return; }   // ⏸ pausa (P) o menú de Esc: todo quieto (en pruebas el menú de Esc sí pausa)
       if(F.on&&tut&&tut.prb){ try{ releaseAll(); mouseDown=false; }catch(e){} } const r=_f.apply(this,arguments); try{ prbTick(dt); }catch(e){ console.warn('prb',e); } return r; }; }
   let lastT=performance.now();
   const _rr=renderer.render; renderer.render=function(sc,c){
-    if(F.on&&tut&&tut.prb&&state==='play'&&sc===scene&&renderer.getRenderTarget()===null){ const t=performance.now(), dt=Math.min(.1,(t-lastT)/1000); lastT=t;
+    if(F.on&&tut&&tut.prb&&(state==='play'||state==='paused')&&sc===scene&&renderer.getRenderTarget()===null){ const t=performance.now(), dt=Math.min(.1,(t-lastT)/1000); lastT=t;
       const K=F.keys, sp=(K.ShiftLeft||K.ShiftRight?60:16)*dt, fw=new THREE.Vector3(Math.sin(F.yaw)*Math.cos(F.pitch),Math.sin(F.pitch),Math.cos(F.yaw)*Math.cos(F.pitch)), rt=new THREE.Vector3(-Math.cos(F.yaw),0,Math.sin(F.yaw));
       if(K.KeyW||K.ArrowUp) F.pos.addScaledVector(fw,sp); if(K.KeyS||K.ArrowDown) F.pos.addScaledVector(fw,-sp); if(K.KeyD||K.ArrowRight) F.pos.addScaledVector(rt,sp); if(K.KeyA||K.ArrowLeft) F.pos.addScaledVector(rt,-sp);
       if(K.KeyE||K.Space) F.pos.y+=sp; if(K.KeyQ||K.ControlLeft) F.pos.y-=sp;
       const g=(typeof heightAt==='function'?heightAt(F.pos.x,F.pos.z):0)+1.2; if(F.pos.y<g) F.pos.y=g;
       cam.aspect=c.aspect; cam.fov=60; cam.position.copy(F.pos); cam.lookAt(F.pos.clone().add(fw)); cam.updateProjectionMatrix(); cam.updateMatrixWorld(); return _rr.call(this,sc,cam); }
     lastT=performance.now(); return _rr.call(this,sc,c); };
+  // ---- menú de Esc en pruebas (pedido de Sebastián): pausa todo, deja usar la barra de pruebas y cambiar de mapa sin salir ----
+  { const _pp=pausePanel; pausePanel=function(){ const r=_pp.apply(this,arguments);
+      try{ if(tut&&tut.prb){ const p=$('panel'), h=p&&p.querySelector('p'); if(h) h.textContent='⏸ Juego en pausa: no se mueve nada. Usá la barra de pruebas (arriba a la izquierda) o cambiá el mapa acá.';
+          if(p&&!document.getElementById('prbMapR')){ const d=document.createElement('div'); d.id='prbMapR'; d.setAttribute('data-notr','');
+            d.style.cssText='display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:10px 0;font:600 15px "Saira Condensed",system-ui,sans-serif;color:#cfc6b0';
+            d.innerHTML=`<span>🗺 Mapa</span><select id="prbMapS" style="flex:1;min-width:220px;background:#0e0f12;color:#fff;border:1px solid #555;border-radius:6px;padding:5px;font:500 15px system-ui">${mapOpts(builtKey||CFG.map)}</select><button class="go alt" id="prbMapG">Cambiar mapa</button>`;
+            const q=$('resume'); if(q&&q.parentNode===p) p.insertBefore(d,q); else p.appendChild(d);
+            d.querySelector('#prbMapG').onclick=()=>{ const m=d.querySelector('#prbMapS').value; if(!WORLDS[m]) return; CFG.map=m; CFG.tank=tut.key; save(); changeMap(); }; } } }catch(e){ console.warn('prb menú',e); }
+      return r; }; }
+  // rearma la batalla de pruebas en el mapa nuevo con el mismo tanque, clima y trucos (los blancos y lo agregado se van)
+  function changeMap(){ const wasF=F.on; PZ.on=false; F.on=false; try{ clearBattle(); }catch(e){ console.warn(e); } start(); if(wasF) setFree(true); }
   // ---- salir: vuelve al menú y a la época de antes, sin premios ----
   { const _cb=clearBattle; clearBattle=function(){ const was=tut&&tut.prb; const o=_cb.apply(this,arguments);
       if(was){ F.on=false; bar.style.display='none'; document.body.classList.remove('prb'); menuScreen='home'; if(prevEra!=null){ curEra=prevEra; try{ applyEraNations(curEra); }catch(e){} } }
