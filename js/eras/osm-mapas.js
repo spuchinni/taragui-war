@@ -88,7 +88,8 @@ const OSM_CFG={
             west:[{label:'Ladera de Sapper Hill',x:450,z:-640},{label:'Camino a Darwin',x:144,z:-692}]}},
   puente:{label:'Corrientes – Resistencia',desc:'El Puente General Belgrano real: 1,7 km sobre el Paraná entre la costanera de Corrientes y la orilla chaqueña. Es el único paso entre las dos ciudades.',
     hitos:o=>osmBelgrano(o),   // pilones en A, obenques y defensas (puente-belgrano.js)
-    bx:1120,bz:430,sky:0xb8c4c8,fog:[300,950],urban:1,ground:'#80864e',pisos:[1,1,2,2,3,4],fill:{p:.9,row2:.6,fr:[7,14],dp:[10,17],gap:[0,2]},deckH:30,shoreSand:0,waterCol:[86,96,82],waterHex:0x4e5c52,eastNat:['ar','ctes'],
+    // bx 1240 (antes 1120): la rampa del puente del lado de Corrientes arranca en x≈−1176 y para subir a A había que salir del mapa
+    bx:1240,bz:430,sky:0xb8c4c8,fog:[300,950],urban:1,ground:'#80864e',pisos:[1,1,2,2,3,4],fill:{p:.9,row2:.6,fr:[7,14],dp:[10,17],gap:[0,2]},deckH:30,shoreSand:0,waterCol:[86,96,82],waterHex:0x4e5c52,eastNat:['ar','ctes'],
     sp:{calle:['lapacho','jacaranda','timbo','ceibo','pindo'],parque:['lapacho','jacaranda','pindo','timbo','ceibo'],bosque:['timbo','ceibo','algarrobo']},calleArb:.3,
     zones:[{id:'A',x:-868,z:20,r:24,label:'Cabecera Corrientes'},{id:'B',x:0,z:0,r:16,label:'Centro del puente'},{id:'C',x:887,z:20,r:24,label:'Cabecera chaqueña'}],
     spawns:{east:[{label:'Corrientes, Av. Costanera',x:-1050,z:150},{label:'Corrientes, Plaza Pedro Arambulo',x:-1000,z:330}],
@@ -100,7 +101,8 @@ const OSM_CFG={
     spawns:{east:[{label:'Posadas, Parque San José',x:-1393,z:-249},{label:'Posadas, Gendarmería',x:-1418,z:-100}],
             west:[{label:'Encarnación, Plaza San Jorge',x:1368,z:-298},{label:'Encarnación, costanera',x:1293,z:-50}]}},
   salto:{label:'Represa de Salto Grande',desc:'La represa real sobre el río Uruguay: 2,5 km de camino sobre el paredón entre Concordia y Salto, con el lago arriba y el río abajo. Es el único cruce.',
-    bx:1250,bz:420,propK:.3,sky:0xb8c4c8,fog:[320,1000],ground:'#7d8a4c',deckH:12,waterCol:[74,92,92],waterHex:0x46606a,eastNat:['uy'],
+    // bx 1340 (antes 1250): el camino de la represa baja al suelo en x≈−1299 (lado Salto) y x≈1166–1326 (Concordia); antes se subía saliendo del mapa
+    bx:1340,bz:420,propK:.3,sky:0xb8c4c8,fog:[320,1000],ground:'#7d8a4c',deckH:12,waterCol:[74,92,92],waterHex:0x46606a,eastNat:['uy'],
     sp:{calle:['timbo','espinillo'],parque:['timbo','ceibo'],bosque:['timbo','algarrobo','espinillo'],monte:['espinillo','algarrobo']},
     extra:o=>osmPresa({...o,ancho:28}),
     zones:[{id:'A',x:647,z:216,r:26,label:'Cabecera Concordia'},{id:'B',x:0,z:259,r:22,label:'Sobre la represa'},{id:'C',x:-863,z:216,r:26,label:'Cabecera Salto'}],
@@ -110,6 +112,15 @@ const OSM_CFG={
 
 const osmW=(D,v)=>-v/10, osmZ=v=>v/10; // datos (dm, x = este) -> juego (m, x = oeste)
 
+// textura de la calzada de los puentes: asfalto con grano, líneas blancas de borde y línea del medio discontinua (12 m: 4,5 pintados, 7,5 sin)
+let _deckRoadTex=null;
+function deckRoadTex(){ if(_deckRoadTex) return _deckRoadTex; const c=document.createElement('canvas'); c.width=128; c.height=256; const x=c.getContext('2d');
+  x.fillStyle='#46474a'; x.fillRect(0,0,128,256); for(let i=0;i<2600;i++){ const v=55+Math.random()*30|0; x.fillStyle=`rgba(${v},${v},${v+3},.55)`; x.fillRect(Math.random()*128,Math.random()*256,1.5,1.5); }
+  x.fillStyle='rgba(30,30,32,.35)'; x.fillRect(30,0,14,256); x.fillRect(84,0,14,256);   // huellas de las ruedas, más oscuras
+  x.fillStyle='#e8e6de'; x.fillRect(5,0,4,256); x.fillRect(119,0,4,256); x.fillStyle='#e9e4cf'; x.fillRect(62,0,4,96);
+  const t=new THREE.CanvasTexture(c); t.wrapS=THREE.ClampToEdgeWrapping; t.wrapT=THREE.RepeatWrapping; t.anisotropy=typeof ANISO!=='undefined'?ANISO:4; return _deckRoadTex=t; }
+// en los mapas reales nada de postes, autos ni cercos debajo o pegados a un tablero de puente
+{ const _fs=freeSpot; freeSpot=function(x,z,m){ if(typeof W!=='undefined'&&W&&W.deckNear&&W.deckNear(x,z,(m||0)+2.5)) return false; return _fs.apply(this,arguments); }; }
 function buildOSM(key){
   const C=OSM_CFG[key], D=osmData(key), R=mulberry(([...key].reduce((a,c)=>a*31+c.charCodeAt(0),7)>>>0)), rr=(a,b)=>a+R()*(b-a), pick=a=>a[(R()*a.length)|0];
   const EX=D.ex, EZ=D.ez, bx=W.bx, bz=W.bz; W.ex=EX; W.ez=EZ;
@@ -162,6 +173,9 @@ function buildOSM(key){
   const deckAt=(x,z)=>{ const L=DG.get(dk(x,z)); if(!L) return null; let best=null; for(const S of L){ const dx=S.bx-S.ax, dz=S.bz-S.az, l=dx*dx+dz*dz; let t=l?((x-S.ax)*dx+(z-S.az)*dz)/l:0; t=clamp(t,0,1);
       if(Math.hypot(x-S.ax-dx*t,z-S.az-dz*t)<S.hw){ const y=S.ya+(S.yb-S.ya)*t; if(best===null||y>best) best=y; } } return best; };
   W.deckAt=decks.length?deckAt:null; W._decks=decks;
+  // ¿hay un tablero de puente a menos de r metros? (árboles y postes no van debajo ni pegados: atravesaban la rampa; pedido de Sebastián)
+  const deckNear=(x,z,r)=>{ if(!decks.length) return false; if(deckAt(x,z)!==null) return true; for(let k=0;k<8;k++){ const a=k*.785; if(deckAt(x+Math.cos(a)*r,z+Math.sin(a)*r)!==null) return true; } return false; };
+  W.deckNear=decks.length?deckNear:null;
   W.h=(x,z)=>{ const g=hg(x,z); if(!decks.length) return g; const d=deckAt(x,z); return d!==null&&d>g?d:g; };
   W.under=decks.length?(x,z,y)=>{ const d=deckAt(x,z); if(d===null) return null; const g=hg(x,z)+(craters.length?craterH(x,z):0); return d-g>3.4&&y<d-3.2?g:null; }:null;
   W.groundH=hg;
@@ -235,6 +249,14 @@ function buildOSM(key){
         for(let s=(i?0:8); s<L; s+=Dk.over&&Dk.ys[i]>12?42:24){ const t=s/L, X=a[0]+(b[0]-a[0])*t, Z=a[1]+(b[1]-a[1])*t, y=ya+(yb-ya)*t, g=hg(X,Z); if(y-g>3.5) piers.push({X,Z,y,g,ang,w:Dk.w}); } } }
     const deckMat=new THREE.MeshLambertMaterial({color:0x6a6862}), railMat=new THREE.MeshLambertMaterial({color:0xb8b4aa});
     const dm=new THREE.Mesh(THREE.BufferGeometryUtils.mergeBufferGeometries(dg),deckMat); dm.castShadow=dm.receiveShadow=true; worldGroup.add(dm); houseMeshes.push(dm);
+    // calzada pintada encima del tablero (pedido de Sebastián: "debería estar pintado como una ruta"): cinta de asfalto con líneas de borde
+    // y línea del medio discontinua, que sigue el puente y su pendiente (v = metros / 12, la textura se repite a lo largo)
+    { const pv=[], pu=[], pi=[]; for(const Dk of decks){ if(Dk.rail) continue; const n=Dk.pts.length, hw=Dk.w/2-.35, b0=pv.length/3;
+        for(let i=0;i<n;i++){ const a=Dk.pts[Math.max(0,i-1)], b=Dk.pts[Math.min(n-1,i+1)]; let dx=b[0]-a[0], dz=b[1]-a[1]; const l=Math.hypot(dx,dz)||1; dx/=l; dz/=l;
+          const [x,z]=Dk.pts[i], y=Dk.ys[i]+.04; pv.push(x+dz*hw,y,z-dx*hw, x-dz*hw,y,z+dx*hw); pu.push(0,Dk.cum[i]/12, 1,Dk.cum[i]/12);
+          if(i<n-1){ const k=b0+i*2; pi.push(k,k+1,k+2, k+1,k+3,k+2); } } }
+      if(pi.length){ const g=new THREE.BufferGeometry(); g.setAttribute('position',new THREE.Float32BufferAttribute(pv,3)); g.setAttribute('uv',new THREE.Float32BufferAttribute(pu,2)); g.setIndex(pi); g.computeVertexNormals();
+        const rm2=new THREE.Mesh(g,new THREE.MeshLambertMaterial({map:deckRoadTex(),polygonOffset:true,polygonOffsetFactor:-2,polygonOffsetUnits:-2})); rm2.receiveShadow=true; worldGroup.add(rm2); } }
     const rm=new THREE.Mesh(THREE.BufferGeometryUtils.mergeBufferGeometries(rg),railMat); rm.castShadow=true; worldGroup.add(rm);
     const pg=new THREE.BoxGeometry(1,1,1), pim=new THREE.InstancedMesh(pg,new THREE.MeshLambertMaterial({color:0x8e8a80}),Math.max(1,piers.length));
     piers.forEach((p,i)=>{ q.setFromAxisAngle(up,p.ang); const H=p.y-p.g+1.5; m4.compose(new THREE.Vector3(p.X,p.g-1.5+H/2-1.1,p.Z),q,new THREE.Vector3(p.w*.55,H,2.2)); pim.setMatrixAt(i,m4);
@@ -269,7 +291,7 @@ function buildOSM(key){
   osmHitoMs=[]; if(C.hitos) C.hitos({R,rr,pick,hg,D,roads,areas,poi:n=>{ const p=D.pois.find(q=>q[0]&&q[0].includes(n)); return p?{x:osmW(D,p[1]),z:osmZ(p[2])}:null; }});
   finalizeBuildings(); houseMeshes.push(...osmHitoMs); osmHitoMs=[]; // los hitos frenan los proyectiles (finalizeBuildings rehace houseMeshes)
   // ---- árboles ----
-  const list=[], tOk=(X,Z,m)=>!roadAt(X,Z)&&!wetAt(X,Z)&&!gridQuery(X,Z,4).some(b=>b.ob&&obPush(X,Z,m,b))&&!W.zones.some(Zn=>Math.hypot(X-Zn.x,Z-Zn.z)<Zn.r-3)&&(!W.deckAt||deckAt(X,Z)===null);
+  const list=[], tOk=(X,Z,m)=>!roadAt(X,Z)&&!wetAt(X,Z)&&!gridQuery(X,Z,4).some(b=>b.ob&&obPush(X,Z,m,b))&&!W.zones.some(Zn=>Math.hypot(X-Zn.x,Z-Zn.z)<Zn.r-3)&&!deckNear(X,Z,3.5);
   const sp=C.sp||{calle:['timbo'],parque:['timbo'],bosque:['timbo']}, inT=(X,Z)=>Math.abs(X)<EX-4&&Math.abs(Z)<EZ-4;
   for(let i=0;i<D.arboles.length;i+=2){ const X=osmW(D,D.arboles[i]), Z=osmZ(D.arboles[i+1]); if(inT(X,Z)&&tOk(X,Z,1)) list.push({x:X,z:Z,sp:pick(sp.calle),s:rr(.7,1)}); }
   for(const A of areas){ const dens=A.k==='bosque'?1/70:A.k==='monte'?1/110:A.k==='parque'||A.k==='plaza'?1/150:A.k==='cementerio'||A.k==='golf'?1/500:A.k==='banado'?1/260:0; if(!dens) continue;
@@ -277,7 +299,7 @@ function buildOSM(key){
     const n=Math.min(2500,Math.round(A.A*dens)), pool=A.k==='bosque'?sp.bosque:A.k==='monte'?(sp.monte||['espinillo']):A.k==='banado'?['junco','espinillo']:sp.parque;
     for(let k=0,m=0;k<n*6&&m<n;k++){ const X=rr(x0,x1), Z=rr(z0,z1); if(!inPoly(X,Z,A.pts)||!inT(X,Z)||!tOk(X,Z,1.5)) continue; list.push({x:X,z:Z,sp:pick(pool),s:rr(.75,1.15)}); m++; } }
   if(C.calleArb) for(const L of roads){ if(!OSM_FRONT.has(L.t)||L.br) continue; for(let i=0;i<L.pts.length-1;i++){ const A=L.pts[i], B=L.pts[i+1], dx=B[0]-A[0], dz=B[1]-A[1], Ls=Math.hypot(dx,dz); if(Ls<4||(!inPlay(A[0],A[1],120)&&!inPlay(B[0],B[1],120))) continue; const ux=dx/Ls, uz=dz/Ls;
-    for(let s0=rr(3,10); s0<Ls; s0+=rr(9,15)){ if(R()>C.calleArb) continue; const sd=R()<.5?1:-1, o=L.w/2+1.2, X=A[0]+ux*s0-uz*sd*o, Z=A[1]+uz*s0+ux*sd*o; if(inT(X,Z)&&!gridQuery(X,Z,3).some(b=>b.ob&&obPush(X,Z,1,b))&&!wetAt(X,Z)) list.push({x:X,z:Z,sp:pick(sp.calle),s:rr(.55,.85)}); } } }
+    for(let s0=rr(3,10); s0<Ls; s0+=rr(9,15)){ if(R()>C.calleArb) continue; const sd=R()<.5?1:-1, o=L.w/2+1.2, X=A[0]+ux*s0-uz*sd*o, Z=A[1]+uz*s0+ux*sd*o; if(inT(X,Z)&&!gridQuery(X,Z,3).some(b=>b.ob&&obPush(X,Z,1,b))&&!wetAt(X,Z)&&!deckNear(X,Z,3.5)) list.push({x:X,z:Z,sp:pick(sp.calle),s:rr(.55,.85)}); } } }
   if(C.extra) C.extra({R,rr,pick,hg,list,roads,areas,kindAt,roadAt,wetAt,tOk});
   // tope de árboles (los montes enormes, como en Salto Grande, se ralean al azar)
   const TOPE=C.maxArb||4500; while(list.length>TOPE) list.splice((R()*list.length)|0,1);
