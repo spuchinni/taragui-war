@@ -1676,7 +1676,9 @@ I18N.add({
 "La ametralladora MAG del TAM, TAM 2C, VCTP, SK-105 y Patagón suena con su grabación propia.": "The MAG machine gun on the TAM, TAM 2C, VCTP, SK-105 and Patagón has its own recording.",
 "subfusil, escotillas, tanque que pasa y MAG: Sound effects from https://gfxsounds.com": "submachine gun, hatches, passing tank and MAG: Sound effects from https://gfxsounds.com",
 "El mecánico que baja a reparar ahora suena: cadenas si arregla la oruga, herramientas si arregla el motor o el cañón.": "The mechanic who climbs out to repair now makes sound: chains when fixing the track, tools when fixing the engine or the gun.",
-"subfusil, escotillas, tanque que pasa, MAG y herramientas: Sound effects from https://gfxsounds.com": "submachine gun, hatches, passing tank, MAG and tools: Sound effects from https://gfxsounds.com"
+"subfusil, escotillas, tanque que pasa, MAG y herramientas: Sound effects from https://gfxsounds.com": "submachine gun, hatches, passing tank, MAG and tools: Sound effects from https://gfxsounds.com",
+"Las semiorugas (Sd.Kfz. 251, M3 y M16) suenan con motor de camión.": "Half-tracks (Sd.Kfz. 251, M3 and M16) now sound like trucks.",
+"subfusil, escotillas, tanque que pasa, MAG, herramientas y semiorugas: Sound effects from https://gfxsounds.com": "submachine gun, hatches, passing tank, MAG, tools and half-tracks: Sound effects from https://gfxsounds.com"
 });
 I18N.words({
 "Perforante sólido": "Solid AP",
