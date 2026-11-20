@@ -138,6 +138,6 @@
       if(!out&&Cn){ const dx=t.x-Cn.x, dz=t.z-Cn.z, c=Math.cos(Cn.th), s=Math.sin(Cn.th), lx=dx*c-dz*s, lz=dx*s+dz*c; out=Math.abs(lx)<Cn.W/2+26&&lz>-Cn.L/2-22&&lz<Cn.L/2+12; }
       if(out) o.list.splice(i,1); }
     if(V) for(let i=0;i<10;i++){ const a=(i+.5)/10*Math.PI*2, r=18.5+(i%2)*2.5; o.list.push({x:V.x+Math.cos(a)*r,z:V.z+Math.sin(a)*r,sp:'pindo',s:1+(i%3)*.08}); } }
-  window.rotondaArboles=rotondaArboles;
+  window.rotondaArboles=rotondaArboles; window.HITO={Bag,block,clearOut,mat,colorize,merge};
   window.osmVirgenRotonda=osmVirgenRotonda; window.osmCanchaBoca=osmCanchaBoca;
 })();
