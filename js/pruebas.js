@@ -40,7 +40,7 @@
       <label>Tanque de los blancos</label><select id="pK"><option value="var">Variados (de la época del mapa, bando contrario)</option>${tankOpts(CFG.tgtK)}</select>
       <div class="ck"><label><input type="checkbox" id="cG" ${CFG.god?'checked':''}> No se rompe</label><label><input type="checkbox" id="cA" ${CFG.ammo?'checked':''}> Munición infinita</label>
         <label><input type="checkbox" id="cR" ${CFG.rel?'checked':''}> Recarga al instante</label><label><input type="checkbox" id="cS" ${CFG.sup?'checked':''}> Apoyos gratis</label></div>
-      <p class="s" style="margin-top:8px">Adentro: barra arriba a la izquierda (cambiar tanque, poner blancos, clima, trucos) · L = cámara libre (W A S D, Q/E, Mayús rápido, mouse mira) · Esc = pausa con el menú (cambiar mapa, Abandonar).</p>
+      <p class="s" style="margin-top:8px">Tu tanque sale al nivel máximo con todo desbloqueado · Esc = pausa con el menú y la barra de pruebas (cambiar tanque, mapa, poner blancos, clima, trucos) · L = cámara libre (W A S D, Q/E, Mayús rápido, mouse mira).</p>
       <div class="row"><button class="go" id="pGo">Entrar</button><button class="go alt" id="pX">Cerrar</button></div></div>`;
     box.style.display='flex'; const v=id=>box.querySelector(id).value, c=id=>box.querySelector(id).checked?1:0;
     box.querySelector('#pK').value=CFG.tgtK in VEH?CFG.tgtK:'var';
@@ -65,6 +65,14 @@
     if(!L.length) L=tankList().filter(k=>eraOf(k)===e); return L[(Math.random()*L.length)|0]||tut.key; }
   function addTarget(x,z,k,noPush){ k=k||tgtKey(); const n=VEH[k].nation, c=newCrew(`Blanco · ${VEH[k].label}`,1,n,false); c.out=CFG.tgt==='quietos'; crews.push(c);
     const t=spawnCrew(c,k,{label:'',x,z}); t.dummy=CFG.tgt==='quietos'; t.prbT=1; t.immuneT=0; t.heading=Math.random()*6.28; if(!noPush) tut.pd.push({t,x,z,k}); return t; }
+  // ---- tu tanque en pruebas siempre al máximo nivel (5) con todo desbloqueado: lanzahumos, reparación rápida, munición mejorada,
+  // control de tiro y las 3 municiones (pedido de Sebastián). tankLv es const: mientras se arma el tanque se le presta experiencia
+  // de sobra en una copia de PROG.txp y después se devuelve la original; saveProg no guarda nada en ese momento (el progreso no se toca).
+  let maxing=false;
+  { const _sc=spawnCrew; spawnCrew=function(c){ if(!(tut&&tut.prb&&c===playerCrew&&PROG)) return _sc.apply(this,arguments);
+      const o=PROG.txp, big={}; for(const k in VEH) big[k]=1e7; PROG.txp=big; maxing=true;
+      try{ return _sc.apply(this,arguments); } finally{ PROG.txp=o; maxing=false; } }; }
+  { const _sp=saveProg; saveProg=function(){ if(maxing) return; return _sp.apply(this,arguments); }; }
   // ---- "No se rompe" de verdad (antes solo ponía immuneT: las esquirlas, el fuego, la ametralladora pesada, los tripulantes expuestos y
   // el cañón se seguían rompiendo, y el tanque titilaba). Ahora se bloquea el daño y cada cuadro se deja todo como nuevo.
   const godOn=t=>tut&&tut.prb&&CFG.god&&t&&t===player;
@@ -110,7 +118,9 @@
         for(const D of tut.pd){ if(D.t&&D.t.dead){ D.rt=(D.rt||0)+dt; if(D.rt>6){ removeTank(D.t); crews=crews.filter(c=>c!==D.t.crew); D.t=addTarget(D.x,D.z,D.k,true); D.rt=0; } } else if(D.t) D.t.spottedT=3; }
         if((tut.barT=(tut.barT||0)+dt)>1){ tut.barT=0; paintBar(true); } } }
   // ---- barra adentro ----
-  function paintBar(soft){ if(!(tut&&tut.prb)){ bar.style.display='none'; return; } bar.style.display='flex'; if(soft&&bar.dataset.k===tut.key+F.on+PZ.on+CFG.god+CFG.ammo+CFG.rel+CFG.sup) return;
+  // la barra se ve solo con el menú de Esc abierto (pedido de Sebastián: "que solo aparezca cuando presiono Esc")
+  const barShow=()=>{ const on=!!(tut&&tut.prb&&state==='paused'); if(bar._on!==on){ bar._on=on; bar.style.display=on?'flex':'none'; } return on; };
+  function paintBar(soft){ if(!(tut&&tut.prb)){ bar._on=false; bar.style.display='none'; return; } barShow(); if(soft&&bar.dataset.k===tut.key+F.on+PZ.on+CFG.god+CFG.ammo+CFG.rel+CFG.sup) return;
     bar.dataset.k=tut.key+F.on+PZ.on+CFG.god+CFG.ammo+CFG.rel+CFG.sup;
     bar.innerHTML=`<b>🧪 Pruebas</b><select id="bT" title="Cambiar de tanque">${tankOpts(tut.key)}</select>
       <div class="r"><button id="bG">🎯 Blanco adelante</button><button id="bC">🧹 Sacar blancos</button></div>
@@ -183,7 +193,8 @@
     if(F.on&&e.code!=='Escape'){ F.keys[e.code]=true; e.stopImmediatePropagation(); e.preventDefault(); } },true);
   document.addEventListener('keyup',e=>{ if(F.on){ F.keys[e.code]=false; e.stopImmediatePropagation(); } },true);
   document.addEventListener('mousemove',e=>{ if(!F.on||!(tut&&tut.prb)) return; if(document.pointerLockElement||e.buttons){ F.yaw-=(e.movementX||0)*.0026; F.pitch=Math.max(-1.45,Math.min(1.45,F.pitch-(e.movementY||0)*.0026)); } },true);
-  { const _f=frame; frame=function(dt){ if(tut&&tut.prb&&((state==='play'&&PZ.on)||state==='paused')){ try{ releaseAll(); mouseDown=false; cullUpdate(); }catch(e){} renderer.render(scene,camera); return; }   // ⏸ pausa (P) o menú de Esc: todo quieto (en pruebas el menú de Esc sí pausa)
+  { const _f=frame; frame=function(dt){ if(tut&&tut.prb) barShow();   // se esconde sola al volver al combate
+      if(tut&&tut.prb&&((state==='play'&&PZ.on)||state==='paused')){ try{ releaseAll(); mouseDown=false; cullUpdate(); }catch(e){} renderer.render(scene,camera); return; }   // ⏸ pausa (P) o menú de Esc: todo quieto (en pruebas el menú de Esc sí pausa)
       if(F.on&&tut&&tut.prb){ try{ releaseAll(); mouseDown=false; }catch(e){} } const r=_f.apply(this,arguments); try{ prbTick(dt); }catch(e){ console.warn('prb',e); } return r; }; }
   let lastT=performance.now();
   const _rr=renderer.render; renderer.render=function(sc,c){
@@ -196,7 +207,7 @@
     lastT=performance.now(); return _rr.call(this,sc,c); };
   // ---- menú de Esc en pruebas (pedido de Sebastián): pausa todo, deja usar la barra de pruebas y cambiar de mapa sin salir ----
   { const _pp=pausePanel; pausePanel=function(){ const r=_pp.apply(this,arguments);
-      try{ if(tut&&tut.prb){ const p=$('panel'), h=p&&p.querySelector('p'); if(h) h.textContent='⏸ Juego en pausa: no se mueve nada. Usá la barra de pruebas (arriba a la izquierda) o cambiá el mapa acá.';
+      try{ if(tut&&tut.prb){ paintBar(); const p=$('panel'), h=p&&p.querySelector('p'); if(h) h.textContent='⏸ Juego en pausa: no se mueve nada. Usá la barra de pruebas (arriba a la izquierda) o cambiá el mapa acá.';
           if(p&&!document.getElementById('prbMapR')){ const d=document.createElement('div'); d.id='prbMapR'; d.setAttribute('data-notr','');
             d.style.cssText='display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:10px 0;font:600 15px "Saira Condensed",system-ui,sans-serif;color:#cfc6b0';
             d.innerHTML=`<span>🗺 Mapa</span><select id="prbMapS" style="flex:1;min-width:220px;background:#0e0f12;color:#fff;border:1px solid #555;border-radius:6px;padding:5px;font:500 15px system-ui">${mapOpts(builtKey||CFG.map)}</select><button class="go alt" id="prbMapG">Cambiar mapa</button>`;
