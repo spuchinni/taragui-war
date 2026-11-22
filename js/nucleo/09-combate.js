@@ -41,7 +41,7 @@ function updateShells(dt){
       hits=hits.filter(x=>{const tr=treeOf(x); if(!tr) return true; if(!tr.fallen){knockTree(tr,dir.x,dir.z);debris(x.point,4,dirtMat,3,.6);} return false;});
       if(hits.length){ const hit=hits[0];
         if(hit.object.userData.wplane){ explode(hit.point,'metal'); if(!s.fx) wplaneHit(hit.object.userData.wplane,s.owner&&s.owner.T&&s.owner.T.auto?(s.owner.T.pen>45?20:9):s.A.kind==='ke'?40:70,s.owner); done=true; break; }
-        if(hit.object.userData.plane){ explode(hit.point,'metal'); if(!s.fx) planeHit(hit.object.userData.plane,s.A.kind==='ke'?55:110,s.owner); done=true; break; }
+        if(hit.object.userData.plane){ explode(hit.point,'metal'); if(!s.fx) planeHit(hit.object.userData.plane,999,s.owner);   /* un cañonazo destruye un avión de línea (pedido de Sebastián) */ done=true; break; }
         if(s.fx){ const tk=hit.object.userData.tank; explode(hit.point,tk?'metal':'ground'); { const fb=bldOf(hit); if(fb) markBuilding(hit,fb,rand(.6,1.2),'big'); } if(tk) clang(distVol(hit.point,.25)); else boom(distVol(hit.point,.25),.5,500); done=true; break; }
         if(s.rocket){ blast(hit.point,.25); noise(hit.point,80); }
         infBlast(hit.point,(s.A.kind==='he'?6:s.A.kind==='hesh'?4:1.8)*(s.A.sc<1?.4:1),s.owner);

@@ -8,6 +8,10 @@
    · Reemplaza airlinerMesh (aviones que despegan huyendo, 11-personas.js) y guarda el tren en vuelo (la pista real la pone 11-personas.js con W._runway). */
 (()=>{
   const CEL='#6fa8dc', CEL2='#2f6aa8', BELLY='#c3c8cd';
+  // pinturas distintas para que se distingan de lejos (pedido de Sebastián: "son el mismo modelo"): el 737 con la celeste y blanca y "ARGENTINA";
+  // el E190 de una línea regional inventada: panza azul marino, franja dorada, "CORRIENTES" y la cola azul marino con el sol (sin franja blanca)
+  const LIV={ '738':{c1:CEL,c2:CEL2,belly:BELLY,title:'ARGENTINA',tcol:CEL2,fin:CEL,finBand:true,tip:CEL2},
+              'e190':{c1:'#e9b52c',c2:'#1d3557',belly:'#1d3557',title:'CORRIENTES',tcol:'#1d3557',fin:'#1d3557',finBand:false,tip:'#e9b52c'} };
   const MAT={}, mat=(k,c,o)=>MAT[k]||(MAT[k]=new THREE.MeshLambertMaterial(Object.assign({color:c},o||{})));
   const T={
     '738':{ L:39.5, rx:1.88, ry:2.0, yc:3.05, nose:5.6, nExp:.62, nDrop:.28, tail:11.5, tEnd:.12, span:17.2, c0:7.9, ct:1.3, sweep:27, kink:6.0, wLE:14.6, dih:6,
@@ -27,7 +31,7 @@
 
   // ----- textura del fuselaje: x = largo (trompa a la izquierda), alto = vuelta completa -----
   const TEXC={};
-  function fuseTex(D){ if(TEXC[D.cock]) return TEXC[D.cock];
+  function fuseTex(D){ if(TEXC[D.cock]) return TEXC[D.cock]; const LV=LIV[D.cock==='b737'?'738':'e190'];
     const cw=2048, ch=512, L=D.L, C=2*Math.PI*D.rx, sx=cw/L, sy=ch/C, c=document.createElement('canvas'); c.width=cw; c.height=ch; const x=c.getContext('2d');
     x.fillStyle='#f4f5f6'; x.fillRect(0,0,cw,ch);
     // dibuja lo mismo de los dos lados: X = metros desde la trompa, Y = metros desde el lomo hacia abajo (hasta C/2 en la panza)
@@ -37,10 +41,10 @@
     const q=C/4;                                            // el costado más ancho
     side(s=>{
       // panza gris y franjas celestes debajo de las ventanillas
-      x.fillStyle=BELLY; x.fillRect(0,q*1.22,L,C/2-q*1.22+.02);
-      x.fillStyle=CEL; x.fillRect(D.nose*.55,q*1.02,L-D.nose*.55-1.2,.34); x.fillStyle=CEL2; x.fillRect(D.nose*.7,q*1.02+.42,L-D.nose*.7-2.2,.12);
+      x.fillStyle=LV.belly; x.fillRect(0,q*1.22,L,C/2-q*1.22+.02);
+      x.fillStyle=LV.c1; x.fillRect(D.nose*.55,q*1.02,L-D.nose*.55-1.2,.34); x.fillStyle=LV.c2; x.fillRect(D.nose*.7,q*1.02+.42,L-D.nose*.7-2.2,.12);
       x.fillStyle='#f4f5f6'; x.beginPath(); x.moveTo(L-D.tail*.55,q*1.0); x.lineTo(L,q*.6); x.lineTo(L,q*1.6); x.lineTo(L-D.tail*.75,q*1.6); x.closePath(); x.fill();   // la franja muere hacia la cola
-      x.fillStyle=CEL; x.beginPath(); x.moveTo(L-D.tail*.55,q*1.02); x.lineTo(L-.5,q*.55); x.lineTo(L-.5,q*.68); x.lineTo(L-D.tail*.52,q*1.36); x.closePath(); x.fill();
+      x.fillStyle=LV.c1; x.beginPath(); x.moveTo(L-D.tail*.55,q*1.02); x.lineTo(L-.5,q*.55); x.lineTo(L-.5,q*.68); x.lineTo(L-D.tail*.52,q*1.36); x.closePath(); x.fill();
       // ventanillas
       x.fillStyle='#1b2630'; const [w0,w1,p]=D.win, wy=q*.86;
       for(let X=w0;X<=w1;X+=p){ if(D.doors.some(d=>Math.abs(X-d)<.75)) continue; rr(X-.13,wy-.19,.26,.36,.1); x.fill(); }
@@ -56,7 +60,7 @@
       else { x.beginPath(); x.moveTo(1.55,q*.34); x.lineTo(2.75,q*.3); x.lineTo(2.95,q*.62); x.lineTo(1.85,q*.74); x.closePath(); x.fill();
         x.beginPath(); x.moveTo(3.05,q*.32); x.lineTo(3.7,q*.33); x.lineTo(3.7,q*.6); x.lineTo(3.1,q*.62); x.closePath(); x.fill(); }
       // nombre, bandera y matrícula
-      txt(s,(D.doors[0]+D.win[1])*.42+1.5,q*.48,'ARGENTINA','bold 30px Arial,Helvetica,sans-serif',CEL2);
+      txt(s,(D.doors[0]+D.win[1])*.42+1.5,q*.48,LV.title,'bold 30px Arial,Helvetica,sans-serif',LV.tcol);
       { const fx=D.doors[0]+1.2, fy=q*.5; x.fillStyle=CEL; x.fillRect(fx,fy-.27,.9,.18); x.fillRect(fx,fy+.09,.9,.18); x.fillStyle='#fff'; x.fillRect(fx,fy-.09,.9,.18); x.fillStyle='#e9b52c'; x.beginPath(); x.arc(fx+.45,fy,.06,0,7); x.fill(); x.strokeStyle='#9aa1a6'; x.lineWidth=.02; x.strokeRect(fx,fy-.27,.9,.54); }
       txt(s,L-D.tail*.62,q*1.05,D.reg,'bold 14px Arial,Helvetica,sans-serif','#3a4248');
       // líneas de paneles
@@ -67,17 +71,17 @@
     const t=new THREE.CanvasTexture(c); t.anisotropy=8; return TEXC[D.cock]=t; }
 
   // deriva: celeste, blanca y celeste con el sol, cortada en diagonal como el borde de ataque
-  function finTex(D,z0,z1,H){ const k='fin'+D.cock; if(TEXC[k]) return TEXC[k]; const cw=512, ch=512, c=document.createElement('canvas'); c.width=cw; c.height=ch; const x=c.getContext('2d');
+  function finTex(D,z0,z1,H){ const k='fin'+D.cock; if(TEXC[k]) return TEXC[k]; const LV=LIV[D.cock==='b737'?'738':'e190']; const cw=512, ch=512, c=document.createElement('canvas'); c.width=cw; c.height=ch; const x=c.getContext('2d');
     const W=z1-z0, P=(zz,y)=>[(zz-z0)/W*cw,(1-y/H)*ch], F=D.fin, zL=y=>{ const t=(y-.85)/(F.h-.85); return (L2-F.le0)+((F.le0-F.le1))*t; }, L2=D.L/2;
-    x.fillStyle=CEL; x.fillRect(0,0,cw,ch);
+    x.fillStyle=LV.fin; x.fillRect(0,0,cw,ch);
     // franja blanca del medio, con los bordes paralelos al borde de ataque
-    const sk=(F.le0-F.le1)/(F.h-.85), yb=H*.36, yt=H*.68; x.fillStyle='#fbfbfb'; x.beginPath();
+    const sk=(F.le0-F.le1)/(F.h-.85), yb=H*.36, yt=H*.68; x.fillStyle=LV.finBand?'#fbfbfb':LV.fin; x.beginPath();
     x.moveTo(...P(z0-20,yb-20/sk*0)); x.lineTo(...P(z1+20,yb)); x.lineTo(...P(z1+20,yt)); x.lineTo(...P(z0-20,yt)); x.closePath(); x.fill();
     // sol de mayo en el medio de la deriva
     { const ym=H*.52, zc=((F.le0-(F.le0-F.le1)*((ym-.85)/(F.h-.85)))+(F.te0+(F.te1-F.te0)*(ym/F.h)))/2-L2, [cx,cy]=P(zc,ym), r=ch*.07; x.fillStyle='#e9b52c'; x.strokeStyle='#c98f12'; x.lineWidth=3;
       for(let i=0;i<32;i++){ const a=i/32*Math.PI*2, R=i%2?r*1.75:r*2.05; x.beginPath(); x.moveTo(cx+Math.cos(a-.07)*r*.9,cy+Math.sin(a-.07)*r*.9); x.lineTo(cx+Math.cos(a)*R,cy+Math.sin(a)*R); x.lineTo(cx+Math.cos(a+.07)*r*.9,cy+Math.sin(a+.07)*r*.9); x.closePath(); x.fill(); }
       x.beginPath(); x.arc(cx,cy,r,0,7); x.fill(); x.stroke(); }
-    x.fillStyle=CEL2; x.fillRect(0,0,cw,ch*.045);                                     // punta azul
+    x.fillStyle=LV.tip; x.fillRect(0,0,cw,ch*.045);                                     // punta azul
     const t=new THREE.CanvasTexture(c); t.anisotropy=4; t.repeat.set(1/W,1/H); t.offset.set(-z0/W,0); return TEXC[k]=t; }
 
   // juntador local (una malla por material)

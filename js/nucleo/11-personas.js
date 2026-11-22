@@ -535,7 +535,8 @@ function updatePlanes(dt){
       const foot=p=>{ const t=Math.max(.08,Math.min(.92,((p.x-r0.x)*dx+(p.z-r0.z)*dz)/l2)); return {x:r0.x+dx*t,z:r0.z+dz*t}; }, dRw=p=>{ const f=foot(p); return Math.hypot(p.x-f.x,p.z-f.z); };
       a=r0; b=r1;
       if(Ap){ const c=Math.cos(Ap.a), s=Math.sin(Ap.a), at=(lx,lz)=>({x:Ap.x+lx*c+lz*s,z:Ap.z-lx*s+lz*c}), c1=at(0,-92), c2=at(0,92); start=dRw(c1)<dRw(c2)?c1:c2;
-        a=foot(start); b=Math.hypot(r0.x-a.x,r0.z-a.z)>Math.hypot(r1.x-a.x,r1.z-a.z)?r0:r1; } }
+        a=foot(start); const far=Math.hypot(r0.x-a.x,r0.z-a.z)>Math.hypot(r1.x-a.x,r1.z-a.z)?r0:r1, near=far===r0?r1:r0;
+        b=(planeSeq%2&&Math.hypot(near.x-a.x,near.z-a.z)>700)?near:far; } }   // alterna hacia dónde despega (si hacia ese lado quedan 700 m de pista)
     const m=airlinerMesh(), dir=new THREE.Vector3(b.x-a.x,0,b.z-a.z).normalize(), p0=start||a, tx=start?new THREE.Vector3(a.x-p0.x,0,a.z-p0.z).normalize():dir;
     const pl={id:++planeSeq,g:m.g,hit:m.hit,pos:new THREE.Vector3(p0.x,heightAt(p0.x,p0.z),p0.z),dir:start?tx:dir,rwDir:dir,rwA:a,v:0,vy:0,pitch:0,state:start?-1:0,hp:150,yaw:Math.atan2(tx.x,tx.z)};
     m.hit.userData.plane=pl; civHits.push(m.hit); scene.add(m.g); civPlanes.push(pl); pl.snd=movingLoop('flyover',2.4,{rate:1.6,start:1,ref:120,lp:5000});
@@ -549,7 +550,8 @@ function updatePlanes(dt){
       else if(pl.state===2){ pl.vy-=9.8*dt; pl.pitch+=(-.6-pl.pitch)*Math.min(1,dt*.8); pl.st=(pl.st||0)-dt; if(pl.st<=0){ pl.st=.12; puff(P.clone().setY(P.y+2),0x2a2622,rand(3,5),3,1.5,.7); puff(P.clone().setY(P.y+2),0xff8a30,2,.5,1,1,true); } }
       const gy=heightAt(P.x,P.z);
       if(pl.state<3){ P.addScaledVector(pl.dir,pl.v*dt*Math.cos(pl.pitch)); P.y+=pl.state===2?pl.vy*dt:pl.v*Math.sin(pl.pitch)*dt; if(P.y<gy||pl.state<=0) P.y=heightAt(P.x,P.z); }
-      if(pl.state===2&&P.y<=gy+.5){ pl.state=3; pl.v=0; blast(P.clone(),2.2); addCrater(P.clone(),6,1.8); infBlast(P.clone(),14,pl.by||null); pl.burn=now+30; boom(distVol(P,1),2,300); }
+      if(pl.state===2&&P.y<=gy+.5){ pl.state=3; pl.v=0; planeBoom(pl,true); addCrater(P.clone(),8,2); infBlast(P.clone(),18,pl.by||null); pl.burn=now+40; }
+      if(pl.sec&&pl.sec.length&&now>=pl.sec[0].t){ const e=pl.sec.shift(), fw=new THREE.Vector3(Math.sin(pl.yaw),0,Math.cos(pl.yaw)), q=P.clone().addScaledVector(fw,e.o).add(new THREE.Vector3(fw.z*e.s,2,-fw.x*e.s)); blast(q,1.4); puff(q.clone(),0xff9a40,rand(7,11),1,3,1,true); boom(distVol(q,.6),1.2,260); }   // explosiones secundarias
       if(pl.state===3&&now<pl.burn){ pl.bt=(pl.bt||0)-dt; if(pl.bt<=0){ pl.bt=.35; puff(P.clone().add(new THREE.Vector3(rand(-8,8),3,rand(-8,8))),0x2a2622,rand(4,7),3,2.5,.7); } }
       if((pl.state===1&&P.distanceTo(new THREE.Vector3(0,P.y,0))>1500)||(pl.state===3&&now>pl.burn+20)){ removePlane(pl); continue; } }
     else if(pl.tp){ const k=Math.min(1,dt*6); P.lerp(pl.tp,k); pl.yaw=wrap(pl.yaw+wrap(pl.tyaw-pl.yaw)*k); pl.pitch+=(pl.tpitch-pl.pitch)*k; }
@@ -557,9 +559,20 @@ function updatePlanes(dt){
     pl.g.position.copy(P); pl.g.rotation.set(-pl.pitch,pl.yaw,0,'YXZ'); if(pl.snd) pl.snd.set(P); }
 }
 function removePlane(pl){ scene.remove(pl.g); if(pl.snd) pl.snd.stop(); const i=civPlanes.indexOf(pl); if(i>=0) civPlanes.splice(i,1); const j=civHits.indexOf(pl.hit); if(j>=0) civHits.splice(j,1); }
+// explosión de avión de línea (pedido de Sebastián: "explotar como una explosión real de aviones"): bola de fuego del combustible de las alas,
+// 4 explosiones secundarias a lo largo del avión en 2 s, pedazos que vuelan, humo negro y el avión queda quemado (negro) ardiendo
+const burntMat=new THREE.MeshLambertMaterial({color:0x1d1b19});
+function planeBoom(pl,ground){ const P=pl.pos.clone().setY(pl.pos.y+2.5), L=(pl.g.userData.dim&&pl.g.userData.dim.L)||36, fw=new THREE.Vector3(Math.sin(pl.yaw),0,Math.cos(pl.yaw)), sd=new THREE.Vector3(fw.z,0,-fw.x);
+  if(ground) blast(P.clone(),3); else { puff(P.clone(),0xffffff,10,.25,0,1,true); }
+  for(let i=0;i<10;i++) puff(P.clone().addScaledVector(sd,rand(-12,12)).addScaledVector(fw,rand(-L*.3,L*.3)).add(new THREE.Vector3(0,rand(0,4),0)),i%3?0xff8a30:0xffd27a,rand(9,15),rand(.8,1.4),rand(2,5),1,true);
+  for(let i=0;i<8;i++) puff(P.clone().add(new THREE.Vector3(rand(-10,10),rand(2,8),rand(-10,10))),0x1f1c1a,rand(12,18),rand(3,5),rand(4,7),.75);
+  debris(P.clone(),26,darkMat,16,2.2); debris(P.clone(),18,sparkMat,22,1.2);
+  shake=Math.max(shake,1.2*clamp(1-camera.position.distanceTo(P)/900,0,1)); boom(distVol(P,1),2.4,220); boom(distVol(P,.8),3.5,90); noise(P,400);
+  pl.sec=[0,1,2,3].map(i=>({t:now+.35+i*.45+rand(0,.2),o:rand(-L*.42,L*.42),s:rand(-6,6)}));
+  pl.g.traverse(o=>{ if(o.isMesh&&o.material&&o.material.visible!==false) o.material=burntMat; }); }
 function planeHit(pl,dmg,by){
   if(net.guest||pl.state>=2) return; pl.hp-=dmg; puff(pl.pos.clone().setY(pl.pos.y+3),0x5a5550,2,1.5,1,.6);
-  if(pl.hp<=0){ pl.by=by; if(pl.state===0){ pl.state=3; blast(pl.pos.clone(),2); pl.burn=now+30; infBlast(pl.pos.clone(),10,by); } else { pl.state=2; pl.vy=pl.v*Math.sin(pl.pitch); }
+  if(pl.hp<=0){ pl.by=by; if(pl.state<=0){ pl.state=3; pl.v=0; planeBoom(pl,true); pl.burn=now+40; infBlast(pl.pos.clone(),18,by); addCrater(pl.pos.clone(),7,1.6); } else { pl.state=2; pl.vy=pl.v*Math.sin(pl.pitch); planeBoom(pl,false); }
     feed('¡Derribaron un avión de pasajeros!','var(--enemy)'); if(by&&by.crew&&!by.inf) award(by.crew,'Avión civil derribado',-150,-200); }
 }
 function clearCivLife(){ traffic.forEach(C=>scene.remove(C.g)); traffic.length=0; civPlanes.slice().forEach(removePlane); civHits.length=0; planeNextT=0; }
