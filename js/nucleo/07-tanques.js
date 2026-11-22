@@ -302,7 +302,7 @@ function drive0(t,throttle,steer,dt){
       p.x+=dx/dd*(m-dd)*k;p.z+=dz/dd*(m-dd)*k; const into=-(fx*dx+fz*dz)/dd*dir; if(into>0)t.speed*=1-Math.min(.9,into*dt*(k<.6?2:8));} }
   crushCars(t);
   propsNear(p.x,p.z,t.co+cr+3,P=>{ if(P.fallen||P.crushed||P.gone) return; for(const k of [1,-1]){ const dx=P.x-(p.x+fx*t.co*k), dz=P.z-(p.z+fz*t.co*k);
-      if(dx*dx+dz*dz<(cr+P.r)**2&&Math.abs(t.speed)>.6){ knockProp(P,dx*dir||fx,dz*dir||fz); t.speed*=P.kind==='car'?.8:.95; break; } } });
+      if(dx*dx+dz*dz<(cr+P.r)**2&&Math.abs(t.speed)>.6){ P._byTank=1; knockProp(P,dx*dir||fx,dz*dir||fz); t.speed*=P.kind==='car'?.8:.95; break; } } });
   if(Math.abs(t.speed)>.3) grassNear(p.x,p.z,t.co+cr,G=>{ if(G.flat) return; if((G.x-p.x)**2+(G.z-p.z)**2<(t.co+cr*.8)**2){ G.flat=1; setGrass(G); } });
   for(const tr of trees){ if(tr.fallen) continue;
     for(const k of [1,-1]){const dx=tr.x-(p.x+fx*t.co*k), dz=tr.z-(p.z+fz*t.co*k);

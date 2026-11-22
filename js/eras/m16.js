@@ -27,7 +27,7 @@
       const w=dWheel(root,x,.475,wz,.475,mat,{rim:.56,holes:8}); cyl(root,.09,.09,.34,x+s*.02,.475,wz,8,darkMat).rotation.z=Math.PI/2;
       const fg=new THREE.Mesh(new THREE.CylinderGeometry(.58,.58,.4,14,1,true,-.2,Math.PI*.82),mat); fg.material=mat; fg.rotation.z=Math.PI/2; fg.rotation.y=0; fg.position.set(x,.5,wz); fg.castShadow=true; root.add(fg);
       box(root,.42,.04,.95,x,1.0,1.15,mat);                                                                    // estribo/guardabarros hasta la cabina
-      box(root,.3,.12,.04,x,.72,.68,mat); }                                                                     // faldón detrás de la rueda
+      box(root,.3,.12,.04,x,.92,.69,mat); }                                                                     // faldón detrás de la rueda
     // ---- chasis, paragolpes con rodillo para zanjas y faros ----
     for(const s of [-1,1]) box(root,.1,.18,5.6,s*.42,.62,.1,darkMat);
     { const r=cyl(root,.16,.16,1.78,0,.62,zf+.02,14,darkMat); r.rotation.z=Math.PI/2; for(const s of [-1,1]){ box(root,.08,.12,.42,s*.86,.64,zf-.18,mat); cyl(root,.18,.18,.06,s*.88,.62,zf+.02,12,mat).rotation.z=Math.PI/2; } }
@@ -43,7 +43,7 @@
       box(root,.05,.03,.2,s*hw,1.3,.25,darkMat); }                                                               // manija
     box(root,W-.12,.22,.06,0,1.22,1.12,darkMat);                                                                 // tablero
     { const sw=new THREE.Mesh(new THREE.TorusGeometry(.2,.022,6,16),darkMat); sw.position.set(-.42,1.42,.88); sw.rotation.x=-1.0; root.add(sw); cyl(root,.025,.025,.5,-.42,1.25,.98,6,darkMat).rotation.x=-1.0; }
-    for(const s of [-1,1]) rbox(root,.5,.12,.5,s*.42,1.22,.42,darkMat,.04);                                    // asientos de adelante
+    for(const s of [-1,1]){ rbox(root,.5,.12,.5,s*.42,1.22,.42,darkMat,.04); box(root,.36,.32,.36,s*.42,1.0,.42,darkMat); }   // asientos de adelante, con su base
     // ---- caja de atrás: piso, costados bajos con la chapa de arriba rebatida hacia afuera, popa con puerta, cajones ----
     box(root,W-.1,.06,3.1,0,fy,-1.48,darkMat);
     add(profGeo([[.05,fy],[zr,fy],[zr,.62],[.05,.62]],W-.04));

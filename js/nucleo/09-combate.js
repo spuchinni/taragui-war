@@ -41,7 +41,7 @@ function updateShells(dt){
       hits=hits.filter(x=>{const tr=treeOf(x); if(!tr) return true; if(!tr.fallen){knockTree(tr,dir.x,dir.z);debris(x.point,4,dirtMat,3,.6);} return false;});
       if(hits.length){ const hit=hits[0];
         if(hit.object.userData.wplane){ explode(hit.point,'metal'); if(!s.fx) wplaneHit(hit.object.userData.wplane,s.owner&&s.owner.T&&s.owner.T.auto?(s.owner.T.pen>45?20:9):s.A.kind==='ke'?40:70,s.owner); done=true; break; }
-        if(hit.object.userData.plane){ explode(hit.point,'metal'); if(!s.fx) planeHit(hit.object.userData.plane,999,s.owner);   /* un cañonazo destruye un avión de línea (pedido de Sebastián) */ done=true; break; }
+        if(hit.object.userData.plane){ explode(hit.point,'metal'); if(!s.fx) planeHit(hit.object.userData.plane,999,s.owner,hit.point,s.A);   /* un cañonazo destruye un avión de línea (pedido de Sebastián) */ done=true; break; }
         if(s.fx){ const tk=hit.object.userData.tank; explode(hit.point,tk?'metal':'ground'); { const fb=bldOf(hit); if(fb) markBuilding(hit,fb,rand(.6,1.2),'big'); } if(tk) clang(distVol(hit.point,.25)); else boom(distVol(hit.point,.25),.5,500); done=true; break; }
         if(s.rocket){ blast(hit.point,.25); noise(hit.point,80); }
         infBlast(hit.point,(s.A.kind==='he'?6:s.A.kind==='hesh'?4:1.8)*(s.A.sc<1?.4:1),s.owner);
@@ -368,8 +368,8 @@ function propsOnRay(o,d,len,by,kind){ if(typeof propsNear!=='function') return -
       if(mg){ P.hp=(P.hp??PROP_HP[P.kind]??5)-(heavy?2.5:1); debris(p,2,sparkMat,2,.5); if(P.hp<=0) knockProp(P,d.x,d.z); return L.s; }
       knockProp(P,d.x,d.z); debris(p,4,sparkMat,3,.8); if(P.kind==='car'&&(kind==='he'||kind==='hesh')) return L.s; continue; }   // el perforante voltea el farol y sigue
     const C=L.obj.C;
-    if(mg){ debris(p,2,sparkMat,2,.5); if(!net.guest){ C.mgHp=(C.mgHp??10)-(heavy?2.5:1); if(C.mgHp<=0) wreckCar(C,by,C.state<2); } return L.s; }
-    if(!net.guest) wreckCar(C,by,C.state<2); debris(p,4,sparkMat,3,.8); if(kind==='he'||kind==='hesh') return L.s; }
+    if(mg){ debris(p,2,sparkMat,2,.5); if(!net.guest){ C.mgHp=(C.mgHp??10)-(heavy?2.5:1); if(C.mgHp<=0){ C._cause='mg'; wreckCar(C,by,C.state<2); } } return L.s; }
+    if(!net.guest){ C._cause=(kind==='he'||kind==='hesh')?'he':'ap'; C._blast={x:p.x,z:p.z}; wreckCar(C,by,C.state<2); } debris(p,4,sparkMat,3,.8); if(kind==='he'||kind==='hesh') return L.s; }
   return -1; }
 function fireMG(t){
   if(t.dead||t.mgLock) return;
@@ -394,7 +394,7 @@ function fireMG(t){
   const end=o.clone().addScaledVector(d,dist);
   if(t.mgN++%3===0) tracer(o,end,t.team===0?0xffd080:0xff9a70);
   if(hit&&hit.object.userData.wplane){ debris(hit.point,2,sparkMat,2,.5); wplaneHit(hit.object.userData.wplane,3,t); hit=null; }
-  if(hit&&hit.object.userData.plane){ debris(hit.point,2,sparkMat,2,.5); planeHit(hit.object.userData.plane,2,t); hit=null; }
+  if(hit&&hit.object.userData.plane){ debris(hit.point,2,sparkMat,2,.5); planeHit(hit.object.userData.plane,2,t,hit.point,null); hit=null; }
   if(hit){ const tr=treeOf(hit); if(tr){ tr.hp-=1; debris(hit.point,2,leafMat,2,.5); if(tr.hp<=0) knockTree(tr,d.x,d.z); }
     else if(hit.object.userData.tank){ if(!net.guest) hitTank(t,hit,d,mgPen(mgCal(t)),'mg'); } else { debris(hit.point,2,dirtMat,2,.5); const b=bldOf(hit); if(b){ if(Math.random()<.6) markBuilding(hit,b,rand(.14,.24)*(mgCal(t)>=12?1.6:1),'mg'); if(Math.random()<.15) damageBuilding(b,mgCal(t)>=12?8:2.5); } } }
   if(t.isPlayer&&LOOPS.mgburst){ mgLastShot=AC.currentTime; } else if(!sfx('mgshot',o,.55,{rate:rand(.95,1.1),maxD:700})) boom(t.isPlayer?.12:distVol(o,.08),.06,2500);

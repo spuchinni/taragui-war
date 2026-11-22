@@ -220,7 +220,7 @@ function buildRhombo(t,M,mat,root,lkL,lkR){
   else { // Mark I: cola de dos ruedas de rayos para ayudar a girar y techo de malla contra granadas
     const tail=new THREE.Group(); tail.position.set(0,0,-4.0); root.add(tail);
     box(tail,.12,.12,1.6,-.6,.8,-.6,darkMat); box(tail,.12,.12,1.6,.6,.8,-.6,darkMat); box(tail,1.3,.1,.1,0,.75,-1.3,darkMat);
-    cyl(tail,.06,.06,.9,0,1.2,-.3,6,darkMat).rotation.x=.9;                                   // pistón hidráulico
+    box(tail,1.3,.1,.1,0,.8,-.8,darkMat); { const ps=cyl(tail,.06,.06,1.18,0,1.29,-.375,6,darkMat); ps.rotation.x=.8; }   // pistón hidráulico: del travesaño de la cola a la popa (antes flotaba)
     for(const s of [-1,1]) spokeWheelX(tail,s*.6,.62,-1.3,.62,12,darkMat,.14);
     const wire=new THREE.MeshBasicMaterial({color:0x3a3a34,wireframe:true});
     for(const sd of [-1,1]){ const gR=new THREE.Group(); gR.position.set(0,2.95,.4); gR.rotation.z=-sd*.55; root.add(gR); const roof=new THREE.Mesh(new THREE.PlaneGeometry(1.0,3.6,3,9),wire); roof.rotation.x=-Math.PI/2; roof.position.x=sd*.5; gR.add(roof); }

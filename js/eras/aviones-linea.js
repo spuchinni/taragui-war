@@ -98,7 +98,9 @@
     for(let i=0;i<p.count;i++){ const ax=Math.abs(p.getX(i)), f=Math.min(1,ax/semi), th=t0+(tTip-t0)*f; p.setY(i, y0 + (p.getY(i)+.5)*th + ax*Math.tan(dih*Math.PI/180)); }
     g.computeVertexNormals(); return g; }
 
-  function avionLinea(tipo){ const D=T[tipo]||T['738'], L=D.L, G=new THREE.Group(), B=Bag(), z=s=>L/2-s;
+  function avionLinea(tipo){ const D=T[tipo]||T['738'], L=D.L, G=new THREE.Group(), z=s=>L/2-s;
+    // por partes (avion-roto.js las separa al destruirse): trompa, centro, cola, alas y motores; cada una se une por material
+    const PB={nose:Bag(),mid:Bag(),tail:Bag(),'w-1':Bag(),'w1':Bag(),'e-1':Bag(),'e1':Bag()}; let B=PB.mid;
     const wh=mat('alWh',0xf4f5f6), bel=mat('alBel',0xc3c8cd), grey=mat('alGr',0x9aa1a7), dk=mat('alDk',0x22282d), tire=mat('alTire',0x1a1c1e), chrome=mat('alCr',0xd9dde1,{emissive:0x202224}),
       fan=mat('alFan',0x30363b), cel=mat('alCel',0x6fa8dc), red=mat('alRed',0xff3a2a,{emissive:0x991010}), grn=mat('alGrn',0x3aff6a,{emissive:0x0a8a20}), wlt=mat('alWlt',0xffffff,{emissive:0x666666}),
       skin=mat('alSkin'+tipo,0xffffff,{map:fuseTex(D)});
@@ -108,13 +110,17 @@
       if(s<D.nose){ const u=1-s/D.nose; f=Math.pow(Math.max(0,1-u*u),D.nExp); dy=-(1-f)*D.ry*D.nDrop; }
       else if(s>L-D.tail){ const u=(s-(L-D.tail))/D.tail; f=1-(1-D.tEnd)*Math.pow(u,1.45); dy=(1-f)*D.ry*.86; }
       rings.push({z:z(s),yc:D.yc+dy,rx:D.rx*Math.max(f,.0001),ry:D.ry*Math.max(f,.0001)*(s>L-D.tail?(.92+.08*f):1),u:s/L}); }
-    B.add(tube(rings,28),skin);
+    { const j0=Math.round(.34*(N-1)), j1=Math.round(.62*(N-1)), cap=(Bg,R,face)=>{ const g=new THREE.CircleGeometry(1,20); if(face<0) g.rotateY(Math.PI); g.scale(R.rx*.98,R.ry*.98,1); g.translate(0,R.yc,R.z); Bg.add(g,dk); };
+      PB.nose.add(tube(rings.slice(0,j0+1),28),skin); PB.mid.add(tube(rings.slice(j0,j1+1),28),skin); PB.tail.add(tube(rings.slice(j1),28),skin);
+      cap(PB.nose,rings[j0],-1); cap(PB.mid,rings[j0],1); cap(PB.mid,rings[j1],-1); cap(PB.tail,rings[j1],1); }   // tapas oscuras adentro: se ven solo si se parte
+    B=PB.tail;
     { const last=rings[N-1]; cyl(B,dk,last.rx*.8,last.rx*.8,.5,0,last.yc,last.z-.15,10,Math.PI/2); }       // escape del APU
     // carenado ala-fuselaje
+    B=PB.mid;
     sph(B,bel,1,0,D.yc-D.ry*.68,z(D.wLE+D.c0*.45),D.rx*1.12,D.ry*.42,D.c0*.95);
     // --- alas con su quiebre del borde de fuga, winglets, carenados de los flaps ---
     const tl=Math.tan(D.sweep*Math.PI/180), wy=D.yc-D.ry*.62, zl=z(D.wLE);
-    for(const sd of [-1,1]){
+    for(const sd of [-1,1]){ B=PB['w'+sd];
       const tipLE=-D.span*tl, pts=[[0,0],[D.span,tipLE],[D.span,tipLE-D.ct],[D.kink,-D.c0],[0,-D.c0]].map(([a,b])=>[a,b]);
       const g=surface(pts,sd,.62,.14,D.span,D.dih,0); g.translate(0,wy,zl); B.add(g,wh);
       const ty=wy+D.span*Math.tan(D.dih*Math.PI/180)+.07, tz=zl+tipLE;
@@ -123,6 +129,7 @@
       sph(B,sd>0?red:grn,.09,sd*(D.span+.05),ty,tz-.3);                                                  // luces de navegación (izq. roja)
       for(const f of [.32,.55,.76]){ const xs=D.span*f, zz=zl-xs*tl-(D.c0+(D.ct-D.c0)*f)*.86; box(B,bel,.28,.32,2.1,sd*xs,wy+xs*Math.tan(D.dih*Math.PI/180)-.12,zz-.5); }
       // motor colgado del pilón, adelante del ala
+      B=PB['e'+sd];
       const E=D.eng, ez=z(E.s), r=E.r, pr=[[.9,0],[1,.25],[1.02,.6],[1,1.6],[.92,2.6],[.78,3.4],[.72,E.len]].map(([k,s])=>({z:ez-s,yc:E.y,rx:r*k,ry:r*k*E.flat,u:s/E.len}));
       const ng=tube(pr,22); ng.translate(sd*E.x,0,0); B.add(ng,wh);
       { const lg=new THREE.CylinderGeometry(r*.9,r*.93,.22,22,1,true); lg.rotateX(Math.PI/2); lg.scale(1,E.flat,1); lg.translate(sd*E.x,E.y,ez-.06); B.add(lg,chrome); const ig=new THREE.CylinderGeometry(r*.86,r*.86,.5,22,1,true); ig.rotateX(Math.PI/2); ig.scale(1,E.flat,1); ig.translate(sd*E.x,E.y,ez-.25); B.add(ig,fan); } cyl(B,cel,r*1.025,r*1.025,.35,sd*E.x,E.y,ez-.95,22,Math.PI/2);
@@ -130,6 +137,7 @@
       { const cg=new THREE.ConeGeometry(r*.5,1.1,14); cg.rotateX(-Math.PI/2); cg.translate(sd*E.x,E.y,ez-E.len-.5); B.add(cg,grey); cyl(B,dk,r*.71,r*.71,.08,sd*E.x,E.y,ez-E.len+.02,18,Math.PI/2); }
       { const pyY=wy+E.x*Math.tan(D.dih*Math.PI/180); box(B,wh,.34,pyY-E.y-r*.6+.3,E.len*.95,sd*E.x,(pyY+E.y+r*.6)/2,ez-E.len*.62); }
       // estabilizador horizontal
+      B=PB.tail;
       { const S=D.stab, stl=Math.tan(S.sweep*Math.PI/180), sp=[[0,0],[S.semi,-S.semi*stl],[S.semi,-S.semi*stl-S.ct],[0,-S.c0]];
         const sz=z(S.s), ring=rings[Math.round(S.s/L*(N-1))]; const sg=surface(sp,sd,.32,.1,S.semi,7,0); sg.translate(0,ring.yc+S.dy-.15,sz); B.add(sg,wh); }
     }
@@ -141,9 +149,10 @@
       g.rotateY(-Math.PI/2); g.translate(.17,yb,0); const fm=mat('alFin'+tipo,0xffffff,{map:finTex(D,z0,z1,F.h)}); B.add(g,fm);
       sph(B,wlt,.08,0,yb-.4,z(L)+.25); }
     // --- antenas, balizas, pitots ---
+    B=PB.mid;
     box(B,grey,.05,.32,.42,0,D.yc+D.ry+.14,z(L*.36)); box(B,grey,.05,.26,.36,0,D.yc+D.ry+.12,z(L*.52)); box(B,grey,.05,.28,.4,0,D.yc-D.ry-.12,z(L*.3));
     sph(B,red,.11,0,D.yc+D.ry+.04,z(L*.44),1,.7,1); sph(B,red,.11,0,D.yc-D.ry-.03,z(L*.47),1,.7,1);
-    for(const sd of [-1,1]) cyl(B,chrome,.025,.025,.3,sd*D.rx*.72,D.yc+.2,z(1.6),5,Math.PI/2);
+    B=PB.nose; for(const sd of [-1,1]) cyl(B,chrome,.025,.025,.3,sd*D.rx*.72,D.yc+.2,z(1.6),5,Math.PI/2);
     // --- tren de aterrizaje ---
     const GR=new THREE.Group(), BG=Bag(), Gd=D.gear;
     { const zn=z(Gd.nose), yb=D.yc-D.ry*.94; cyl(BG,chrome,.07,.07,yb-Gd.rn,0,(yb+Gd.rn)/2,zn,8); cyl(BG,grey,.11,.11,.7,0,yb-.4,zn,8);
@@ -153,8 +162,9 @@
       cyl(BG,chrome,.1,.1,yt-Gd.rm,x0,(yt+Gd.rm)/2,zm,8); cyl(BG,grey,.17,.17,1.0,x0,yt-.55,zm,8); box(BG,grey,.12,.12,1.2,x0*.6,yt-.25,zm,0,0,sd*.9);
       for(const k of [-1,1]){ const xw=x0+k*.42; cyl(BG,tire,Gd.rm,Gd.rm,.36,xw,Gd.rm,zm,18,0,Math.PI/2); cyl(BG,grey,Gd.rm*.55,Gd.rm*.55,.37,xw,Gd.rm,zm,10,0,Math.PI/2); } }
     BG.meshes(GR); G.add(GR);
-    B.meshes(G);
-    G.userData.gear=GR; G.userData.dim={L,span:D.span+.3,h:D.yc+D.ry+D.fin.h,tipo};
+    const parts={}; for(const k in PB){ const pg=new THREE.Group(); pg.name='part_'+k; const ms=PB[k].meshes(pg); const bb=new THREE.Box3(); ms.forEach(m=>{ m.geometry.computeBoundingBox(); bb.union(m.geometry.boundingBox); });
+      const c=bb.getCenter(new THREE.Vector3()); ms.forEach(m=>{ m.geometry.translate(-c.x,-c.y,-c.z); m.geometry.computeBoundingSphere(); }); pg.position.copy(c); G.add(pg); parts[k]=pg; }
+    G.userData.parts=parts; G.userData.gear=GR; G.userData.dim={L,span:D.span+.3,h:D.yc+D.ry+D.fin.h,tipo};
     return G; }
   window.avionLinea=avionLinea; window.AVION_LINEA=T;
 
@@ -167,7 +177,7 @@
   const _up=updatePlanes;
   updatePlanes=function(dt){
     _up(dt);
-    for(const pl of civPlanes){ const gr=pl.g.userData.gear; if(gr) gr.visible=!(pl.state>=1&&pl.pos.y-heightAt(pl.pos.x,pl.pos.z)>14); jetSound(pl); }
+    for(const pl of civPlanes){ const gr=pl.g.userData.gear; if(gr) gr.visible=!pl.noGear&&!(pl.state>=1&&pl.pos.y-heightAt(pl.pos.x,pl.pos.z)>14); jetSound(pl); }
     for(const pl of [...JS]) if(!civPlanes.includes(pl)) jetStop(pl); };
   // sonidos CC0 de Freesound (22/11/2026): jettaxi = turbina rodando (joeffl #843280), jetroar = plena potencia de cerca (Sonicwave32 #436511),
   // jetfar = despegue lejano (clif_creates #251973); bucles de 6–7 s con 0,3 s de margen a cada lado (herramientas/sonidos/aviones-linea.py)

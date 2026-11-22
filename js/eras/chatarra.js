@@ -29,8 +29,9 @@ float fb(vec3 p){ return vn(p)*.55+vn(p*2.13)*.28+vn(p*4.7)*.17; }`).replace('#i
   const RUST_A=new THREE.Color(0x3e1e0e), RUST_B=new THREE.Color(0x8c4a22), ASH=new THREE.Color(0x77706a), SOOT=new THREE.Color(0x1c1916), UNDER=new THREE.Color(0x15120f);
   const isCart=V=>!V||V.noMotor||V.k==='bike'||V.k==='cart'||V.k==='carreta';
 
-  function burn(C){ const g=C.g, u=g.userData; if(!g||u._burnt) return; u._burnt=1;
-    const R=hashR(C.id), old=C.id>=9e5, crush=.08+R()*.28+(old?.08:0), seed=R()*10, rust=old?.85:.25;
+  function burn(C,cause){ const g=C.g, u=g.userData; if(!g||u._burnt) return; u._burnt=1;
+    // cuánto se hunde el techo según qué lo destruyó: pisado por un tanque o los viejos de la avenida sí; a los tiros o volado, apenas abollado
+    const R=hashR(C.id), old=C.id>=9e5, crushed=cause==='crush'||old, crush=crushed?.08+R()*.28+(old?.08:0):0, dent=cause==='he'?1.6:crushed?1:.7, seed=R()*10, rust=old?.85:.25;
     g.updateMatrixWorld(true); const box=new THREE.Box3().setFromObject(g); u._h=box.max.y-g.position.y; u._w=box.max.x-box.min.x;
     g.traverse(o=>{ if(!o.isMesh) return;
       if(o.material===glassMat){ o.material=sootGlass; o.castShadow=false; return; }
@@ -41,7 +42,7 @@ float fb(vec3 p){ return vn(p)*.55+vn(p*2.13)*.28+vn(p*4.7)*.17; }`).replace('#i
       const P=geo.attributes.position, CA=geo.attributes.color; geo.computeBoundingBox(); const bb=geo.boundingBox, H=(bb.max.y-bb.min.y)||1;
       for(let i=0;i<P.count;i++){ let x=P.getX(i), y=P.getY(i), z=P.getZ(i); const t=(y-bb.min.y)/H;
         if(t>.7) y-=crush*((t-.7)/.3)*H*.55*(.65+.35*Math.sin(x*2.3+z*1.1+seed));      // techo hundido
-        const n=nz(x,y,z,seed); x+=n*.045; y+=n*.025; z+=nz(z,x,y,seed+3)*.045;          // abolladuras
+        const n=nz(x,y,z,seed)*dent; x+=n*.045; y+=n*.025; z+=nz(z,x,y,seed+3)*.045*dent;          // abolladuras
         P.setXYZ(i,x,y,z);
         if(!CA) continue; orig.fromBufferAttribute(CA,i);
         const r=nz(x*4.3,y*4.3,z*4.3,seed+5)+.45*nz(x*11,y*11,z*11,seed+2), r2=nz(x*6.5,y*6.5,z*6.5,seed+9), r3=nz(x*2,y*2,z*2,seed+1);
@@ -57,9 +58,28 @@ float fb(vec3 p){ return vn(p)*.55+vn(p*2.13)*.28+vn(p*4.7)*.17; }`).replace('#i
     u.mats=[DUMMY]; u.m=DUMMY;   // lo que pinte después el núcleo (vWreckLook, golpes) no toca el material compartido
   }
 
+  // a los tiros (ametralladora): queda con su pintura, vidrios rotos y agujeros; a veces se prende fuego a los segundos y recién ahí se quema
+  const holeMat=new THREE.MeshBasicMaterial({color:0x0c0b0a}), holeGeo=new THREE.CircleGeometry(.045,6);
+  function riddle(C){ const g=C.g, u=g.userData, R=hashR(C.id+3); if(u._riddled) return; u._riddled=1;
+    g.traverse(o=>{ if(o.isMesh&&o.material===glassMat){ o.material=sootGlass; } });
+    g.updateMatrixWorld(true); const box=new THREE.Box3().setFromObject(g), inv=new THREE.Matrix4().copy(g.matrixWorld).invert(), L=(box.max.x-box.min.x+box.max.z-box.min.z)/2;
+    const hs=new THREE.InstancedMesh(holeGeo,holeMat,18), m=new THREE.Matrix4(), q=new THREE.Quaternion(), ray=new THREE.Raycaster(), meshes=[]; g.traverse(o=>{ if(o.isMesh&&o.material!==sootGlass) meshes.push(o); });
+    let n=0; for(let k=0;k<40&&n<18;k++){ const a=R()*6.28, y=box.min.y+(box.max.y-box.min.y)*(.25+R()*.55), c=box.getCenter(new THREE.Vector3()), o=new THREE.Vector3(c.x+Math.cos(a)*L*2,y,c.z+Math.sin(a)*L*2);
+      ray.set(o,new THREE.Vector3(c.x-o.x,0,c.z-o.z).normalize()); const h=ray.intersectObjects(meshes,false)[0]; if(!h||!h.face) continue;
+      const nw=h.face.normal.clone().transformDirection(h.object.matrixWorld), p=h.point.clone().addScaledVector(nw,.012).applyMatrix4(inv);
+      q.setFromUnitVectors(new THREE.Vector3(0,0,1),nw.clone().transformDirection(inv)); m.compose(p,q,new THREE.Vector3(1,1,1).multiplyScalar(.7+R()*.8)); hs.setMatrixAt(n++,m); }
+    hs.count=n; hs.instanceMatrix.needsUpdate=true; g.add(hs); }
   const _vw=vWreckLook;
-  vWreckLook=function(C){ const r=_vw.apply(this,arguments); const u=C.g&&C.g.userData; if(!u||isCart(u.V)) return r;
-    try{ burn(C); C.g.scale.y=1; }catch(e){ console.warn('chatarra',e); } return r; };
+  vWreckLook=function(C){ const u=C.g&&C.g.userData; if(!u||isCart(u.V)) return _vw.apply(this,arguments);
+    const cause=C._cause||(C.id>=9e5?'old':'he'), cols=(u.mats||[u.m]).map(m=>m&&m.color&&m.color.getHex());
+    const r=_vw.apply(this,arguments);
+    try{ if(cause==='mg'&&!C._fire){ (u.mats||[u.m]).forEach((m,i)=>{ if(m&&m.color&&cols[i]!=null) m.color.setHex(cols[i]); }); C.g.scale.y=1; riddle(C);
+          const R=hashR(C.id+9); C.burn=0; if(R()<.45) C._fireAt=now+2+R()*6; return r; }       // a veces se prende fuego
+        burn(C,cause); C.g.scale.y=1;
+        if(cause==='he'&&!C._pose){ const R=hashR(C.id+21), q=R(); if(q<.4){ const h=u._h||1.45, w=u._w||1.8, side=R()<.55;   // la onda lo levanta: cae de costado o volcado
+            const b=C._blast, away=b?Math.atan2(C.x-b.x,C.z-b.z):R()*6.28; C._pose=side?{dy:w*.48,rx:0,rz:1.5*(R()<.5?1:-1)}:{dy:h*.86,rx:(R()-.5)*.1,rz:Math.PI};
+            C._jump={t:0,vy:3+R()*4,T:.9,dx:Math.sin(away)*(1+R()*2),dz:Math.cos(away)*(1+R()*2)}; } }
+    }catch(e){ console.warn('chatarra',e); } return r; };
 
   // ---- pose de los autos ubicados (sale del id) ----
   // pila del Carrefour: [dx, dz, giro, pose, arriba] en metros respecto del centro; pose 0 llantas, 1 de costado, 2 volcado, 3 de punta
@@ -74,10 +94,13 @@ float fb(vec3 p){ return vn(p)*.55+vn(p*2.13)*.28+vn(p*4.7)*.17; }`).replace('#i
     for(const C of traffic){ if(C.state!==3) continue; const u=C.g.userData; if(!u||isCart(u.V)) continue;
       if(!C._flat) for(const t of tanks){ if(t.dead||!t.pos||Math.abs(t.speed||0)<1) continue; if(Math.hypot(C.x-t.pos.x,C.z-t.pos.z)<(t.R||3)+1.2){ C._flat=1; C.burn=0;
           debris(new THREE.Vector3(C.x,heightAt(C.x,C.z)+.6,C.z),8,rustDoor,3,1); puff(new THREE.Vector3(C.x,heightAt(C.x,C.z)+.5,C.z),0x6a5e50,3,1.2,1.4,.5); break; } }
-      if(C.id<9e5&&!C._flat) continue;
+      if(C._fireAt&&now>C._fireAt&&!C._flat){ C._fireAt=0; C._fire=1; u._burnt=0; const k=C._cause; C._cause='ap'; burn(C,'ap'); C._cause=k; C.burn=now+25;   // se prendió fuego
+        for(let i=0;i<4;i++) puff(new THREE.Vector3(C.x+rand(-1,1),heightAt(C.x,C.z)+rand(.5,1.5),C.z+rand(-1,1)),0xff8a30,rand(2,3),.6,1,1,true); }
+      if(C.id<9e5&&!C._flat&&!C._pose) continue;
       const p=C._pose||(C._pose=C.id>=9e5?poseOf(C):{dy:-.1,rx:0,rz:0});
-      C.g.rotation.order='YXZ'; C.g.position.set(C.x,heightAt(C.x,C.z)+(C._flat?Math.min(p.dy,.05)*.4:p.dy),C.z);
-      C.g.rotation.set(C._flat?0:p.rx,C.h,C._flat?(Math.abs(p.rz)>2?Math.PI:0):p.rz); C.g.scale.y=C._flat?.38:1; }
+      let k=1, jy=0; if(C._jump&&!C._flat){ const J=C._jump; J.t+=dt; k=Math.min(1,J.t/J.T); jy=Math.max(0,J.vy*J.t-4.9*J.t*J.t); if(k<1){ C.x+=J.dx*dt/J.T; C.z+=J.dz*dt/J.T; } else C._jump=null; }
+      C.g.rotation.order='YXZ'; C.g.position.set(C.x,heightAt(C.x,C.z)+(C._flat?Math.min(p.dy,.05)*.4:p.dy*k+jy),C.z);
+      C.g.rotation.set(C._flat?0:p.rx*k,C.h,C._flat?(Math.abs(p.rz)>2?Math.PI:0):p.rz*k); C.g.scale.y=C._flat?.38:1; }
     return r; };
 
   // ---- Av. Independencia (Carrefour) ----

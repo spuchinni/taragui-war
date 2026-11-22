@@ -98,7 +98,8 @@
     B.meshes(G).forEach(m=>osmHitoMs.push(m)); G.updateMatrixWorld(true);
     // aviones de línea en la plataforma con la trompa hacia la terminal: un 737-800 y un E190 (aviones-linea.js, librea genérica argentina)
     for(const [tipo,lx] of [['738',-16],['e190',22]]){ const P=window.avionLinea?avionLinea(tipo):airliner(), d=P.userData.dim||{L:39.5,span:17.9}, lz=-30-d.L/2, [px,pz]=at(lx,lz);
-      P.position.set(px,heightAt(px,pz),pz); P.rotation.y=a; worldGroup.add(P); P.updateMatrixWorld(true); P.traverse(m=>{ if(m.isMesh) osmHitoMs.push(m); });
+      P.position.set(px,heightAt(px,pz),pz); P.rotation.y=a; worldGroup.add(P); P.updateMatrixWorld(true);
+      if(window.parkPlane) parkPlane(P,a); else P.traverse(m=>{ if(m.isMesh) osmHitoMs.push(m); });   // avion-roto.js: se pueden destruir
       // choque invisible (pierObs: frena tanques sin dibujar nada): fuselaje, tren principal y motores
       const T=window.AVION_LINEA&&AVION_LINEA[tipo], gy0=heightAt(px,pz), ob=(ox,oz,hw,hd,top)=>{ const [x,z]=at(lx+ox,lz+oz); pierObs.push({ob:{cx:x,cz:z,c,s,hw,hd},top:gy0+top}); };
       if(T){ ob(0,0,T.rx,d.L*.47,T.yc+T.ry); ob(0,d.L/2-T.gear.main,T.gear.track+.8,.9,3); for(const sd of [-1,1]) ob(sd*T.eng.x,d.L/2-T.eng.s-T.eng.len/2,T.eng.r+.1,T.eng.len/2+.3,T.eng.y+T.eng.r); }

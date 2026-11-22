@@ -333,7 +333,7 @@ const _pm=new THREE.Matrix4(), _pq=new THREE.Quaternion(), _pq2=new THREE.Quater
 function setPropMatrix(P){
   _pq.setFromAxisAngle(new THREE.Vector3(0,1,0),P.a);
   if(P.fallen&&P.axis){ _pq2.setFromAxisAngle(P.axis,P.t*P.t*Math.PI/2*.95); _pq.premultiply(_pq2); }
-  const sink=P.sink||0, crush=P.crushed?.4:1;
+  const sink=P.sink||0, crush=P.crushed?(P._byTank?.4:.9):1;   // baleado o volado: queda quemado y apoyado en las llantas; aplastado (.4) solo si lo pisó un tanque
   _pm.compose(_pv.set(P.x,P.y-sink*1.2,P.z),_pq,_ps.set(1,crush*(1-sink*.9),1)); if(P.gone) _pm.makeScale(0,0,0);
   if(P.kind==='post'){ propIM.post.setMatrixAt(P.i,_pm); propIM.lamp.setMatrixAt(P.i,_pm); propIM.post.instanceMatrix.needsUpdate=propIM.lamp.instanceMatrix.needsUpdate=true; }
   else if(P.kind==='fence'){ propIM.fence.setMatrixAt(P.i,_pm); propIM.fence.instanceMatrix.needsUpdate=true; }

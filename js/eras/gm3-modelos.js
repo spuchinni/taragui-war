@@ -891,9 +891,9 @@ function stuartTurret(tur,G,M,I,mat,gy){ const hw=M.tw/2, hl=M.tl/2, th=M.th;
   cyl(tur,.27,.28,.06,-hw*.18,th+.03,-hl*.25,16,mat); cyl(tur,.04,.04,.06,-hw*.18+.22,th+.07,-hl*.25,6,darkMat);
   for(const [x,z] of [[hw*.35,hl*.35],[-hw*.35,hl*.38]]){ const p=rbox(tur,.14,.1,.18,x,th+.06,z,mat,.02); box(p,.1,.05,.02,0,.01,.09,_shLensMat()); }
   cyl(tur,.1,.1,.06,hw*.35,th+.03,-hl*.35,10,darkMat);
-  // .30 Browning en el pivote del costado derecho de la torre
-  cyl(tur,.05,.06,.18,hw*.98,th*.6,-hl*.25,8,darkMat);
-  mgMount(tur,hw+.07,th+.36,-hl*.25,{post:.45,...MG_AA,seat:['commander','loader']}); }
+  // .30 Browning en el pivote del techo, del lado derecho de la torre (antes colgaba afuera de la pared curva y quedaba en el aire)
+  cyl(tur,.07,.08,.05,hw*.62,th+.025,-hl*.25,10,mat);
+  mgMount(tur,hw*.62,th+.4,-hl*.25,{post:.34,...MG_AA,seat:['commander','loader']}); }
 
 // ---- Soviéticos más fieles (m.w2.det='ru', I.ru = 't70'|'kv1'|'kv2'|'su100'|'bt7'|'t26'|'zsu37') ----
 // KV: 6 ruedas chicas, 3 rodillos de retorno, motriz atrás, guardabarros anchos con cajones. T-70, ZSU-37 (chasis del SU-76M): ruedas con goma
@@ -1150,7 +1150,7 @@ function mgMount(parent,x,y,z,o={}){ const t=shTurMG.t, k=(o.cal||7.62)>=11?1.45
   const yg=new THREE.Group(); base.add(yg); const pg=new THREE.Group(); yg.add(pg);
   if(o.ball){ const b=new THREE.Mesh(_bmgBall,o.mat||darkMat); b.scale.set(o.ball/.11,o.ball/.11,o.ball/.11*.75); b.castShadow=true; pg.add(b); }
   else { box(pg,.07*k,.09*k,.34*k,0,0,-.02,darkMat); if(o.box!==false) box(pg,.1*k,.12*k,.17*k,.09*k,-.03,0,_shGreenBox); }
-  const c=cyl(pg,.017*k,.017*k,L,0,.01,L/2+.12,6,darkMat); c.rotation.x=Math.PI/2;
+  const st=o.ball?Math.min(.12,o.ball*.45):.12, c=cyl(pg,.017*k,.017*k,L+.12-st,0,.01,st+(L+.12-st)/2,6,darkMat); c.rotation.x=Math.PI/2;   // en rótula el caño sale de adentro de la bocha (antes quedaba separado)
   if(k>1){ const j=cyl(pg,.03,.03,L*.4,0,.01,.14+L*.2,8,darkMat); j.rotation.x=Math.PI/2; }
   if(o.shield) box(pg,.42,.28,.02,0,.05,.22,o.mat||darkMat);
   const muz=new THREE.Object3D(); muz.position.set(0,.01,L+.14); pg.add(muz);

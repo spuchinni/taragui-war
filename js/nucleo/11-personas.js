@@ -498,8 +498,8 @@ function wreckCar(C,by,occupied){ if(C.state===3) return; const u=C.g.userData, 
   C.state=3; C.v=0; vWreckLook(C);
   for(let i=0;i<5;i++) puff(new THREE.Vector3(C.x+rand(-1.5,1.5),heightAt(C.x,C.z)+rand(.5,2),C.z+rand(-1.5,1.5)),0xff8a30,rand(2,3.5),.6,1,1,true);
   if(occupied&&by&&by.crew&&!by.inf) award(by.crew,'Civil abatido',-50,-60); }
-function carsBlast(p,r,by){ if(net.guest) return; for(const C of traffic){ if(C.state===3) continue; const d=Math.hypot(C.x-p.x,C.z-p.z); if(d<r+2.2) wreckCar(C,by,C.state<2); else if(d<r*4+20) abandonCar(C); } }
-function crushCars(t){ if(net.guest||!traffic.length||Math.abs(t.speed)<1) return; for(const C of traffic){ if(C.state===3) continue; if(Math.hypot(C.x-t.pos.x,C.z-t.pos.z)<t.R+1.8) wreckCar(C,t,C.state<2); } }
+function carsBlast(p,r,by){ if(net.guest) return; for(const C of traffic){ if(C.state===3) continue; const d=Math.hypot(C.x-p.x,C.z-p.z); if(d<r+2.2){ C._cause=C._cause||'he'; C._blast={x:p.x,z:p.z}; wreckCar(C,by,C.state<2); } else if(d<r*4+20) abandonCar(C); } }
+function crushCars(t){ if(net.guest||!traffic.length||Math.abs(t.speed)<1) return; for(const C of traffic){ if(C.state===3) continue; if(Math.hypot(C.x-t.pos.x,C.z-t.pos.z)<t.R+1.8){ C._cause='crush'; wreckCar(C,t,C.state<2); } } }
 function updateTraffic(dt){
   for(const C of traffic){
     if(C.state===3){ if(now<C.burn){ C.bt=(C.bt||0)-dt; if(C.bt<=0){ C.bt=.4; puff(new THREE.Vector3(C.x,heightAt(C.x,C.z)+1.4,C.z),0x2a2622,rand(2.5,4),2.5,2,.6); } } }
