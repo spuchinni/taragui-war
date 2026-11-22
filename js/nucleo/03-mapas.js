@@ -1,10 +1,13 @@
 /* ---------- Mapas ---------- */
 function inPoly(x,y,poly){let c=false;for(let i=0,j=poly.length-1;i<poly.length;j=i++){const a=poly[i],b=poly[j];
   if(((a[1]>y)!==(b[1]>y))&&(x<(b[0]-a[0])*(y-a[1])/(b[1]-a[1])+a[0]))c=!c;}return c;}
-// B° Sor Asunta: coordenadas en píxeles de la captura (888 x 815). Escala estimada 0,265 m por píxel.
-const IW=888, IH=815, SPX=.265, PAD=110;
-const toW=(px,py)=>({x:-(px-IW/2)*SPX,z:-(py-IH/2)*SPX});
-const toPx=(x,z)=>[IW/2-x/SPX, IH/2-z/SPX];
+// B° Sor Asunta: coordenadas en píxeles de la captura (888 x 815). Desde el 22/11/2026 el mapa es el real de OSM (B° Sor Asunta hasta la
+// rotonda de B° Jardín, osm-mapas.js) y la captura se ubica encima: escala real 0,34 m por píxel y giro sacados de 6 esquinas
+// (Bilbao, Los Tulipanes, Palmeras, Timbó, Sevilla) contra las calles de OSM (error 3–5 m). toW = píxel de la captura -> juego.
+const IW=888, IH=815, SPX=.34, PAD=110;
+const SOR_A=[.293891,-.170378,10.941,539.042];   // e = ar·px + ai·py + br ; n = ai·px − ar·py + bi (metros de OSM, x = este)
+const toW=(px,py)=>{ const [ar,ai,br,bi]=SOR_A; return {x:-(ar*px+ai*py+br),z:ai*px-ar*py+bi}; };
+const toPx=(x,z)=>{ const [ar,ai,br,bi]=SOR_A, e=-x-br, n=z-bi, k=ar*ar+ai*ai; return [(ar*e+ai*n)/k,(ai*e-ar*n)/k]; };
 const SOR_STREETS=[
  {n:'Bilbao',p:[[-110,252],[62,197],[300,121],[608,22],[720,-16]]},
  {n:'Los Tulipanes',p:[[30,110],[62,197],[140,400],[212,607],[268,815],[295,920]]},

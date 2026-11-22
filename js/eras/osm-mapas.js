@@ -35,6 +35,13 @@ const OSM_CFG={
     zones:[{id:'A',x:560,z:-540,r:24,label:'Cabecera del puente'},{id:'B',x:450,z:0,r:22,label:'Costanera, Padre Lavagna'},{id:'C',x:-120,z:447,r:24,label:'Parque Camba Cuá'}],
     spawns:{0:[{label:'Base sur, Av. 3 de Abril',x:-200,z:-690},{label:'Base sudoeste, Elías Abad',x:100,z:-690}],
             1:[{label:'Base norte, 25 de Mayo',x:-420,z:640},{label:'Base noreste, La Merced',x:-640,z:500}]}},
+  sor:{label:'B° Sor Asunta',desc:'Del B° Sor Asunta a la rotonda de B° Jardín por Las Margaritas: las manzanas del barrio casa por casa como son y las calles reales hasta la plaza Majul. Combate de barrio, a quemarropa.',
+    bx:450,bz:700,sky:0xbcc6c8,fog:[240,760],urban:1,ground:'#83864f',pisos:[1,1,1,1,1,2],fill:{p:.92,row2:.6,fr:[7,12],dp:[9,15],gap:[.3,2.5]},pitch:.3,
+    sp:{calle:['lapacho','jacaranda','timbo','ceibo','pindo'],parque:['lapacho','jacaranda','pindo','timbo'],bosque:['timbo','algarrobo','espinillo'],monte:['espinillo','algarrobo']},calleArb:.3,
+    pre:o=>sorHand(o), noFill:(x,z)=>{ const [a,b]=toPx(x,z); return a>-10&&a<IW+10&&b>-10&&b<IH+10; },   // las manzanas de la captura van casa por casa (abajo)
+    zones:[{id:'A',x:-94,z:333,r:16,label:'Murcia y Timbó'},{id:'B',x:-80,z:-68,r:20,label:'Las Margaritas y Málaga'},{id:'C',x:-4,z:-460,r:24,label:'Rotonda de B° Jardín'}],
+    spawns:{0:[{label:'Base sur, Los Gladiolos',x:-100,z:-650},{label:'Base sureste, Las Rosas',x:150,z:-640}],
+            1:[{label:'Base norte, Los Tulipanes',x:-50,z:640},{label:'Base noroeste, Las Pasionarias',x:150,z:620}]}},
   rotonda:{label:'Ruta 12 y Av. Independencia',desc:'La rotonda de la Ruta 12 y Av. Independencia, la plaza del Mercosur, los barrios del oeste, la cancha de Boca Unidos y los descampados con lagunas del otro lado de la ruta. Calles reales, a escala.',
     sky:0xbcc6c8,fog:[260,820],urban:1,ground:'#83864f',pisos:[1,1,1,1,2,2,3],fill:{p:.9,row2:.6,fr:[7,13],dp:[9,16],gap:[.4,3]},pitch:.15,
     sp:{calle:['lapacho','jacaranda','timbo','ceibo','pindo'],parque:['lapacho','jacaranda','pindo','timbo'],bosque:['timbo','algarrobo','espinillo'],monte:['espinillo','algarrobo']},calleArb:.3,
@@ -271,6 +278,7 @@ function buildOSM(key){
   const WALLS=C.walls||[0xece6da,0xe0d6c4,0xd8cfbd,0xcfc6b6,0xe6dccb,0xd4c4a8,0xc9c2b8,0xe8e0d0,0xbdb6aa,0xdcd2c0,0xd9c7a8,0xe2d0c0], ROOFS=C.roofs||[0x7d7e7b,0x9c9a93,0x8a8f93,0x7e4e38,0x8a573f,0x9c4a32];
   const flat=(cx,cz,w,d,a)=>{ const c=Math.cos(a), s=Math.sin(a); let lo=1e9,hi=-1e9; for(const [lx,lz] of [[-w/2,-d/2],[w/2,-d/2],[w/2,d/2],[-w/2,d/2],[0,0]]){ const X=cx+lx*c+lz*s, Z=cz-lx*s+lz*c; if(wetAt(X,Z)||(W.deckAt&&deckAt(X,Z)!==null)) return 99; const h=hg(X,Z); lo=Math.min(lo,h); hi=Math.max(hi,h); } return hi-lo; };
   const maxD=Math.max(bx,bz)+220, nearZone=(X,Z,m)=>W.zones.some(Zn=>Math.hypot(X-Zn.x,Z-Zn.z)<Zn.r*.6+m)||Object.values(W.spawns).flat().some(S=>Math.hypot(X-S.x,Z-S.z)<28+m);
+  if(C.pre) C.pre({R,rr,pick,hg,D,roads,roadAt,kindAt,wetAt});
   const osmB=[]; for(const b of D.edif){ const cx=osmW(D,b[0]), cz=osmZ(b[1]); if(Math.abs(cx)>maxD||Math.abs(cz)>maxD) continue; const w=b[2]/10, d=b[3]/10, a=b[4]/1000, h=b[5]/10;
     if(flat(cx,cz,w,d,a)>4||nearZone(cx,cz,0)) continue; osmB.push([cx,cz,w,d,a,h,b[6],b[7]]); }
   osmB.sort((p,q)=>q[2]*q[3]-p[2]*p[3]);
@@ -280,7 +288,7 @@ function buildOSM(key){
   const F=C.fill; if(F){ const ROOFR=[0x7d7e7b,0x9c9a93,0x8a8f93], hgt=()=>{ const p=pick(C.pisos||[1,1,2]); return p*3.1+rr(.2,1); };
     const tryHouse=(cx,cz,w,d,a,h)=>{ if(Math.abs(cx)>maxD||Math.abs(cz)>maxD) return false; const c=Math.cos(a), s=Math.sin(a), ob={cx,cz,c,s,hw:w/2,hd:d/2};
       for(const [lx,lz] of [[-w/2,-d/2],[w/2,-d/2],[w/2,d/2],[-w/2,d/2],[0,0],[0,d/2],[0,-d/2],[w/2,0],[-w/2,0]]){ const X=cx+lx*.8*c+lz*.8*s, Z=cz-lx*.8*s+lz*.8*c; if(roadAt(X,Z)||OSM_NOBUILD.has(OSM_AREAS.indexOf(kindAt(X,Z)))) return false; }
-      if(flat(cx,cz,w,d,a)>2.5||nearZone(cx,cz,4)) return false;
+      if(flat(cx,cz,w,d,a)>2.5||nearZone(cx,cz,4)||(C.noFill&&C.noFill(cx,cz))) return false;
       for(const b of gridQuery(cx,cz,Math.max(w,d)+2)) if(b.ob&&obOverlap(ob,b.ob)) return false;
       const pit=h<6.5&&R()<(C.pitch||0); addBuilding(cx,cz,w,d,h,a,pick(WALLS),h>7?pick(ROOFR):pick(ROOFS),false,h>15?260:h>7?200:110,pit); return true; };
     const FT=C.fillTipos?new Set(C.fillTipos):OSM_FRONT; // tipos de calle con casas (en los pueblos, solo las del pueblo)
@@ -338,6 +346,26 @@ function osmOuter(){
 // Los mapas de la Guerra Fría que pasan a ser reales (reemplazan a los comprimidos)
 for(const k in OSM_CFG){ const C=OSM_CFG[k], D0=WORLDS[k]||{};
   WORLDS[k]={key:k,label:C.label,desc:C.desc,osm:true,bx:C.bx||750,bz:C.bz||750,sky:C.sky||D0.sky,fog:C.fog||[240,780],h:(x,z)=>0,zones:C.zones,spawns:C.spawns,eastNat:C.eastNat,city:!!C.urban,dust:C.dust}; }
+
+// B° Sor Asunta: las casas de la captura (SOR_BLD y SOR_OUT de 03-mapas.js) ubicadas sobre el mapa real con toW; se corren de las calles de OSM
+// (la captura y OSM difieren 3–5 m) y no van donde OSM tiene calle. b.sorH = casa de la captura (barrio.js le pone galería).
+function sorHand(o){ const WALLS=[0xeeeae0,0xe2d8c4,0xf1e6cf,0xd9cfbd,0xe8d2bc,0xcfc8bb,0xe6dcc0];
+  const ROOF={g:[0x7d7e7b,0x767879,0x868580],l:[0x9c9a93,0xa4a29b],d:[0x585b5f,0x4d5054],r:[0x7e4e38,0x8a573f],b:[0x3c455c,0x353d52],w:[0xc9c7c1]};
+  const A=toW(170,492), B=toW(444,425), ang=Math.atan2(-(B.z-A.z),B.x-A.x); let n=0;
+  for(const arr of [SOR_BLD,SOR_OUT]) for(const [px,py,pw,ph,rk] of arr){ let {x,z}=toW(px,py); const w=pw*SPX, d=ph*SPX;
+    for(let k=0;k<4;k++){ const q=nearestSeg(x,z,streetSegs), req=Math.min(w,d)/2+(q.seg&&q.seg.w?q.seg.w/2:3)+1.6; if(q.d<req&&q.d>.01){ x+=(x-q.px)/q.d*(req-q.d); z+=(z-q.pz)/q.d*(req-q.d); } }
+    const c=Math.cos(ang), s=Math.sin(ang); if([[0,0],[w*.4,d*.4],[-w*.4,d*.4],[w*.4,-d*.4],[-w*.4,-d*.4]].some(([lx,lz])=>o.roadAt(x+lx*c+lz*s,z-lx*s+lz*c))) continue;
+    const before=bList.length;
+    if(rk==='church') addBuilding(x,z,w,d,7,ang,0xf2efe8,0x8e4a35,true,160);
+    else if(rk==='corralon') addBuilding(x,z,w,d,5.5,ang,0xd2c8b4,0x8c8f90,true,160);
+    else addBuilding(x,z,w,d,o.rr(3,3.8),ang,o.pick(WALLS),o.pick(ROOF[rk]||ROOF.g),true,110);
+    if(bList.length>before){ bList[bList.length-1].sorH=1; n++; } }
+  W._sorHand=n;
+  // la plaza de la rotonda no tiene calles adentro (el nodo más cercano queda a ~39 m, en el anillo): el camino termina adentro del punto
+  if(!window._sorGoal&&typeof pickGoal==='function'){ window._sorGoal=1; const _pg=pickGoal;
+    pickGoal=function(t){ const r=_pg.apply(this,arguments); try{ if(W===WORLDS.sor&&t.path&&t.path.length){ const g=t.path[t.path.length-1];
+      const Z=zones.find(Z=>Math.hypot(g.x-Z.x,g.z-Z.z)<Z.r+30&&Math.hypot(g.x-Z.x,g.z-Z.z)>Z.r*.6);
+      if(Z){ const p=new THREE.Vector3(Z.x+rand(-Z.r*.35,Z.r*.35),0,Z.z+rand(-Z.r*.35,Z.r*.35)); t.path.push(p); t.goal=p; } } }catch(e){} return r; }; } }
 
 // ---- Hitos que OSM no tiene en 3D ----
 let osmHitoMs=[];

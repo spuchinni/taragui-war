@@ -11,5 +11,6 @@
   "posadas":     {"nombre":"Posadas – Encarnación","lat":-27.37193,"lon":-55.8688,"hx":1480,"hz":520,"rot":156.5,"pisos":[1,1,2,3]},
   "salto":       {"nombre":"Represa de Salto Grande","lat":-31.27595,"lon":-57.94134,"hx":1250,"hz":420,"rot":30.5,"pisos":[1,1,2]},
   "cordillera":  {"nombre":"Paso Cristo Redentor","lat":-32.8253,"lon":-70.0708,"hx":750,"hz":750,"zrel":14,"montana":1,"sinAgua":1,"pico":120,"pisos":[1]},
-  "malvinas":    {"nombre":"Islas Malvinas","lat":-51.6965,"lon":-57.8830,"hx":750,"hz":750,"pisos":[1,1,2]}
+  "malvinas":    {"nombre":"Islas Malvinas","lat":-51.6965,"lon":-57.8830,"hx":750,"hz":750,"pisos":[1,1,2]},
+  "sor":         {"nombre":"B° Sor Asunta y B° Jardín","lat":-27.45441,"lon":-58.78083,"rot":-30,"hx":450,"hz":700,"pisos":[1,1,1,2]}
 }

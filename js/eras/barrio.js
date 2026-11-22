@@ -15,7 +15,10 @@
 (function(){
   // 'sor' = el barrio completo; 'osm' = mapas reales (Itatí, Laguna Brava, Paso de la Patria, Corrientes…): solo las casas bajas,
   // sin galerías, postes, carteles ni suelo propio, y todo partido en sectores de 260 m que se apagan de lejos (cullAdd)
-  const MODE=()=>typeof W==='undefined'?null:W===WORLDS.sor?'sor':W.osm?'osm':null, ON=()=>!!MODE();
+  const MODE=()=>typeof W==='undefined'?null:W.osm?'osm':W===WORLDS.sor?'sor':null, ON=()=>!!MODE();
+  // B° Sor Asunta real (desde el 22/11/2026 es un mapa de OSM hasta la rotonda de B° Jardín): todo como los mapas reales, y en las
+  // manzanas de la captura (casas con b.sorH) además galerías, postes de madera con cables, carteles y el cordón de Las Margaritas
+  const SORX=()=>typeof W!=='undefined'&&W===WORLDS.sor&&!!W.osm;
   const SMALL=b=>isFinite(b.max)&&b.max<1e8&&b.top-b.base<=6.4&&b.w*b.d<=280&&b.w>2.5&&b.d>2.5;
   const FENCE_MAX=2000;
   const merge=a=>THREE.BufferGeometryUtils.mergeBufferGeometries(a.map(g=>g.index?g.toNonIndexed():g));
@@ -77,7 +80,7 @@
       const F=frame(b,side), gap=best-3.3, hs={b,F,side,gap,r:R,parts:[]};
       hs.roof=r()<.44?'chapa':r()<.4?'teja':'losa'; if(b.w*b.d>140&&hs.roof==='teja') hs.roof='losa';
       hs.dF=gap>=2.1&&gap<16?Math.min(gap-1.3,6.5):0;                             // frente del lote (cerco) a dF del frente de la casa
-      hs.gd=(!osm&&hs.dF>=2.2&&r()<.8)?Math.min(2.6,hs.dF-.7):0;                 // galería
+      hs.gd=((!osm||(b.sorH&&SORX()))&&hs.dF>=2.2&&r()<.8)?Math.min(2.6,hs.dF-.7):0;                 // galería
       hs.gw=hs.gd?F.W*(r()<.5?1:.55+r()*.3):0; hs.gx=hs.gd&&hs.gw<F.W?(r()<.5?-1:1)*(F.W-hs.gw)/2:0;
       if(hs.gd){ const o=b.box.ob, ext=hs.gd; if(side[1]==='z'){ o.hd+=ext/2; const k=side[0]==='+'?1:-1; o.cx+=s*ext/2*k; o.cz+=c*ext/2*k; } else { o.hw+=ext/2; const k=side[0]==='+'?1:-1; o.cx+=c*ext/2*k; o.cz-=s*ext/2*k; }
         // la caja de la grilla vuelve a cubrir las cuatro esquinas
@@ -86,7 +89,7 @@
       hs.fence=hs.dF&&(!osm||r()<.7)?['tr','tr','r','a','m','tr'][(r()*6)|0]:null;
       hs.col=WALLS[(r()*WALLS.length)|0]; hs.brick=frac(b.x*.1371+b.z*.3113)<.28;   // mismo sorteo que fachadas.js (casilla de ladrillo)
       H.houses.push(hs); }
-    if(!osm){ grid=new Map(); houseBoxes.forEach(gridAdd); } }
+    if(!osm||SORX()){ grid=new Map(); houseBoxes.forEach(gridAdd); } }
 
   // ---------- las casas ----------
   function buildHouses(){
@@ -247,7 +250,10 @@
         const P={kind:'street',ims,i,x:f.x,z:f.z,y:heightAt(f.x,f.z)-.03,a:f.a,r:f.len/2,t:0,fence:1}; addProp(P); setPropMatrix(P); });
       ims.forEach(im=>{ if(im.instanceColor) im.instanceColor.needsUpdate=true; });
       if(osm){ let cx=0,cz=0; L.forEach(f=>{ cx+=f.x; cz+=f.z; }); cx/=L.length; cz/=L.length; const r=Math.max(...L.map(f=>Math.hypot(f.x-cx,f.z-cz)))+3; ims.forEach(im=>cullAdd(im,cx,heightAt(cx,cz)+1,cz,r,230)); } }
-    if(osm){ W._barrio={casas:H.houses.length,cercos:H.fences.length}; return; }
+    if(osm&&!SORX()){ W._barrio={casas:H.houses.length,cercos:H.fences.length}; return; }
+    if(osm){ const nb=(x,z)=>{ const [a,b]=toPx(x,z); return a>-40&&a<IW+40&&b>-40&&b<IH+40; };   // sin las columnas genéricas donde van los postes de madera
+      const out=props.filter(P=>P.kind==='post'&&nb(P.x,P.z)); out.forEach(P=>{ P.gone=1; setPropMatrix(P); });
+      if(out.length){ const S=new Set(out); props=props.filter(P=>!S.has(P)); propGrid=new Map(); for(const P of props){ const k=pk(P.x,P.z); let a=propGrid.get(k); if(!a){a=[];propGrid.set(k,a);} a.push(P); } } }
     // ---- postes de la red eléctrica a lo largo de cada calle, siempre del mismo lado ----
     const runs=[]; SOR_STREETS.forEach((S,si)=>{ const w=S.p.map(q=>toW(...q)), R=mulberry0(500+si*17), sd=R()<.5?1:-1, off=(S.pav?3.6:3.25)+.7; let acc=R()*20, run=[];
       for(let i=0;i<w.length-1;i++){ const A=w[i], B=w[i+1], L=Math.hypot(B.x-A.x,B.z-A.z), ux=(B.x-A.x)/L, uz=(B.z-A.z)/L; let d=acc;
