@@ -487,7 +487,7 @@ Object.assign(VEH,{
   m16mgmc:{nation:'us',era:3,year:1943,br:3.0,req:'m3stuart',cls:'antiaéreo',label:'M16 MGMC',desc:'El semioruga M3 con el montaje Maxson M45: cuatro ametralladoras de 12,7 mm. Contra la infantería lo llamaban "la picadora de carne".',
     aa:1,elev:1.4,auto:{mag:200,rof:.035},maxF:kmh2(64),maxR:3,turn:.85,trav:1.8,reload:7,pen:22,hp:55,crewReal:5,seats:['driver','commander','gunner','loader'],
     armor:{hull:{front:12,side:6,rear:6,top:0},turret:{front:6,side:6,rear:6,top:0}},camo:W2US,camoMode:'flat',mgc:12.7,
-    m:{ww1:'ht',L:6.5,W:2.2,H:2.4,tz:0,tw:.8,th:.5,tl:.4,gl:1.3,gr:.02,ht:{ins:'us',aa:1}}},
+    m:{ww1:'ht',L:6.17,W:2.16,H:2.34,tz:0,tw:.8,th:.5,tl:.4,gl:1.2,gr:.022,ht:{ins:'us',aa:1,m16:1}}},
   crusaderaa:{nation:'uk',era:3,year:1943,br:3.3,req:'crusader3',cls:'antiaéreo',label:'Crusader AA Mk II',desc:'Crusader con una torre abierta y dos Oerlikon de 20 mm. Preparados para el Día D; como los aliados dominaban el aire, muchos terminaron tirándole a la infantería.',
     aa:1,elev:1.4,auto:{mag:120,rof:.07},maxF:kmh2(42),maxR:3,turn:.8,trav:1.5,reload:6,pen:32,hp:95,crewReal:3,seats:['driver','commander','gunner'],
     armor:{hull:{front:51,side:28,rear:28,top:10},turret:{front:14,side:14,rear:14,top:0}},camo:W2UK,camoMode:'flat',mgc:7.7,
