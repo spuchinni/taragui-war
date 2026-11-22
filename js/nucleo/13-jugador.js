@@ -58,9 +58,12 @@ function updatePlayer(dt){
     t.root.updateMatrixWorld(true);
     // Mira del artillero real (pedido de Sebastián): va montada con el cañón, así que se ve hacia donde apunta el tubo (menos la
     // sobreelevación de la alza, t.se) y sigue a la torre con su retraso; el mouse marca adonde querés llevarlo (miras.js)
-    const tp=t.gunPivot.getWorldPosition(new THREE.Vector3()); tp.y+=.35;
+    const pv=t.gunPivot.getWorldPosition(new THREE.Vector3()), tp=pv.clone(); tp.y+=.35;
     const gd=t.barrel.getWorldDirection(new THREE.Vector3()), gy=Math.atan2(gd.x,gd.z), gpch=Math.asin(clamp(gd.y,-1,1))-(t.se||0);
-    camera.position.copy(tp); camera.lookAt(tp.clone().add(new THREE.Vector3(Math.sin(gy)*Math.cos(gpch),Math.sin(gpch),Math.cos(gy)*Math.cos(gpch))));
+    // la mira está 35 cm arriba del cañón: si mira paralela al tubo, el tiro pega por debajo del centro de la cruz (≈1° a 20 m; pedido de Sebastián:
+    // "está fuera de eje"). Como una mira puesta a cero, converge en el punto del tubo a la distancia de lo que se apunta: el centro es donde pega.
+    const R=clamp(lastAim?lastAim.distanceTo(pv):400,6,3000);
+    camera.position.copy(tp); camera.lookAt(pv.clone().addScaledVector(new THREE.Vector3(Math.sin(gy)*Math.cos(gpch),Math.sin(gpch),Math.cos(gy)*Math.cos(gpch)),R));
     // aumento real: 1× = lo que ocupa la pantalla vista a distancia normal (~34° de alto); clic derecho: el mayor aumento (si tiene uno solo, ×1,5)
     const mags=t.T.optic||[8], mag=rightDown?(mags.length>1?Math.max(...mags):mags[0]*1.5):mags[Math.min(t.magIdx||0,mags.length-1)], tf=2*Math.atan(Math.tan(17*Math.PI/180)/mag)*180/Math.PI;
     camera.fov+=(tf-camera.fov)*Math.min(1,dt*12);
