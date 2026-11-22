@@ -167,7 +167,29 @@
   const _up=updatePlanes;
   updatePlanes=function(dt){
     _up(dt);
-    for(const pl of civPlanes){ const gr=pl.g.userData.gear; if(gr) gr.visible=!(pl.state>=1&&pl.pos.y-heightAt(pl.pos.x,pl.pos.z)>14); } };
+    for(const pl of civPlanes){ const gr=pl.g.userData.gear; if(gr) gr.visible=!(pl.state>=1&&pl.pos.y-heightAt(pl.pos.x,pl.pos.z)>14); jetSound(pl); }
+    for(const pl of [...JS]) if(!civPlanes.includes(pl)) jetStop(pl); };
+  // sonidos CC0 de Freesound (22/11/2026): jettaxi = turbina rodando (joeffl #843280), jetroar = plena potencia de cerca (Sonicwave32 #436511),
+  // jetfar = despegue lejano (clif_creates #251973); bucles de 6–7 s con 0,3 s de margen a cada lado (herramientas/sonidos/aviones-linea.py)
+  Object.assign(SND_FILES,{jettaxi:1,jetroar:1,jetfar:1});
   }
   if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',instalar); else instalar();
+  // ----- sonido de cada avión: rodaje, plena potencia de cerca y rugido grave de lejos, en una sola fuente con posición -----
+  const JS=new Set(), LEN={jettaxi:7,jetroar:6,jetfar:6};
+  function jetSound(pl){ if(typeof AC==='undefined'||!AC||!extBus) return;
+    if(!pl._au){ if(!['jettaxi','jetroar','jetfar'].every(k=>SFX[k]&&SFX[k].length)) return;
+      if(pl.snd){ pl.snd.stop(); pl.snd=null; }                                                    // el 'flyover' genérico de 11-personas.js
+      const pn=AC.createPanner(); pn.panningModel='equalpower'; pn.distanceModel='inverse'; pn.refDistance=110; pn.rolloffFactor=1;
+      const lp=AC.createBiquadFilter(); lp.type='lowpass'; lp.frequency.value=9000; lp.connect(pn).connect(extBus);
+      const mk=k=>{ const s=AC.createBufferSource(); s.buffer=SFX[k][0]; s.loop=true; s.loopStart=.3; s.loopEnd=.3+LEN[k]; const g=AC.createGain(); g.gain.value=0; s.connect(g).connect(lp); s.start(0,.3+Math.random()*LEN[k]); return {s,g}; };
+      pl._au={pn,lp,taxi:mk('jettaxi'),roar:mk('jetroar'),far:mk('jetfar')}; JS.add(pl); }
+    const A=pl._au, P=pl.pos, t=AC.currentTime, d=P.distanceTo(camera.position), st=pl.state, v=pl.v||0;
+    if(A.pn.positionX){ A.pn.positionX.value=P.x; A.pn.positionY.value=P.y+3; A.pn.positionZ.value=P.z; } else A.pn.setPosition(P.x,P.y+3,P.z);
+    A.lp.frequency.setTargetAtTime(Math.max(600,9000*Math.exp(-d/650)),t,.2);
+    const full=st>=0&&st<3?1:0, taxi=st===-1?1:(st===0?Math.max(0,1-v/25):0), near=Math.max(0,Math.min(1,1-(d-150)/550));
+    const ramp=st===0?Math.min(1,.35+v/45):1;                                                       // al soltar los frenos sube de a poco
+    A.taxi.g.gain.setTargetAtTime(1.3*taxi,t,.4); A.roar.g.gain.setTargetAtTime(2.6*full*ramp*near,t,.3); A.far.g.gain.setTargetAtTime(2.4*full*ramp*(1-near*.85),t,.3);
+    A.taxi.s.playbackRate.value=.9+Math.min(v,15)/15*.18; A.roar.s.playbackRate.value=.92+Math.min(v,95)/95*.14; }
+  function jetStop(pl){ const A=pl._au; JS.delete(pl); if(!A) return; pl._au=null; try{ const t=AC.currentTime; for(const k of ['taxi','roar','far']){ A[k].g.gain.setTargetAtTime(0,t,.5); A[k].s.stop(t+2.5); } }catch(e){} }
+  addEventListener('DOMContentLoaded',()=>{ if(typeof stopAllLoops==='function'){ const _sa=stopAllLoops; stopAllLoops=function(){ for(const pl of [...JS]) jetStop(pl); return _sa.apply(this,arguments); }; } });
 })();
