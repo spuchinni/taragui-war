@@ -2,7 +2,7 @@
    Cada vez que un tanque pasa a ser tuyo (comprado, regalado por el entrenamiento, el premio diario, una nación nueva…), la primera vez que
    aparece en el garaje no está ahí: llega por la explanada arriba de un transporte de tanques Oshkosh M1070 + semirremolque M1000 (hecho por
    código), frena, baja las rampas, el tanque baja marcha atrás, gira en el lugar hasta su lugar y el camión se va. Tocar/clic o Esc lo saltea.
-   PROG.llego = tanques que ya llegaron (al estrenarse se llena con todos los que ya tenías, así no llegan todos de golpe). */
+   Solo para tanques desbloqueados mientras jugás (PROG.llegaPend): los que ya tenías no vuelven a llegar (ver sync, 22/11/2026). */
 (()=>{
   const S=()=>document.getElementById('llegaBox');
   { const st=document.createElement('style'); st.textContent='body.llega .hg>*:not(canvas){opacity:0!important;pointer-events:none!important;transition:opacity .4s} body.llega .hgHint{display:none}'; document.head.appendChild(st); }
@@ -135,13 +135,20 @@
   // saltear: clic, toque o Esc en el garaje
   const skip=e=>{ if(L.on&&hangarOn()&&L.time>.4){ finish(true); if(e&&e.type==='keydown') e.stopPropagation(); } };
   document.addEventListener('pointerdown',skip,true); document.addEventListener('keydown',e=>{ if(e.key==='Escape') skip(e); },true);
-  // ¿qué tanques ya llegaron? (al estrenarse: todos los que ya tenías)
-  function seed(){ if(!PROG||PROG.llego) return; PROG.llego={}; for(const k in (PROG.owned||{})) if(!(PROG.loan&&PROG.loan.k===k)) PROG.llego[k]=1; }
-  { const _l=loadProg; loadProg=function(){ const r=_l.apply(this,arguments); try{ seed(); }catch(e){} return r; }; }
+  // ¿cuándo llega? (22/11/2026, pedido de Sebastián: "debe ser cuando se desbloquea un tanque nuevo, no cuando voy al hangar")
+  // Antes salía para todo tanque tuyo que no estuviera en PROG.llego, y si esa lista se desfasaba (progreso que llega de la nube, de otro aparato…)
+  // el camión traía tanques que ya tenías cada vez que entrabas al garaje. Ahora: los que tenés al cargar el progreso son la base; solo un tanque
+  // que pasa a ser tuyo mientras jugás (comprado, regalado, premio) queda "en camino" (PROG.llegaPend) y el camión lo trae la primera vez que el
+  // garaje lo muestra: en el acto si lo compraste ahí, o la próxima vez que entrás si lo ganaste en otra pantalla.
+  let base=null, baseP=null;
+  function sync(){ if(!PROG) return; const own=PROG.owned||{};
+    if(PROG!==baseP||!base){ baseP=PROG; base=new Set(Object.keys(own)); return; }                  // progreso nuevo (al cargar, otra cuenta, la nube): base sin animar
+    for(const k in own) if(!base.has(k)){ base.add(k); if(VEH[k]&&!VEH[k].support&&!(PROG.loan&&PROG.loan.k===k)) (PROG.llegaPend=PROG.llegaPend||{})[k]=1; } }
+  { const _sp=saveProg; saveProg=function(){ try{ sync(); }catch(e){} return _sp.apply(this,arguments); }; }
+  { const _l=loadProg; loadProg=function(){ const r=_l.apply(this,arguments); try{ sync(); }catch(e){} return r; }; }
   { const _hs=hgShow; hgShow=function(key){ _hs.apply(this,arguments);
-      try{ if(!PROG||!hg||!hg.obj||!key||!VEH[key]) return; seed();
-        if(PROG.train||!owned(key)||VEH[key].support||PROG.llego[key]) return;
-        if(PROG.loan&&PROG.loan.k===key) return;
-        PROG.llego[key]=1; saveProg(); start(hg.obj,key); }catch(e){ console.warn('camión',e); } }; }
+      try{ if(!PROG||!hg||!hg.obj||!key||!VEH[key]) return; sync();
+        if(PROG.train||!owned(key)||!(PROG.llegaPend&&PROG.llegaPend[key])) return;
+        delete PROG.llegaPend[key]; saveProg(); start(hg.obj,key); }catch(e){ console.warn('camión',e); } }; }
   window.llegaCamion=k=>{ if(hg&&hg.obj) start(hg.obj,k||hgSel); };                                                 // para probar desde la consola
 })();
