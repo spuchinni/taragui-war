@@ -528,21 +528,32 @@ function airlinerMesh(){ const g=new THREE.Group(), w=new THREE.MeshLambertMater
   return {g,hit}; }
 function updatePlanes(dt){
   if(!net.guest&&W===WORLDS.aeropuerto&&state!=='end'&&civPlanes.filter(P=>P.state<3).length<1&&now>planeNextT&&civPlanes.length<4&&now>15){
-    planeNextT=now+rand(45,75); const a=aW(...RUNWAY[0]), b=aW(...RUNWAY[1]), m=airlinerMesh(), dir=new THREE.Vector3(b.x-a.x,0,b.z-a.z).normalize();
-    const pl={id:++planeSeq,g:m.g,hit:m.hit,pos:new THREE.Vector3(a.x,heightAt(a.x,a.z),a.z),dir,v:0,vy:0,pitch:0,state:0,hp:150,yaw:Math.atan2(dir.x,dir.z)};
+    planeNextT=now+rand(45,75);
+    // mapa real (OSM): pista de OSM; el avión sale de la plataforma de la terminal (del lado que da a la pista), rueda derecho hasta la pista
+    // y despega hacia la punta más lejana (la pista tiene 2,2 km: desde el medio le sobra para despegar)
+    let a=aW(...RUNWAY[0]), b=aW(...RUNWAY[1]), start=null; if(W._runway){ const [r0,r1]=W._runway, Ap=W._aero, dx=r1.x-r0.x, dz=r1.z-r0.z, l2=dx*dx+dz*dz;
+      const foot=p=>{ const t=Math.max(.08,Math.min(.92,((p.x-r0.x)*dx+(p.z-r0.z)*dz)/l2)); return {x:r0.x+dx*t,z:r0.z+dz*t}; }, dRw=p=>{ const f=foot(p); return Math.hypot(p.x-f.x,p.z-f.z); };
+      a=r0; b=r1;
+      if(Ap){ const c=Math.cos(Ap.a), s=Math.sin(Ap.a), at=(lx,lz)=>({x:Ap.x+lx*c+lz*s,z:Ap.z-lx*s+lz*c}), c1=at(18,-52), c2=at(18,52); start=dRw(c1)<dRw(c2)?c1:c2;
+        a=foot(start); b=Math.hypot(r0.x-a.x,r0.z-a.z)>Math.hypot(r1.x-a.x,r1.z-a.z)?r0:r1; } }
+    const m=airlinerMesh(), dir=new THREE.Vector3(b.x-a.x,0,b.z-a.z).normalize(), p0=start||a, tx=start?new THREE.Vector3(a.x-p0.x,0,a.z-p0.z).normalize():dir;
+    const pl={id:++planeSeq,g:m.g,hit:m.hit,pos:new THREE.Vector3(p0.x,heightAt(p0.x,p0.z),p0.z),dir:start?tx:dir,rwDir:dir,rwA:a,v:0,vy:0,pitch:0,state:start?-1:0,hp:150,yaw:Math.atan2(tx.x,tx.z)};
     m.hit.userData.plane=pl; civHits.push(m.hit); scene.add(m.g); civPlanes.push(pl); pl.snd=movingLoop('flyover',2.4,{rate:1.6,start:1,ref:120,lp:5000});
     feed('Un avión de pasajeros intenta despegar para huir','var(--paper)'); }
   for(let i=civPlanes.length-1;i>=0;i--){ const pl=civPlanes[i], P=pl.pos;
     if(!net.guest){
-      if(pl.state===0){ pl.v=Math.min(78,pl.v+dt*4.2); if(pl.v>62){ pl.state=1; } }
+      if(pl.state===-1){ const A=pl.rwA, d=Math.hypot(A.x-P.x,A.z-P.z); pl.v=Math.min(d<40?7:15,pl.v+dt*2.5);          // rodando hasta la cabecera
+        pl.dir.set(A.x-P.x,0,A.z-P.z).normalize(); if(d<4){ pl.state=0; pl.dir.copy(pl.rwDir); pl.v=Math.min(pl.v,6); } }
+      else if(pl.state===0){ pl.v=Math.min(78,pl.v+dt*4.2); if(pl.v>62){ pl.state=1; } }
       else if(pl.state===1){ pl.v=Math.min(95,pl.v+dt*2); pl.pitch+=(.16-pl.pitch)*Math.min(1,dt); }
       else if(pl.state===2){ pl.vy-=9.8*dt; pl.pitch+=(-.6-pl.pitch)*Math.min(1,dt*.8); pl.st=(pl.st||0)-dt; if(pl.st<=0){ pl.st=.12; puff(P.clone().setY(P.y+2),0x2a2622,rand(3,5),3,1.5,.7); puff(P.clone().setY(P.y+2),0xff8a30,2,.5,1,1,true); } }
       const gy=heightAt(P.x,P.z);
-      if(pl.state<3){ P.addScaledVector(pl.dir,pl.v*dt*Math.cos(pl.pitch)); P.y+=pl.state===2?pl.vy*dt:pl.v*Math.sin(pl.pitch)*dt; if(P.y<gy) P.y=gy; }
+      if(pl.state<3){ P.addScaledVector(pl.dir,pl.v*dt*Math.cos(pl.pitch)); P.y+=pl.state===2?pl.vy*dt:pl.v*Math.sin(pl.pitch)*dt; if(P.y<gy||pl.state<=0) P.y=heightAt(P.x,P.z); }
       if(pl.state===2&&P.y<=gy+.5){ pl.state=3; pl.v=0; blast(P.clone(),2.2); addCrater(P.clone(),6,1.8); infBlast(P.clone(),14,pl.by||null); pl.burn=now+30; boom(distVol(P,1),2,300); }
       if(pl.state===3&&now<pl.burn){ pl.bt=(pl.bt||0)-dt; if(pl.bt<=0){ pl.bt=.35; puff(P.clone().add(new THREE.Vector3(rand(-8,8),3,rand(-8,8))),0x2a2622,rand(4,7),3,2.5,.7); } }
       if((pl.state===1&&P.distanceTo(new THREE.Vector3(0,P.y,0))>1500)||(pl.state===3&&now>pl.burn+20)){ removePlane(pl); continue; } }
     else if(pl.tp){ const k=Math.min(1,dt*6); P.lerp(pl.tp,k); pl.yaw=wrap(pl.yaw+wrap(pl.tyaw-pl.yaw)*k); pl.pitch+=(pl.tpitch-pl.pitch)*k; }
+    if(!net.guest&&pl.state<2){ const ty=Math.atan2(pl.dir.x,pl.dir.z); pl.yaw=wrap(pl.yaw+wrap(ty-pl.yaw)*Math.min(1,dt*(pl.state===-1?1.6:4))); }   // gira de a poco hacia donde va
     pl.g.position.copy(P); pl.g.rotation.set(-pl.pitch,pl.yaw,0,'YXZ'); if(pl.snd) pl.snd.set(P); }
 }
 function removePlane(pl){ scene.remove(pl.g); if(pl.snd) pl.snd.stop(); const i=civPlanes.indexOf(pl); if(i>=0) civPlanes.splice(i,1); const j=civHits.indexOf(pl.hit); if(j>=0) civHits.splice(j,1); }

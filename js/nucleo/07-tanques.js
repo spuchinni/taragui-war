@@ -168,10 +168,12 @@ function tankFX(t,dt){
   if(net.guest&&t.fireT>0&&!t.dead){ t.fxF=(t.fxF||0)-dt; if(t.fxF<=0){ t.fxF=.35; puff(t.pos.clone().add(new THREE.Vector3(rand(-1,1),t.topH,rand(-1,1))),0xff7020,rand(2,3),.6,2,1,true); puff(t.pos.clone().setY(t.pos.y+t.topH+1),0x2a2622,rand(3,5),2,3,.6); } }
   if(t.ammoCount){ if(t.mgRel>0) t.mgRel=Math.max(0,t.mgRel-dt);
     const mine=t.team===0?1:-1, Z=zones.find(Z=>Z.owner===mine&&Math.hypot(Z.x-t.pos.x,Z.z-t.pos.z)<Z.r);
-    const full=t.ammoCount.every((c,i)=>c>=t.ammoMax[i])&&t.mgBelts>=3&&t.mgBelt>=250;
+    // humo (pedido de Sebastián): en un punto propio también se reponen las granadas, una cada 6 s hasta las que da el nivel (smokeMax)
+    const smkMax=t.smokeMax!=null?t.smokeMax:(t.lv>=2&&!t.noSmk?2:0), full=t.ammoCount.every((c,i)=>c>=t.ammoMax[i])&&t.mgBelts>=3&&t.mgBelt>=250&&!((t.smoke||0)<smkMax);
     t.resupply=!!Z&&Math.abs(t.speed)<1&&!full;
     if(t.resupply){ t.rsT=(t.rsT||0)+dt; if(t.rsT>=1.1){ t.rsT=0; let j=-1,w=1; t.ammoCount.forEach((c,i)=>{const f=c/t.ammoMax[i]; if(f<w){w=f;j=i;}}); if(j>=0) t.ammoCount[j]++; }
-      t.rsM=(t.rsM||0)+dt; if(t.rsM>=4){ t.rsM=0; if(t.mgBelt<250) t.mgBelt=250; else if(t.mgBelts<3) t.mgBelts++; } } else { t.rsT=0; t.rsM=0; } }
+      t.rsM=(t.rsM||0)+dt; if(t.rsM>=4){ t.rsM=0; if(t.mgBelt<250) t.mgBelt=250; else if(t.mgBelts<3) t.mgBelts++; }
+      if((t.smoke||0)<smkMax){ t.rsS=(t.rsS||0)+dt; if(t.rsS>=6){ t.rsS=0; t.smoke=(t.smoke||0)+1; tell(t,'💨 Granada de humo repuesta','#8fd88a'); } } } else { t.rsT=0; t.rsM=0; t.rsS=0; } }
   const ds=t.speed*dt, near=t.pos.distanceToSquared(camera.position)<330*330;
   if(t.trk){ const k=ds*.42; // los eslabones de arriba avanzan respecto del casco
     t.trk.sideP.map.offset.x=(t.trk.sideP.map.offset.x+k)%1; t.trk.sideN.map.offset.x=(t.trk.sideN.map.offset.x-k)%1; t.trk.top.map.offset.x=(t.trk.top.map.offset.x+k)%1; }

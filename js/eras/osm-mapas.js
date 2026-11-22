@@ -158,6 +158,9 @@ function buildOSM(key){
   W.water=hasW?0:undefined;
   // ---- calles (en metros del juego) ----
   const roads=D.calles.map(r=>{ const pts=[]; for(let i=5;i<r.length;i+=2) pts.push([osmW(D,r[i]),osmZ(r[i+1])]); return {t:r[0],w:r[1]/10,br:!!(r[2]&1),tun:!!(r[2]&2),dirt:!!(r[2]&4),lay:r[3],name:r[4]>=0?D.nombres[r[4]]:'',pts}; });
+  // pista de aterrizaje de OSM (la más larga): los aviones que huyen despegan por ahí (antes usaban la pista del mapa viejo de la v1 y salían de cualquier lado)
+  { let best=null, bl=0; for(const L of roads){ if(L.t!==17||L.pts.length<2) continue; const a=L.pts[0], b=L.pts[L.pts.length-1], l=Math.hypot(b[0]-a[0],b[1]-a[1]); if(l>bl){ bl=l; best=[{x:a[0],z:a[1]},{x:b[0],z:b[1]}]; } }
+    W._runway=best&&bl>300?best:null; }
   // ---- puentes: tableros por encima del agua o de otras calles ----
   const decks=[]; { const bl=roads.filter(L=>L.br&&(OSM_CAR.has(L.t)||L.t===16)&&L.pts.length>1);
     // une los tramos de un mismo puente (comparten punta)

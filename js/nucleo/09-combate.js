@@ -34,6 +34,7 @@ function updateShells(dt){
       s.v.y-=G*h; s.p.addScaledVector(s.v,h); const seg=s.p.distanceTo(p0); s.travel+=seg;
       const dir=s.p.clone().sub(p0).normalize();
       if(!s.fx&&infOnRay(p0,dir,seg,s.owner,.8,'blast')>=0&&s.A.kind!=='ke'){ blast(s.p,.3); infBlast(s.p,3,s.owner); done=true; break; }
+      if(!s.fx){ const ps=propsOnRay(p0,dir,seg,s.owner,s.A.kind); if(ps>=0){ const bp=p0.clone().addScaledVector(dir,ps); blast(bp,.3); heSplash(bp,s.owner,s.A); done=true; break; } }
       ray.set(p0,dir); ray.far=seg;
       let hits=ray.intersectObjects(colliders.concat(houseMeshes,treeMeshes(),civHits),false).filter(x=>x.object.userData.tank!==s.owner);
       ray.far=Infinity;
@@ -351,6 +352,25 @@ function destroy(t,by,rack){
 }
 
 /* ---------- Ametralladora ---------- */
+// Faroles, postes, cercos y autos en el camino de un tiro (pedido de Sebastián: "deberían recibir impactos y destruirse con las ametralladoras o cañonazos").
+// Antes solo los rompían las explosiones cercanas y los tanques al pisarlos. kind: 'mg' (bala) o el tipo de munición del cañón ('ke','heat','he','hesh').
+// Devuelve la distancia donde el tiro se frena (bala contra farol o auto; explosiva contra auto) o -1 si sigue.
+const PROP_R={car:2.1,post:.45,street:.45,fence:1.2}, PROP_H={car:1.8,post:8,street:8,fence:1.4}, PROP_HP={car:10,post:5,street:5,fence:3};
+function propsOnRay(o,d,len,by,kind){ if(typeof propsNear!=='function') return -1; const hz=d.x*d.x+d.z*d.z; if(hz<1e-6) return -1;
+  const seen=new Set(), list=[], mg=kind==='mg', heavy=mg&&by&&mgCal(by)>=12;
+  const test=(x,z,r,H,obj)=>{ const sx=clamp(((x-o.x)*d.x+(z-o.z)*d.z)/hz,0,len), qx=o.x+d.x*sx, qz=o.z+d.z*sx, qy=o.y+d.y*sx, g=heightAt(x,z);
+    if(Math.hypot(qx-x,qz-z)<r&&qy>g-.4&&qy<g+H) list.push({s:sx,obj}); };
+  for(let k=0;k<=len;k+=3){ const px=o.x+d.x*k, pz=o.z+d.z*k; propsNear(px,pz,3,P=>{ if(seen.has(P)||P.fallen||(P.kind==='car'&&P.crushed)) return; seen.add(P); test(P.x,P.z,PROP_R[P.kind]||.45,PROP_H[P.kind]||6,{P}); }); }
+  if(typeof traffic!=='undefined') for(const C of traffic){ if(C.state===3) continue; test(C.x,C.z,(C.len||4.6)/2,1.9,{C}); }
+  if(!list.length) return -1; list.sort((a,b)=>a.s-b.s);
+  for(const L of list){ const p=o.clone().addScaledVector(d,L.s);
+    if(L.obj.P){ const P=L.obj.P;
+      if(mg){ P.hp=(P.hp??PROP_HP[P.kind]??5)-(heavy?2.5:1); debris(p,2,sparkMat,2,.5); if(P.hp<=0) knockProp(P,d.x,d.z); return L.s; }
+      knockProp(P,d.x,d.z); debris(p,4,sparkMat,3,.8); if(P.kind==='car'&&(kind==='he'||kind==='hesh')) return L.s; continue; }   // el perforante voltea el farol y sigue
+    const C=L.obj.C;
+    if(mg){ debris(p,2,sparkMat,2,.5); if(!net.guest){ C.mgHp=(C.mgHp??10)-(heavy?2.5:1); if(C.mgHp<=0) wreckCar(C,by,C.state<2); } return L.s; }
+    if(!net.guest) wreckCar(C,by,C.state<2); debris(p,4,sparkMat,3,.8); if(kind==='he'||kind==='hesh') return L.s; }
+  return -1; }
 function fireMG(t){
   if(t.dead||t.mgLock) return;
   if(t.mgBelt!=null){ if(t.mgRel>0) return;
@@ -369,6 +389,7 @@ function fireMG(t){
   ray.far=Infinity;
   let dist=380, hit=hits[0]||null; if(hit) dist=hit.distance;
   { const s=infOnRay(o,d,dist,t,.3); if(s>=0){dist=s;hit=null;} }
+  { const s=propsOnRay(o,d,dist,t,'mg'); if(s>=0){dist=s;hit=null;} }
   for(let s=3;s<dist;s+=3){const p=o.clone().addScaledVector(d,s); if(p.y<heightAt(p.x,p.z)){dist=s;hit=null;debris(p,2,dirtMat,2,.5);break;}}
   const end=o.clone().addScaledVector(d,dist);
   if(t.mgN++%3===0) tracer(o,end,t.team===0?0xffd080:0xff9a70);

@@ -6,7 +6,7 @@
 (function(){
   const SU=()=>!!(window.superUser&&superUser.on);
   const LSg=k=>{ try{ return localStorage.getItem(k); }catch(e){ return null; } }, LSs=(k,v)=>{ try{ localStorage.setItem(k,v); }catch(e){} };
-  const CFG=Object.assign({tank:'m4a1',map:'alamein',wx:'dia',tgt:'quietos',tgtK:'var',god:1,ammo:1,rel:0,sup:1,auto:0,side:'foe',addK:'var',addM:'combate',open:1},(()=>{ try{ return JSON.parse(LSg('tw2_prb')||'{}'); }catch(e){ return {}; } })());
+  const CFG=Object.assign({tank:'m4a1',map:'alamein',wx:'dia',tgt:'quietos',tgtK:'var',god:1,ammo:1,rel:0,sup:1,smk:1,auto:0,side:'foe',addK:'var',addM:'combate',open:1},(()=>{ try{ return JSON.parse(LSg('tw2_prb')||'{}'); }catch(e){ return {}; } })());
   const save=()=>LSs('tw2_prb',JSON.stringify(CFG));
   const st=document.createElement('style'); st.textContent=`
     #prbBox{position:fixed;inset:0;z-index:70;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.72)}
@@ -30,6 +30,7 @@
   const mapOpts=sel=>Object.keys(WORLDS).filter(k=>WORLDS[k]&&WORLDS[k].label).sort((a,b)=>((WORLDS[a].era||5)-(WORLDS[b].era||5))||WORLDS[a].label.localeCompare(WORLDS[b].label))
     .map(k=>`<option value="${k}"${k===sel?' selected':''}>[${ERA_N[WORLDS[k].era||5]||''}] ${WORLDS[k].label}</option>`).join('');
   const wxOpts=sel=>Object.keys(WXS).map(k=>`<option value="${k}"${k===sel?' selected':''}>${WXS[k].n||k}</option>`).join('');
+  const TGT_M={quietos:'quieto',mueven:'mueve',combate:'combate'}, M_TGT={quieto:'quietos',mueve:'mueven',combate:'combate'}, M_N={quieto:'Quieto',mueve:'Se mueve, no tira',combate:'Pelea'};
   const TGT=[['ninguno','Ninguno: recorrer el mapa solo'],['quietos','Quietos (como el campo de tiro)'],['mueven','Se mueven, sin tirar'],['combate','Pelean de verdad']];
   function panel(){ if(!SU()) return;
     box.innerHTML=`<div class="card"><h2>🧪 Modo de pruebas</h2><p class="s">Solo para vos. No da puntos, PI, Yaguaretés ni cuenta como batalla.</p>
@@ -39,13 +40,13 @@
       <label>Blancos</label><select id="pG">${TGT.map(([v,t])=>`<option value="${v}"${v===CFG.tgt?' selected':''}>${t}</option>`).join('')}</select>
       <label>Tanque de los blancos</label><select id="pK"><option value="var">Variados (de la época del mapa, bando contrario)</option>${tankOpts(CFG.tgtK)}</select>
       <div class="ck"><label><input type="checkbox" id="cG" ${CFG.god?'checked':''}> No se rompe</label><label><input type="checkbox" id="cA" ${CFG.ammo?'checked':''}> Munición infinita</label>
-        <label><input type="checkbox" id="cR" ${CFG.rel?'checked':''}> Recarga al instante</label><label><input type="checkbox" id="cS" ${CFG.sup?'checked':''}> Apoyos gratis</label></div>
+        <label><input type="checkbox" id="cR" ${CFG.rel?'checked':''}> Recarga al instante</label><label><input type="checkbox" id="cS" ${CFG.sup?'checked':''}> Apoyos gratis</label><label><input type="checkbox" id="cH" ${CFG.smk?'checked':''}> Humo infinito</label></div>
       <p class="s" style="margin-top:8px">Tu tanque sale al nivel máximo con todo desbloqueado · Esc = pausa con el menú y la barra de pruebas (cambiar tanque, mapa, poner blancos, clima, trucos) · L = cámara libre (W A S D, Q/E, Mayús rápido, mouse mira).</p>
       <div class="row"><button class="go" id="pGo">Entrar</button><button class="go alt" id="pX">Cerrar</button></div></div>`;
     box.style.display='flex'; const v=id=>box.querySelector(id).value, c=id=>box.querySelector(id).checked?1:0;
     box.querySelector('#pK').value=CFG.tgtK in VEH?CFG.tgtK:'var';
     box.querySelector('#pX').onclick=()=>{ box.style.display='none'; };
-    box.querySelector('#pGo').onclick=()=>{ Object.assign(CFG,{tank:v('#pT'),map:v('#pM'),wx:v('#pW'),tgt:v('#pG'),tgtK:v('#pK'),god:c('#cG'),ammo:c('#cA'),rel:c('#cR'),sup:c('#cS')}); save(); box.style.display='none'; start(); };
+    box.querySelector('#pGo').onclick=()=>{ Object.assign(CFG,{tank:v('#pT'),map:v('#pM'),wx:v('#pW'),tgt:v('#pG'),tgtK:v('#pK'),god:c('#cG'),ammo:c('#cA'),rel:c('#cR'),sup:c('#cS'),smk:c('#cH')}); save(); box.style.display='none'; start(); };
   }
   window.pruebas=panel;
   let prevEra=null;
@@ -64,7 +65,7 @@
     const myAx=side(VEH[tut.key].nation), nats=Object.keys(NATIONS).filter(n=>side(n)!==myAx); let L=[]; for(const n of nats) try{ L=L.concat(vehTreeE(n,e)); }catch(e){}
     if(!L.length) L=tankList().filter(k=>eraOf(k)===e); return L[(Math.random()*L.length)|0]||tut.key; }
   function addTarget(x,z,k,noPush){ k=k||tgtKey(); const n=VEH[k].nation, c=newCrew(`Blanco · ${VEH[k].label}`,1,n,false); c.out=CFG.tgt==='quietos'; crews.push(c);
-    const t=spawnCrew(c,k,{label:'',x,z}); t.dummy=CFG.tgt==='quietos'; t.prbT=1; t.immuneT=0; t.heading=Math.random()*6.28; if(!noPush) tut.pd.push({t,x,z,k}); return t; }
+    const t=spawnCrew(c,k,{label:'',x,z}); t.dummy=CFG.tgt==='quietos'; t.prbT=1; t.prbS=1; t.prbM=TGT_M[CFG.tgt]||'quieto'; t.immuneT=0; t.heading=Math.random()*6.28; if(!noPush) tut.pd.push({t,x,z,k}); return t; }
   // ---- tu tanque en pruebas siempre al máximo nivel (5) con todo desbloqueado: lanzahumos, reparación rápida, munición mejorada,
   // control de tiro y las 3 municiones (pedido de Sebastián). tankLv es const: mientras se arma el tanque se le presta experiencia
   // de sobra en una copia de PROG.txp y después se devuelve la original; saveProg no guarda nada en ese momento (el progreso no se toca).
@@ -114,18 +115,19 @@
         if(!player.dead){ if(CFG.god) heal(player);
           if(CFG.ammo&&player.ammoCount&&player.ammoMax){ for(let i=0;i<player.ammoCount.length;i++) player.ammoCount[i]=player.ammoMax[i]; player.mgBelt=250; }
           if(CFG.rel&&player.reloadT>0) player.reloadT=0;
+          if(CFG.smk&&player.lv>=2&&!player.noSmk) player.smoke=Math.max(player.smoke||0,player.smokeMax!=null?player.smokeMax:2);   // humo infinito
           if(CFG.sup){ playerCrew.sp=9999; playerCrew.artyCD=0; playerCrew.airCD=0; try{ if(typeof teamSup!=='undefined'&&teamSup[0]){ teamSup[0].arty=0; teamSup[0].air=0; } }catch(e){} } }
         for(const D of tut.pd){ if(D.t&&D.t.dead){ D.rt=(D.rt||0)+dt; if(D.rt>6){ removeTank(D.t); crews=crews.filter(c=>c!==D.t.crew); D.t=addTarget(D.x,D.z,D.k,true); D.rt=0; } } else if(D.t) D.t.spottedT=3; }
         if((tut.barT=(tut.barT||0)+dt)>1){ tut.barT=0; paintBar(true); } } }
   // ---- barra adentro ----
   // la barra se ve solo con el menú de Esc abierto (pedido de Sebastián: "que solo aparezca cuando presiono Esc")
   const barShow=()=>{ const on=!!(tut&&tut.prb&&state==='paused'); if(bar._on!==on){ bar._on=on; bar.style.display=on?'flex':'none'; } return on; };
-  function paintBar(soft){ if(!(tut&&tut.prb)){ bar._on=false; bar.style.display='none'; return; } barShow(); if(soft&&bar.dataset.k===tut.key+F.on+PZ.on+CFG.god+CFG.ammo+CFG.rel+CFG.sup) return;
-    bar.dataset.k=tut.key+F.on+PZ.on+CFG.god+CFG.ammo+CFG.rel+CFG.sup;
+  function paintBar(soft){ if(!(tut&&tut.prb)){ bar._on=false; bar.style.display='none'; return; } barShow(); if(soft&&bar.dataset.k===tut.key+F.on+PZ.on+CFG.god+CFG.ammo+CFG.rel+CFG.sup+CFG.smk) return;
+    bar.dataset.k=tut.key+F.on+PZ.on+CFG.god+CFG.ammo+CFG.rel+CFG.sup+CFG.smk;
     bar.innerHTML=`<b>🧪 Pruebas</b><select id="bT" title="Cambiar de tanque">${tankOpts(tut.key)}</select>
       <div class="r"><button id="bG">🎯 Blanco adelante</button><button id="bC">🧹 Sacar blancos</button></div>
       <select id="bW">${wxOpts(wxKey)}</select>
-      <div class="r"><button id="tG" class="${CFG.god?'on':''}">No se rompe</button><button id="tA" class="${CFG.ammo?'on':''}">Munición ∞</button><button id="tR" class="${CFG.rel?'on':''}">Recarga 0</button><button id="tS" class="${CFG.sup?'on':''}">Apoyos gratis</button></div>
+      <div class="r"><button id="tG" class="${CFG.god?'on':''}">No se rompe</button><button id="tA" class="${CFG.ammo?'on':''}">Munición ∞</button><button id="tR" class="${CFG.rel?'on':''}">Recarga 0</button><button id="tS" class="${CFG.sup?'on':''}">Apoyos gratis</button><button id="tH" class="${CFG.smk?'on':''}">Humo ∞</button></div>
       <div class="r"><button id="bL" class="${F.on?'on':''}">🎥 Cámara libre (L)</button><button id="bP" class="${PZ.on?'on':''}">${PZ.on?'▶ Seguir':'⏸ Pausa'} (P)</button><button id="bX">⏏ Salir</button></div>
       <button id="bO">${CFG.open?'▾':'▸'} Agregar donde mirás</button>
       <div id="bAdd" style="display:${CFG.open?'flex':'none'};flex-direction:column;gap:4px">
@@ -141,14 +143,21 @@
     q('#bG').onclick=()=>{ const d=new THREE.Vector3(); camera.getWorldDirection(d); d.y=0; d.normalize(); const p=(F.on?F.pos:player.pos).clone().addScaledVector(d,120); addTarget(p.x,p.z); };
     q('#bC').onclick=()=>{ for(const D of tut.pd){ if(D.t){ removeTank(D.t); crews=crews.filter(c=>c!==D.t.crew); } } tut.pd.length=0; };
     q('#bW').onchange=e=>{ e.target.blur(); applyWeather(e.target.value); CFG.wx=e.target.value; save(); };
-    const tg=(id,k)=>q(id).onclick=()=>{ CFG[k]=CFG[k]?0:1; save(); paintBar(); }; tg('#tG','god'); tg('#tA','ammo'); tg('#tR','rel'); tg('#tS','sup');
+    const tg=(id,k)=>q(id).onclick=()=>{ CFG[k]=CFG[k]?0:1; save(); paintBar(); }; tg('#tG','god'); tg('#tA','ammo'); tg('#tR','rel'); tg('#tS','sup'); tg('#tH','smk');
     q('#bL').onclick=()=>setFree(!F.on); q('#bP').onclick=()=>setPause(!PZ.on);
     q('#bO').onclick=()=>{ CFG.open=CFG.open?0:1; save(); paintBar(); };
     q('#sF').onclick=()=>{ CFG.side='foe'; save(); paintBar(); }; q('#sA').onclick=()=>{ CFG.side='ally'; save(); paintBar(); };
-    q('#aK').value=CFG.addK in VEH?CFG.addK:'var'; q('#aK').onchange=e=>{ e.target.blur(); CFG.addK=e.target.value; save(); }; q('#aM').onchange=e=>{ e.target.blur(); CFG.addM=e.target.value; save(); };
+    q('#aK').value=CFG.addK in VEH?CFG.addK:'var'; q('#aK').onchange=e=>{ e.target.blur(); CFG.addK=e.target.value; save(); }; q('#aM').onchange=e=>{ e.target.blur(); CFG.addM=e.target.value; save(); setModeAll(CFG.addM); };
     q('#aT').onclick=()=>addTank(); q('#aI').onclick=()=>addSquad(); q('#aP').onclick=()=>addRef('para'); q('#aH').onclick=()=>addRef('ht');
     q('#aA').onclick=()=>addSup('arty'); q('#aB').onclick=()=>addSup('air'); q('#aS').onclick=()=>addSup('strike'); q('#aN').onclick=()=>addSup('nuke');
     q('#aX').onclick=clearAll; q('#aU').onclick=()=>{ CFG.auto=CFG.auto?0:1; save(); paintBar(); }; q('#bX').onclick=()=>{ try{ clearBattle(); mainMenu(); }catch(e){ location.reload(); } }; }
+  // el modo (Quieto / Se mueve, no tira / Pelea) se aplica en el acto a todos los tanques de prueba del bando elegido, no solo a los que se agreguen
+  // después (pedido de Sebastián: "está en quieto y se siguen moviendo, además disparan"); los blancos del arranque que reaparecen siguen el modo nuevo
+  function setModeAll(m){ if(!(tut&&tut.prb&&player)) return; const foe=CFG.side!=='ally'; let n=0;
+    for(const t of tanks){ if(t===player||t.dead||!t.prbT) continue; if(foe!==(t.team!==player.team)) continue;
+      t.prbM=m; t.dummy=false; t.target=null; t.infT=null; t.prbGo=null; t.goal=null; t.path=null; n++; }
+    if(foe&&CFG.tgt!=='ninguno'){ CFG.tgt=M_TGT[m]; save(); }
+    feed(`${foe?'Enemigos':'Aliados'}: ${M_N[m]} (${n} tanque${n===1?'':'s'})`,'var(--amber)'); }
   // ---- agregar cosas donde mira la cámara (pedido de Sebastián: "no debe pasar nada sin que yo lo diga") ----
   function lookPoint(dist){ const c=F.on?cam:camera, d=new THREE.Vector3(); c.getWorldDirection(d); const o=c.position.clone();
     for(let s=4;s<1200;s+=3){ const p=o.clone().addScaledVector(d,s); if(p.y<=heightAt(p.x,p.z)+.3){ p.y=heightAt(p.x,p.z); return p; } }
@@ -171,8 +180,9 @@
   function addSup(k){ const p=lookPoint(), team=teamOf(), by=fakeBy(team,p);
     try{ if(k==='arty') callArtillery(by,p);
       else if(k==='air'){ const S=RULE().sup, o=S.air; S.air=1; try{ callAirstrike(by,p); } finally{ S.air=o; } }
-      else if(k==='strike'){ let best=null, bd=1e9; for(const t of tanks){ if(t.dead||t.team===team) continue; const d=t.pos.distanceTo(p); if(d<bd){ bd=d; best=t; } }
-        if(best&&!godOn(best)) a10Strike(best); else banner('Ataque aéreo','No hay blanco del otro bando cerca de donde mirás'+(best&&godOn(best)?' (vos estás con "No se rompe")':''),2.5); }
+      else if(k==='strike'){ // el tanque más cercano a donde mirás que no seas vos (antes iba contra el bando contrario al elegido: con "Enemigo" te atacaba a vos)
+        let best=null, bd=1e9; for(const t of tanks){ if(t.dead||t===player) continue; const d=t.pos.distanceTo(p); if(d<bd){ bd=d; best=t; } }
+        if(best&&bd<400) a10Strike(best); else banner('Ataque aéreo','No hay ningún tanque cerca de donde mirás (a menos de 400 m)',2.5); }
       else if(k==='nuke'){ if(nuke&&nuke.phase>=2) nuke=null; if(nuke){ banner('Nuke','Ya hay una en curso',1.5); return; }
         const S=RULE().sup, o=S.nuke, foe=1-team, sp=W.sp[foe]; S.nuke=1; W.sp[foe]=[{x:p.x/.85,z:p.z/.85}];   // callNuke tira sobre la base enemiga: le pongo una "base" donde mirás
         try{ callNuke(by); } finally{ S.nuke=o; W.sp[foe]=sp; } } }catch(e){ console.warn(e); banner('No se pudo',e.message,2); } }
