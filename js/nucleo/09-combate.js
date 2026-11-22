@@ -12,7 +12,7 @@ function fireGun(t,F){
   else { t.reloadT=t.reloadMax*reloadFactor(t); t.recoil=1; t.immuneT=0; const ky=t.turretYaw||0; t.sPv=(t.sPv||0)+Math.cos(ky)*.9; t.sRv=(t.sRv||0)-Math.sin(ky)*.7; }
   t.root.updateMatrixWorld(true);
   const A=ammoOf(t), mp=F?F.mp:t.muzzle.getWorldPosition(new THREE.Vector3()), dir=F?F.dir:t.barrel.getWorldDirection(new THREE.Vector3());
-  if(!F){ const bk=(t.mod.barrel??100)<60?1+(60-t.mod.barrel)/15:1, spread=(.0012+Math.abs(t.speed)*(t.T.stab?.0003:.0035))*bk;
+  if(!F){ const bk=(t.mod.barrel??100)<60?1+(60-t.mod.barrel)/15:1, spread=(.0012+Math.abs(t.speed)*(t.T.stab?.0003:t.T.aa?.0007:.0035))*bk;   // antiaéreos: el apuntador va en un montaje con motor y corrige a mano mientras anda (antes .0035: en marcha tiraba a cualquier lado)
   dir.x+=rand(-1,1)*spread; dir.y+=rand(-1,1)*spread; dir.z+=rand(-1,1)*spread; dir.normalize(); }
   const m=new THREE.Mesh(shellGeo,SHELL_MAT[A.kind]); m.position.copy(mp); scene.add(m);
   shells.push({p:mp.clone(),v:dir.clone().multiplyScalar(A.v),owner:t,m,travel:0,life:4,A,fx:net.guest}); noise(mp,120); if(tut&&t===player) tut.shots=(tut.shots||0)+1;
