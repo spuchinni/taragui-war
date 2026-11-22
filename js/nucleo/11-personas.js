@@ -529,12 +529,12 @@ function airlinerMesh(){ const g=new THREE.Group(), w=new THREE.MeshLambertMater
 function updatePlanes(dt){
   if(!net.guest&&W===WORLDS.aeropuerto&&state!=='end'&&civPlanes.filter(P=>P.state<3).length<1&&now>planeNextT&&civPlanes.length<4&&now>15){
     planeNextT=now+rand(45,75);
-    // mapa real (OSM): pista de OSM; el avión sale de la plataforma de la terminal (del lado que da a la pista), rueda derecho hasta la pista
+    // mapa real (OSM): pista de OSM; el avión sale de la plataforma de la terminal (del lado que da a la pista, detrás de las colas de los dos estacionados de aviones-linea.js), rueda derecho hasta la pista
     // y despega hacia la punta más lejana (la pista tiene 2,2 km: desde el medio le sobra para despegar)
     let a=aW(...RUNWAY[0]), b=aW(...RUNWAY[1]), start=null; if(W._runway){ const [r0,r1]=W._runway, Ap=W._aero, dx=r1.x-r0.x, dz=r1.z-r0.z, l2=dx*dx+dz*dz;
       const foot=p=>{ const t=Math.max(.08,Math.min(.92,((p.x-r0.x)*dx+(p.z-r0.z)*dz)/l2)); return {x:r0.x+dx*t,z:r0.z+dz*t}; }, dRw=p=>{ const f=foot(p); return Math.hypot(p.x-f.x,p.z-f.z); };
       a=r0; b=r1;
-      if(Ap){ const c=Math.cos(Ap.a), s=Math.sin(Ap.a), at=(lx,lz)=>({x:Ap.x+lx*c+lz*s,z:Ap.z-lx*s+lz*c}), c1=at(18,-52), c2=at(18,52); start=dRw(c1)<dRw(c2)?c1:c2;
+      if(Ap){ const c=Math.cos(Ap.a), s=Math.sin(Ap.a), at=(lx,lz)=>({x:Ap.x+lx*c+lz*s,z:Ap.z-lx*s+lz*c}), c1=at(0,-92), c2=at(0,92); start=dRw(c1)<dRw(c2)?c1:c2;
         a=foot(start); b=Math.hypot(r0.x-a.x,r0.z-a.z)>Math.hypot(r1.x-a.x,r1.z-a.z)?r0:r1; } }
     const m=airlinerMesh(), dir=new THREE.Vector3(b.x-a.x,0,b.z-a.z).normalize(), p0=start||a, tx=start?new THREE.Vector3(a.x-p0.x,0,a.z-p0.z).normalize():dir;
     const pl={id:++planeSeq,g:m.g,hit:m.hit,pos:new THREE.Vector3(p0.x,heightAt(p0.x,p0.z),p0.z),dir:start?tx:dir,rwDir:dir,rwA:a,v:0,vy:0,pitch:0,state:start?-1:0,hp:150,yaw:Math.atan2(tx.x,tx.z)};

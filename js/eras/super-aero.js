@@ -5,7 +5,8 @@
      playa de estacionamiento con líneas, dos filas de techitos de media sombra, columnas de luz y el cartel alto (pilón) junto a la avenida.
    · Aeropuerto Piragine Niveyro: terminal de dos plantas (76 × 21 m) blanca con franjas de vidrio, hall central con techo abovedado, marquesina del lado
      de la calle y del lado de la plataforma, letras "AEROPUERTO CORRIENTES", torre de control redonda con cabina vidriada, manga de viento y un avión de
-     línea genérico (tamaño de un 737-800, blanco y sin marca) estacionado en la plataforma. El punto A pasa al frente de la terminal (antes caía adentro). */
+     línea en la plataforma: desde el 22/11/2026 un 737-800 y un E190 de aviones-linea.js (librea genérica argentina), con choque invisible en pierObs
+     (antes bloques que se veían como losas). El punto A pasa al frente de la terminal (antes caía adentro). */
 (()=>{
   const H=()=>window.HITO;
   const tex=(w,h,fn,rep)=>{ const c=document.createElement('canvas'); c.width=w; c.height=h; fn(c.getContext('2d'),w,h); const t=new THREE.CanvasTexture(c); t.anisotropy=4; if(rep){ t.wrapS=t.wrapT=THREE.RepeatWrapping; t.repeat.set(rep[0],rep[1]); } return t; };
@@ -95,9 +96,13 @@
     // manga de viento al borde de la plataforma
     { const wx=-Lt/2-8, wz=-30; B.cyl(.08,.1,6,wx,3,wz,dk,6); for(let i=0;i<4;i++){ const g=new THREE.CylinderGeometry(.42-i*.06,.36-i*.06,.9,10,1,true); g.rotateZ(Math.PI/2); g.translate(wx+.45+i*.9,5.6-i*.08,wz); B.add(g,i%2?wh:ora); } }
     B.meshes(G).forEach(m=>osmHitoMs.push(m)); G.updateMatrixWorld(true);
-    // avión de línea en la plataforma, con la trompa hacia la terminal
-    { const P=airliner(), [px,pz]=at(-14,-50); P.position.set(px,heightAt(px,pz),pz); P.rotation.y=a; worldGroup.add(P); P.updateMatrixWorld(true); P.children.forEach(m=>osmHitoMs.push(m));
-      const fa=a; block(px,pz,3.8,38,fa,.35); { const [wx,wz]=at(-14,-49.5); block(wx,wz,34,4,fa,.3); } }
+    // aviones de línea en la plataforma con la trompa hacia la terminal: un 737-800 y un E190 (aviones-linea.js, librea genérica argentina)
+    for(const [tipo,lx] of [['738',-16],['e190',22]]){ const P=window.avionLinea?avionLinea(tipo):airliner(), d=P.userData.dim||{L:39.5,span:17.9}, lz=-30-d.L/2, [px,pz]=at(lx,lz);
+      P.position.set(px,heightAt(px,pz),pz); P.rotation.y=a; worldGroup.add(P); P.updateMatrixWorld(true); P.traverse(m=>{ if(m.isMesh) osmHitoMs.push(m); });
+      // choque invisible (pierObs: frena tanques sin dibujar nada): fuselaje, tren principal y motores
+      const T=window.AVION_LINEA&&AVION_LINEA[tipo], gy0=heightAt(px,pz), ob=(ox,oz,hw,hd,top)=>{ const [x,z]=at(lx+ox,lz+oz); pierObs.push({ob:{cx:x,cz:z,c,s,hw,hd},top:gy0+top}); };
+      if(T){ ob(0,0,T.rx,d.L*.47,T.yc+T.ry); ob(0,d.L/2-T.gear.main,T.gear.track+.8,.9,3); for(const sd of [-1,1]) ob(sd*T.eng.x,d.L/2-T.eng.s-T.eng.len/2,T.eng.r+.1,T.eng.len/2+.3,T.eng.y+T.eng.r); }
+      else block(px,pz,3.6,d.L*.92,a,.35); }
     clearOut((x,z,r)=>{ const dx=x-cx, dz=z-cz, lx=dx*c-dz*s, lz=dx*s+dz*c; return Math.abs(lx)<Lt/2+14+r*.3&&lz>-Dt/2-8-r*.3&&lz<Dt/2+9+r*.3; });
     block(cx,cz,Lt,Dt,a,.35); { const [x,z]=at(Lt/2+6,-6); block(x,z,4.6,4.6,a,.35); }
     W._aero={x:cx,z:cz,a}; }
