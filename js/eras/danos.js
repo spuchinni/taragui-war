@@ -156,7 +156,7 @@ groundMark=function(p,r){ groundDecal('sc',p.x,p.z,r*1.15); };
 const falling=[];
 { const _db=damageBuilding; damageBuilding=function(b,dmg,fromNet){ const alive=b&&b.hp>0; _db.apply(this,arguments);
     if(alive&&b.hp<=0){ falling.push({b,t:0}); const g=heightAt(b.x,b.z), H=b.top-b.base;
-      for(let k=0;k<14;k++){ const a=k/14*Math.PI*2, r=Math.max(b.w,b.d)*rand(.3,.7); puff(new THREE.Vector3(b.x+Math.cos(a)*r,g+rand(.5,H*.5),b.z+Math.sin(a)*r),0x9e958a,rand(6,10),rand(4,7),rand(.6,1.8),.75); }   // nube de polvo que se abre
+      for(let k=0;k<4;k++){ const a=k/4*Math.PI*2, r=Math.max(b.w,b.d)*rand(.3,.6); puff(new THREE.Vector3(b.x+Math.cos(a)*r,g+rand(.5,2),b.z+Math.sin(a)*r),0x9e958a,rand(2.5,4),rand(2,3),rand(.4,1),.6); }   // polvo al ceder (la nube grande sale al llegar abajo, choques.js)
       groundDecal('du',b.x,b.z,Math.max(b.w,b.d)*1.1); } }; }
 function updFalling(dt){ for(let i=falling.length-1;i>=0;i--){ const F=falling[i], b=F.b; F.t+=dt; const k=Math.min(1,F.t/1.4), e=k*k, H=b.top-b.base, h=H+(1.2-H)*e;
     const m=new THREE.Matrix4(), q=new THREE.Quaternion().setFromEuler(new THREE.Euler(e*.06,b.a,e*.05));

@@ -282,7 +282,7 @@ function drive0(t,throttle,steer,dt){
       p.x+=push.x; p.z+=push.z;
       const n=Math.hypot(push.x,push.z)||1, into=-(fx*push.x+fz*push.z)/n*dir;
       // embestir casas: un tanque rápido y pesado las derrumba de a poco
-      if(it===0&&b.bld&&into>.4&&Math.abs(t.speed)>3) damageBuilding(b.bld,Math.abs(t.speed)*t.T.hp*.09*dt*into);
+      if(it===0&&b.bld&&into>.3){ if(typeof bldRam==='function') bldRam(t,b.bld,into,dt,fx,fz,dir); else if(Math.abs(t.speed)>3) damageBuilding(b.bld,Math.abs(t.speed)*t.T.hp*.09*dt*into); }   // choques.js: energía del golpe contra lo que aguanta
       if(it===0&&b.stub&&into>.3&&Math.abs(t.speed)>2.2&&typeof knockStub==='function') knockStub(b,t,fx*dir,fz*dir);   // pedazos de pared de las ruinas: rápido los tira, despacio frenan
       if(into>0&&it===0) t.speed*=1-Math.min(.9,into*dt*10);
     }
