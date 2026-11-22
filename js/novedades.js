@@ -139,6 +139,10 @@
     #novBox h2{margin:0 0 8px;font:800 30px 'Saira Condensed',system-ui,sans-serif;color:#ffd24a;text-align:center}
     #novBox h3{margin:12px 0 4px;color:#cfc6b0;font-size:16px;letter-spacing:.06em} #novBox ul{margin:0;padding-left:20px} #novBox li{margin:4px 0;line-height:1.3}
     #novBox .x{display:block;margin:14px auto 0;min-width:180px;font-size:20px}
+    #novBox .nh{position:sticky;top:-16px;margin:-16px -20px 6px;padding:12px 52px 6px;background:rgba(18,20,24,.98);z-index:1;border-bottom:1px solid rgba(255,210,74,.25)}
+    #novBox .nh h2{margin:0}
+    #novBox .nx{position:absolute;right:10px;top:10px;width:38px;height:38px;border-radius:50%;border:1px solid #ffd24a;background:#26221a;color:#ffd24a;font:800 22px/1 system-ui;cursor:pointer}
+    #novBox .nx:hover{background:#ffd24a;color:#111}
     #introL{display:none} .homeCopy{left:0;right:0;text-align:center;bottom:calc(2px + env(safe-area-inset-bottom,0px))}
     .homeBar{bottom:calc(26px + env(safe-area-inset-bottom,0px))!important}
     .novB{position:relative} .novB i{position:absolute;top:-2px;right:-10px;width:10px;height:10px;border-radius:50%;background:#ff4a36;box-shadow:0 0 0 2px #111}
@@ -148,10 +152,14 @@
   document.head.appendChild(st);
   const box=document.createElement('div'); box.id='novBox'; box.setAttribute('data-notr',''); document.body.appendChild(box);
   function showNov(){ const L=EN();
-    box.innerHTML=`<div class="card"><h2>${L?'What\'s new':'Novedades'}</h2>${NOV.map(n=>`<h3>${n.fecha}</h3><ul>${(L?n.en:n.es).map(x=>`<li>${x}</li>`).join('')}</ul>`).join('')}
+    // ✕ fija arriba a la derecha (no hace falta bajar hasta el final para cerrar), Esc o tocar afuera también cierran (22/11/2026, opinión de un jugador de itch.io)
+    box.innerHTML=`<div class="card"><div class="nh"><h2>${L?'What\'s new':'Novedades'}</h2><button class="nx" id="novX2" title="${L?'Close':'Cerrar'}" aria-label="${L?'Close':'Cerrar'}">✕</button></div>${NOV.map(n=>`<h3>${n.fecha}</h3><ul>${(L?n.en:n.es).map(x=>`<li>${x}</li>`).join('')}</ul>`).join('')}
       <button class="go alt x" id="novX">${L?'Close':'Cerrar'}</button></div>`;
     box.style.display='flex'; LS('tw2_nov',NOV[0].id);
-    document.getElementById('novX').onclick=()=>{ box.style.display='none'; if(state==='menu') mainMenu(); }; }
+    document.getElementById('novX').onclick=document.getElementById('novX2').onclick=closeNov; }
+  function closeNov(){ if(box.style.display==='none') return; box.style.display='none'; if(state==='menu') mainMenu(); }
+  box.addEventListener('click',e=>{ if(e.target===box) closeNov(); });
+  document.addEventListener('keydown',e=>{ if(e.code==='Escape'&&box.style.display==='flex'){ e.preventDefault(); e.stopImmediatePropagation(); closeNov(); } },true);
   window.showNov=showNov;
   const _mm=mainMenu; mainMenu=function(){ const r=_mm.apply(this,arguments);
     const bar=document.querySelector('.homeBar'); if(!bar) return r;
@@ -170,7 +178,9 @@
     if(!novShown&&!autoT&&LS('tw2_nov')!==NOV[0].id){ let n=0; autoT=setInterval(()=>{ n++;
       if(state!=='menu'||!$('playB')){ n=0; return; }   // todavía en la portada o fuera del menú: espera (sigue mirando hasta que se pueda)
       const busy=[...document.querySelectorAll('#dayBox,#natPick,#tkPick,#giftBox,#opBox,#nahBox,#iosGuide')].some(e=>e&&getComputedStyle(e).display!=='none');
-      if(!busy&&n>=3){ clearInterval(autoT); autoT=0; novShown=true; if(LS('tw2_nov')!==NOV[0].id&&state==='menu'&&!(PROG&&PROG.train&&!(PROG.stats&&PROG.stats.battles))) showNov(); } },500); }
+      // recién después del entrenamiento (3 batallas): antes se abría igual si el progreso todavía no estaba armado y demoraba la 1ª batalla
+      if(!busy&&n>=3){ clearInterval(autoT); autoT=0; const bat=PROG?(typeof progBat==='function'?progBat(PROG):(PROG.stats&&PROG.stats.battles)||0):0, ready=PROG&&!PROG.train&&bat>=3;
+        if(ready&&LS('tw2_nov')!==NOV[0].id&&state==='menu'){ novShown=true; showNov(); } } },500); }
     return r; };
   let autoT=0, novShown=false;
 })();

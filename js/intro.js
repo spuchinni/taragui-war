@@ -47,7 +47,7 @@ function introUI(){
   $('iStart').onclick=()=>{ initAudio(); if(AC.state==='suspended') AC.resume(); introPlay(); };
   return el;
 }
-document.addEventListener('keydown',e=>{ if(state!=='intro') return; if(['Escape','Enter','Space'].includes(e.code)){ e.preventDefault(); e.stopImmediatePropagation(); if(intro&&intro.vid){ if(introSeen()) afterVideo(); else vidSound(); return; } if(intro&&intro.cover){ initAudio(); if(AC.state==='suspended') AC.resume(); if(e.code==='Escape') introEnd(); else coverGo(); return; } if(intro&&!intro.on&&e.code!=='Escape') $('iStart').click(); else introEnd(); } },true);
+document.addEventListener('keydown',e=>{ if(state!=='intro') return; if(['Escape','Enter','Space'].includes(e.code)){ e.preventDefault(); e.stopImmediatePropagation(); if(intro&&intro.vid){ if(e.code==='Escape'||introSeen()) afterVideo(); else vidSound(); return; } if(intro&&intro.cover){ initAudio(); if(AC.state==='suspended') AC.resume(); if(e.code==='Escape') introEnd(); else coverGo(); return; } if(intro&&!intro.on&&e.code!=='Escape') $('iStart').click(); else introEnd(); } },true);
 // Intro en video (video/intro.mp4, armado con los videos de Gemini): se muestra en vez de la hecha con el motor, que queda si el video no carga
 // Video con los tanques mejorados (pedido de Sebastián, 16/11/2026): sale la primera vez al tocar la portada; inglés = intro-en.mp4 (cierra en la portada "Steel Front")
 const INTRO_VIDEO_ON=true;
@@ -72,7 +72,7 @@ function coverStart(){
   ui.appendChild(c); const bt=$('boot'); if(bt) bt.remove();
   c.onclick=()=>{ initAudio(); if(AC.state==='suspended') AC.resume(); coverGo(); };
 }
-// Pedido de Sebastián: siempre primero el video y después la portada; la primera vez (o si cambió INTRO_ID) no se puede saltear.
+// Pedido de Sebastián: siempre primero el video y después la portada. Desde el 22/11/2026 se puede saltear siempre ("Saltar intro" o Esc), también la primera vez.
 // Sin un toque previo el navegador no deja arrancar con sonido: arranca mudo y "Tocá para el sonido" lo prende (no lo saltea).
 function coverGo(){ introEnd(); }
 function videoFirst(){
@@ -84,7 +84,7 @@ function videoFirst(){
   v.src=introVideoSrc(); v.hidden=false; v.onended=()=>afterVideo(); v.onerror=()=>{ introVideoOk=false; afterVideo(); };
   v.style.pointerEvents='auto'; v.onclick=()=>vidSound();
   let snd=$('iSnd'); if(!snd){ snd=document.createElement('button'); snd.id='iSnd'; snd.className='iSkip iSnd'; snd.textContent='🔊 Tocá para el sonido'; snd.onclick=e=>{ e.stopPropagation(); vidSound(); }; ui.appendChild(snd); }
-  snd.hidden=true; $('iSkip').hidden=!introSeen();
+  snd.hidden=true; $('iSkip').hidden=false;   // se puede saltear siempre, también la primera vez (22/11/2026: un jugador de itch.io dijo que el prólogo largo lo demoraba)
   const bt=$('boot'); if(bt) bt.remove();
   if(typeof musStop==='function'&&AC) musStop(); musMode=null; v.currentTime=0; v.muted=false; v.volume=Math.min(1,volMaster);
   v.play().catch(()=>{ v.muted=true; snd.hidden=false; v.play().catch(()=>afterVideo()); });
