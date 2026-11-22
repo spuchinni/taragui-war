@@ -209,7 +209,10 @@ const FS_IN='<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke=
 function enterFS(){ const el=document.documentElement; if(document.fullscreenElement||!el.requestFullscreen) return;
   try{ const r=el.requestFullscreen({navigationUI:'hide'}); if(r&&r.catch) r.catch(()=>banner('Pantalla completa bloqueada','Descargá el archivo y abrilo directo en Chrome o Edge',4)); }catch(e){} }
 function toggleFS(){ if(document.fullscreenElement){ document.exitFullscreen&&document.exitFullscreen(); } else enterFS(); }
-document.addEventListener('fullscreenchange',()=>{ const b=document.getElementById('fsBtn'); if(b) b.innerHTML=document.fullscreenElement?FS_OUT:FS_IN;
+// Pantalla completa (pedido de Sebastián, 22/11/2026): Esc no tiene que sacarte. Con el bloqueo de teclado (Chrome y Edge) un toque de Esc le llega al juego
+// y para salir hay que mantener Esc apretado (el navegador lo avisa) o tocar ⛶. Firefox y Safari no lo tienen: ahí Esc sigue saliendo.
+function kbLockSync(){ try{ const K=navigator.keyboard; if(!K||!K.lock) return; if(document.fullscreenElement) K.lock(['Escape']).catch(()=>{}); else K.unlock(); }catch(e){} }
+document.addEventListener('fullscreenchange',()=>{ kbLockSync(); const b=document.getElementById('fsBtn'); if(b) b.innerHTML=document.fullscreenElement?FS_OUT:FS_IN;
   if(document.fullscreenElement&&state==='play'&&!document.pointerLockElement&&!freeAim) lock(); });
 function enableFreeAim(){ if(freeAim) return; freeAim=true; document.body.classList.add('freeaim');
   if(state==='paused'){ state='play'; $('overlay').style.display='none'; }
@@ -279,6 +282,8 @@ document.addEventListener('keydown',e=>{
     bindCapture=null; renderSettings(); return; }
   keys[e.code]=true;
   if(artyPick&&e.code==='Escape'){ artyMap(false); return; }
+  // con el bloqueo de teclado el navegador ya no suelta el mouse con Esc: lo soltamos nosotros (eso abre el menú de Esc como siempre)
+  if(e.code==='Escape'&&!e.repeat&&state==='play'&&document.pointerLockElement===renderer.domElement){ document.exitPointerLock(); return; }
   if(e.code==='Escape'&&freeAim&&!e.repeat){ if(state==='play'&&player&&!player.dead){ pauseOpen(); return; } if(state==='paused'){ lock(); return; } }   // con el mouse libre no hay bloqueo del puntero que suelte Esc
   if(e.code===binds.ping&&state==='play'&&player&&!player.dead&&!e.repeat){ doPing(); return; }
   if(net.guest&&state==='play'&&player&&!player.dead&&lastAim&&(e.code===binds.arty||e.code===binds.air)&&!e.repeat){ supKey(e.code===binds.arty?'arty':'air'); return; }

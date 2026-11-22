@@ -79,12 +79,16 @@
 
   // ---- animación: cámara propia ----
   const CI={on:false}, cam=new THREE.PerspectiveCamera(50,1,.5,4000);
-  function cineStart(o){ if(CI.on) cineEnd(); Object.assign(CI,{on:true,t0:now,dur:o.dur,upd:o.upd,end:o.end}); cb.innerHTML=`<div class="t">${o.title}</div><button class="s" id="cineSkip">${EN()?'Skip ⏭':'Saltear ⏭'}</button>`; cb.querySelector('#cineSkip').onclick=e=>{ e.stopPropagation(); cineEnd(); };
+  function cineStart(o){ if(CI.on) cineEnd(); Object.assign(CI,{on:true,t0:now,dur:o.dur,upd:o.upd,end:o.end}); cb.innerHTML=`<div class="t">${o.title}</div><button class="s" id="cineSkip">${EN()?'Skip (Esc) ⏭':'Saltear (Esc) ⏭'}</button>`; cb.querySelector('#cineSkip').onclick=e=>{ e.stopPropagation(); cineEnd(); };
     cb.style.display='block'; document.body.classList.add('cine'); try{ releaseAll(); mouseDown=false; rightDown=false; }catch(e){}
     if(player&&!player.dead) player.immuneT=Math.max(player.immuneT||0,o.dur+1); }
   function cineEnd(){ if(!CI.on) return; CI.on=false; cb.style.display='none'; document.body.classList.remove('cine'); try{ CI.end&&CI.end(); }catch(e){} }
   // mientras dura: el tanque no recibe teclas ni clics (no se mueve ni dispara); solo el botón Saltear la corta
-  const block=e=>{ if(!CI.on) return; if(e.target&&e.target.id==='cineSkip') return; e.stopImmediatePropagation(); if(e.cancelable) e.preventDefault(); };
+  // Esc la saltea (pedido de Sebastián: con el mouse capturado por el juego no se llegaba al botón Saltear)
+  let skipT=0; const skip=()=>{ skipT=performance.now(); cineEnd(); };
+  const block=e=>{ if(!CI.on) return; if(e.target&&e.target.id==='cineSkip') return; e.stopImmediatePropagation(); if(e.cancelable) e.preventDefault(); if(e.type==='keydown'&&e.code==='Escape'&&!e.repeat) skip(); };
+  // sin el bloqueo de teclado (Firefox, o fuera de pantalla completa) Esc suelta el mouse antes: eso también saltea y no abre el menú de Esc
+  { const _po=pauseOpen; pauseOpen=function(){ if(CI.on){ skip(); return; } if(performance.now()-skipT<600) return; return _po.apply(this,arguments); }; }
   for(const ev of ['keydown','keyup','mousedown','mouseup','touchstart']) document.addEventListener(ev,block,{capture:true,passive:false});
   { const _f=frame; frame=function(){ if(CI.on){ try{ releaseAll(); mouseDown=false; rightDown=false; if(typeof T!=='undefined'&&T&&T.ax) T.ax.x=T.ax.y=0; }catch(e){} } return _f.apply(this,arguments); }; }
   // el terreno y lo de cada sector se apagaban según TU cámara (cullUpdate): en la animación quedaban piezas y casas sin suelo, "flotando"
