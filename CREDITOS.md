@@ -24,6 +24,7 @@ Recortados y comprimidos para el juego.
 | thump_0–3 (cañonazos lejanos de la artillería) | Freesound #517747 danlucaz, #879283 qvantor, #320788 kostrava ("distant explosion(s)") | CC0 | ✅ (verificado 19/11/2026) |
 | prop_0 (avioneta, bucle de 3,7 s) | Freesound #648720: itinerantmonk108, "bi-plane flyby" | CC0 | ✅ (verificado 19/11/2026; también se probaron #431206 oscaraudiogeek y #251971 clif_creates) |
 | jettaxi_0 / jetroar_0 / jetfar_0 (aviones de línea del aeropuerto: rodaje, plena potencia de cerca y despegue lejano, bucles de 6–7 s) | Freesound #843280 joeffl "Airport, Exterior, Orlando International (MCO)", #436511 Sonicwave32 "Airbus A330 takeoff", #251973 clif_creates "Takeoff 1 (Distant)" | CC0 | ✅ (verificado en Freesound, 22/11/2026) |
+| m2quad_0 / m2tail_0 (ráfaga de las 4 M2 del M16 MGMC armada con los tiros de una .50 real, y el eco al soltar) | Freesound #160355 qubodup "Air Defense Artillery Avenger Training .50cal" | CC0 | ✅ (verificado en Freesound, 22/11/2026) |
 | mgburst_0, mgshot_0, siren_0, flyover_0 | Pixabay (freesound_community) | Licencia de contenido de Pixabay (uso comercial permitido dentro del juego; no se puede revender el sonido suelto) | ✅ |
 | fighter_0 (aviones de apoyo de la 2ª Guerra: tramo a plena potencia en bucle de 3,15 s) | Pixabay: "Sound Effect WW2 Fighter Plane Takeoff" de scottishperson (n.º 333260) | Licencia de contenido de Pixabay | ✅ |
 | menu_0 (tema del menú, 12,3 s del medio en bucle) | Pixabay: "Military War" de mfcc (n.º 620908) | Licencia de contenido de Pixabay | ✅ |

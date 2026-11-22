@@ -10,6 +10,7 @@
 //  thump_2 / thump_3 ................................ Freesound #320788, kostrava, distant explosions .. CC0
 //  prop_0 (avioneta a hélice, en bucle) ............. Freesound #648720, itinerantmonk108, bi-plane flyby CC0
 //  jettaxi_0 / jetroar_0 / jetfar_0 (aviones de línea, en bucle; los suma aviones-linea.js) ... Freesound #843280 joeffl, #436511 Sonicwave32, #251973 clif_creates ... CC0
+//  m2quad_0 / m2tail_0 (las 4 M2 del M16 MGMC en bucle y el eco al soltar; los suma sonidos-gfx.js, armados con herramientas/sonidos/m16.py) ... Freesound #160355 qubodup ... CC0
 //  mgburst_0, mgshot_0, siren_0, flyover_0 .......... Pixabay (freesound_community) ...... licencia de contenido de Pixabay
 //  menu_0 ........................................... Pixabay #620908, mfcc, "Military War" ... licencia de contenido de Pixabay
 //  fighter_0 (caza a hélice, épocas 3–4) ............ Pixabay #333260, scottishperson, WW2 fighter plane takeoff ... licencia de contenido de Pixabay
