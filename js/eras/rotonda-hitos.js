@@ -105,10 +105,12 @@
     // césped con las franjas y las líneas: una malla que copia el suelo
     { const g=new THREE.PlaneGeometry(Wd,Lg,24,30); g.rotateX(-Math.PI/2); const p=g.attributes.position; for(let i=0;i<p.count;i++){ const [X,Z]=at(p.getX(i),p.getZ(i)); p.setY(i,heightAt(X,Z)-gy+.07); } g.computeVertexNormals();
       const m=new THREE.Mesh(g,new THREE.MeshLambertMaterial({map:pitchTex(Lg,Wd,Math.min(100,Lg-12),Math.min(66,Wd-14)),polygonOffset:true,polygonOffsetFactor:-2})); m.receiveShadow=true; G.add(m); }
+    // cada pieza se apoya en el suelo que tiene debajo (el terreno no es plano: antes todo iba a la altura del centro y tribunas, arcos y torres flotaban 2–4 m)
+    const gh=(lx,lz)=>heightAt(...at(lx,lz))-gy;
     const B=Bag(), wh=mat('arco',0xf4f4f0), roofM=mat('techoV',0x5a5e60), conM=mat('conV',0xbdb7aa), Lp=Math.min(100,Lg-12);
     // arcos con red
-    for(const sg of [-1,1]){ const z=sg*Lp/2; for(const x of [-3.66,3.66]) B.cyl(.06,.06,2.44,x,1.22,z,wh,8); B.cyl(.06,.06,7.44,0,2.44,z,wh,8,0,Math.PI/2);
-      const net=new THREE.PlaneGeometry(7.3,2.44); net.translate(0,1.22,z+sg*1.6); B.add(net,MAT.mesh); for(const x of [-3.66,3.66]){ const g=new THREE.PlaneGeometry(1.6,2.44); g.rotateY(Math.PI/2); g.translate(x,1.22,z+sg*.8); B.add(g,MAT.mesh); } }
+    for(const sg of [-1,1]){ const z=sg*Lp/2, y0=gh(0,z)+.07; for(const x of [-3.66,3.66]) B.cyl(.06,.06,2.44,x,y0+1.22,z,wh,8); B.cyl(.06,.06,7.44,0,y0+2.44,z,wh,8,0,Math.PI/2);
+      const net=new THREE.PlaneGeometry(7.3,2.44); net.translate(0,y0+1.22,z+sg*1.6); B.add(net,MAT.mesh); for(const x of [-3.66,3.66]){ const g=new THREE.PlaneGeometry(1.6,2.44); g.rotateY(Math.PI/2); g.translate(x,y0+1.22,z+sg*.8); B.add(g,MAT.mesh); } }
     const Y=0xf2c230, R=0xc8322a, Wt=0xd9d5c9, Gr=0x9a968c, Dk=0x6e6a64, gap=2.2, parts=[];
     // cada tribuna: punto medio del borde de adelante (x,z), giro f (el frente mira hacia (-sin f, -cos f)), largo, fondo, alto
     const wl=74, wz=8, el=98, ez=-2, sz=-Lg/2-gap, sl=Wd-30;
@@ -118,11 +120,14 @@
     for(const [x1,z1] of [[Wd/2+gap,wz-wl/2],[-Wd/2-gap,ez-el/2]]){ const x0=Math.sign(x1)*sl/2, dx=x1-x0, dz=z1-sz, len=Math.hypot(dx,dz), mx=(x0+x1)/2, mz=(sz+z1)/2;   // ochavas
       let nx=dz/len, nz=-dx/len; if(nx*-mx+nz*-mz<0){ nx=-nx; nz=-nz; } parts.push({x:mx,z:mz,f:Math.atan2(-nx,-nz),len:len+.6,dep:14,rise:5.5,n:12,cols:[Wt,Y],seg:6.5,back:Dk}); }
     for(const P of parts){ const b=Bag(); terrace(b,P.len,P.dep,P.rise,P.n,P.cols,P.seg,P.back); fence(b,P.len,3);
-      const M=new THREE.Matrix4().makeRotationY(P.f).setPosition(P.x,0,P.z); b.meshes({add:m=>{ m.geometry.applyMatrix4(M); B.add(m.geometry,m.material); }}); }
+      // suelo debajo de la tribuna: base un poco arriba del punto más bajo y zócalo de hormigón hasta abajo (no quedan huecos ni se entierra entera)
+      const sn=Math.sin(P.f), cs=Math.cos(P.f); let lo=1e9, hi=-1e9; for(let i=0;i<=6;i++) for(let j=0;j<=3;j++){ const ax=-P.len/2+P.len*i/6, az=P.dep*j/3, h=gh(P.x+ax*cs+az*sn,P.z-ax*sn+az*cs); lo=Math.min(lo,h); hi=Math.max(hi,h); }
+      const by=lo+(hi-lo)*.35, plinth=by-lo+.6; { const g=new THREE.BoxGeometry(P.len+.6,plinth,P.dep+.4); g.translate(0,-plinth/2+.02,P.dep/2); colorize(g,P.back); b.add(g,MAT.terr); }
+      const M=new THREE.Matrix4().makeRotationY(P.f).setPosition(P.x,by,P.z); b.meshes({add:m=>{ m.geometry.applyMatrix4(M); B.add(m.geometry,m.material); }}); }
     // vestuarios al norte y el portón de entrada
-    B.box(30,3.4,7,-12,1.7,Lg/2+6,conM); B.box(31,.3,8,-12,3.55,Lg/2+6,roofM); for(let i=0;i<6;i++) B.box(1.1,.9,.08,-25+i*4.6,2.2,Lg/2+2.46,mat('vidV',0x2a3a44));
+    { const vy=gh(-12,Lg/2+6); B.box(30,3.4+3,7,-12,vy+1.7-1.5,Lg/2+6,conM); B.box(31,.3,8,-12,vy+3.55,Lg/2+6,roofM); for(let i=0;i<6;i++) B.box(1.1,.9,.08,-25+i*4.6,vy+2.2,Lg/2+2.46,mat('vidV',0x2a3a44)); }
     // torres de luz en las esquinas
-    for(const [x,z] of [[Wd/2+6,Lg/2-6],[-Wd/2-6,Lg/2-6],[Wd/2+6,-Lg/2+2],[-Wd/2-6,-Lg/2+2]]){ B.cyl(.3,.45,24,x,12,z,mat('torreV',0x9aa0a4),8); B.box(4,2.2,.5,x,24.5,z,mat('torreV',0x9aa0a4),Math.atan2(-x,-z)); B.box(3.6,1.8,.1,x,24.5,z,mat('lampV',0xeef0dc,{emissive:0x22221a}),Math.atan2(-x,-z)); }
+    for(const [x,z] of [[Wd/2+6,Lg/2-6],[-Wd/2-6,Lg/2-6],[Wd/2+6,-Lg/2+2],[-Wd/2-6,-Lg/2+2]]){ const ty=gh(x,z); B.cyl(.3,.45,26,x,ty+12-1,z,mat('torreV',0x9aa0a4),8); B.box(4,2.2,.5,x,ty+24.5,z,mat('torreV',0x9aa0a4),Math.atan2(-x,-z)); B.box(3.6,1.8,.1,x,ty+24.5,z,mat('lampV',0xeef0dc,{emissive:0x22221a}),Math.atan2(-x,-z)); }
     B.meshes(G).forEach(m=>osmHitoMs.push(m)); G.updateMatrixWorld(true);
     // casas o tribunas de OSM adentro de la huella: afuera
     const loc=(x,z)=>{ const dx=x-cx, dz=z-cz; return [dx*c-dz*s, dx*s+dz*c]; };
@@ -130,7 +135,7 @@
     // choque: bloques bajos debajo de cada tribuna y de los vestuarios
     for(const P of parts){ const lx=P.x+Math.sin(P.f)*P.dep/2, lz=P.z+Math.cos(P.f)*P.dep/2, [X,Z]=at(lx,lz); block(X,Z,P.len,P.dep,th+P.f,.3); }
     { const [X,Z]=at(-12,Lg/2+6); addBuilding(X,Z,30,7,.3,th,0xbdb7aa,0x5a5e60,false,1e9,false); bList[bList.length-1].hp=bList[bList.length-1].max=1e9; }
-    W._cancha={x:cx,z:cz,th,L:Lg,W:Wd}; }
+    W._cancha={x:cx,z:cz,th,L:Lg,W:Wd}; cachaGoals(); }
 
   // árboles: ninguno sobre la plaza del monumento ni en la cancha; pindós alrededor de la plaza (como en las fotos)
   function rotondaArboles(o){ const V=W._virgen, Cn=W._cancha; if(!o.list) return;
@@ -138,6 +143,18 @@
       if(!out&&Cn){ const dx=t.x-Cn.x, dz=t.z-Cn.z, c=Math.cos(Cn.th), s=Math.sin(Cn.th), lx=dx*c-dz*s, lz=dx*s+dz*c; out=Math.abs(lx)<Cn.W/2+26&&lz>-Cn.L/2-22&&lz<Cn.L/2+12; }
       if(out) o.list.splice(i,1); }
     if(V) for(let i=0;i<10;i++){ const a=(i+.5)/10*Math.PI*2, r=18.5+(i%2)*2.5; o.list.push({x:V.x+Math.cos(a)*r,z:V.z+Math.sin(a)*r,sp:'pindo',s:1+(i%3)*.08}); } }
+  // bots hacia el punto C (adentro de la cancha): el camino de calles termina en la calle más cercana, afuera del estadio, y no entraban nunca.
+  // Si el destino es C, van por las calles hasta la entrada norte (lado abierto, al este de los vestuarios) y de ahí entran derecho al punto.
+  // (este archivo carga antes que 12-ia.js: se instala la primera vez que se arma la cancha, cuando pickGoal ya existe)
+  let pgOn=false; function cachaGoals(){ if(pgOn||typeof pickGoal!=='function') return; pgOn=true; const _pg=pickGoal; pickGoal=function(t){ const r=_pg.apply(this,arguments);
+      try{ const Cn=W._cancha, Z=zones.find(z=>z.id==='C'); if(!Cn||!Z||!nodes||!t.path||!t.path.length) return r;
+        const s=Math.sin(Cn.th), c=Math.cos(Cn.th), loc=(x,z)=>{ const dx=x-Cn.x, dz=z-Cn.z; return [dx*c-dz*s, dx*s+dz*c]; };
+        const [zx,zz]=loc(Z.x,Z.z); if(Math.abs(zx)>Cn.W/2||Math.abs(zz)>Cn.L/2) return r;                       // C no está adentro de la cancha
+        const end=t.path[t.path.length-1]; if(Math.hypot(end.x-Z.x,end.z-Z.z)>Z.r+70) return r;                 // va a otro lado
+        const at=(lx,lz)=>new THREE.Vector3(Cn.x+lx*c+lz*s,0,Cn.z-lx*s+lz*c), entry=at(22,Cn.L/2+26), mid=at(22,Cn.L/2-8);
+        const [px,pz]=loc(t.pos.x,t.pos.z); if(Math.abs(px)<Cn.W/2&&Math.abs(pz)<Cn.L/2) return r;              // ya está adentro
+        t.path=astar(nearestNode(t.pos.x,t.pos.z),nearestNode(entry.x,entry.z)).map(n=>n.p.clone()).concat([entry,mid,new THREE.Vector3(Z.x+rand(-6,6),0,Z.z+rand(-6,6))]); t.goal=t.path[t.path.length-1];
+      }catch(e){ console.warn('cancha',e); } return r; }; }
   window.rotondaArboles=rotondaArboles; window.HITO={Bag,block,clearOut,mat,colorize,merge};
   window.osmVirgenRotonda=osmVirgenRotonda; window.osmCanchaBoca=osmCanchaBoca;
 })();

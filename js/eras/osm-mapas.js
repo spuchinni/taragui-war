@@ -38,7 +38,7 @@ const OSM_CFG={
   rotonda:{label:'Ruta 12 y Av. Independencia',desc:'La rotonda de la Ruta 12 y Av. Independencia, la plaza del Mercosur, los barrios del oeste, la cancha de Boca Unidos y los descampados con lagunas del otro lado de la ruta. Calles reales, a escala.',
     sky:0xbcc6c8,fog:[260,820],urban:1,ground:'#83864f',pisos:[1,1,1,1,2,2,3],fill:{p:.9,row2:.6,fr:[7,13],dp:[9,16],gap:[.4,3]},pitch:.15,
     sp:{calle:['lapacho','jacaranda','timbo','ceibo','pindo'],parque:['lapacho','jacaranda','pindo','timbo'],bosque:['timbo','algarrobo','espinillo'],monte:['espinillo','algarrobo']},calleArb:.3,
-    zones:[{id:'A',x:144,z:390,r:24,label:'Plaza del Mercosur'},{id:'B',x:-108,z:-29,r:22,label:'Ruta 12, Hotel Hawai'},{id:'C',x:-128,z:-540,r:24,label:'Cancha de Boca Unidos'}],
+    zones:[{id:'A',x:77,z:518,r:26,label:'Rotonda de la Virgen'},{id:'B',x:-108,z:-29,r:22,label:'Ruta 12, Hotel Hawai'},{id:'C',x:-55,z:-527,r:24,label:'Cancha de Boca Unidos'}],   // A en la rotonda y C adentro de la cancha, mitad norte (abierta hacia los vestuarios), pedido de Sebastián
     hitos:o=>{ osmVirgenRotonda(o.poi('Rotonda Virgen'),Math.PI/2); osmCanchaBoca(o,{x:-51,z:-555}); }, extra:o=>rotondaArboles(o),   // rotonda-hitos.js
     spawns:{0:[{label:'Base oeste, Perito Moreno',x:600,z:-200},{label:'Base noroeste, Necochea',x:620,z:250}],
             1:[{label:'Base este, Av. Armando Romero',x:-600,z:150},{label:'Base sudeste, descampado',x:-620,z:-200}]}},

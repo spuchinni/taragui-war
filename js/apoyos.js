@@ -87,11 +87,15 @@
   const block=e=>{ if(!CI.on) return; if(e.target&&e.target.id==='cineSkip') return; e.stopImmediatePropagation(); if(e.cancelable) e.preventDefault(); };
   for(const ev of ['keydown','keyup','mousedown','mouseup','touchstart']) document.addEventListener(ev,block,{capture:true,passive:false});
   { const _f=frame; frame=function(){ if(CI.on){ try{ releaseAll(); mouseDown=false; rightDown=false; if(typeof T!=='undefined'&&T&&T.ax) T.ax.x=T.ax.y=0; }catch(e){} } return _f.apply(this,arguments); }; }
+  // el terreno y lo de cada sector se apagaban según TU cámara (cullUpdate): en la animación quedaban piezas y casas sin suelo, "flotando"
+  function cullWith(c){ if(typeof cullList==='undefined'||!cullList.length) return; _cullPM.multiplyMatrices(c.projectionMatrix,c.matrixWorldInverse); _frus.setFromProjectionMatrix(_cullPM);
+    const far=scene.fog.far+40, cp=c.position; for(const o of cullList){ const d=o.s.center.distanceTo(cp)-o.s.radius, v=d<far&&d<o.maxD&&_frus.intersectsSphere(o.s);
+      if(o.lod){ const near=d<o.lod.d; o.o.visible=v&&near; o.lod.m.visible=v&&!near; } else o.o.visible=v; } }
   const _rr=renderer.render; renderer.render=function(sc,c){
     if(CI.on&&sc===scene&&renderer.getRenderTarget()===null){
-      if(state!=='play'&&state!=='lesson'&&state!=='paused'){ cineEnd(); return _rr.call(this,sc,c); }
+      if(state!=='play'&&state!=='lesson'&&state!=='paused'&&!(CI.keep&&['deploy','spectate','end'].includes(state))){ cineEnd(); return _rr.call(this,sc,c); }
       const k=(now-CI.t0)/CI.dur; if(k>=1){ cineEnd(); return _rr.call(this,sc,c); }
-      try{ cam.aspect=c.aspect; cam.fov=50; CI.upd(k,now-CI.t0,cam); cam.updateProjectionMatrix(); cam.updateMatrixWorld(); return _rr.call(this,sc,cam); }catch(e){ console.warn('cine',e); cineEnd(); } }
+      try{ cam.aspect=c.aspect; cam.fov=50; CI.upd(k,now-CI.t0,cam); cam.updateProjectionMatrix(); cam.updateMatrixWorld(); cullWith(cam); return _rr.call(this,sc,cam); }catch(e){ console.warn('cine',e); cineEnd(); } }
     return _rr.call(this,sc,c); };
 
   // ---- batería de 4 piezas detrás de la base (solo para la animación) ----
@@ -139,14 +143,22 @@
     const team=by.team, B=W.sp&&W.sp[team]&&W.sp[team].length?W.sp[team]:[{x:by.pos.x,z:by.pos.z}];
     const bx=B.reduce((a,s)=>a+s.x,0)/B.length, bz=B.reduce((a,s)=>a+s.z,0)/B.length;
     let dx=point.x-bx, dz=point.z-bz; const L=Math.hypot(dx,dz)||1; dx/=L; dz/=L;            // hacia el blanco
-    const cx=bx-dx*45, cz=bz-dz*45, sx=-dz, sz=dx, yaw=Math.atan2(dx,dz), nat=(by.crew&&by.crew.nation)||(typeof teamNation==='function'?teamNation(team):'');
+    // suelo de verdad (en los mapas reales heightAt da el tablero si hay un puente encima: la batería y la cámara quedaban flotando a 30 m)
+    const gAt=(x,z)=>{ const u=W.under?W.under(x,z,-1e4):null; return u!=null?u:heightAt(x,z); };
+    const sx=-dz, sz=dx, inB=(x,z)=>Math.abs(x)<(W.bx||700)-12&&Math.abs(z)<(W.bz||700)-12;
+    // lugar libre para las 4 piezas: detrás de la base, dentro del mapa, sin casas y lejos de los puentes (si no hay, el de siempre metido en el mapa)
+    let cx=null, cz=null; for(const bk of [45,30,60,20,80,10]){ for(const lt of [0,25,-25,50,-50,80,-80]){ const x0=bx-dx*bk+sx*lt, z0=bz-dz*bk+sz*lt; let ok=true;
+        for(let i=0;i<4&&ok;i++){ const o=(i-1.5)*11, x=x0+sx*o, z=z0+sz*o; ok=inB(x,z)&&!(W.deckNear&&W.deckNear(x,z,8))&&(typeof freeSpot!=='function'||freeSpot(x,z,2.5)); }
+        if(ok){ cx=x0; cz=z0; break; } } if(cx!=null) break; }
+    if(cx==null){ cx=clamp(bx-dx*45,-(W.bx||700)+40,(W.bx||700)-40); cz=clamp(bz-dz*45,-(W.bz||700)+40,(W.bz||700)-40); }
+    const yaw=Math.atan2(dx,dz), nat=(by.crew&&by.crew.nation)||(typeof teamNation==='function'?teamNation(team):'');
     const grp=new THREE.Group(); scene.add(grp); const guns=[];
-    for(let i=0;i<4;i++){ const o=(i-1.5)*11, x=cx+sx*o, z=cz+sz*o, g=gunPiece(nat,i); g.position.set(x,heightAt(x,z),z); g.rotation.y=yaw; crewMen(g,team); grp.add(g); guns.push({g,fired:false,at:short?.25+i*.35:.55+i*.5}); }
+    for(let i=0;i<4;i++){ const o=(i-1.5)*11, x=cx+sx*o, z=cz+sz*o, g=gunPiece(nat,i); g.position.set(x,gAt(x,z),z); g.rotation.y=yaw; crewMen(g,team); grp.add(g); guns.push({g,fired:false,at:short?.25+i*.35:.55+i*.5}); }
     // cámara: al costado de la primera pieza, se va corriendo por la fila
     const side=(t)=>{ const o=-24+t*9; return new THREE.Vector3(cx+sx*o-dx*9+dz*0,0,cz+sz*o-dz*9); };
     cineStart({dur:short?2.6:4.2,title:short?(EN()?'⚠ Enemy artillery!':'⚠ ¡Artillería enemiga!'):(EN()?'✸ The battery opens fire':'✸ La batería abre fuego'),
-      upd:(k,t,c)=>{ const p=side(t); p.y=heightAt(p.x,p.z)+2.1; c.position.copy(p);
-        const lk=new THREE.Vector3(cx+sx*(-6+t*4)+dx*4,0,cz+sz*(-6+t*4)+dz*4); lk.y=heightAt(lk.x,lk.z)+2.4; c.lookAt(lk);
+      upd:(k,t,c)=>{ const p=side(t); p.y=gAt(p.x,p.z)+2.1; c.position.copy(p);
+        const lk=new THREE.Vector3(cx+sx*(-6+t*4)+dx*4,0,cz+sz*(-6+t*4)+dz*4); lk.y=gAt(lk.x,lk.z)+2.4; c.lookAt(lk);
         for(const G of guns){ const br=G.g.userData.br; if(!G.fired&&t>=G.at){ G.fired=true; G.rt=t;
             const mz=G.g.userData.mz.clone(); G.g.userData.pv.localToWorld(mz);
             puff(mz.clone(),0xffa040,3.2,.22,0,1,true); puff(mz.clone(),0xfff0c0,1.8,.12,0,1,true);
@@ -171,17 +183,38 @@
   // animación una vez por partida y por equipo (pedido de Sebastián): la primera artillería y el primer avión que pide tu equipo
   // (vos o un aliado) se ven enteros; los primeros del enemigo, en versión corta con aviso. Se reinicia en cada partida.
   let CIN={arty:[0,0],air:[0,0]};
-  const cineOk=()=>player&&!player.dead&&(!tut||tut.prb)&&state==='play'&&!(typeof TUT1!=='undefined'&&TUT1&&TUT1.stg<2&&PROG&&PROG.stats&&PROG.stats.battles<1);
+  // en pruebas los apoyos se piden desde el menú de Esc (juego en pausa): la animación se programa igual y arranca al volver al combate
+  const cineOk=q=>player&&!player.dead&&(!tut||tut.prb)&&(state==='play'||(q&&tut&&tut.prb&&state==='paused'))&&!(typeof TUT1!=='undefined'&&TUT1&&TUT1.stg<2&&PROG&&PROG.stats&&PROG.stats.battles<1);
   const _ca=callArtillery; callArtillery=function(by,point){ const ok=_ca.apply(this,arguments);
     try{ if(ok&&by){ if(by.isPlayer){ rb.style.display='none'; radio(point,artyDelay()); }
-        const tm=by.team?1:0; if((!CIN.arty[tm]||(tut&&tut.prb))&&cineOk()){ CIN.arty[tm]=1; const enemy=player.team!==by.team, D=artyDelay(), pt=point.clone();
+        const tm=by.team?1:0; if((!CIN.arty[tm]||(tut&&tut.prb))&&cineOk(1)){ CIN.arty[tm]=1; const enemy=player.team!==by.team, D=artyDelay(), pt=point.clone();
           supQ.push({t:now+D-(enemy?2.6:4),f:()=>{ if(cineOk()&&!CI.on) artyCine(by,pt,enemy); }}); } } }catch(e){ console.warn(e); }
     return ok; };
   const _cs=callAirstrike; callAirstrike=function(by,point){ const ok=_cs.apply(this,arguments);
     try{ if(ok&&by&&by.isPlayer) rvSay(['bombardeo']); }catch(e){}
-    try{ if(ok&&by){ const tm=by.team?1:0; if((!CIN.air[tm]||(tut&&tut.prb))&&cineOk()){ CIN.air[tm]=1; by._airCine=player.team!==by.team?2:1; } } }catch(e){} return ok; };
+    try{ if(ok&&by){ const tm=by.team?1:0; if((!CIN.air[tm]||(tut&&tut.prb))&&cineOk(1)){ CIN.air[tm]=1; by._airCine=player.team!==by.team?2:1; } } }catch(e){} return ok; };
   const _ap=airPass; airPass=function(by,point,dir){ const n=planes.length, r=_ap.apply(this,arguments);
     try{ if(by&&by._airCine){ const sh=by._airCine===2; by._airCine=0; if(cineOk()&&!CI.on) airCine(by,point,n,sh); } }catch(e){ console.warn(e); } return r; };
+  // ---- nuke (pedido de Sebastián: "falta la animación del B-29 llegando y foco en la explosión") ----
+  // 1) detrás y al costado del B-29 que llega, 2) sigue a la Fat Man que cae, 3) toma lejana y alta de la detonación y el hongo (7 s).
+  // La batalla sigue mientras tanto; con CI.keep no se corta si te destruye la onda (despliegue, espectador o fin de la partida).
+  function nukeCine(enemy){ const N=nuke; if(!N||!N.plane) return; const dir=N.plane.dir.clone(), sd=new THREE.Vector3(-dir.z,0,dir.x), p0=N.p.clone(); let last=null, tC=null;
+    const imm=player?player.immuneT||0:0;
+    const wide=()=>{ const gh=heightAt(N.p.x,N.p.z); return {pos:N.p.clone().addScaledVector(dir,-620).addScaledVector(sd,420).setY(gh+95),look:N.p.clone().setY(gh+110)}; };
+    cineStart({dur:60,title:enemy?(EN()?'⚠ Enemy nuclear strike!':'⚠ ¡Ataque nuclear enemigo!'):(EN()?'☢ The B-29 is coming in':'☢ Llega el B-29'),
+      upd:(k,t,c)=>{ if(nuke!==N){ CI.dur=Math.max(.01,t-.01); return; }
+        let pos, look;
+        if(N.phase>=1||N.hit){ if(tC==null){ tC=t; CI.dur=t+7; } const W2=wide(), f=Math.min(1,(t-tC)/1.4), s=f*f*(3-2*f);
+          pos=last?last.clone().lerp(W2.pos,s):W2.pos; look=W2.look.clone().setY(W2.look.y-80+80*Math.min(1,(t-tC)/5)); }      // sube con el hongo
+        else if(N.bomb){ const b=N.bomb.m.position; pos=b.clone().addScaledVector(sd,34).addScaledVector(dir,-26).setY(b.y+8); look=b.clone(); }
+        else if(N.plane){ const g=N.plane.g.position; pos=g.clone().addScaledVector(dir,-52).addScaledVector(sd,20).setY(g.y+7); look=g.clone().addScaledVector(dir,40).setY(g.y-4); }
+        else { const W2=wide(); pos=W2.pos; look=W2.look; }
+        c.far=6000; c.position.copy(pos); c.lookAt(look); last=pos.clone(); },
+      end:()=>{ CI.keep=false; } });
+    CI.keep=true; if(player&&!player.dead) player.immuneT=Math.max(imm,13); }   // cineStart lo dejaba inmune 61 s: solo hasta que cae la bomba (la onda igual lo destruye)
+  const _cn=callNuke; callNuke=function(by){ const ok=_cn.apply(this,arguments);
+    try{ if(ok&&by&&cineOk(1)&&!CI.on){ const enemy=player.team!==by.team; if(state==='play') nukeCine(enemy); else supQ.push({t:now,f:()=>{ if(cineOk()&&!CI.on) nukeCine(enemy); }}); } }catch(e){ console.warn(e); }
+    return ok; };
   // al salir de la batalla se corta
   if(typeof clearBattle==='function'){ const _cb=clearBattle; clearBattle=function(){ cineEnd(); rb.style.display='none'; CIN={arty:[0,0],air:[0,0]}; return _cb.apply(this,arguments); }; }
   window.CINE=CI; window.radioMsg=radio;
