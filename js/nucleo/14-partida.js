@@ -294,33 +294,69 @@ function summary(winner){
   $('banner').style.opacity=0; bannerT=0; $('overlay').style.display='flex';
   const top=crews.reduce((b,c)=>!b||c.score>b.score?c:b,null);
   const table=team=>{const rows=crews.filter(c=>c.team===team).sort((a,b)=>b.score-a.score), sm=k=>rows.reduce((a,c)=>a+(+c[k]||0),0);
-    return `<h2 class="tm ${team===0?'':'foe'}">${team===0?allyLabel():NATIONS[foeNation].label}${team===winner?'<span class="w">GANADOR</span>':''}<span class="tk">${Math.max(0,Math.ceil(tickets[team]))} tickets</span></h2><table class="sum"><colgroup><col style="width:21%"><col><col style="width:8.5%"><col style="width:8.5%"><col style="width:8.5%"><col style="width:8.5%"><col style="width:10%"></colgroup><thead><tr><th>Jugador</th><th>Tanques</th><th class="n">Bajas</th><th class="n">Asist.</th><th class="n">Muertes</th><th class="n">Capturas</th><th class="n">Puntos</th></tr></thead><tbody>${
+    return `<div class="wteam"><h2 class="tm ${team===0?'':'foe'}">${team===0?allyLabel():NATIONS[foeNation].label}${team===winner?'<span class="w">GANADOR</span>':''}<span class="tk">${Math.max(0,Math.ceil(tickets[team]))} tickets</span></h2><table class="sum"><colgroup><col style="width:23%"><col><col style="width:8%"><col style="width:8%"><col style="width:10%"><col style="width:8%"><col style="width:10%"></colgroup><thead><tr><th>Jugador</th><th>Tanques</th><th class="n">Bajas</th><th class="n">Asist.</th><th class="n">Muertes</th><th class="n">Capt.</th><th class="n">Puntos</th></tr></thead><tbody>${
       rows.map(c=>{ const ia=net.on&&!c.isPlayer&&!c.peer&&!c.wasHuman&&!c.human, tks=Object.keys(c.uses).filter(k=>VEH[k]).map(k=>VEH[k].label).join(', ')||'Ninguno';
         return `<tr class="${c.isPlayer?'me':''}"><td title="${esc(c.name)}">${esc(c.name)}${c===top&&c.score>0?'<span class="mvp" title="Mejor de la partida">★</span>':''}${ia?'<span class="ia">BOT</span>':''}</td><td title="${esc(tks)}">${esc(tks)}</td><td class="n">${c.kills|0}</td><td class="n">${c.assists|0}</td><td class="n">${c.deaths|0}</td><td class="n">${c.caps|0}</td><td class="n pts">${(c.score|0).toLocaleString('es-AR')}</td></tr>`; }).join('')}</tbody>
-      <tfoot><tr><td>Total</td><td></td><td class="n">${sm('kills')}</td><td class="n">${sm('assists')}</td><td class="n">${sm('deaths')}</td><td class="n">${sm('caps')}</td><td class="n">${sm('score').toLocaleString('es-AR')}</td></tr></tfoot></table>`;};
+      <tfoot><tr><td>Total</td><td></td><td class="n">${sm('kills')}</td><td class="n">${sm('assists')}</td><td class="n">${sm('deaths')}</td><td class="n">${sm('caps')}</td><td class="n">${sm('score').toLocaleString('es-AR')}</td></tr></tfoot></table></div>`;};
   const N=winner===0?allyLabel():NATIONS[foeNation].label;
-  let rpHtml=''; const me=crews.find(c=>c.isPlayer||c.name==='Vos'||c.name==='Vos (IA)');
-  const MS=curSpecial&&curSpecial.mission?missionById(curSpecial.mission):null; let mres=null, unl=[];
+  // Resumen estilo War Thunder (23/11/2026, pedido de Sebastián: "toda la info es muy grande, hay que scrollear, no muestra lo que investigamos ni las mejoras"):
+  // entra en una pantalla sin scroll: arriba el resultado y lo ganado, a la izquierda investigación y tanques usados con barras animadas y mejoras nuevas,
+  // a la derecha las dos tablas compactas y abajo los botones fijos.
+  const fmt=v=>Math.round(v).toLocaleString('es-AR'), me=crews.find(c=>c.isPlayer||c.name==='Vos'||c.name==='Vos (IA)');
+  const MS=curSpecial&&curSpecial.mission?missionById(curSpecial.mission):null; let mres=null, unl=[], chips='', left='', bars=[];
+  const bar=(f0,f1,cls='')=>{ const id='wb'+bars.length; bars.push([id,f1]); return `<div class="wbar ${cls}"><i class="old" style="width:${Math.round(f0*100)}%"></i><i class="gain" id="${id}" style="left:${Math.round(f0*100)}%;width:0"></i></div>`; };
   if(!spectating&&(!curSpecial||MS)&&me&&PROG&&!summary._done){ summary._done=true; const n=MS?MS.ally:chosenNation, win=winner===0;
     // premio según el rango más alto que usaste: PI para investigar y Yaguaretés para comprar
     const used=Object.keys(me.uses||{}).filter(k=>VEH[k]), rk=Math.max(1,...used.map(rankOf)), R=battleReward(rk,win,me.score|0), rp=R.rp;
     if(MS) mres=missionResult(MS,win);
+    const nx0=nextResearch(n), rp0=nx0?(PROG.rp[nx0]||0):0;
     PROG.stats.battles++; if(win) PROG.stats.wins++; updateSkill(me,win); PROG.yp=(PROG.yp||0)+R.yp; const un=addRP(n,rp).concat(mres&&mres.un||[]), nx=nextResearch(n); unl=un;
-    let xpHtml='', progHtml='';
-    { const st=me.st||{}, win=winner===0, v={kills:me.kills|0,side:st.side|0,caps:me.caps|0,assists:me.assists|0,inf:st.inf|0,wins:win?1:0,badwx:['noche','niebla','lluvia','tormenta'].includes(wxKey)?1:0,smoke:st.smoke|0};
-      const gx=Math.max(0,Math.round(me.score*2+(win?500:200))), r0=rankIdx(PROG.pxp||0); PROG.pxp=(PROG.pxp||0)+gx; const dn=progressDaily(v,n), r1=rankIdx(PROG.pxp);
-      PROG.tstat=PROG.tstat||{}; for(const k of used){ const S=PROG.tstat[k]||(PROG.tstat[k]={b:0,w:0,k:0,d:0}); S.b++; if(win) S.w++; const tk=(me.tk||{})[k]; if(tk){ S.k+=tk.k|0; S.d+=tk.d|0; } }
-      progHtml=`<br><b>+${gx.toLocaleString('es-AR')} XP de jugador</b> · ${RANKS[r1][1]}${r1>r0?` <b style="color:var(--amber)">¡Ascendiste a ${RANKS[r1][1]}!</b>`:''}`+dn.map(c=>`<br>Desafío cumplido: ${chText(c)} · <b>+1 medalla</b> y +1.000 XP`).join(''); saveProg(); }
-    for(const k of used){ const xp=Math.round(rp/used.length), ups=addTankXP(k,xp), L=tankLv(k);
-      xpHtml+=`<br>${VEH[k].label}: +${xp.toLocaleString('es-AR')} XP · nivel ${L}${L<5?` (${tankXP(k).toLocaleString('es-AR')} / ${LV_XP[L].toLocaleString('es-AR')})`:' (máximo)'}`+ups.map(l=>`<br>&nbsp;&nbsp;¡Nivel ${l}! <b>${lvUp(l,k).n}</b>: ${lvUp(l,k).d}`).join(''); }
-    { const eu=checkEraUnlock(); progHtml+=eu.map(e=>`<br>🔓 Se abrió el rango ${RANK_ROMAN[e]}: <b>${ERAS[e].n}</b> (${ERAS[e].y}).`).join(''); }
-    rpHtml=(mres?mres.html:'')+`<div class="rpbox"><b>+${rp.toLocaleString('es-AR')} PI</b> y <b>+${ypTxt(R.yp)}</b> ${YP} <small>(rango ${RANK_ROMAN[rk]})</small> · tenés <b>${ypTxt(PROG.yp)}</b>
-      ${xpHtml}${progHtml}${nx?`<br>Investigando: ${VEH[nx].label} (rango ${RANK_ROMAN[rankOf(nx)]}) · ${(PROG.rp[nx]||0).toLocaleString('es-AR')} / ${rpCost(nx).toLocaleString('es-AR')} PI<div class="pbar"><i style="width:${Math.round((PROG.rp[nx]||0)/rpCost(nx)*100)}%"></i></div>`:'<br>No queda nada para investigar en '+NATIONS[n].label+' por ahora.'}</div>`;
-    if(unl.length&&!net.on) rpHtml+=`<div class="rpbox unl">${unl.map(k=>`<div class="unlI" data-k="${k}">${unlHTML(k)}</div>`).join('')}</div>`; }
-  $('panel').innerHTML=`<h1>${spectating?'Fin de la partida':MS?(winner===0?'Misión cumplida':'Misión fallida'):winner===0?'Victoria':'Derrota'}</h1>${rpHtml}
-    <p>Gana ${N}. Tickets finales: ${allyLabel()} ${Math.max(0,Math.ceil(tickets[0]))}, ${NATIONS[foeNation].label} ${Math.max(0,Math.ceil(tickets[1]))}. Puntos: penetrar 20, destruir 100, capturar 60 y artillería 10 por impacto.</p>
-    <div class="sumwrap">${table(0)}${table(1)}</div>
-    <button class="go" id="again">${MS?(mres&&mres.next?'Siguiente misión: '+mres.next.title:'Reintentar la misión'):curSpecial?'Revancha en el puente':'Continuar: '+WORLDS[nextMapKey()].label}</button><button class="go alt" id="menuB">${MS?'Volver a la campaña':'Menú principal'}</button>`;
+    let gx=0, r0=0, r1=0, dn=[];
+    { const st=me.st||{}, v={kills:me.kills|0,side:st.side|0,caps:me.caps|0,assists:me.assists|0,inf:st.inf|0,wins:win?1:0,badwx:['noche','niebla','lluvia','tormenta'].includes(wxKey)?1:0,smoke:st.smoke|0};
+      gx=Math.max(0,Math.round(me.score*2+(win?500:200))); r0=rankIdx(PROG.pxp||0); PROG.pxp=(PROG.pxp||0)+gx; dn=progressDaily(v,n); r1=rankIdx(PROG.pxp);
+      PROG.tstat=PROG.tstat||{}; for(const k of used){ const S=PROG.tstat[k]||(PROG.tstat[k]={b:0,w:0,k:0,d:0}); S.b++; if(win) S.w++; const tk=(me.tk||{})[k]; if(tk){ S.k+=tk.k|0; S.d+=tk.d|0; } } saveProg(); }
+    chips=`<span class="wchip rp" title="Puntos de investigación">+${fmt(rp)} <small>PI</small></span><span class="wchip yp" title="Yaguaretés: para comprar tanques">+${ypTxt(R.yp)}</span><span class="wchip xp" title="Experiencia de jugador">+${fmt(gx)} <small>XP</small></span><span class="wchip have">Tenés ${ypTxt(PROG.yp)}</span>`;
+    // investigación: lo que se estaba investigando (de lo que había a lo que hay) y, si se terminó, el siguiente
+    let res='';
+    if(nx0){ const c=rpCost(nx0), done=un.includes(nx0), r1v=done?c:(PROG.rp[nx0]||0);
+      res+=`<div class="wrow">${miniHTML(nx0)}<div class="wtx"><b>${VEH[nx0].label}</b> <small>rango ${RANK_ROMAN[rankOf(nx0)]}</small>${done?'<span class="wnew">¡Investigado!</span>':''}
+        ${bar(rp0/c,r1v/c,done?'full':'')}<small>${done?(owned(nx0)?'Ya es tuyo':'Ahora lo podés comprar')+' · '+fmt(c)+' / '+fmt(c)+' PI':fmt(r1v)+' / '+fmt(c)+' PI · faltan '+fmt(c-r1v)+' (unas '+Math.max(1,Math.ceil((c-r1v)/Math.max(1,rp)))+' batallas así)'}</small></div></div>`; }
+    for(const k of un.filter(k=>k!==nx0)) res+=`<div class="wrow">${miniHTML(k)}<div class="wtx"><b>${VEH[k].label}</b><span class="wnew">¡Investigado!</span>${bar(1,1,'full')}</div></div>`;
+    if(nx&&nx!==nx0){ const c=rpCost(nx), h=PROG.rp[nx]||0; res+=`<div class="wrow next">${miniHTML(nx)}<div class="wtx"><small>Ahora investigás</small> <b>${VEH[nx].label}</b>${bar(0,h/c)}<small>${fmt(h)} / ${fmt(c)} PI</small></div></div>`; }
+    if(window.tallerQ) for(const k of un) tallerQ.push({kind:'res',k});                                       // escena de la mesa de dibujo (taller.js)
+    if(!res) res=`<p class="wnone">No queda nada para investigar en ${NATIONS[n].label} por ahora.</p>`;
+    // tanques usados: experiencia y nivel, con las mejoras que se desbloquearon en esta batalla
+    let tks='';
+    for(const k of used){ const xp=Math.round(rp/used.length), L0=tankLv(k), x0=tankXP(k), ups=addTankXP(k,xp), L=tankLv(k), x1=tankXP(k);
+      const lo=v=>L0>=5?0:(v-(LV_XP[L0-1]||0))/(LV_XP[L0]-(LV_XP[L0-1]||0));
+      const f0=L0>=5?1:lo(x0), f1=L0>=5?1:(L>L0?1:lo(x1));
+      const nw=ups.map(l=>{ const u=lvUp(l,k), am=(l===2||l===3)&&VEH[k].ammo&&VEH[k].ammo[l-1];   // la 2ª y la 3ª munición se abren con los niveles 2 y 3 (municion.js)
+        return `<span class="wup" title="${esc(u.d)}">🔓 Nv ${l}: ${u.n}</span>`+(am?`<span class="wup am">🔓 ${esc(am.n)}</span>`:''); }).join('');
+      if(ups.length&&window.tallerQ) tallerQ.push({kind:'up',k,txt:ups.map(l=>`Nv ${l}: ${lvUp(l,k).n}`+((l===2||l===3)&&VEH[k].ammo&&VEH[k].ammo[l-1]?` · ${VEH[k].ammo[l-1].n}`:'')).join(' · ')});   // escena del taller al volver al garaje (taller.js)
+      const nextUp=L<5?lvUp(L+1,k):null;
+      tks+=`<div class="wrow">${miniHTML(k)}<div class="wtx"><b>${VEH[k].label}</b> <span class="wlv">Nv ${L}</span> <small>+${fmt(xp)} XP</small>${bar(f0,f1,L>L0?'full':'')}
+        <small>${L>=5?'Nivel máximo':L>L0?'¡Subió al nivel '+L+'!':fmt(x1)+' / '+fmt(LV_XP[L])+' XP · nivel '+(L+1)+': '+(nextUp?nextUp.n.toLowerCase():'')}</small>${nw?`<div class="wups">${nw}</div>`:''}</div></div>`; }
+    let ach='';
+    if(r1>r0) ach+=`<span class="wach">🎖 Ascendiste a ${RANKS[r1][1]}</span>`;
+    ach+=dn.map(c=>`<span class="wach">✔ ${chText(c)} · +1 medalla</span>`).join('');
+    ach+=checkEraUnlock().map(e=>`<span class="wach">🔓 Rango ${RANK_ROMAN[e]}: ${ERAS[e].n}</span>`).join('');
+    left=(mres?`<div class="wcard mis">${mres.html}</div>`:'')+
+      `<div class="wcard"><h3>Investigación · ${NATIONS[n].label}</h3>${res}</div>`+
+      (tks?`<div class="wcard"><h3>Tus tanques</h3>${tks}</div>`:'')+
+      `<div class="wcard ach"><span class="wach rk">${RANKS[r1][1]}</span>${ach}</div>`+
+      (unl.length&&!net.on?`<div class="rpbox unl">${unl.map(k=>`<div class="unlI" data-k="${k}">${unlHTML(k)}</div>`).join('')}</div>`:''); }
+  const title=spectating?'Fin de la partida':MS?(winner===0?'Misión cumplida':'Misión fallida'):winner===0?'Victoria':'Derrota';
+  const mapN=WORLDS[builtKey]?WORLDS[builtKey].label:'';
+  $('panel').innerHTML=`<div class="wts${left?'':' noL'}">
+    <header class="wtsHead"><div class="wtsRes ${winner===0?'win':'lose'}">${title}</div>
+      <div class="wtsSub">${mapN?esc(mapN)+' · ':''}gana ${N}<br><span class="wtk">${allyLabel()} ${Math.max(0,Math.ceil(tickets[0]))} – ${Math.max(0,Math.ceil(tickets[1]))} ${NATIONS[foeNation].label}</span></div>
+      <div class="wtsChips">${chips}</div></header>
+    <div class="wtsMain">${left?`<section class="wtsL">${left}</section>`:''}<section class="wtsR sumwrap">${table(0)}${table(1)}</section></div>
+    <footer class="wtsBar" id="wtsBar"><button class="go alt" id="menuB">${MS?'Volver a la campaña':'Menú principal'}</button><button class="go" id="again">${MS?(mres&&mres.next?'Siguiente misión: '+mres.next.title:'Reintentar la misión'):curSpecial?'Revancha en el puente':'Continuar: '+WORLDS[nextMapKey()].label}</button></footer></div>`;
+  if(typeof miniPedir==='function'){ const ks=[...document.querySelectorAll('#panel img.vmini')].map(i=>i.dataset.k); if(ks.length) miniPedir([...new Set(ks)]); }
+  setTimeout(()=>bars.forEach(([id,f1])=>{ const e=document.getElementById(id); if(e){ const l=parseFloat(e.style.left)||0; e.style.width=Math.max(0,Math.round(f1*100)-l)+'%'; } }),350);
+  // lo que otros archivos agregan al final del panel (Discord, Dar opinión) va a la barra de abajo
+  setTimeout(()=>{ const B=$('wtsBar'); if(!B) return; for(const id of ['comDc','opP']){ const e=$(id); if(e&&e.parentNode!==B&&e.style.display!=='none'){ if(id==='comDc') e.textContent='👥 Discord'; B.insertBefore(e,B.firstChild); } } },0);
   if(net.guest){ $('again').textContent='Esperando que el anfitrión siga…'; $('again').disabled=true; $('menuB').textContent='Salir de la sala'; }
   if(net.host) $('menuB').textContent=net.quick?'Salir de la partida':'Cerrar la sala';
   if(net.host&&net.quick) setTimeout(salaSeguir,0);

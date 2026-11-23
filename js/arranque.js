@@ -140,7 +140,7 @@
       const bt=box.querySelector('#firstBtns'), a=$('again'), m=$('menuB');
       if(a){ a.setAttribute('data-notr',''); a.textContent=EN()?'Next battle':'Siguiente batalla'; a.style.fontSize='22px'; bt.appendChild(a); }
       if(m){ m.textContent=EN()?'Main menu':'Menú principal'; bt.appendChild(m); }
-      $('detB').onclick=()=>{ kept.forEach(el=>el.style.display=''); box.querySelector('h1').style.display='none'; $('detB').remove(); if(a) P.appendChild(a); if(m) P.appendChild(m); };
+      $('detB').onclick=()=>{ kept.forEach(el=>el.style.display=''); box.querySelector('h1').style.display='none'; $('detB').remove(); const WB=$('wtsBar')||P; if(m) WB.appendChild(m); if(a) WB.appendChild(a); };
     }catch(e){ console.warn('resumen simple',e); }
     return r; };
 })();

@@ -6,6 +6,15 @@
   const EN=()=>window.LANG==='en';
   const LS=(k,v)=>{ try{ if(v===undefined) return localStorage.getItem(k); localStorage.setItem(k,v); }catch(e){ return null; } };
   const NOV=[
+    {id:'2026-11-23',fecha:'23/11/2026',
+     es:['Resumen de la batalla nuevo, estilo War Thunder: entra en una sola pantalla, con lo que ganaste arriba, la barra de lo que estás investigando, la experiencia de cada tanque que usaste y las mejoras que se desbloquearon.',
+         'El garaje tiene oficina técnica: una mesa de dibujo con el plano del tanque que estás investigando. Y un taller en el galpón, con mecánicos, aparejo y banco de trabajo.',
+         'Cuando terminás de investigar un tanque o uno sube de nivel, al volver al garaje lo ves: el plano nuevo en la mesa o la mejora instalada en el taller.',
+         'KV-2 e IS-2 rehechos, más parecidos a los de verdad. Las calcomanías y los accesorios quedan pegados a la chapa.'],
+     en:['New battle summary, War Thunder style: it fits on one screen, with your rewards on top, the bar of what you are researching, the experience of each tank you used and the upgrades you unlocked.',
+         'The garage now has a design office: a drafting table with the blueprint of the tank you are researching. And a workshop in the hangar, with mechanics, a hoist and a workbench.',
+         'When you finish researching a tank or one levels up, you see it back in the garage: the new blueprint on the table or the upgrade installed in the workshop.',
+         'KV-2 and IS-2 remade, closer to the real ones. Stickers and accessories now sit on the armor.']},
     {id:'2026-11-19',fecha:'19/11/2026',
      es:['Los aviones de apoyo de la 2ª Guerra (ataque aéreo y P-47) suenan con un motor de caza a hélice grabado.','Las semiorugas (Sd.Kfz. 251, M3 y M16) suenan con motor de camión.','El mecánico que baja a reparar ahora suena: cadenas si arregla la oruga, herramientas si arregla el motor o el cañón.','B° Sor Asunta rehecho: casas de barrio con techo de chapa, de tejas o losa con parapeto, tanque de agua, antena, aire acondicionado y galería; frentes con tapial y reja, alambrado o muro, con portón.',
          'Postes de madera de la luz con cruceta, aisladores, transformador y farol de brazo que se prende de noche, cables con comba y acometidas a las casas; si se cae un poste, sus cables quedan en el suelo. Carteles con el nombre de las calles en las esquinas.',

@@ -19,7 +19,7 @@ function baseScene(){
   const jm=L(0x75726b); for(let i=-2;i<=2;i++){ add(new THREE.BoxGeometry(34,.02,.08),jm,-3,.03,-4+i*6); add(new THREE.BoxGeometry(.08,.02,30),jm,-3+i*6.8,.03,-4); }
   const ym=new THREE.MeshBasicMaterial({color:0xc9b14a}); for(const [x,z,w,d] of [[-4.6,0,.18,10],[4.6,0,.18,10],[0,5,9.4,.18]]) add(new THREE.BoxGeometry(w,.03,d),ym,x,.035,z);
   // galpón de chapa en arco (Nissen), abierto hacia el tanque
-  { const hm=L(0x7c8277), arc=new THREE.CylinderGeometry(9,9,24,20,1,true,-Math.PI/2,Math.PI); arc.rotateZ(Math.PI/2); arc.rotateY(Math.PI/2);
+  { const hm=L(0x7c8277), arc=new THREE.CylinderGeometry(9,9,24,20,1,true,0,Math.PI); arc.rotateZ(Math.PI/2); arc.rotateY(Math.PI/2);
     const h=add(arc,hm,-6,0,-36); h.material.side=THREE.DoubleSide; h.castShadow=true;
     const back=add(new THREE.CircleGeometry(9,20,0,Math.PI),L(0x3a3c38),-6,0,-47.9); back.material.side=THREE.DoubleSide;
     for(let i=0;i<11;i++){ const r=add(new THREE.TorusGeometry(9.05,.08,4,20,Math.PI),L(0x5c6058),-6,0,-47.5+i*2.3); }                       // costillas de la chapa
