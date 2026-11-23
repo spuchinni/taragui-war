@@ -100,8 +100,8 @@ function w2Turret(tur,M,I,mat){ const w=M.tw, l=M.tl, h=M.th, hw=w/2, hl=l/2;
     case 'kv2': { const y0=.12;                                                                                                  // KV-2 (MT-2): caja enorme, frente vertical con el plano de arriba inclinado hacia atrás, techo plano, puerta atrás
       profMesh(tur,[[hl,y0],[hl,h*.62],[hl-.45,h],[-hl+.07,h],[-hl,h-.07],[-hl,y0]],w,0,mat);
       cyl(tur,.98,1.02,y0+.02,0,y0/2,-.05,20,mat); break; }                                                                      // collar del aro de la torre
-    case 'is2': { const g=loftGeo([[1.0,.66,.6],[.84,.9,.86],[.5,1,.97],[-.1,.98,1],[-.55,.86,.94],[-.88,.7,.82],[-1.02,.5,.7]].map(([z,a,b])=>[z*hl+.12,a*hw,b*h]),22,2.9);
-      const m=new THREE.Mesh(g,mat); m.castShadow=m.receiveShadow=true; tur.add(m); tur.userData.loft={S:g.userData.S,p:2.9}; break; }                                    // IS-2: fundida, larga y baja, con el cesto que sobresale atrás
+    case 'is2': { const g=loftGeo([[1.0,.6,.62],[.86,.84,.88],[.55,.97,.98],[0,1,1],[-.5,.9,.97],[-.85,.74,.88],[-1.04,.56,.76]].map(([z,a,b])=>[z*hl+.12,a*hw,b*h]),22,3.6);
+      const m=new THREE.Mesh(g,mat); m.castShadow=m.receiveShadow=true; tur.add(m); tur.userData.loft={S:g.userData.S,p:3.6}; break; }                                    // IS-2: fundida, larga y baja, con el cesto que sobresale atrás
     case 'none': break;                                                                                                          // casamata (StuG): el cañón va en el casco
     default: prism(tur,[[-hw*.75,hl],[hw*.75,hl],[hw,hl*.35],[hw,-hl*.85],[hw*.85,-hl],[-hw*.85,-hl],[-hw,-hl*.85],[-hw,hl*.35]],h,.12,0,0,0,mat); // biselada (Pz III/IV, Crusader, Stuart)
   }
@@ -583,6 +583,7 @@ function t34Turret(tur,G,M,I,mat,gy){ const hw=M.tw/2, hl=M.tl/2, th=M.th;
     for(const sx of [-1,1]){ cyl(tur,.13,.15,.12,sx*hw*.22,th-.02,-hl*.7,10,mat); cyl(tur,.1,.13,.05,sx*hw*.22,th+.06,-hl*.7,10,mat); } } }   // ventiladores atrás
 
 // ---- IS-2 mod. 1944 ----
+const _is2Bag=new THREE.MeshLambertMaterial({color:0x6e6446});
 function is2Gear(root,I,x,s,tw,zf,zr,mat){
   const r=I.wR, n=I.nW, ay=r+.03, z0=zr+1.05, z1=zf-1.1;
   for(let i=0;i<n;i++){ const z=z0+(z1-z0)*i/(n-1); for(const d of [-.13,.13]) dWheel(root,x+d,ay,z,r,mat,{sc:.42,rim:.78}); }   // ruedas dobles de 550 mm
@@ -596,13 +597,15 @@ function is2Hull(root,M,I,mat,iw2,deck,gz,zf,zr,L){
     const q=glacisPt(I,deck,gz,zf,.95,.05), k=new THREE.Mesh(_tgShackle,darkMat); k.position.set(sx*iw2*.34,q.y,q.z); k.rotation.y=Math.PI/2; root.add(k); }
   for(let k=0;k<3;k++){ const p=glacisPt(I,deck,gz,zf,.62+k*.12,.04), b=box(root,iw2*.55,.05,.14,0,p.y,p.z,trackMat); b.rotation.x=p.a; }   // eslabones de repuesto
   for(const sx of [-1,1]){
-    rbox(root,I.trW*.8,.32,.75,sx*ft,fy+.16,zf-1.5,mat,.04); rbox(root,I.trW*.8,.28,.6,sx*ft,fy+.14,-.3,mat,.04);   // cajones sobre los guardabarros
-    const c=cyl(root,.19,.19,.85,sx*ft,fy+.2,zr+.75,12,mat); c.rotation.x=Math.PI/2;                                 // tanques de combustible externos
-    for(const dz of [-.25,.25]){ const st=new THREE.Mesh(_strapGeo,darkMat); st.position.set(sx*ft,fy+.2,zr+.75+dz); root.add(st); }
+    const ex=sx*(hw-.24);                                                                                           // sobre el borde de la cubierta (el casco alto tapa los guardabarros)
+    rbox(root,.4,.28,.7,ex,deck+.14,zf-gz-.55,mat,.04); rbox(root,.36,.24,.55,ex,deck+.12,.15,mat,.04);             // cajones
+    for(const zc of [zr+.75,zr+1.8]){ const c=cyl(root,.19,.19,.95,ex,deck+.19,zc,12,mat); c.rotation.x=Math.PI/2;   // tanques de combustible externos (dos por lado, largos)
+      for(const dz of [-.3,.3]){ const st=new THREE.Mesh(_strapGeo,darkMat); st.position.set(ex,deck+.19,zc+dz); root.add(st); } }
     const cb=cyl(root,.035,.035,L-2.2,sx*(iw2/2+.02),deck-.12,.1,6,darkMat); cb.rotation.x=Math.PI/2;              // cable de remolque
     const e=cyl(root,.08,.08,.36,sx*iw2*.36,deck-.12,zr-.02,8,darkMat); e.rotation.x=Math.PI/2-.4;                  // escapes
-    box(root,.5,.03,.8,sx*iw2*.28,deck+.02,zr+1.0,darkMat); }                                                       // rejillas
-  rbox(root,.6,.06,.7,0,deck+.03,zr+1.05,mat,.03); }                                                               // escotilla del motor
+    louvres(root,.55,1.0,9,sx*iw2*.2,deck+.02,zr+1.15,mat); }                                                    // rejillas grandes del motor
+  rbox(root,.3,.06,.9,0,deck+.03,zr+1.15,mat,.03);
+  { const lg=cyl(root,.14,.14,iw2*.95,0,deck+.02,zr+.28,10,_wdMat); lg.rotation.z=Math.PI/2; for(const sx of [-1,1]) box(root,.05,.3,.05,sx*iw2*.3,deck-.05,zr+.18,darkMat); } }   // tronco para desencajarse atrás                                                               // escotilla del motor
 function is2Turret(tur,G,M,I,mat,gy){ const hw=M.tw/2, hl=M.tl/2, th=M.th;
   rbox(G.gp,1.05,.66,.34,0,0,.1,mat,.1); const sl=cyl(G.gp,.17,.21,.72,0,0,.58,12,mat); sl.rotation.x=Math.PI/2; // mantelete ancho y funda del D-25T
   cyl(G.gp,.035,.035,.1,-.32,.12,.28,8,darkMat).rotation.x=Math.PI/2; cyl(G.gp,.04,.04,.1,.32,.0,.28,8,darkMat).rotation.x=Math.PI/2;   // mira y coaxial
@@ -612,6 +615,7 @@ function is2Turret(tur,G,M,I,mat,gy){ const hw=M.tw/2, hl=M.tl/2, th=M.th;
   const L=tur.userData.loft;
   for(const sx of [-1,1]){ rail(tur,sx*(loftX(L,th*.55,-hl*.2)+.06),th*.55,-hl*.5,hl*.1,3); const pp=cyl(tur,.06,.06,.04,sx*(loftX(L,th*.38,-hl*.3)+.01),th*.38,-hl*.3,8,mat); pp.rotation.z=Math.PI/2; }
   box(tur,.12,.07,.1,-hw*.1,th+.06,hl*.3,darkMat);
+  for(const sx of [-1,1]) for(const [z,y] of [[-hl*.62,.42],[-hl*.86,.36]]){ const x=loftX(L,th*y,z+.12), b=rbox(tur,.24,.34,.36,sx*(x+.1),th*y,z,_is2Bag,.08); b.rotation.z=sx*.12; }   // mochilas y lonas colgadas atrás
   if(L) for(const o of tur.children) if(!o.userData.loftOk&&o.position.y>th*.85&&!(o.geometry&&o.geometry.userData.S)) o.position.y+=loftY(L,o.position.x,o.position.z)-th; }   // lo del techo (cúpula, aro, periscopios, DShK) apoyado en la curva de la torre
 const DET={panther:{gear:pantherGear,hull:pantherHull,tur:pantherTurret},t34:{gear:t34Gear,hull:t34Hull,tur:t34Turret},is2:{gear:is2Gear,hull:is2Hull,tur:is2Turret}};
 
