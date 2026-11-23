@@ -1679,7 +1679,8 @@ I18N.add({
 "subfusil, escotillas, tanque que pasa, MAG y herramientas: Sound effects from https://gfxsounds.com": "submachine gun, hatches, passing tank, MAG and tools: Sound effects from https://gfxsounds.com",
 "Las semiorugas (Sd.Kfz. 251, M3 y M16) suenan con motor de camión.": "Half-tracks (Sd.Kfz. 251, M3 and M16) now sound like trucks.",
 "subfusil, escotillas, tanque que pasa, MAG, herramientas y semiorugas: Sound effects from https://gfxsounds.com": "submachine gun, hatches, passing tank, MAG, tools and half-tracks: Sound effects from https://gfxsounds.com",
-"Los aviones de apoyo de la 2ª Guerra (ataque aéreo y P-47) suenan con un motor de caza a hélice grabado.": "WWII support planes (air strike and P-47) now sound like a real propeller fighter."
+"Los aviones de apoyo de la 2ª Guerra (ataque aéreo y P-47) suenan con un motor de caza a hélice grabado.": "WWII support planes (air strike and P-47) now sound like a real propeller fighter.",
+"Tanque homenaje a Alejandro, que regaló el Abrams de juguete en el que está inspirado: camuflaje digital gris azulado, escarapelas argentinas y su nombre en la torre. Mismos números que el M1 Abrams.": "Tribute tank for Alejandro, who gave away the toy Abrams it is based on: blue-grey digital camo, Argentine roundels and his name on the turret. Same stats as the M1 Abrams."
 });
 I18N.words({
 "Perforante sólido": "Solid AP",
