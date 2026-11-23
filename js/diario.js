@@ -173,18 +173,33 @@
       if(t.turret){ t.turret.traverse(o=>{ if(o.isMesh&&o!==t.barrelMesh&&!(t.barrel&&isChild(o,t.barrel))) tb.expandByObject(o); }); }
       for(const c of R.children) if(c!==t.turret) hb.expandByObject(c);
       const deck=t.turret?t.turret.position.y:hb.max.y, W=hb.max.x-hb.min.x, zf=hb.max.z, zr=hb.min.z;
-      if(S.stk&&STK[S.stk]&&t.turret&&!tb.isEmpty()){ const mat=new THREE.MeshLambertMaterial({map:stickerTex(S.stk),transparent:true,alphaTest:.25,depthWrite:false});
-        const tp=t.turret.position, hw=Math.max(Math.abs(tb.max.x),Math.abs(tb.min.x))-tp.x, y=(tb.min.y+(tb.max.y-tb.min.y)*.42)-tp.y, z=(tb.min.z+tb.max.z)/2-tp.z;
-        for(const s of [-1,1]){ const p=new THREE.Mesh(new THREE.PlaneGeometry(.5,.5),mat); p.position.set(s*(hw+.012),y,Math.min(z,0)); p.rotation.y=s*Math.PI/2; t.turret.add(p); } }
+      // Superficies de verdad (pedido de Sebastián: en el Stuart las calcomanías quedaban en el aire): rayos contra la chapa del casco y de la torre
+      const skip=o=>{ for(let q=o;q;q=q.parent){ if(q===t.barrel||q.userData&&(q.userData.tank||q.userData.crewFig)) return true; if(t.mgs&&t.mgs.some(m=>m&&(m.yg===q||m.base===q||m.g===q))) return true; } return false; };
+      const bigOf=(root,min)=>{ const L=[]; root.traverse(o=>{ if(!o.isMesh||!o.visible||!o.geometry||skip(o)) return; if(!o.geometry.boundingSphere) o.geometry.computeBoundingSphere();
+        const sc=o.getWorldScale(new THREE.Vector3()); if(o.geometry.boundingSphere.radius*Math.max(sc.x,sc.y,sc.z)>=min) L.push(o); }); return L; };
+      const allM=bigOf(R,0).filter(o=>!t.turret||!isChild(o,t.turret)), hullM=bigOf(R,.3).filter(o=>!t.turret||!isChild(o,t.turret)), turM=t.turret?bigOf(t.turret,.45):[];
+      const rc=new THREE.Raycaster(), hit=(L,o,d)=>{ rc.set(o,d.clone().normalize()); rc.far=12; const h=rc.intersectObjects(L,false)[0]; if(!h) return null;
+        const n=h.face.normal.clone().transformDirection(h.object.matrixWorld); if(n.dot(d)>0) n.negate(); return {p:h.point,n,o:h.object}; };
+      const V=(x,y,z)=>new THREE.Vector3(x,y,z), Z=V(0,0,1);
+      const onSurf=(par,obj,h,off)=>{ const p=h.p.clone().addScaledVector(h.n,off), q=new THREE.Quaternion().setFromUnitVectors(Z,h.n);           // pega obj (cara +z hacia afuera) en el punto h
+        if(par!==R){ par.worldToLocal(p); const pq=par.getWorldQuaternion(new THREE.Quaternion()); q.premultiply(pq.invert()); }
+        obj.position.copy(p); obj.quaternion.copy(q); par.add(obj); return obj; };
+      const down=(x,z,y0)=>{ const h=hit(hullM,V(x,y0+3,z),V(0,-1,0)); return h&&h.p.y>y0-.6?h.p.y:null; };                                     // altura de la cubierta en (x,z)
+      if(S.stk&&STK[S.stk]&&t.turret&&turM.length){ const mat=new THREE.MeshLambertMaterial({map:stickerTex(S.stk),transparent:true,alphaTest:.25,depthWrite:false,polygonOffset:true,polygonOffsetFactor:-2});
+        const tw=new THREE.Box3(); turM.forEach(o=>tw.expandByObject(o)); const y=tw.min.y+(tw.max.y-tw.min.y)*.45, zc=(tw.min.z+tw.max.z)/2;
+        for(const sd of [-1,1]) for(const dz of [-.15,-.35,.1,.3]){ const h=hit(turM,V(sd*6,y,zc+dz),V(-sd,0,0)); if(h&&Math.abs(h.n.x)>.55){ onSurf(t.turret,new THREE.Mesh(new THREE.PlaneGeometry(.46,.46),mat),h,.012); break; } } }
       const A=S.acc||[];
-      if(A.includes('sacos')) for(let i=0;i<4;i++) for(let j=0;j<2;j++) add(R,G.box,M.sand,(-1.5+i)*W*.17,deck+.08+j*.12,zf-1.15-j*.08,W*.16,.13,.34,0,(i+j)%2?.06:-.05,0);
-      if(A.includes('troncos')){ const l=add(R,G.cyl,M.wood,0,deck+.16,zr+.45,.15,W*.72,.15,0,0,Math.PI/2); }
+      if(A.includes('sacos')) for(let i=0;i<4;i++) for(let j=0;j<2;j++){ const x=(-1.5+i)*W*.17, z=zf-1.15-j*.08, y=down(x,z,deck)??deck; add(R,G.box,M.sand,x,y+.07+j*.12,z,W*.16,.13,.34,0,(i+j)%2?.06:-.05,0); }
+      if(A.includes('troncos')){ const z=zr+.45, y=Math.max(down(-W*.25,z,deck)??deck,down(W*.25,z,deck)??deck); add(R,G.cyl,M.wood,0,y+.15,z,.15,W*.72,.15,0,0,Math.PI/2); }
       if(A.includes('ramas')){ let h=7; const rnd=()=>{ h=(h*16807)%2147483647; return h/2147483647; };
-        for(let i=0;i<12;i++){ const s=i%2?1:-1, r=.22+rnd()*.18; add(R,G.leaf,M.leaf,s*(W/2-.15-rnd()*.25),deck+.1+rnd()*.15,zr+.6+rnd()*(zf-zr-1.4),r,r*.7,r,rnd()*3,rnd()*3,0); }
-        if(t.turret) for(let i=0;i<4;i++){ const r=.2+rnd()*.12; add(t.turret,G.leaf,M.leaf,(i%2?1:-1)*.5,.55+rnd()*.15,-.4-rnd()*.4,r,r*.7,r,rnd()*3,rnd()*3,0); } }
-      if(A.includes('bidones')) for(let i=0;i<4;i++) add(R,G.box,M.can,(-1.5+i)*W*.13,deck-.3,zr-.08,.17,.32,.12);
-      if(A.includes('eslabones')&&t.turret&&!tb.isEmpty()){ const hw=Math.max(Math.abs(tb.max.x),Math.abs(tb.min.x))-t.turret.position.x;
-        for(const s of [-1,1]) for(let i=0;i<4;i++) add(t.turret,G.box,M.link,s*(hw+.03),(tb.max.y-tb.min.y)*.35,-.55+i*.3,.05,.14,.27); }
+        for(let i=0;i<12;i++){ const s=i%2?1:-1, r=.22+rnd()*.18, x=s*(W/2-.15-rnd()*.25), z=zr+.6+rnd()*(zf-zr-1.4), y=down(x,z,deck); if(y==null) continue; add(R,G.leaf,M.leaf,x,y+r*.35,z,r,r*.7,r,rnd()*3,rnd()*3,0); }
+        if(t.turret&&turM.length) for(let i=0;i<4;i++){ const r=.2+rnd()*.12, x=(i%2?1:-1)*.45, z=-.35-rnd()*.4, tp=t.turret.position, h=hit(turM,V(tp.x+x,tp.y+4,tp.z+z),V(0,-1,0));
+          if(h){ const o=add(R,G.leaf,M.leaf,0,0,0,r,r*.7,r,rnd()*3,rnd()*3,0); o.position.copy(h.p); o.position.y+=r*.3; t.turret.worldToLocal(o.position); t.turret.add(o); } } }
+      if(A.includes('bidones')){ let n=0;                                                                                                   // bidones de nafta/agua colgados de la popa (los tanques los llevaban de reserva)
+        for(const x of [-.39,-.13,.13,.39].map(f=>f*W)){ let h=null; for(const y of [deck-.35,deck-.6,deck-.85,deck-.15]){ h=null; let ok=true; for(const dy of [-.16,0,.16]) for(const dx of [-.09,.09]){ const a=hit(allM,V(x+dx,y+dy,zr-6),Z); if(!a||a.n.z>-.4||!hullM.includes(a.o)) ok=false; else if(dx<0&&dy===0) h=a; } if(ok&&h) break; h=null; }   // que toda la cara del bidón apoye en chapa grande (no en escapes)
+          if(!h) continue; const c=onSurf(R,new THREE.Group(),h,.07); add(c,G.box,M.can,0,0,0,.17,.32,.12); add(c,G.box,M.link,0,.17,-.03,.08,.03,.05); n++; } }
+      if(A.includes('eslabones')&&t.turret&&turM.length){ const tw=new THREE.Box3(); turM.forEach(o=>tw.expandByObject(o)); const y=tw.min.y+(tw.max.y-tw.min.y)*.35;
+        for(const sd of [-1,1]) for(let i=0;i<4;i++){ const h=hit(turM,V(sd*6,y,tw.min.z+.35+i*.27),V(-sd,0,0)); if(!h||Math.abs(h.n.x)<.4) continue; const g=onSurf(t.turret,new THREE.Group(),h,.03); add(g,G.box,M.link,0,0,0,.27,.14,.05,0,0,0); } }
     }catch(e){ console.warn('diario: accesorios',e); }
     R.position.copy(P); R.quaternion.copy(Q); R.updateMatrixWorld(true); }
   const isChild=(o,p)=>{ for(let q=o;q;q=q.parent) if(q===p) return true; return false; };
