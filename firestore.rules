@@ -4,9 +4,22 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Progreso de cada jugador: solo lo lee y escribe su dueño, con el mail verificado
+    // Progreso de cada jugador: solo lo lee y escribe su dueño. Desde el 25/11/2026 también con el mail sin verificar
+    // y con la cuenta invisible (anónima): antes ese progreso quedaba solo en el navegador y se podía perder.
     match /jugadores/{uid} {
-      allow read, write: if request.auth != null && request.auth.uid == uid && request.auth.token.email_verified == true;
+      allow read, write: if request.auth != null && request.auth.uid == uid;
+    }
+
+    // Código de recuperación sin mail (js/nube.js): el id es sha256("tw2:"+código+":"+PIN), así que solo lo encuentra
+    // quien sabe el código y el PIN. Se lee de a uno (no se puede listar) y no se borra.
+    match /recup/{id} {
+      allow get: if id.matches('^[0-9a-f]{64}$');
+      allow list, delete: if false;
+      allow create, update: if id.matches('^[0-9a-f]{64}$')
+        && request.resource.data.keys().hasOnly(['prog', 'n', 't'])
+        && request.resource.data.prog is string && request.resource.data.prog.size() <= 400000
+        && request.resource.data.n is string && request.resource.data.n.size() <= 40
+        && request.resource.data.t == request.time;
     }
 
     // Partidas online abiertas (js/salas.js): las ve cualquiera; se anuncian sin cuenta,
