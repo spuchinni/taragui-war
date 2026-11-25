@@ -1711,7 +1711,12 @@ I18N.add({
 "Los PI de las próximas batallas van a este tanque": "Research points from your next battles go to this tank",
 "Tocá para seguir": "Tap to continue",
 "Llega en camión al garaje cuando vuelvas.": "It arrives at your garage by truck when you go back.",
-"Está en tu garaje.": "It's in your garage."
+"Está en tu garaje.": "It's in your garage.",
+"Los refuerzos ocupan {} del punto {}": "Reinforcements take over {} at point {}",
+"la ametralladora": "the machine gun",
+"el antitanque": "the anti-tank gun",
+"la trinchera": "the trench",
+"El antitanque del punto {} vuelve a tirar": "The anti-tank gun at point {} is firing again"
 });
 I18N.words({
 "Perforante sólido": "Solid AP",

@@ -12,7 +12,7 @@
   const EN=()=>window.LANG==='en', T2=(es,en)=>EN()?en:es;
   // ---- mapa: campo abierto tipo Campo de Mayo ----
   WW1_CFG.campomayo={seed:1947,era:3,label:'Campo de Mayo (Buenos Aires)',desc:'Campo de maniobras del Ejército en la pampa: pasto, alamedas y caminos de tierra.',
-    bx:175,bz:155,sky:0xb6c6d4,fog:[170,560],ground:['#7f9a4e','#76904a','#8aa458','#6d8644'],grass:.95,craters:0,crR:[1,2],front:60,noTrench:1,churn:0,deadTrees:0,
+    bx:175,bz:155,sky:0xb6c6d4,fog:[170,560],ground:['#7f9a4e','#76904a','#8aa458','#6d8644'],grass:.95,craters:0,crR:[1,2],front:60,noTrench:1,posts:0,churn:0,deadTrees:0,
     hills:[{x:-120,z:90,r:50,h:3},{x:130,z:-100,r:45,h:2.5}],
     village:{x:-140,z:-110,n:6,ruin:0,r:16,name:'Cuarteles',walls:['#e8e0cc','#ddd3bc','#efe8d6'],roofs:['#9a4a32','#8a4a36']},
     woods:[{x:-150,z:120,r:24,n:50,sp:['alamo']},{x:150,z:115,r:22,n:45,sp:['roble']},{x:155,z:-125,r:20,n:40,sp:['alamo']}],

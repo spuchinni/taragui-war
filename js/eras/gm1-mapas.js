@@ -90,6 +90,23 @@ function buildWW1Map(key){
     for(let i=0;i<D.length-1;i++){ const [ax,az]=D[i], [bx2,bz2]=D[i+1], L=Math.hypot(bx2-ax,bz2-az);
       for(let t=rr(10,C.ditchGap*.5);t<L;t+=C.ditchGap){ const t1=Math.min(L,t+C.ditchGap-22); if(t1-t<8) continue;
         addLine([[ax+(bx2-ax)*t/L,az+(bz2-az)*t/L],[ax+(bx2-ax)*t1/L,az+(bz2-az)*t1/L]],C.ditchW||1.6,C.ditchD||1.1,'ditch'); } } }
+  // ---- posiciones defensivas alrededor de cada punto (24/11/2026, pedido de Sebastián con "WW1 trench, Pajamäki", "Low Poly Trench Warfare Pack"
+  // y "ww2 trench pack" de Sketchfab de referencia; por código): en todos los mapas del generador, una trinchera en almena de cada lado del punto
+  // (mirando a cada base), con una comunicación hacia atrás, el nido de la ametralladora adelante, el pozo del antitanque atrás y, desde
+  // Entreguerras y fuera de las ciudades, una casamata de hormigón en una punta. refuerzos.js las arma al fortificar y los refuerzos las ocupan.
+  const ZP=[], zSegs=[], zRx=[], zRz=[]; W.posts=ZP;
+  if(C.posts!==0) for(const Z of C.zones){ const city=!!C.city, era=W.era||1, Rr=Z.r*(city?.5:.85), HL=Z.r*(city?.42:.9), w=era>=2?1.3:1.6, d=era>=2?1.45:1.7;
+    for(const s of [-1,1]){ const zc=Z.z+s*Rr;
+      if(CO&&base(Z.x,zc)<1.2) continue;
+      if(city&&(C.city.lm||[]).some(L=>Math.hypot(L.x-Z.x,L.z-zc)<Math.max(L.w,L.d)/2+HL+4)) continue;
+      const n=Math.max(4,Math.round(HL*2/6)), x0=Z.x-n*3, pts=[], bays=[];                             // zigzag de tramos de ~6 m (sin esquinas en ángulo recto)
+      for(let i=0;i<=n;i++){ const k=i%2, zz=zc+s*(k?1.8:0); pts.push([x0+i*6,zz]); if(k) bays.push({x:x0+i*6,z:zz}); }
+      const a0=segs.length; addLine(pts,w,d,'fire');
+      if(!city){ const cx=Z.x+(R()<.5?-1:1)*rr(3,HL*.5); addLine([[cx,zc],[cx+rr(-2,2),zc-s*Rr*.45],[cx+rr(-3,3),zc-s*Rr*.8]],1.1,d*.9,'com'); }
+      for(let q=a0;q<segs.length;q++){ segs[q].fz=s; segs[q].zp=1; zSegs.push(segs[q]); }
+      const b=bays.reduce((a,c)=>Math.abs(c.x-Z.x)<Math.abs(a.x-Z.x)?c:a,bays[0]), g=R()<.5?-1:1, h=s>0?0:Math.PI;
+      ZP.push({id:Z.id,s,bays,w,d,h,mg:{x:b.x,z:b.z+s*2.7},pit:{x:Z.x+g*HL*.55,z:zc-s*8},box:era>=2&&!city?{x:g<0?x0+n*6+5:x0-5,z:zc+s*.9}:null});
+      zRz.push([Math.min(zc,zc+s*4.6)-4,Math.max(zc,zc+s*4.6)+4]); zRx.push([x0-4,x0+n*6+4]); } }
   // ---- setos del bocage (Normandía): cuadrícula de potreros con bordos de tierra y tranqueras ----
   const hedges=[]; if(C.hedges){ const H=C.hedges, cuts=(L0,L1)=>{ const v=[L0]; while(v[v.length-1]<L1) v.push(v[v.length-1]+rr(H.cell[0],H.cell[1])); return v; };
     const xs0=cuts(-bx-40,bx+40), zs0=cuts(-bz-40,bz+40);
@@ -124,10 +141,13 @@ function buildWW1Map(key){
     stamp(x,z,2.6,(k,X,Z)=>{ const q=Math.hypot(X-x,Z-z); if(q<2.6) A[k]=Math.max(A[k],base(X,Z)+.7*Math.cos(q/2.6*Math.PI/2)); }); } }
   // trincheras: profundidad aparte (para que los tanques largos pasen por encima) y parapeto de tierra del lado enemigo
   const segDistW=(x,z,S)=>{ const dx=S.bx-S.ax, dz=S.bz-S.az, l=dx*dx+dz*dz; let t=l?((x-S.ax)*dx+(z-S.az)*dz)/l:0; t=clamp(t,0,1); return Math.hypot(x-S.ax-dx*t,z-S.az-dz*t); };
+  // el parapeto de cada tramo se junta con el mayor (no se suma: en las esquinas de la almena se apilaban y salían "carpas"), y nunca adentro de otra trinchera
+  const PB=new Float32Array(nx*nz);
   for(const S of segs){ const m=S.w/2+1.8; const cx=(S.ax+S.bx)/2, cz=(S.az+S.bz)/2, rad=Math.hypot(S.bx-S.ax,S.bz-S.az)/2+m;
     stamp(cx,cz,rad,(k,X,Z)=>{ const q=segDistW(X,Z,S); if(q<S.w/2){ const f=clamp((S.w/2-q)/.4,0,1); TD[k]=Math.max(TD[k],S.d*f); }
-      else if(q<m&&S.kind!=='com'&&S.kind!=='ditch'){ const zm=(S.az+S.bz)/2, enemy=S.az<0?Z>zm:Z<zm; if(enemy) A[k]+=.55*Math.sin((q-S.w/2)/(m-S.w/2)*Math.PI); } }); }
-  for(let k=0;k<A.length;k++) A[k]-=TD[k];
+      else if(q<m&&S.kind!=='com'&&S.kind!=='ditch'){ const dx=S.bx-S.ax, dz=S.bz-S.az, L=Math.hypot(dx,dz)||1, fz=S.fz??(S.az<0?1:-1), side=((X-S.ax)*-dz+(Z-S.az)*dx)/L*(dx/L);   // lado del tramo que mira al enemigo
+        if(Math.abs(dx/L)>.3&&side*fz>0) PB[k]=Math.max(PB[k],.55*Math.sin((q-S.w/2)/(m-S.w/2)*Math.PI)); } }); }
+  for(let k=0;k<A.length;k++) A[k]+=(TD[k]>0?0:PB[k])-TD[k];
   // zona de partida y retaguardia más planas (sin embudos encima de la base)
   // ---- consultas para el motor ----
   const SB=new Map(), sb=(x,z)=>Math.floor(x/10)*10007+Math.floor(z/10);
@@ -148,8 +168,11 @@ function buildWW1Map(key){
   const axis=(L,step)=>{ const v=[-L]; while(v[v.length-1]<L-1e-6){ const c=v[v.length-1]; v.push(Math.min(L,c+step(c))); } return v; };
   const comX=segs.filter(S=>S.kind==='com').map(S=>(S.ax+S.bx)/2);
   const GR=C.grid||[1.15,2.0,4.0,2.3,1.0]; // separación de la grilla: trincheras, tierra de nadie, retaguardia; en x: general y junto a las comunicaciones
-  const zs=axis(MZ,z=>{ const a=Math.abs(z); return a>F-22&&a<F+68?GR[0]:a<=F-22?GR[1]:GR[2]; });
-  const xs=axis(MX,x=>comX.some(c=>Math.abs(c-x)<7)?GR[4]:GR[3]);
+  const zs=axis(MZ,z=>{ const a=Math.abs(z); return (a>F-22&&a<F+68)||zRz.some(r=>z>r[0]&&z<r[1])?GR[0]:a<=F-22?GR[1]:GR[2]; });
+  const xs=axis(MX,x=>comX.some(c=>Math.abs(c-x)<7)||zRx.some(r=>x>r[0]&&x<r[1])?GR[4]:GR[3]);
+  // solo para el dibujo: adentro de las trincheras el suelo baja más (queda escondido debajo del piso y las paredes de dressTrenches);
+  // la altura del juego no cambia. Antes la malla del suelo, más gruesa que la trinchera, la tapaba en V y tapaba las pasarelas.
+  const trDrop=(x,z)=>{ const L=SB.get(sb(x,z)); if(!L) return 0; for(const S of L){ if(S.kind==='ditch') continue; if(segDistW(x,z,S)<S.w/2+.5) return 1.3; } return 0; };
   // el terreno va en sectores (mapas grandes): cada uno se dibuja solo si se ve (cullAdd)
   const CH=C.big?60:1e6, terrGeos=[];
   for(let i0=0;i0<xs.length-1;i0+=CH) for(let j0=0;j0<zs.length-1;j0+=CH){
@@ -157,12 +180,12 @@ function buildWW1Map(key){
     const g=new THREE.PlaneGeometry(1,1,X.length-1,Z.length-1); g.rotateX(-Math.PI/2);
     const pos=g.attributes.position, uv=g.attributes.uv;
     // PlaneGeometry (ya rotada) ordena las filas de z=-Lz/2 hacia +Lz/2 y las columnas de x=-Lx/2 hacia +Lx/2: se reemplazan por las grillas propias
-    for(let i=0;i<pos.count;i++){ const x=X[i%X.length], z=Z[(i/X.length)|0]; pos.setXYZ(i,x,ww1Sample(W,x,z),z); uv.setXY(i,(MX-x)/(2*MX),(z+MZ)/(2*MZ)); }
+    for(let i=0;i<pos.count;i++){ const x=X[i%X.length], z=Z[(i/X.length)|0]; pos.setXYZ(i,x,ww1Sample(W,x,z)-trDrop(x,z),z); uv.setXY(i,(MX-x)/(2*MX),(z+MZ)/(2*MZ)); }
     g.computeVertexNormals(); g.computeBoundingSphere();
     // versión liviana del sector (uno de cada 3 vértices) para dibujarlo de lejos
     let gl=null; if(C.big){ const sx=[], sz=[]; for(let i=0;i<X.length;i+=3) sx.push(X[i]); if(sx[sx.length-1]!==X[X.length-1]) sx.push(X[X.length-1]); for(let j=0;j<Z.length;j+=3) sz.push(Z[j]); if(sz[sz.length-1]!==Z[Z.length-1]) sz.push(Z[Z.length-1]);
       gl=new THREE.PlaneGeometry(1,1,sx.length-1,sz.length-1); gl.rotateX(-Math.PI/2); const P2=gl.attributes.position, U2=gl.attributes.uv;
-      for(let i=0;i<P2.count;i++){ const x=sx[i%sx.length], z=sz[(i/sx.length)|0]; P2.setXYZ(i,x,ww1Sample(W,x,z)-.05,z); U2.setXY(i,(MX-x)/(2*MX),(z+MZ)/(2*MZ)); } gl.computeVertexNormals(); }
+      for(let i=0;i<P2.count;i++){ const x=sx[i%sx.length], z=sz[(i/sx.length)|0]; P2.setXYZ(i,x,ww1Sample(W,x,z)-.05-trDrop(x,z),z); U2.setXY(i,(MX-x)/(2*MX),(z+MZ)/(2*MZ)); } gl.computeVertexNormals(); }
     terrGeos.push([g,gl]); }
   const cv=document.createElement('canvas'), S2=2048; cv.width=cv.height=S2; const ctx=cv.getContext('2d');
   const px=x=>(MX-x)/(2*MX)*S2, py=z=>(MZ-z)/(2*MZ)*S2, pm=S2/(2*MX);
@@ -175,7 +198,7 @@ function buildWW1Map(key){
     if(gl){ const lo=new THREE.Mesh(gl,mat); lo.receiveShadow=true; worldGroup.add(lo); const S=g.boundingSphere; cullAdd(terr,S.center.x,S.center.y,S.center.z,S.radius,0,{m:lo,d:140}); } }
   W.mmCanvas=(()=>{ const m=document.createElement('canvas'); m.width=m.height=512; m.getContext('2d').drawImage(cv,0,0,512,512); return m; })(); W.mmEX=MX; W.mmEZ=MZ;
   // ---- trincheras: sacos terreros, tablones de revestimiento y pasarelas ----
-  dressTrenches(segs,G,R);
+  dressTrenches(segs,G,R,C);
   // ---- alambradas: postes y alambre en zigzag ----
   { const P=[], lines=[]; for(const B of belts){ B.cut=[]; for(let row=0;row<2;row++){ const zz=B.z0+(B.z1-B.z0)*(row?.75:.25); let prev=null;
       for(let x=-bx-30;x<=bx+30;x+=3.2){ if(B.gaps.some(g=>Math.abs(x-g)<6)){ prev=null; continue; } const z=zz+rr(-.8,.8), y=ww1Sample(W,x,z);
@@ -195,7 +218,7 @@ function buildWW1Map(key){
       im.instanceMatrix.needsUpdate=true; LP.needsUpdate=true; return true; }; }
   // ---- pueblo en ruinas (y caserío) ----
   const houses=[]; const town=(V,small)=>{ const n=V.n; for(let i=0,tries=0;i<n&&tries<n*12;tries++){ const a=R()*Math.PI*2, r=Math.sqrt(R())*V.r, x=V.x+Math.cos(a)*r, z=V.z+Math.sin(a)*r;
-      if(roadSegs.some(S=>segDistW(x,z,S)<6.5)) continue; if(segs.some(S=>segDistW(x,z,S)<S.w/2+5)) continue;
+      if(roadSegs.some(S=>segDistW(x,z,S)<6.5)) continue; if(segs.some(S=>segDistW(x,z,S)<S.w/2+5)) continue; if(ZP.some(P=>Math.hypot(P.pit.x-x,P.pit.z-z)<10||Math.hypot(P.mg.x-x,P.mg.z-z)<7||(P.box&&Math.hypot(P.box.x-x,P.box.z-z)<9))) continue;
       const w=rr(6,10)*(V.sz||1), d=rr(6,9)*(V.sz||1), h=rr(4.5,7.5)*(V.hz||1), rot=Math.round(R()*2)*Math.PI/2+rr(-.06,.06), wall=pickR(V.walls||[0xb8ab90,0x9e917a,0xa45a44,0xc2b49a,0x8d7f6a]), roof=pickR(V.roofs||[0x8a4430,0x7a3c2c,0x4a4e52,0x6a3a2a]);
       if(addBuilding(x,z,w,d,h,rot,wall,roof,true,100,true)){ houses.push({ruin:R()<V.ruin}); i++; } }
     if(V.church){ if(addBuilding(V.x+4,V.z-6,9,18,9,0,0xc4b8a0,0x4a4e52,true,300,true)) houses.push({ruin:R()<V.ruin*.6}); if(addBuilding(V.x+4,V.z+4.5,5,5,17,0,0xc4b8a0,0x4a4e52,true,300,false)) houses.push({ruin:R()<V.ruin*.5}); } };
@@ -216,15 +239,17 @@ function buildWW1Map(key){
       for(let a=0;a<nx;a++) for(let b=0;b<nz;b++){ if(a>0&&a<nx-1&&b>0&&b<nz-1) continue;               // alrededor de un patio
         const x=x0+lw*(a+.5), z=z0+ld*(b+.5), h=rr(Ct.h[0],Ct.h[1]);
         if(roadSegs.some(S=>S.city&&S.w>st&&segDistW(x,z,S)<S.w/2+Math.max(lw,ld)/2)) continue;
+        if(zSegs.some(S=>segDistW(x,z,S)<S.w/2+Math.max(lw,ld)/2+1)||ZP.some(P=>Math.hypot(P.pit.x-x,P.pit.z-z)<Math.max(lw,ld)/2+5)) continue;
         if(addBuilding(x,z,lw-1.4,ld-1.4,h,0,pickR(Ct.walls),pickR(Ct.roofs),true,160,R()<(Ct.pitched||0))) houses.push({ruin:R()<Ct.ruin,col:Ct.col}); } } }
   // casamatas de hormigón para ametralladoras (Línea Hindenburg)
   if(C.bunkers) for(let i=0;i<C.bunkers;i++){ const x=-bx*.75+i*(bx*1.5/(C.bunkers-1))+rr(-10,10), z=C.front+16+rr(-3,3); if(roadSegs.some(S=>segDistW(x,z,S)<5)) continue; if(addBuilding(x,z,4.5,4,1.8,rr(-.2,.2),0x8e8c84,0x7a7870,true,260,false)) houses.push({ruin:false,bunker:1}); }
+  for(const P of ZP) if(P.box){ if(addBuilding(P.box.x,P.box.z,4.6,4.0,1.9,P.h,0x8e8c84,0x7a7870,true,600,false)) houses.push({ruin:false,bunker:1}); else P.box=null; }
   finalizeBuildings();
   buildings.forEach((b,i)=>{ const H=houses[i]; if(H&&H.lmRuin){ ruinBuilding(b,R()<H.lmRuin); return; } if(!H||H.lm) return; if(H.ruin) ruinBuilding(b,R()<(H.col??.65)); else if(!H.bunker&&R()<.6) ruinBuilding(b,false); });
   for(const L of lms) if(L.extra){ const n0=worldGroup.children.length; L.extra(ww1Sample(W,L.x,L.z)); L.ex=worldGroup.children.slice(n0); }   // L.ex: se caen si se derrumba lo que las sostiene (ruinas.js)                                       // cúpula, torres, columnas, chimeneas
   // ---- bosques (vivos o hechos astillas) y álamos junto a los caminos ----
   const list=[]; const wood=(Wd)=>{ for(let i=0;i<Wd.n;i++){ const a=R()*Math.PI*2, r=Math.sqrt(R())*Wd.r, x=Wd.x+Math.cos(a)*r, z=Wd.z+Math.sin(a)*r;
-      if(segs.some(S=>segDistW(x,z,S)<S.w/2+1.2)) continue; if(gridQuery(x,z,4).some(b=>obPush(x,z,3,b))) continue;
+      if(segs.some(S=>segDistW(x,z,S)<S.w/2+1.2)) continue; if(gridQuery(x,z,4).some(b=>obPush(x,z,3,b))) continue; if(ZP.some(P=>Math.hypot(P.pit.x-x,P.pit.z-z)<6||Math.hypot(P.mg.x-x,P.mg.z-z)<4)) continue;
       const dead=R()<Wd.dead; list.push({x,z,sp:dead?(R()<.55?'muerto':'tocon'):Wd.sp?pickR(Wd.sp):(R()<.8?'roble':'alamo'),s:rr(.8,1.2)*(Wd.s||1)}); } };
   for(const Wd of [...C.woods,...(C.extraWoods||[])]) wood(Wd);
   // árboles sueltos destrozados en la tierra de nadie
@@ -232,7 +257,7 @@ function buildWW1Map(key){
   if(C.poplars) for(const S of roadSegs) { const L=Math.hypot(S.bx-S.ax,S.bz-S.az); for(let t=3;t<L;t+=9){ if(R()<.35) continue; const k=t/L, x=S.ax+(S.bx-S.ax)*k, z=S.az+(S.bz-S.az)*k, nx2=-(S.bz-S.az)/L, nz2=(S.bx-S.ax)/L;
     for(const sd of [-1,1]){ const X=x+nx2*sd*4.8, Z=z+nz2*sd*4.8; if(Math.abs(X)<bx+20&&Math.abs(Z)<bz+20&&!segs.some(Sg=>segDistW(X,Z,Sg)<Sg.w/2+1)&&!gridQuery(X,Z,3).some(b=>obPush(X,Z,2,b))) list.push({x:X,z:Z,sp:'alamo',s:rr(.9,1.15)}); } } }
   for(const S of hedges){ const L=Math.hypot(S.bx-S.ax,S.bz-S.az); for(let t=1;t<L;t+=rr(3.6,5.4)){ const x=S.ax+(S.bx-S.ax)*t/L+rr(-.4,.4), z=S.az+(S.bz-S.az)*t/L+rr(-.4,.4);
-    if(Math.abs(x)>bx+30||Math.abs(z)>bz+30) continue; list.push({x,z,sp:R()<.12?'roble':'seto',s:rr(.8,1.25)}); } }
+    if(Math.abs(x)>bx+30||Math.abs(z)>bz+30) continue; if(zSegs.some(Sg=>segDistW(x,z,Sg)<Sg.w/2+1.5)||ZP.some(P=>Math.hypot(P.pit.x-x,P.pit.z-z)<6||Math.hypot(P.mg.x-x,P.mg.z-z)<4)) continue; list.push({x,z,sp:R()<.12?'roble':'seto',s:rr(.8,1.25)}); } }
   buildTrees(list);
   // ---- charcos de agua barrosa en los embudos grandes ----
   { const big=crs.filter(c=>c.r>2.6&&R()<.45&&Math.abs(c.x)<bx+25&&Math.abs(c.z)<bz+25); const pg=new THREE.CircleGeometry(1,14); pg.rotateX(-Math.PI/2);
@@ -302,44 +327,100 @@ const TRENCH_TEX=(()=>{ const mk=(w,h,f)=>{ const c=document.createElement('canv
     corr:mk(32,64,(x,w,h)=>{ for(let i=0;i<w;i++){ const v=150+60*Math.sin(i/w*Math.PI*2*3); x.fillStyle=`rgb(${v},${v*.95|0},${v*.9|0})`; x.fillRect(i,0,1,h); } for(let i=0;i<40;i++){ x.fillStyle=`rgba(120,60,25,${Math.random()*.35})`; x.fillRect(Math.random()*w,Math.random()*h,2+Math.random()*4,2+Math.random()*10); } }),
     duck:mk(64,64,(x,w,h)=>{ x.fillStyle='#2a2016'; x.fillRect(0,0,w,h); for(let k=0;k<8;k++){ const y=k*8+1, v=170+((k*37)%40); x.fillStyle=`rgb(${v},${v*.82|0},${v*.6|0})`; x.fillRect(0,y,w,6); x.fillStyle='rgba(60,40,20,.3)'; x.fillRect(0,y+5,w,1); } x.fillStyle='rgba(50,35,20,.6)'; x.fillRect(6,0,4,h); x.fillRect(w-10,0,4,h); }),
     crate:mk(64,64,(x,w,h)=>{ x.fillStyle='#b4925e'; x.fillRect(0,0,w,h); for(let k=0;k<4;k++){ x.fillStyle='rgba(40,25,10,.5)'; x.fillRect(0,k*16,w,1.5); } x.strokeStyle='#6e522e'; x.lineWidth=5; x.strokeRect(2,2,w-4,h-4); x.beginPath(); x.moveTo(4,4); x.lineTo(w-4,h-4); x.stroke(); x.fillStyle='rgba(30,30,30,.7)'; x.font='bold 11px Arial'; x.fillText('.303',20,36); }) }; })();
-function dressTrenches(segs,G,R){
-  const bag=[], board=[], corr=[], duck=[], post=[], crate=[], barrel=[], ladder=[], rr=(a,b)=>a+R()*(b-a);
-  for(const S of segs){ const dx=S.bx-S.ax, dz=S.bz-S.az, L=Math.hypot(dx,dz); if(L<.5||S.kind==='ditch') continue; const ux=dx/L, uz=dz/L, nx=-uz, nz=ux, ang=Math.atan2(ux,uz), com=S.kind==='com';
-    // parapeto: sacos de 0,62 m trabados como ladrillos, cada uno siguiendo el suelo
-    for(const sd of [-1,1]){ const front=S.az<0?nz*sd>0:nz*sd<0, rows=front&&!com?(R()<.3?3:2):(R()<.35?1:0);
-      for(let r=0;r<rows;r++) for(let t=.3+(r%2)*.31;t<L-.2;t+=.62){ if(r>0&&R()<.12) continue; if(!front&&R()<.4) continue;
-        const off=S.w/2+.32+(r===2?.12:0)-r*.03, ex=S.ax+ux*t+nx*sd*off, ez=S.az+uz*t+nz*sd*off, y=ww1Sample(W,ex,ez);
-        bag.push([ex,y+.1+r*.2,ez,ang+rr(-.07,.07),R()]); } }
-    // revestimiento: un panel cada 2,5 m (tablones, o chapa acanalada en 1 de cada 4), postes entre paneles
-    for(let t=1.25,ti=0;t<L;t+=2.5,ti++){ const cx=S.ax+ux*t, cz=S.az+uz*t, fy=ww1Sample(W,cx,cz);
-      for(const sd of [-1,1]){ const wx=cx+nx*sd*(S.w/2-.08), wz=cz+nz*sd*(S.w/2-.08);
-        (R()<.25?corr:board).push([wx,fy+S.d*.45,wz,ang,S.d*.9]);
-        const px=wx-ux*1.25, pz=wz-uz*1.25; post.push([px,fy+S.d*.45,pz,S.d*.9+.1]); }
-      // cajones, barriles y escaleras de asalto contra la pared del lado enemigo
-      const en=S.az<0?(nz>0?1:-1):(nz>0?-1:1), k=R();
-      if(!com&&k<.12) crate.push([cx+nx*en*(S.w/2-.38),fy+.2,cz+nz*en*(S.w/2-.38),ang+rr(-.3,.3)]);
-      else if(!com&&k<.18) barrel.push([cx+nx*en*(S.w/2-.4),fy,cz+nz*en*(S.w/2-.4)]);
-      else if(!com&&k<.24) ladder.push([cx+nx*en*(S.w/2-.25),fy,cz+nz*en*(S.w/2-.25),ang,S.d]); }
-    for(let t=.5;t<L;t+=1.25){ const cx=S.ax+ux*t, cz=S.az+uz*t; duck.push([cx,ww1Sample(W,cx,cz)+.06,cz,ang]); } }
+// 3.ª versión (24/11/2026, pedido de Sebastián: "las vi y muy flojas"; referencias "WW1 trench, Pajamäki", "Low Poly Trench Warfare Pack" y
+// "ww2 trench pack" de Sketchfab; por código): la trinchera tiene paredes de verdad (tablones, chapa acanalada o tierra, del piso hasta el
+// borde del suelo), piso de barro con pasarelas, un bordo de tierra del lado enemigo (y uno bajo detrás) con 2–3 hileras de sacos seguidas
+// encima, y en los puntos el nido de la ametralladora, el pozo del antitanque y la tronera de la casamata. Paredes, pisos y bordos son mallas
+// unidas por sector de 150 m (pocas llamadas de dibujo); el suelo dibujado baja adentro de la trinchera (trDrop en buildWW1Map).
+TRENCH_TEX.earth=(()=>{ const c=document.createElement('canvas'); c.width=c.height=64; const x=c.getContext('2d'); x.fillStyle='#c9bfae'; x.fillRect(0,0,64,64);
+  for(let i=0;i<260;i++){ x.fillStyle=`rgba(${60+Math.random()*40|0},${45+Math.random()*30|0},30,${.08+Math.random()*.18})`; x.beginPath(); x.ellipse(Math.random()*64,Math.random()*64,1+Math.random()*4,.6+Math.random()*2,0,0,7); x.fill(); }
+  for(let j=0;j<64;j+=3+Math.random()*4){ x.fillStyle='rgba(50,38,25,.18)'; x.fillRect(0,j,64,1); }                                   // marcas de la pala
+  for(let i=0;i<14;i++){ x.strokeStyle='rgba(70,50,30,.35)'; x.lineWidth=.8; x.beginPath(); const a=Math.random()*64, b=Math.random()*64; x.moveTo(a,b); x.quadraticCurveTo(a+rand(-6,6),b+rand(2,8),a+rand(-10,10),b+rand(6,14)); x.stroke(); } // raíces
+  const t=new THREE.CanvasTexture(c); t.anisotropy=ANISO; t.wrapS=t.wrapT=THREE.RepeatWrapping; return t; })();
+TRENCH_TEX.planks.wrapS=TRENCH_TEX.planks.wrapT=TRENCH_TEX.corr.wrapS=TRENCH_TEX.corr.wrapT=THREE.RepeatWrapping;
+function dressTrenches(segs,G,R,C){
+  C=C||W.cfg||{}; const era=W.era||1, rr=(a,b)=>a+R()*(b-a), gs=(x,z)=>ww1Sample(W,x,z);
+  const bag=[], duck=[], post=[], crate=[], barrel=[], ladder=[], slit=[];
+  const CELL=150, CM=new Map(), cellOf=(x,z)=>{ const k=Math.floor(x/CELL)+','+Math.floor(z/CELL); let c=CM.get(k); if(!c){ c={pl:[[],[]],co:[[],[]],ea:[[],[]],fl:[[],[]],be:[[],[]]}; CM.set(k,c); } return c; };
+  const quad=(B,a,b,c,d,ua,ub,uc,ud)=>{ B[0].push(a[0],a[1],a[2],b[0],b[1],b[2],c[0],c[1],c[2],a[0],a[1],a[2],c[0],c[1],c[2],d[0],d[1],d[2]); B[1].push(ua[0],ua[1],ub[0],ub[1],uc[0],uc[1],ua[0],ua[1],uc[0],uc[1],ud[0],ud[1]); };
+  const cuts=(a,b,step)=>{ const n=Math.max(1,Math.ceil((b-a)/step)), v=[]; for(let i=0;i<=n;i++) v.push(a+(b-a)*i/n); return v; };
+  // ¿el punto cae adentro de otra trinchera? (las esquinas de la almena: paredes, bordos y sacos de un tramo no deben atravesar al de al lado)
+  const HS=new Map(), hk=(x,z)=>Math.floor(x/4)*7919+Math.floor(z/4), sd2=(x,z,S)=>{ const dx=S.bx-S.ax, dz=S.bz-S.az, l=dx*dx+dz*dz; let t=l?((x-S.ax)*dx+(z-S.az)*dz)/l:0; t=clamp(t,0,1); return Math.hypot(x-S.ax-dx*t,z-S.az-dz*t); };
+  for(const S of segs){ if(S.kind==='ditch') continue; for(let x=Math.floor((Math.min(S.ax,S.bx)-S.w)/4);x<=Math.floor((Math.max(S.ax,S.bx)+S.w)/4);x++) for(let z=Math.floor((Math.min(S.az,S.bz)-S.w)/4);z<=Math.floor((Math.max(S.az,S.bz)+S.w)/4);z++){ const k=x*7919+z; if(!HS.has(k)) HS.set(k,[]); HS.get(k).push(S); } }
+  const inO=(x,z,S,m)=>{ const L=HS.get(hk(x,z)); if(L) for(const O of L) if(O!==S&&sd2(x,z,O)<O.w/2+m) return true; return false; };
+  const pick=com=>{ const k=R(); return com?(k<.7?'ea':'pl'):era<2?(k<.72?'pl':k<.94?'co':'ea'):(k<.45?'pl':k<.55?'co':'ea'); };
+  for(const S of segs){ if(S.kind==='ditch') continue; const dx=S.bx-S.ax, dz=S.bz-S.az, L=Math.hypot(dx,dz); if(L<.3) continue;
+    const ux=dx/L, uz=dz/L, nx=-uz, nz=ux, ang=Math.atan2(ux,uz), com=S.kind==='com', hw=S.w/2, fzs=S.fz??(S.az<0?1:-1), B=cellOf((S.ax+S.bx)/2,(S.az+S.bz)/2);
+    const at=(t,q,sd)=>[S.ax+ux*t+nx*sd*q,S.az+uz*t+nz*sd*q], fy=t=>{ const tt=clamp(t,0,L); return gs(S.ax+ux*tt,S.az+uz*tt); };
+    const T=cuts(0,L,1.25), TT=[-hw,...T,L+hw], TW=[...cuts(-hw,0,.4).slice(0,-1),...cuts(0,L,.5),...cuts(L,L+hw,.4).slice(1)];
+    // paredes: del piso al borde del suelo; un tablero cada 2,5 m (tablones, chapa o tierra), postes entre tableros
+    for(const sd of [-1,1]){ const mats=[]; for(let k=0;k<=Math.ceil((L+2*hw)/2.5);k++) mats.push(pick(com));
+      for(let i=0;i<TW.length-1;i++){ const t0=TW[i], t1=TW[i+1], ext=t0<-.01||t1>L+.01, off=hw+(ext?.025:0), m=mats[Math.floor((t0+hw+.01)/2.5)];
+        if(inO(...at((t0+t1)/2,hw-.06,sd),S,0)) continue;                                                  // esa parte de la pared queda adentro del tramo vecino
+        const [x0,z0]=at(t0,off,sd), [x1,z1]=at(t1,off,sd), [ex0,ez0]=at(t0,hw+.08,sd), [ex1,ez1]=at(t1,hw+.08,sd);
+        const y0=fy(t0)-.08, y1=fy(t1)-.08, h0=gs(ex0,ez0)+.04, h1=gs(ex1,ez1)+.04, su=m==='co'?.9:m==='ea'?2:2.5, sv=m==='ea'?2:1.25;
+        quad(B[m],[x0,y0,z0],[x1,y1,z1],[x1,h1,z1],[x0,h0,z0],[t0/su,y0/sv],[t1/su,y1/sv],[t1/su,h1/sv],[t0/su,h0/sv]); }   // v = altura del mundo: los tablones quedan horizontales
+      for(let t=0;t<=L;t+=2.5){ if(mats[Math.floor((t+hw+.01)/2.5)]==='ea') continue; const [x,z]=at(t,hw-.04,sd); if(inO(x,z,S,.05)) continue; const b=fy(t)-.05, h=gs(...at(t,hw+.08,sd))+.14; post.push([x,(b+h)/2,z,h-b]); } }
+    // piso de barro (con un poco de más en las puntas para tapar las esquinas)
+    for(let i=0;i<TT.length-1;i++){ const t0=TT[i], t1=TT[i+1], y0=fy(t0)+.015, y1=fy(t1)+.015, [ax0,az0]=at(t0,hw+.03,-1), [bx0,bz0]=at(t0,hw+.03,1), [ax1,az1]=at(t1,hw+.03,-1), [bx1,bz1]=at(t1,hw+.03,1);
+      quad(B.fl,[ax0,y0,az0],[ax1,y1,az1],[bx1,y1,bz1],[bx0,y0,bz0],[0,0],[0,0],[0,0],[0,0]); }
+    // bordos de tierra: alto del lado enemigo (con sacos encima), bajo detrás; en las comunicaciones, bajos de los dos lados
+    for(const sd of [-1,1]){ const sz=nz*sd, front=!com&&(fzs>0?sz>.3:sz<-.3);
+      const P=front?[[hw,.03],[hw+.55,.36],[hw+1.1,.3],[hw+2.3,-.05]]:[[hw,.03],[hw+.5,com?.12:.18],[hw+1.4,-.05]];
+      for(let i=0;i<T.length-1;i++){ const t0=T[i], t1=T[i+1];
+        for(let k=0;k<P.length-1;k++){ const [qa,la]=P[k], [qb,lb]=P[k+1], A0=at(t0,qa,sd), B0=at(t0,qb,sd), A1=at(t1,qa,sd), B1=at(t1,qb,sd);
+          let bad=false; for(const u of [0,.5,1]) for(const v of [0,.5,1]){ const p=at(t0+(t1-t0)*u,qa+(qb-qa)*v,sd); if(inO(p[0],p[1],S,.15)){ bad=true; break; } } if(bad) continue;
+          quad(B.be,[A0[0],gs(...A0)+la,A0[1]],[A1[0],gs(...A1)+la,A1[1]],[B1[0],gs(...B1)+lb,B1[1]],[B0[0],gs(...B0)+lb,B0[1]],[t0/2,qa/2],[t1/2,qa/2],[t1/2,qb/2],[t0/2,qb/2]); } }
+      // sacos terreros seguidos y trabados como ladrillos, apoyados en el bordo
+      if(front){ const rows=S.zp?3:S.kind==='sup'?(R()<.4?1:2):(R()<.3?3:2);
+        for(let r=0;r<rows;r++) for(let t=.3+(r%2)*.3;t<L-.15;t+=.6){ if(R()<.04) continue; const q=hw+.3+(r===2?.22:0)-r*.02, [x,z]=at(t,q,sd); if(inO(x,z,S,.35)) continue; const yb=gs(x,z)+.03+(.33*(q-hw)/.55);
+          bag.push([x+rr(-.02,.02),yb+.1+r*.19,z,ang+rr(-.06,.06),R()]); } } }
+    // pasarelas de listones, cajones, barriles y escaleras de asalto contra la pared del lado enemigo
+    if(!com||R()<.5) for(let t=.5;t<L;t+=1.25){ const [x,z]=at(t,0,1); duck.push([x,fy(t)+.07,z,ang]); }
+    const en=(fzs>0?nz>0:nz<0)?1:-1;
+    for(let t=1.25;t<L;t+=2.5){ if(com) break; const k=R(), fyt=fy(t);
+      if(k<.1){ const [x,z]=at(t,hw-.38,en); crate.push([x,fyt+.2,z,ang+rr(-.3,.3)]); }
+      else if(k<.15){ const [x,z]=at(t,hw-.4,en); barrel.push([x,fyt,z]); }
+      else if(k<.21){ const [x,z]=at(t,hw-.25,en); ladder.push([x,fyt,z,ang,S.d]); } } }
+  // ---- puntos fortificados: nido de ametralladora, pozo del antitanque y casamata ----
+  const ring=(cx,cz,r,rows,open,gap)=>{ for(let k=0;k<rows;k++){ const n=Math.max(8,Math.round(Math.PI*2*r/.6)); for(let i=0;i<n;i++){ const a=(i+(k%2)*.5)/n*Math.PI*2; if(Math.abs(wrap(a-open))<gap) continue;
+      const x=cx+Math.cos(a)*r, z=cz+Math.sin(a)*r; bag.push([x,gs(x,z)+.1+k*.19,z,Math.PI/2-a,R()]); } } };
+  const wallB=(x0,z0,x1,z1,rows)=>{ const L=Math.hypot(x1-x0,z1-z0), a=Math.atan2(x1-x0,z1-z0); for(let k=0;k<rows;k++) for(let t=.3+(k%2)*.3;t<L-.1;t+=.6){ const x=x0+(x1-x0)*t/L, z=z0+(z1-z0)*t/L; bag.push([x,gs(x,z)+.1+k*.19,z,a,R()]); } };
+  for(const P of W.posts||[]){ const s=P.s;
+    ring(P.mg.x,P.mg.z,1.5,3,Math.atan2(-s,0),.55);                                                       // abierto hacia la trinchera
+    for(const ox of [-.7,.7]) crate.push([P.mg.x+ox,gs(P.mg.x+ox,P.mg.z-s*.9)+.2,P.mg.z-s*.9,rr(-.3,.3)]);
+    const px=P.pit.x, pz=P.pit.z, h=1.9;                                                                   // pozo del antitanque: U de sacos abierta hacia atrás
+    wallB(px-h,pz+s*h,px+h,pz+s*h,3); wallB(px-h,pz+s*h,px-h,pz-s*h*.4,2); wallB(px+h,pz+s*h,px+h,pz-s*h*.4,2);
+    for(let i=0;i<3;i++) crate.push([px-1.2+i*1.1,gs(px,pz-s*h*.9)+.2,pz-s*h*.9,rr(-.4,.4)]);
+    if(P.box){ const bx=P.box.x, bz=P.box.z, base=gs(bx,bz);                                                // casamata: tronera y sacos a los costados
+      slit.push([bx,base+1.15,bz+s*2.03,P.h]); for(const ox of [-3.2,3.2]) wallB(bx+ox,bz+s*1.8,bx+ox,bz-s*.6,3); } }
+  // ---- mallas ----
   const M4=new THREE.Matrix4(), q=new THREE.Quaternion(), q2=new THREE.Quaternion(), up=new THREE.Vector3(0,1,0), sc=new THREE.Vector3(), p=new THREE.Vector3(), ax=new THREE.Vector3(1,0,0);
-  const mkOne=(geo,mat,list,f,shadow=true)=>{ if(!list.length) return; const im=new THREE.InstancedMesh(geo,mat,list.length); list.forEach((e,i)=>{ f(e,i); im.setMatrixAt(i,M4); }); im.castShadow=shadow; im.receiveShadow=true; im.frustumCulled=false; worldGroup.add(im);
-    if(W.cfg&&W.cfg.big){ let cx=0,cz=0; list.forEach(e=>{cx+=e[0];cz+=e[2];}); cx/=list.length; cz/=list.length; cullAdd(im,cx,list[0][1],cz,Math.max(...list.map(e=>Math.hypot(e[0]-cx,e[2]-cz)))+4,320); } return im; };
-  const mk=(geo,mat,list,f,shadow)=>{ const out=[]; for(const L of cells(list,150,e=>e[0],e=>e[2]).values()) out.push(mkOne(geo,mat,L,f,shadow)); return out; };
-  // saco: caja con la panza abultada y la boca atada más angosta (12 caras, sigue siendo barato)
-  const bagG=new THREE.BoxGeometry(.62,.2,.36,2,1,1); { const P=bagG.attributes.position; for(let i=0;i<P.count;i++){ const x=P.getX(i), y=P.getY(i), z=P.getZ(i), mid=Math.abs(x)<.01;
-      P.setZ(i,z*(y>0?.78:1)*(mid?1.12:1)); P.setX(i,x*(y>0?.92:1)); P.setY(i,y*(mid?1.15:1)); } bagG.computeVertexNormals(); }
-  { const ims=mk(bagG,new THREE.MeshLambertMaterial({map:TRENCH_TEX.burlap}),bag,e=>{ q.setFromAxisAngle(up,e[3]+Math.PI/2); M4.compose(p.set(e[0],e[1],e[2]),q,sc.set(rr(.92,1.08),rr(.9,1.1),1)); });
-    const c=new THREE.Color(); for(const im of ims){ for(let i=0;i<im.count;i++){ const v=R(); im.setColorAt(i,c.set(v<.4?0xb8a47e:v<.7?0xa4916c:v<.9?0x8f7e5c:0x7a6a4c)); } im.instanceColor.needsUpdate=true; } }
-  mk(new THREE.BoxGeometry(.06,1,2.48),new THREE.MeshLambertMaterial({map:TRENCH_TEX.planks,color:0x9a8266}),board,e=>{ q.setFromAxisAngle(up,e[3]); M4.compose(p.set(e[0],e[1],e[2]),q,sc.set(1,e[4],1)); });
-  mk(new THREE.BoxGeometry(.04,1,2.48),new THREE.MeshLambertMaterial({map:TRENCH_TEX.corr,color:0xe0dcd4}),corr,e=>{ q.setFromAxisAngle(up,e[3]); M4.compose(p.set(e[0],e[1],e[2]),q,sc.set(1,e[4],1)); });
+  const big=W.cfg&&W.cfg.big, cullIt=(o,list)=>{ if(!big||!list.length) return; let cx=0,cz=0,cy=0; list.forEach(e=>{cx+=e[0];cy+=e[1];cz+=e[2];}); cx/=list.length; cy/=list.length; cz/=list.length;
+    cullAdd(o,cx,cy,cz,Math.max(...list.map(e=>Math.hypot(e[0]-cx,e[2]-cz)))+4,320); };
+  const mkOne=(geo,mat,list,f,shadow=true)=>{ if(!list.length) return; const im=new THREE.InstancedMesh(geo,mat,list.length); list.forEach((e,i)=>{ f(e,i); im.setMatrixAt(i,M4); }); im.castShadow=shadow; im.receiveShadow=true; im.frustumCulled=false; worldGroup.add(im); cullIt(im,list); return im; };
+  const mk=(geo,mat,list,f,shadow)=>{ const out=[]; for(const L of cells(list,CELL,e=>e[0],e=>e[2]).values()) out.push(mkOne(geo,mat,L,f,shadow)); return out; };
+  const gcol=new THREE.Color(C.ground?C.ground[2]||C.ground[0]:'#7b684e').multiplyScalar(1.15);
+  const MAT={pl:new THREE.MeshLambertMaterial({map:TRENCH_TEX.planks,color:0x9a8266,side:THREE.DoubleSide}),co:new THREE.MeshLambertMaterial({map:TRENCH_TEX.corr,color:0xa49e94,side:THREE.DoubleSide}),
+    ea:new THREE.MeshLambertMaterial({map:TRENCH_TEX.earth,color:new THREE.Color(0x6e5c46).lerp(gcol,.25),side:THREE.DoubleSide}),fl:new THREE.MeshLambertMaterial({color:new THREE.Color(0x3a3024).lerp(gcol,.15)}),
+    be:new THREE.MeshLambertMaterial({map:TRENCH_TEX.earth,color:gcol,side:THREE.DoubleSide})};
+  for(const c of CM.values()) for(const k in MAT){ const [P,U]=c[k]; if(!P.length) continue; const g=new THREE.BufferGeometry(); g.setAttribute('position',new THREE.Float32BufferAttribute(P,3)); g.setAttribute('uv',new THREE.Float32BufferAttribute(U,2));
+    g.computeVertexNormals(); g.computeBoundingSphere(); const m=new THREE.Mesh(g,MAT[k]); m.receiveShadow=true; m.castShadow=k==='be'; worldGroup.add(m);
+    if(big){ const S=g.boundingSphere; cullAdd(m,S.center.x,S.center.y,S.center.z,S.radius,320); } }
+  // saco: caja con la panza abultada y la boca atada más angosta
+  const bagG=new THREE.BoxGeometry(.6,.2,.36,2,1,1); { const P=bagG.attributes.position; for(let i=0;i<P.count;i++){ const x=P.getX(i), y=P.getY(i), z=P.getZ(i), mid=Math.abs(x)<.01;
+      P.setZ(i,z*(y>0?.78:1)*(mid?1.12:1)); P.setX(i,x*(y>0?.9:1)); P.setY(i,y*(mid?1.18:1)); } bagG.computeVertexNormals(); }
+  { const ims=mk(bagG,new THREE.MeshLambertMaterial({map:TRENCH_TEX.burlap}),bag,e=>{ q.setFromAxisAngle(up,e[3]+Math.PI/2); M4.compose(p.set(e[0],e[1],e[2]),q,sc.set(.94+e[4]*.12,.92+e[4]*.16,1)); });
+    const c=new THREE.Color(); for(const im of ims){ for(let i=0;i<im.count;i++){ const v=R(); im.setColorAt(i,c.set(v<.35?0xb8a47e:v<.65?0xa4916c:v<.88?0x8f7e5c:0x726450)); } im.instanceColor.needsUpdate=true; } }
   mk(new THREE.BoxGeometry(.72,.07,1.0),new THREE.MeshLambertMaterial({map:TRENCH_TEX.duck,color:0xa08a6c}),duck,e=>{ q.setFromAxisAngle(up,e[3]); M4.compose(p.set(e[0],e[1],e[2]),q,sc.set(1,1,1)); },false);
   { const pg=THREE.BufferGeometryUtils.mergeBufferGeometries([new THREE.BoxGeometry(.11,1,.11),new THREE.BoxGeometry(.05,.3,.05).translate(0,.62,0)]);
     mk(pg,new THREE.MeshLambertMaterial({color:0x4a3a2a}),post,e=>{ q.identity(); M4.compose(p.set(e[0],e[1],e[2]),q,sc.set(1,e[3],1)); }); }
   mk(new THREE.BoxGeometry(.75,.4,.45),new THREE.MeshLambertMaterial({map:TRENCH_TEX.crate}),crate,e=>{ q.setFromAxisAngle(up,e[3]); M4.compose(p.set(e[0],e[1],e[2]),q,sc.set(1,1,1)); });
   { const bg=new THREE.CylinderGeometry(.28,.28,.85,10); bg.translate(0,.425,0); mk(bg,new THREE.MeshLambertMaterial({color:0x5a5040}),barrel,e=>{ q.identity(); M4.compose(p.set(e[0],e[1],e[2]),q,sc.set(1,1,1)); }); }
   { const rails=[-.22,.22].map(x=>new THREE.BoxGeometry(.06,1,.05).translate(x,.5,0)), rungs=[]; for(let k=0;k<5;k++) rungs.push(new THREE.BoxGeometry(.44,.04,.04).translate(0,.12+k*.2,0));
-    const lg=THREE.BufferGeometryUtils.mergeBufferGeometries([...rails,...rungs].map(g=>g.toNonIndexed()));
+    const lg=THREE.BufferGeometryUtils.mergeBufferGeometries([...rails,...rungs].map(g=>g.index?g.toNonIndexed():g));
     mk(lg,new THREE.MeshLambertMaterial({color:0x6a5236}),ladder,e=>{ q.setFromAxisAngle(up,e[3]+Math.PI/2); q2.setFromAxisAngle(ax,.32); q.multiply(q2); M4.compose(p.set(e[0],e[1],e[2]),q,sc.set(1,e[4]+.5,1)); }); }
+  mk(new THREE.BoxGeometry(2.2,.26,.12),new THREE.MeshBasicMaterial({color:0x0c0c0b}),slit,e=>{ q.setFromAxisAngle(up,e[3]); M4.compose(p.set(e[0],e[1],e[2]),q,sc.set(1,1,1)); },false);
 }
 
 // Casas en ruinas desde el arranque: techo hundido y paredes ennegrecidas, o derrumbe completo con escombros

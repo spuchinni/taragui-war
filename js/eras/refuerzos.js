@@ -35,17 +35,45 @@ function nestMG(nat,x,z){ const g=new THREE.Group(), y=heightAt(x,z); g.position
 // Fortificar un punto recién capturado
 function fortifyZone(Z,team){
   if(net.guest||!RULE().guns) return; const F=Z.fort; if(F&&F.team===team&&((F.mg&&!F.mg.dead)||(F.gun&&!F.gun.dead))) return;
-  const eb=baseOf(1-team); let dx=eb.x-Z.x, dz=eb.z-Z.z; const L=Math.hypot(dx,dz)||1; dx/=L; dz/=L; const px=-dz, pz=dx, nat=teamNation(team);
-  const mx=Z.x+dx*Z.r*.55+px*rand(-6,6), mz=Z.z+dz*Z.r*.55+pz*rand(-6,6);
-  const ring=sandRing(mx,mz,1.7,Math.atan2(-dz,-dx));                                     // abierto hacia atrás
+  const eb=baseOf(1-team); let dx=eb.x-Z.x, dz=eb.z-Z.z; const L=Math.hypot(dx,dz)||1; dx/=L; dz/=L; let px=-dz, pz=dx; const nat=teamNation(team);
+  // con la trinchera del punto (gm1-mapas.js, W.posts): se usa la que mira hacia la base enemiga, con su nido, su pozo y sus bahías
+  const PO=postOf(Z,team); if(PO){ dx=0; dz=PO.s; px=-dz; pz=0; if(F&&F.mount&&F.post===PO) scene.remove(F.mount.g); }
+  let mx=Z.x+dx*Z.r*.55+px*rand(-6,6), mz=Z.z+dz*Z.r*.55+pz*rand(-6,6); if(PO){ mx=PO.mg.x; mz=PO.mg.z; }
+  const ring=PO?null:sandRing(mx,mz,1.7,Math.atan2(-dz,-dx));                             // abierto hacia atrás (el de la trinchera ya tiene sus sacos)
   const mg=makePerson('hmg',team,mx-dx*.45,mz-dz*.45); mg.hold=true; mg.goal=null; mg.nest={x:mx-dx*.45,z:mz-dz*.45}; mg.noEmb=1e9; mg.heading=Math.atan2(dx,dz); if(mg.parts.wep) mg.parts.wep.visible=false;
   const mount=nestMG(nat,mx+dx*.25,mz+dz*.25);
   const rf=makePerson('rifle',team,mx+px*1.2,mz+pz*1.2); rf.hold=true; rf.goal=null;
   const key=(typeof GUN_ERA!=='undefined'&&GUN_ERA[W.era]&&GUN_ERA[W.era][nat])||GUN_OF[nat], h=Math.atan2(dx,dz);
-  const gun=rfGun(team,key,Z.x+dx*Z.r*.35-px*9,Z.z+dz*Z.r*.35-pz*9,h,`Antitanque del punto ${Z.id}`);
+  const gun=PO?rfGun(team,key,PO.pit.x,PO.pit.z,h,`Antitanque del punto ${Z.id}`):rfGun(team,key,Z.x+dx*Z.r*.35-px*9,Z.z+dz*Z.r*.35-pz*9,h,`Antitanque del punto ${Z.id}`);
   const aa=W.era===3?rfGun(team,axisOf(team)?'aa_de':'aa_al',Z.x-dx*6+px*5,Z.z-dz*6+pz*5,h,`Antiaéreo del punto ${Z.id}`):null;
-  Z.fort={team,mg,rf,gun,aa,ring,mount,nx:mg.nest.x,nz:mg.nest.z}; feed(`${NATIONS[nat].label} fortifica el punto ${Z.id}: ametralladora${gun?', antitanque':''}${aa?' y antiaéreo':''}`,team===0?'var(--ally)':'var(--enemy)');
+  Z.fort={team,mg,rf,gun,aa,ring,mount,nx:mg.nest.x,nz:mg.nest.z,post:PO,key,bayP:[]};
+  if(PO) for(let i=0;i<Math.min(2,PO.bays.length);i++){ const b=PO.bays[(i*3+1)%PO.bays.length], P=makePerson('rifle',team,b.x,b.z); toPost(P,Z.fort,b); } feed(`${NATIONS[nat].label} fortifica el punto ${Z.id}: ametralladora${gun?', antitanque':''}${aa?' y antiaéreo':''}`,team===0?'var(--ally)':'var(--enemy)');
 }
+// ---- Posiciones de la trinchera del punto (24/11/2026, pedido de Sebastián: "hacer funcionales las armas solicitando refuerzos") ----
+// La trinchera de cada lado del punto (W.posts) tiene un nido de ametralladora, el pozo del antitanque y bahías para los fusileros.
+// Al fortificar se arman; los refuerzos que llegan después (los que se piden con B, los paracaidistas y el semioruga que vienen solos)
+// vuelven a armar lo que el enemigo destruyó: primero la ametralladora, después el antitanque y después las bahías vacías.
+const postOf=(Z,team)=>{ const L=(W.posts||[]).filter(p=>p.id===Z.id); if(!L.length) return null; const s=Math.sign(baseOf(1-team).z-Z.z)||1; return L.find(p=>p.s===s)||L[0]; };
+function toPost(P,F,b){ P.hold=true; P.goal=null; P.noEmb=1e9; P.post={x:b.x,z:b.z,t:now}; F.bayP.push(P); }
+function manPost(P,Z,team){ const F=Z.fort; if(!F||F.team!==team||!F.post||P.dead||isCiv(P)) return false; const PO=F.post;
+  if((!F.mg||F.mg.dead)&&(!F.rf||F.rf.dead)){ F.rf=P; P.hold=true; P.goal=null; P.noEmb=1e9; P.post={x:F.nx,z:F.nz,mg:1}; return 'la ametralladora'; }
+  if((!F.gun||F.gun.dead)&&!F.gunP&&F.key){ F.gunP=P; P.hold=true; P.goal=null; P.noEmb=1e9; P.post={x:PO.pit.x,z:PO.pit.z-PO.s*1.2,gun:1}; return 'el antitanque'; }
+  F.bayP=F.bayP.filter(Q=>!Q.dead); const free=PO.bays.filter(b=>!F.bayP.some(Q=>Q.post&&Q.post.x===b.x&&Q.post.z===b.z));
+  if(free.length&&F.bayP.length<4){ toPost(P,F,free[(Math.random()*free.length)|0]); return 'la trinchera'; }
+  return false; }
+function manArrivals(L,Z,team){ if(net.guest||!Z) return; const got=new Set(); for(const P of L){ const r=manPost(P,Z,team); if(r) got.add(r); }
+  if(got.size) feed(`Los refuerzos ocupan ${[...got].join(', ')} del punto ${Z.id}`,team===0?'var(--ally)':'var(--enemy)'); }
+// van caminando a su puesto; al llegar se quedan (el del antitanque vuelve a poner en servicio la pieza)
+function updPosts(dt){ if(net.guest) return; for(const Z of zones||[]){ const F=Z.fort; if(!F||!F.post) continue;
+    for(const P of [...F.bayP,F.gunP,F.rf].filter(Boolean)){ if(P.dead||!P.post||P.nest) continue; P.cover=null; P.goal=null; P.hold=true; P.advT=9;
+      if(Math.hypot(P.pos.x-P.post.x,P.pos.z-P.post.z)>1.1&&!(P.post.t&&now-P.post.t>20)){ walk(P,P.post.x,P.post.z,3.4,dt); continue; }   // si en 20 s no llegó (lo traba algo), se queda donde está
+      if(P.post.mg) continue;                                                                                   // el de la ametralladora lo maneja el bucle del nido
+      if(P.post.gun){ F.gunP=null; if(F.team===teamOfZone(Z)){ F.gun=rfGun(F.team,F.key,F.post.pit.x,F.post.pit.z,F.post.h,`Antitanque del punto ${Z.id}`);
+          if(F.gun) feed(`El antitanque del punto ${Z.id} vuelve a tirar`,F.team===0?'var(--ally)':'var(--enemy)'); } removeInf(P); continue; }
+      P.nest={x:P.post.x,z:P.post.z}; P.heading=F.post.s>0?0:Math.PI; } } }
+const teamOfZone=Z=>Z.owner===1?0:Z.owner===-1?1:-1;
+// el que va a su puesto se cubre en su puesto (si no, la búsqueda de cobertura lo llevaba a otro lado y nunca llegaba)
+{ const _cp=coverPoint; coverPoint=function(P,th){ if(P.post&&!P.dead) return {x:P.post.x,z:P.post.z}; return _cp(P,th); }; }
 function onZoneCaptured(Z,team){ if(net.guest) return; fortifyZone(Z,team);
   if(W.era===3&&now>(Z.refT||0)){ Z.refT=now+100; refPending.push({Z,team,t:now+rand(8,16)}); } }
 
@@ -167,7 +195,8 @@ function updRefuerzos(dt){
     if(T.life<=0){ if(T.snd) T.snd.stop(); scene.remove(T.g); unhit(T); transports.splice(i,1); } }
   for(let i=chutes.length-1;i>=0;i--){ const C=chutes[i]; if(C.dead){ C.vy-=9.8*dt; C.g.rotation.x+=dt*.8; } else C.vy=Math.min(-4.5,C.vy+dt*12); C.ph+=dt; C.g.position.y+=C.vy*dt; C.g.position.x+=Math.sin(C.ph*.7)*dt*1.2; C.g.rotation.z=Math.sin(C.ph)*.08;
     const q=C.g.position, gh=heightAt(q.x,q.z); if(q.y>gh+.2) continue;
-    scene.remove(C.g); chutes.splice(i,1); const P=makePerson(C.kind,C.team,q.x,q.z); if(C.dead){ killInf(P,C.by,C.vy<-14?'blast':'shot'); continue; } P.noEmb=now+90; const a=rand(0,6.28), r=rand(0,C.Z.r*.6); P.goal={x:C.Z.x+Math.cos(a)*r,z:C.Z.z+Math.sin(a)*r}; }
+    scene.remove(C.g); chutes.splice(i,1); const P=makePerson(C.kind,C.team,q.x,q.z); if(C.dead){ killInf(P,C.by,C.vy<-14?'blast':'shot'); continue; } P.noEmb=now+90; const a=rand(0,6.28), r=rand(0,C.Z.r*.6); P.goal={x:C.Z.x+Math.cos(a)*r,z:C.Z.z+Math.sin(a)*r}; manArrivals([P],C.Z,C.team); }
+  updPosts(dt);
   updateRefugeeCars(dt);
   // el ametralladorista se queda en el nido y gira el arma; si cae, el fusilero toma su lugar
   for(const Z of zones||[]){ const F=Z.fort; if(!F||!F.mount) continue; let M=F.mg;
@@ -179,7 +208,8 @@ function updRefuerzos(dt){
 function clearRefuerzos(){ transports.forEach(T=>{ scene.remove(T.g); if(T.snd) T.snd.stop(); unhit(T); }); transports.length=0; chutes.forEach(C=>scene.remove(C.g)); chutes.length=0;
   fortProps.forEach(g=>scene.remove(g)); fortProps.length=0; refPending.length=0; for(const Z of zones||[]){ Z.fort=null; Z.refT=0; } }
 // Al bajar la infantería, el semioruga queda vacío
-{ const _dm=dismount; dismount=function(t){ const r=_dm(t); if(r!==false&&t.seated) t.seated.forEach(g=>g.visible=false); return r; }; }
+{ const _dm=dismount; dismount=function(t){ const n0=infantry.length, r=_dm(t); if(r!==false&&t.seated) t.seated.forEach(g=>g.visible=false);
+    if(r!==false&&t.convoyZ) manArrivals(infantry.slice(n0).filter(P=>P.team===t.team),t.convoyZ,t.team); return r; }; }
 // Con un antiaéreo la cámara sube casi vertical (para seguir a los aviones)
 const camMaxP=()=>player&&!player.dead&&player.T.aa?1.25:.6;
 // Mira de adelanto para el jugador con antiaéreo: un círculo donde va a estar cada avión enemigo cuando llegue el tiro
