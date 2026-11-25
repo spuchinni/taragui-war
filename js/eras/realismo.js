@@ -217,7 +217,14 @@ function numTex(txt,nat){ const key=nat+txt; if(_numTex[key]) return _numTex[key
       const n=nat==='de'?`${1+(t.id%8)}${1+((t.id>>3)%3)}${1+((t.id>>5)%4)}`:String(100+(t.id*37)%800);
       const m=new THREE.MeshLambertMaterial({map:numTex(n,nat),transparent:true,alphaTest:.3,depthWrite:false,polygonOffset:true,polygonOffsetFactor:-2});
       const y=(t.gunPivot&&t.gunPivot.parent===t.turret?t.gunPivot.position.y:M.th*.5)+.05; // a la altura de las insignias
-      for(const sx of [-1,1]){ const p=new THREE.Mesh(new THREE.PlaneGeometry(.8*M.th/.95,.4*M.th/.95),m); p.position.set(sx*(M.tw/2*(['box','hex','tiger'].includes(I.tur)?1:.92)+.04),y,M.tl*.2); p.rotation.y=sx>0?Math.PI/2:-Math.PI/2; t.turret.add(p); } }
+      // proyectado sobre la chapa de la torre (24/11/2026: en torres redondas o cónicas, como la del BT-7, el plano quedaba en el aire)
+      const nz=M.numZ??M.tl*.2, gp=t.gunPivot, tg=[]; t.root.updateMatrixWorld(true);
+      t.turret.traverse(o=>{ if(!o.isMesh||!o.visible||(o.userData&&(o.userData.decal||o.userData.tank))) return; for(let q=o;q&&q!==t.turret;q=q.parent) if(q===gp) return; tg.push(o); });
+      for(const sx of [-1,1]){ let d=null;
+        if(typeof decalBT==='function') try{ const c=t.turret.localToWorld(new THREE.Vector3(sx*M.tw/2,y,nz)), out=new THREE.Vector3(sx,0,0).transformDirection(t.turret.matrixWorld), up=new THREE.Vector3(0,1,0).transformDirection(t.turret.matrixWorld);
+          d=decalBT(t.turret,tg,numTex(n,nat),c,out,up,.8*M.th/.95,.4*M.th/.95,8); if(d){ d.material.alphaTest=.3; d.userData.stand=0; } }catch(e){ d=null; }
+        if(d) continue;
+        const p=new THREE.Mesh(new THREE.PlaneGeometry(.8*M.th/.95,.4*M.th/.95),m); p.position.set(sx*(M.tw/2*(['box','hex','tiger'].includes(I.tur)?1:.92)+.04),y,nz); p.rotation.y=sx>0?Math.PI/2:-Math.PI/2; t.turret.add(p); } }
   return t; }; }
 
 /* ---------- Sonido del motor según el tanque (pedido de Sebastián) ----------
