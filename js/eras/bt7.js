@@ -44,7 +44,7 @@
     if(miss>P.count*.3){ g.dispose(); return null; }
     g.computeVertexNormals(); const m=new THREE.Mesh(g,new THREE.MeshLambertMaterial({map,transparent:true,alphaTest:.45,polygonOffset:true,polygonOffsetFactor:-3,polygonOffsetUnits:-3}));
     m.renderOrder=2; m.userData.stand=1; m.userData.decal=1; parent.add(m); return m; }
-  window.decalBT=decalBT;
+  window.decalBT=decalBT; window.loftBT=loft; window.fixWindingBT=fixWinding;
 
   function bt7(t,M,mat,root,lkL,lkR){ shTurMG.t=t;
     const I=M.w2, L=M.L, W=M.W, zf=L/2, zr=-L/2, deck=I.deck, tw=I.trW, tx=W/2-tw/2, fy=1.0;   // fy = guardabarros

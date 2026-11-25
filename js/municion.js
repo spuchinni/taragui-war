@@ -8,7 +8,7 @@
   const EN=()=>window.LANG==='en', T2=(es,en)=>EN()?en:es;
   const AMMO_LV=[1,2,3];
   const battles=()=>(PROG&&PROG.stats&&PROG.stats.battles)||0;
-  const unlocked=(k,i)=>!VEH[k]||tankLv(k)>=(AMMO_LV[i]||1);
+  const unlocked=(k,i)=>!VEH[k]||i===0||modHas(k,'am'+(i+1));   // 25/11/2026: se investiga en Mejoras (mejoras.js)
   window.ammoUnlocked=unlocked;
   const loadOf=k=>(PROG&&PROG.load&&PROG.load[k])||null;
 
@@ -28,12 +28,12 @@
   // ---- casillas bloqueadas: 🔒 y el nivel; la tecla avisa en vez de elegirla ----
   const _ub=updateAmmoBar; updateAmmoBar=function(t){ const r=_ub.apply(this,arguments);
     try{ const E=$('ammoSlots')&&$('ammoSlots')._els; if(E&&t.ammoLock) t.ammoLock.forEach((lk,i)=>{ const o=E['a'+i]; if(!o) return;
-      if(lk){ if(o.el._c!=='as off lock'){ o.el._c='as off lock'; o.el.className='as off lock'; } const txt=`🔒${AMMO_LV[i]}`; if(o.n.textContent!==txt) o.n.textContent=txt;
-        o.el.title=T2(`Se desbloquea con el nivel ${AMMO_LV[i]} del tanque`,`Unlocks at tank level ${AMMO_LV[i]}`); } }); }catch(e){}
+      if(lk){ if(o.el._c!=='as off lock'){ o.el._c='as off lock'; o.el.className='as off lock'; } const txt='🔒'; if(o.n.textContent!==txt) o.n.textContent=txt;
+        o.el.title=T2('Se investiga en Mejoras, en el garaje','Research it in Upgrades, in the garage'); } }); }catch(e){}
     return r; };
   document.addEventListener('keydown',e=>{ if(typeof state==='undefined'||state!=='play'||!player||!player.ammoLock) return;
     for(let i=0;i<3;i++) if(e.code===binds['ammo'+(i+1)]&&player.ammoLock[i]){ e.stopImmediatePropagation(); e.preventDefault();
-      hitMsg(T2(`🔒 ${player.T.ammo[i].n}: se desbloquea con el nivel ${AMMO_LV[i]} del tanque`,`🔒 ${player.T.ammo[i].n}: unlocks at tank level ${AMMO_LV[i]}`),'var(--paper)'); return; } },true);
+      hitMsg(T2(`🔒 ${player.T.ammo[i].n}: se investiga en Mejoras, en el garaje`,`🔒 ${player.T.ammo[i].n}: research it in Upgrades, in the garage`),'var(--paper)'); return; } },true);
 
   // ---- hangar: botón "Munición" ----
   function hgAmmo(){ const box=$('hgModal'); if(!box||!hgSel) return; const k=hgSel, V=VEH[k], L=V.ammo||[];
@@ -46,7 +46,7 @@
         ${L.map((A,i)=>{ const op=unlocked(k,i); return `<div style="display:flex;align-items:center;gap:10px;margin:8px 0;opacity:${op?1:.5}">
           <div style="flex:1;text-align:left"><b>${A.n}</b><br><small>${(typeof KIND_ES!=='undefined'&&KIND_ES[A.kind])||A.kind} · ${A.pen} mm</small></div>
           ${op?`<button class="hgB" data-m="${i}">−</button><b style="min-width:2.4em;text-align:center">${cur[i]}</b><button class="hgB" data-p="${i}">+</button>`
-            :`<span>🔒 ${T2(`nivel ${AMMO_LV[i]}`,`level ${AMMO_LV[i]}`)}</span>`}</div>`; }).join('')}
+            :`<span>🔒 ${T2('en Mejoras','in Upgrades')}</span>`}</div>`; }).join('')}
         <div style="display:flex;gap:8px;justify-content:center;margin-top:10px"><button class="go alt" id="amRst">${T2('Repartir como siempre','Default split')}</button><button class="go" id="amOk">${T2('Listo','Done')}</button></div></div>`;
       box.querySelectorAll('[data-m]').forEach(b=>b.onclick=()=>{ const i=+b.dataset.m; if(cur[i]>0){ cur[i]--; draw(); } });
       box.querySelectorAll('[data-p]').forEach(b=>b.onclick=()=>{ const i=+b.dataset.p; if(cur.reduce((a,c)=>a+c,0)<tot){ cur[i]++; draw(); } else { const j=cur.findIndex((n,x)=>x!==i&&n>0&&unlocked(k,x)); if(j>=0){ cur[j]--; cur[i]++; draw(); } } });

@@ -327,15 +327,12 @@ function summary(winner){
     if(!res) res=`<p class="wnone">No queda nada para investigar en ${NATIONS[n].label} por ahora.</p>`;
     // tanques usados: experiencia y nivel, con las mejoras que se desbloquearon en esta batalla
     let tks='';
-    for(const k of used){ const xp=Math.round(rp/used.length), L0=tankLv(k), x0=tankXP(k), ups=addTankXP(k,xp), L=tankLv(k), x1=tankXP(k);
-      const lo=v=>L0>=5?0:(v-(LV_XP[L0-1]||0))/(LV_XP[L0]-(LV_XP[L0-1]||0));
-      const f0=L0>=5?1:lo(x0), f1=L0>=5?1:(L>L0?1:lo(x1));
-      const nw=ups.map(l=>{ const u=lvUp(l,k), am=(l===2||l===3)&&VEH[k].ammo&&VEH[k].ammo[l-1];   // la 2ª y la 3ª munición se abren con los niveles 2 y 3 (municion.js)
-        return `<span class="wup" title="${esc(u.d)}">🔓 Nv ${l}: ${u.n}</span>`+(am?`<span class="wup am">🔓 ${esc(am.n)}</span>`:''); }).join('');
-      if(ups.length&&window.tallerQ) tallerQ.push({kind:'up',k,txt:ups.map(l=>`Nv ${l}: ${lvUp(l,k).n}`+((l===2||l===3)&&VEH[k].ammo&&VEH[k].ammo[l-1]?` · ${VEH[k].ammo[l-1].n}`:'')).join(' · ')});   // escena del taller al volver al garaje (taller.js)
-      const nextUp=L<5?lvUp(L+1,k):null;
-      tks+=`<div class="wrow">${miniHTML(k)}<div class="wtx"><b>${VEH[k].label}</b> <span class="wlv">Nv ${L}</span> <small>+${fmt(xp)} XP</small>${bar(f0,f1,L>L0?'full':'')}
-        <small>${L>=5?'Nivel máximo':L>L0?'¡Subió al nivel '+L+'!':fmt(x1)+' / '+fmt(LV_XP[L])+' XP · nivel '+(L+1)+': '+(nextUp?nextUp.n.toLowerCase():'')}</small>${nw?`<div class="wups">${nw}</div>`:''}</div></div>`; }
+    // 25/11/2026: la experiencia va a la mejora que elegiste investigar en el garaje (mejoras.js)
+    for(const k of used){ const xp=Math.round(rp/used.length); addTankXP(k,xp); const G=modGain(k,xp);
+      const nw=G.done.map(m=>`<span class="wup" title="${esc(m.d)}">🔓 ${esc(m.n)}</span>`).join('');
+      if(G.done.length&&window.tallerQ) tallerQ.push({kind:'up',k,txt:G.done.map(m=>m.n).join(' · ')});   // escena del taller al volver al garaje (taller.js)
+      tks+=`<div class="wrow">${miniHTML(k)}<div class="wtx"><b>${VEH[k].label}</b> <span class="wlv">${modDone(k)}/${modTotal(k)}</span> <small>+${fmt(xp)} XP</small>${bar(G.f0,G.done.length?1:G.f1,G.done.length?'full':'')}
+        <small>${!G.cur?(G.done.length?'¡Mejora lista! Ya tiene todas':'Todas las mejoras listas'):G.done.length?'¡Mejora lista! Ahora investiga: '+G.cur.n.toLowerCase():'Investigando '+G.cur.n.toLowerCase()+': '+fmt(G.have)+' / '+fmt(G.cost)+' XP'}</small>${nw?`<div class="wups">${nw}</div>`:''}</div></div>`; }
     let ach='';
     if(r1>r0) ach+=`<span class="wach">🎖 Ascendiste a ${RANKS[r1][1]}</span>`;
     ach+=dn.map(c=>`<span class="wach">✔ ${chText(c)} · +1 medalla</span>`).join('');

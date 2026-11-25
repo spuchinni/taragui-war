@@ -2,6 +2,9 @@
 const COST={ligero:120,medio:170,principal:210,'de élite':260};
 const SP_START=180, USES=Infinity;   // cada tanque: salida inicial + una reaparición (los de élite salen una sola vez)
 const usesMax=key=>VEH[key].uses||USES;
+// Jugadores (25/11/2026, pedido de Sebastián): cada tanque sale como mucho 2 veces por partida; el Nahuel 3 (por ahora su línea es un solo tanque).
+// Los bots siguen sin tope para que la batalla no se quede sin tanques.
+const usesLim=(crew,key)=>VEH[key].uses||(crew&&(crew.isPlayer||crew.peer)&&!(typeof tut!=='undefined'&&tut)?((key==='nahuel'||key==='esp_nahuel')?3:2):USES);
 const NATIONS={
   ar:{label:'Argentina',desc:'SK-105, TAM y TAM 2C-A2.',lineup:['sk105','tam','tam2c'],
       names:['Sgto. Ríos','Cabo Benítez','Tte. Acosta','Sgto. Ledesma','Cabo Sosa'],camo:['#5d5c3c','#73583a','#2c2b22']},

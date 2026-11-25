@@ -6,6 +6,15 @@
   const EN=()=>window.LANG==='en';
   const LS=(k,v)=>{ try{ if(v===undefined) return localStorage.getItem(k); localStorage.setItem(k,v); }catch(e){ return null; } };
   const NOV=[
+    {id:'2026-11-25',fecha:'25/11/2026',
+     es:['Mejoras: en el garaje elegís qué investigar de cada tanque (lanzahumos, 2ª y 3ª munición, reparación rápida, munición mejorada, control de tiro). La experiencia del tanque va a la que elegiste.',
+         'Despliegue nuevo: mapa grande para elegir la base, la munición con la que salís y la ficha del tanque al pasar el mouse.',
+         'Cada tanque sale como mucho 2 veces por partida (el Nahuel, 3).',
+         'BT-7 y T-70 rehechos, más parecidos a los de verdad. Y el tanque que comprás al terminar la batalla llega en camión apenas volvés al menú.'],
+     en:['Upgrades: in the garage you choose what to research for each tank (smoke, 2nd and 3rd ammo, fast repair, improved ammo, fire control). The tank\'s XP goes to the one you chose.',
+         'New deployment screen: big map to pick your base, the ammo you carry and the tank card when you hover it.',
+         'Each tank can deploy at most twice per match (the Nahuel, three times).',
+         'BT-7 and T-70 remade, closer to the real ones. And the tank you buy at the end of a battle arrives by truck as soon as you go back to the menu.']},
     {id:'2026-11-24',fecha:'24/11/2026',
      es:['Al terminar la batalla ya podés comprar el tanque que investigaste, sin salir de la partida. Y llega en camión al garaje cuando volvés, aunque lo hayas comprado en el árbol o en el resumen.',
          'Repaso de todos los tanques: faros, sirenas, antenas, barandas y otras piezas que quedaban en el aire ahora apoyan en la chapa (por ejemplo en el M4A1 Sherman). Los cañones del T-26, BT-5 y M2 llegan hasta la torre.',

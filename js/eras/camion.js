@@ -165,5 +165,15 @@
         const k=hangarOn()&&!L.on&&pendHere();
         if(k&&k!==key) setTimeout(()=>{ if(hangarOn()&&!L.on&&PROG.llegaPend&&PROG.llegaPend[k]){ hgSel=k; renderHangar(); } },0); }catch(e){ console.warn('camión',e); } }; }
   { const st=document.createElement('style'); st.textContent='body.llega #tallerBox{opacity:0!important}'; document.head.appendChild(st); }   // el cartel del taller espera a que se vaya el camión
+  // 25/11/2026 (pedido de Sebastián: "terminé la partida, compré un tanque y no salió el camión"): después de la batalla "Salir de la partida"
+  // vuelve a la portada del menú y de ahí "Jugar ahora" va derecho a otra batalla, así que el garaje nunca se mostraba. Ahora, si hay un tanque
+  // en camino de la época, el menú abre el garaje de su nación con ese tanque y el camión lo trae en el acto.
+  { const _mm=mainMenu; let busy=false; mainMenu=function(){ const r=_mm.apply(this,arguments);
+      try{ if(busy||!PROG||PROG.train||state!=='menu'||L.on) return r; sync();
+        const k=Object.keys(PROG.llegaPend||{}).find(k=>VEH[k]&&owned(k)&&llegaOk(k)&&(VEH[k].era||3)===curEra);
+        if(k&&!(menuScreen==='hangar'&&hgSel===k)&&(menuScreen==='hangar'||document.body.classList.contains('home'))){
+          busy=true; chosenNation=VEH[k].nation; hgSel=k; menuScreen='hangar'; try{ _mm.call(this); }finally{ busy=false; } } }catch(e){ console.warn('camión',e); }
+      return r; }; }
+  { const _sb=startBattle; startBattle=function(){ try{ if(L.on) finish(true); }catch(e){} return _sb.apply(this,arguments); }; }   // si arranca una batalla, el camión se saltea (no queda el cartel)
   window.llegaCamion=k=>{ if(hg&&hg.obj) start(hg.obj,k||hgSel); };                                                 // para probar desde la consola
 })();

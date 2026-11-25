@@ -149,7 +149,7 @@ function makeTank(crew,key,x,z,heading,id){
   const seats=T.seats?T.seats.slice():T.crew===3?['driver','gunner','commander']:T.crew===5?['driver','gunner','commander','loader','codriver']:['driver','gunner','commander','loader'];
   t.crewM=seats.map(st=>({seat:st,hp:100,alive:true})); t.mod={engine:100,breech:100,trans:100,barrel:100}; t.trkHP=[100,100]; t.ext=2; t.trackT=0; t.engT=0; t.breechT=0; t.fireT=0; t.swapT=0;
   t.ammoIdx=0; t.thermal=false; t.troops=T.troops||0; t.id=id||++net.seq; t.mgCount=0; t.cid=cid&&CAMOS[cid]?cid:'base';
-  applyLevel(t,crew&&crew.isPlayer?tankLv(key):crew&&crew.lvs?crew.lvs[key]||1:1);
+  applyLevel(t,crew&&crew.isPlayer?modCode(key):crew&&crew.lvs?crew.lvs[key]||1:1);
   if(!crew.isPlayer){ t.sk=clamp((crew.team===1||net.quick?enemySkill():.55)+rand(-.07,.07),.15,1); t.reloadMax*=1.5-t.sk*.4; /* online: los bots de los dos bandos igual de hábiles */ t.eY*=1.6-t.sk; t.eP*=1.6-t.sk; t.smokeN=t.noSmk?0:t.sk>.8?2:t.sk>.45?1:0; t.mode='adv'; }
   if(crew&&crew.isPlayer) initAmmo(t);
   t.root=root; root.rotation.order='YXZ';

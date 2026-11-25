@@ -206,7 +206,7 @@ async function netJoin(code,onFail,quick,peerId){
 function guestConnect(peer,target,code,quick,onOpen){
   const conn=peer.connect(target,{reliable:true,serialization:'json'});
   conn.on('open',()=>{ onOpen&&onOpen(); net.lastT=performance.now(); Object.assign(net,{on:true,host:false,guest:true,peer,hostConn:conn,code,name:myName(),quick:!!quick}); sala.busca=false;
-    conn.send({t:'hi',name:net.name,side:net.side?1:0,nation:chosenNation,garage:garageOf(chosenNation),lvs:Object.fromEntries(garageOf(chosenNation).map(k=>[k,tankLv(k)])),cams:PROG.camo||{}});
+    conn.send({t:'hi',name:net.name,side:net.side?1:0,nation:chosenNation,garage:garageOf(chosenNation),lvs:Object.fromEntries(garageOf(chosenNation).map(k=>[k,modCode(k)])),cams:PROG.camo||{}});
     if(!battleOn()&&state!=='summary') guestWait(null); });
   conn.on('data',d=>{ try{ guestData(d); }catch(e){ console.error(e); } });
   conn.on('close',()=>{ if(net.guest&&net.hostConn===conn) hostGone(); });

@@ -136,7 +136,7 @@ function applyLevel(t,lv){ t.lv=lv=clamp(lv|0,1,5); t.noSmk=noSmokeEra(t.key); t
 const hasFcs=t=>!!(t&&(t.T.fcs||t.fcsX));
 const usesOf=(crew,key)=>crew.uses[key]||0;
 const costOf=(crew,key)=>crew.spawns===0&&!VEH[key].uses?0:Math.round(COST[VEH[key].cls]*(usesOf(crew,key)?1.5:1));
-const available=(crew,key)=>usesOf(crew,key)<usesMax(key)&&costOf(crew,key)<=crew.sp;
+const available=(crew,key)=>usesOf(crew,key)<usesLim(crew,key)&&costOf(crew,key)<=crew.sp;
 const canSpawn=crew=>crew.lineup.some(k=>available(crew,k));
 function zoneSpawn(Z,team){
   if(nodes){const n=nearestNode(Z.x,Z.z);return {x:n.p.x,z:n.p.z};}

@@ -71,8 +71,8 @@
   // de sobra en una copia de PROG.txp y después se devuelve la original; saveProg no guarda nada en ese momento (el progreso no se toca).
   let maxing=false;
   { const _sc=spawnCrew; spawnCrew=function(c){ if(!(tut&&tut.prb&&c===playerCrew&&PROG)) return _sc.apply(this,arguments);
-      const o=PROG.txp, big={}; for(const k in VEH) big[k]=1e7; PROG.txp=big; maxing=true;
-      try{ return _sc.apply(this,arguments); } finally{ PROG.txp=o; maxing=false; } }; }
+      const o=PROG.txp, big={}; for(const k in VEH) big[k]=1e7; PROG.txp=big; maxing=true; window._modAll=true;
+      try{ return _sc.apply(this,arguments); } finally{ PROG.txp=o; maxing=false; window._modAll=false; } }; }
   { const _sp=saveProg; saveProg=function(){ if(maxing) return; return _sp.apply(this,arguments); }; }
   // ---- "No se rompe" de verdad (antes solo ponía immuneT: las esquirlas, el fuego, la ametralladora pesada, los tripulantes expuestos y
   // el cañón se seguían rompiendo, y el tanque titilaba). Ahora se bloquea el daño y cada cuadro se deja todo como nuevo.
