@@ -1709,7 +1709,9 @@ I18N.add({
 "Ya lo tenés en el garaje": "Already in your garage",
 "Ya lo podés comprar en el árbol de Vehículos": "You can buy it now in Vehicles",
 "Los PI de las próximas batallas van a este tanque": "Research points from your next battles go to this tank",
-"Tocá para seguir": "Tap to continue"
+"Tocá para seguir": "Tap to continue",
+"Llega en camión al garaje cuando vuelvas.": "It arrives at your garage by truck when you go back.",
+"Está en tu garaje.": "It's in your garage."
 });
 I18N.words({
 "Perforante sólido": "Solid AP",

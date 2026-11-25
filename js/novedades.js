@@ -6,6 +6,11 @@
   const EN=()=>window.LANG==='en';
   const LS=(k,v)=>{ try{ if(v===undefined) return localStorage.getItem(k); localStorage.setItem(k,v); }catch(e){ return null; } };
   const NOV=[
+    {id:'2026-11-24',fecha:'24/11/2026',
+     es:['Al terminar la batalla ya podés comprar el tanque que investigaste, sin salir de la partida. Y llega en camión al garaje cuando volvés, aunque lo hayas comprado en el árbol o en el resumen.',
+         'Repaso de todos los tanques: faros, sirenas, antenas, barandas y otras piezas que quedaban en el aire ahora apoyan en la chapa (por ejemplo en el M4A1 Sherman). Los cañones del T-26, BT-5 y M2 llegan hasta la torre.'],
+     en:['When the battle ends you can now buy the tank you researched without leaving the match. And it arrives at your garage by truck when you go back, even if you bought it in the tree or in the summary.',
+         'All tanks reviewed: headlights, sirens, antennas, rails and other parts that were floating now sit on the hull (for example on the M4A1 Sherman). The guns of the T-26, BT-5 and M2 now reach the turret.']},
     {id:'2026-11-23',fecha:'23/11/2026',
      es:['Resumen de la batalla nuevo, estilo War Thunder: entra en una sola pantalla, con lo que ganaste arriba, la barra de lo que estás investigando, la experiencia de cada tanque que usaste y las mejoras que se desbloquearon.',
          'El garaje tiene oficina técnica: una mesa de dibujo con el plano del tanque que estás investigando. Y un taller en el galpón, con mecánicos, aparejo y banco de trabajo.',

@@ -140,15 +140,30 @@
   // el camión traía tanques que ya tenías cada vez que entrabas al garaje. Ahora: los que tenés al cargar el progreso son la base; solo un tanque
   // que pasa a ser tuyo mientras jugás (comprado, regalado, premio) queda "en camino" (PROG.llegaPend) y el camión lo trae la primera vez que el
   // garaje lo muestra: en el acto si lo compraste ahí, o la próxima vez que entrás si lo ganaste en otra pantalla.
-  let base=null, baseP=null;
+  // 24/11/2026 (pedido de Sebastián: "no salió la animación del tanque llegando en el camión"): (1) comprar marca el tanque en camino en el acto
+  // (buyTank envuelto), sin depender de comparar listas; (2) lo que está en camino se guarda también fuera de PROG (enCamino), porque la nube
+  // reemplaza el objeto PROG al juntar progresos y la marca se perdía; (3) al entrar al garaje, si hay un tanque en camino de esa nación y época,
+  // el garaje lo elige solo (antes había que seleccionarlo: si lo compraste en el árbol o en el resumen, el camión no salía).
+  let base=null, baseP=null; const enCamino=new Set();
+  const llegaOk=k=>VEH[k]&&!VEH[k].support&&!(PROG.loan&&PROG.loan.k===k);
+  const marcar=k=>{ (PROG.llegaPend=PROG.llegaPend||{})[k]=1; enCamino.add(k); };
   function sync(){ if(!PROG) return; const own=PROG.owned||{};
-    if(PROG!==baseP||!base){ baseP=PROG; base=new Set(Object.keys(own)); return; }                  // progreso nuevo (al cargar, otra cuenta, la nube): base sin animar
-    for(const k in own) if(!base.has(k)){ base.add(k); if(VEH[k]&&!VEH[k].support&&!(PROG.loan&&PROG.loan.k===k)) (PROG.llegaPend=PROG.llegaPend||{})[k]=1; } }
+    if(PROG!==baseP||!base){ baseP=PROG; base=new Set(Object.keys(own));                                     // progreso nuevo (al cargar, otra cuenta, la nube): base sin animar
+      for(const k in (PROG.llegaPend||{})) enCamino.add(k);
+      for(const k of enCamino) if(own[k]&&llegaOk(k)) (PROG.llegaPend=PROG.llegaPend||{})[k]=1;                // lo que ya estaba en camino sigue en camino
+      return; }
+    for(const k in own) if(!base.has(k)){ base.add(k); if(llegaOk(k)) marcar(k); } }
   { const _sp=saveProg; saveProg=function(){ try{ sync(); }catch(e){} return _sp.apply(this,arguments); }; }
   { const _l=loadProg; loadProg=function(){ const r=_l.apply(this,arguments); try{ sync(); }catch(e){} return r; }; }
+  { const _b=buyTank; buyTank=function(k){ const r=_b.apply(this,arguments);
+      try{ if(r&&PROG&&llegaOk(k)){ sync(); if(base) base.add(k); marcar(k); saveProg(); } }catch(e){ console.warn('camión',e); } return r; }; }
+  const pendHere=()=>{ if(!PROG||!PROG.llegaPend) return null; const G=garageOf(chosenNation);
+    return Object.keys(PROG.llegaPend).find(k=>VEH[k]&&owned(k)&&G.includes(k))||null; };
   { const _hs=hgShow; hgShow=function(key){ _hs.apply(this,arguments);
-      try{ if(!PROG||!hg||!hg.obj||!key||!VEH[key]) return; sync();
-        if(PROG.train||!owned(key)||!(PROG.llegaPend&&PROG.llegaPend[key])) return;
-        delete PROG.llegaPend[key]; saveProg(); start(hg.obj,key); }catch(e){ console.warn('camión',e); } }; }
+      try{ if(!PROG||!hg||!hg.obj||!key||!VEH[key]||PROG.train) return; sync();
+        if(owned(key)&&PROG.llegaPend&&PROG.llegaPend[key]){ delete PROG.llegaPend[key]; enCamino.delete(key); saveProg(); start(hg.obj,key); return; }
+        const k=hangarOn()&&!L.on&&pendHere();
+        if(k&&k!==key) setTimeout(()=>{ if(hangarOn()&&!L.on&&PROG.llegaPend&&PROG.llegaPend[k]){ hgSel=k; renderHangar(); } },0); }catch(e){ console.warn('camión',e); } }; }
+  { const st=document.createElement('style'); st.textContent='body.llega #tallerBox{opacity:0!important}'; document.head.appendChild(st); }   // el cartel del taller espera a que se vaya el camión
   window.llegaCamion=k=>{ if(hg&&hg.obj) start(hg.obj,k||hgSel); };                                                 // para probar desde la consola
 })();

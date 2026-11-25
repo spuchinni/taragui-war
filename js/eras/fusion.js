@@ -82,6 +82,7 @@
   { const _tf=tankFX; tankFX=function(t){ const r=_tf.apply(this,arguments); try{ skinSync(t); }catch(e){} return r; }; }
   const _mt=makeTank; makeTank=function(){ const t=_mt.apply(this,arguments);
     try{ if(t.T&&t.T.m&&t.T.m.ww1==='w2'&&typeof snapSides==='function') snapSides(t,t.root,t.T.m,t.T.m.w2); }catch(e){ console.warn('snapSides',e); }   // otra pasada con todo ya puesto (insignias y piezas que suman otros archivos después de buildW2)
+    try{ if(typeof apoyarPiezas==='function') apoyarPiezas(t); }catch(e){ console.warn('apoyar',e); }   // piezas en el aire: se apoyan en la chapa antes de unir (apoyar.js)
     try{ if(window.FUSION!==false) fuse(t); }catch(e){ console.warn('fusion',e); } return t; };
   window.fuseTank=fuse;
 

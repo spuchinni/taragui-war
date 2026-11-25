@@ -342,9 +342,9 @@ function summary(winner){
     ach+=checkEraUnlock().map(e=>`<span class="wach">🔓 Rango ${RANK_ROMAN[e]}: ${ERAS[e].n}</span>`).join('');
     left=(mres?`<div class="wcard mis">${mres.html}</div>`:'')+
       `<div class="wcard"><h3>Investigación · ${NATIONS[n].label}</h3>${res}</div>`+
+      (unl.length?`<div class="rpbox unl">${unl.map(k=>`<div class="unlI" data-k="${k}">${unlHTML(k)}</div>`).join('')}</div>`:'')+   // la compra, a la vista: justo debajo de lo investigado
       (tks?`<div class="wcard"><h3>Tus tanques</h3>${tks}</div>`:'')+
-      `<div class="wcard ach"><span class="wach rk">${RANKS[r1][1]}</span>${ach}</div>`+
-      (unl.length&&!net.on?`<div class="rpbox unl">${unl.map(k=>`<div class="unlI" data-k="${k}">${unlHTML(k)}</div>`).join('')}</div>`:''); }
+      `<div class="wcard ach"><span class="wach rk">${RANKS[r1][1]}</span>${ach}</div>`; }
   const title=spectating?'Fin de la partida':MS?(winner===0?'Misión cumplida':'Misión fallida'):winner===0?'Victoria':'Derrota';
   const mapN=WORLDS[builtKey]?WORLDS[builtKey].label:'';
   $('panel').innerHTML=`<div class="wts${left?'':' noL'}">
@@ -368,7 +368,10 @@ function summary(winner){
     else if(b.dataset.try!=null) tryTank(k); else if(b.dataset.tut!=null){ initAudio(); startTutorial(k); } };
 }
 // Tanque recién investigado: comprarlo y después probarlo (o hacer el tutorial si tiene algo especial)
-function unlHTML(k,justBought){ const V=VEH[k], c=ypCost(k), sp=vehSpecial(k);
+// En las salas online (las batallas de "Jugar ahora" siempre lo son) también se compra acá; probarlo o hacer el tutorial sacaría de la sala,
+// así que después de comprar solo avisa que llega al garaje (24/11/2026, pedido de Sebastián: "tuve que salir de la partida para comprarlo").
+function unlHTML(k,justBought){ const V=VEH[k], c=ypCost(k), sp=vehSpecial(k), sala=typeof net!=='undefined'&&net.on;
+  if(owned(k)&&sala) return `<p><b>${justBought?'¡Compraste el':'Ya tenés el'} ${V.label}!</b> ${justBought?'Llega en camión al garaje cuando vuelvas.':'Está en tu garaje.'}</p>`;
   if(!owned(k)) return `<p><b>¡Investigaste el ${V.label}!</b> Para usarlo tenés que comprarlo: cuesta <b>${ypTxt(c)}</b> y tenés ${ypTxt(PROG.yp)}.</p>
     <div class="unlB">${PROG.yp>=c?`<button class="go" data-buy>Comprar · ${ypTxt(c)}</button>`:`<button class="go" disabled>Te faltan ${ypTxt(c-PROG.yp)}</button>`}</div>`;
   return `<p><b>${justBought?'¡Compraste el':'Ya tenés el'} ${V.label}!</b> ${sp?`Tiene ${sp}. ¿Querés aprender a usarlo en el tutorial o probarlo directo en batalla?`:'¿Querés probarlo en batalla?'}</p>
