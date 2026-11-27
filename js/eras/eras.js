@@ -28,15 +28,19 @@ function eventWin(e,t=new Date()){ const E=ERA_EVENT[e]; if(!E) return null;
   for(const y of [t.getFullYear()-1,t.getFullYear(),t.getFullYear()+1]){ const a=new Date(y,E.m-1,E.d), b=new Date(a.getTime()+E.days*864e5); if(t<b) return [a,b]; } return null; }
 function eventOn(e){ if(!ERA_EVENT[e]) return true; if(typeof location!=='undefined'&&/[?&]evento=1/.test(location.search)) return true; const w=eventWin(e), t=new Date(); return !!w&&t>=w[0]&&t<w[1]; }
 const fmtDia=d=>`${d.getDate()}/${d.getMonth()+1}`;
-function eventTxt(e){ const w=eventWin(e); if(!w) return ''; const last=new Date(w[1].getTime()-864e5); return eventOn(e)?`Evento: hasta el ${fmtDia(last)}`:`Evento: del ${fmtDia(w[0])} al ${fmtDia(last)}`; }
+function eventTxt(e){ const w=eventWin(e); if(!w) return ''; const last=new Date(w[1].getTime()-864e5); return eventOn(e)?`Evento: doble PI hasta el ${fmtDia(last)}`:`Evento (doble PI): del ${fmtDia(w[0])} al ${fmtDia(last)}`; }
 const RULE=()=>ERAS[(typeof W!=='undefined'&&W&&W.era)||5]; // reglas de la partida en curso (según el mapa)
 const eraOf=k=>(VEH[k]&&VEH[k].era)||5;
 const eraReady=e=>!!(ERAS[e]&&ERAS[e].ready);
 // FOCO (documento de diseño del 8/11/2026, decisión de Sebastián): se muestra solo la 2ª Guerra como puerta de entrada y los
 // países del foco. Lo demás queda guardado en el código, sin borrar: épocas, países y mapas se vuelven a abrir sacándolos de acá.
+// Con la línea única por nación (26/11/2026) el FOCO ya no esconde épocas: todas las listas se ven en el árbol y se juegan siempre.
+// FOCO.eras queda como la puerta de entrada (dónde arranca el entrenamiento). Los eventos ya no cierran épocas: dan doble PI (eraBonus).
 const FOCO={eras:[3],hide:['it','jp','cn','fr'],hideMaps:['okinawa','saipan','shanghai']};
-const eraPlayable=e=>FOCO.eras.includes(e)&&eraReady(e)&&eventOn(e);   // del foco, lista y, si es un evento, dentro de su fecha
-const eraList=()=>Object.keys(ERAS).map(Number).filter(e=>FOCO.eras.includes(e));
+const eraPlayable=e=>eraReady(e);
+const eraList=()=>Object.keys(ERAS).map(Number).filter(eraReady);
+// Evento de una época en su fecha: los PI de las batallas en sus mapas valen doble
+const eraBonus=e=>ERA_EVENT[e]&&eventOn(e)?2:1;
 
 /* Cada nación cambia de nombre, tripulantes, uniforme y casco según la época */
 const NAT_ERA={
@@ -54,6 +58,8 @@ function applyEraNations(e){
 }
 // Naciones que tienen vehículos en una época (sin las especiales de Corrientes vs. Resistencia)
 const eraNations=e=>Object.keys(NATIONS).filter(n=>!NATIONS[n].special&&!FOCO.hide.includes(n)&&Object.keys(VEH).some(k=>VEH[k].nation===n&&eraOf(k)===e&&!VEH[k].static&&!VEH[k].support));
+// Naciones de la línea única: las que tienen algún tanque en cualquier época lista
+const lineNations=()=>[...new Set(eraList().flatMap(eraNations))];
 // Bando de una nación en una época con bandos históricos (0 o 1); -1 si la época no tiene bandos
 const eraSide=(e,n)=>{ const S=ERAS[e]&&ERAS[e].sides; if(!S) return -1; return S[0].includes(n)?0:S[1].includes(n)?1:-1; };
 let curSpan=0; // largo del tanque que se está moviendo (para cruzar trincheras)

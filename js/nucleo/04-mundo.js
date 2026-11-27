@@ -647,7 +647,7 @@ function buildOuter(){
 }
 const outOfBounds=p=>Math.abs(p.x)>W.bx||Math.abs(p.z)>W.bz||(W.boundary&&!inPoly(p.x,p.z,W.boundary));
 function assignSpawns(nat0){
-  const east=W.eastNat?W.eastNat.includes(nat0):(nat0==='ar'||nat0==='ctes');
+  const east=W.eastNat?W.eastNat.includes(nat0)||(nat0==='la'&&W.eastNat.includes('uy')):(nat0==='ar'||nat0==='ctes');   // Latinoamérica juega del lado de Uruguay
   const sp=W.spawns.west?{0:east?W.spawns.east:W.spawns.west,1:east?W.spawns.west:W.spawns.east}:W.spawns;
   W.sp={0:[],1:[]}; for(const tm of [0,1]) for(const s of sp[tm]){const p=s.px?toW(...s.px):{x:s.x,z:s.z}; W.sp[tm].push({label:s.label,x:p.x,z:p.z});}
 }

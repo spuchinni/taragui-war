@@ -55,8 +55,10 @@ function hgGetHTML(k,S){
   return `<div class="lvl">🔒 ${S.why} · ${S.cost.toLocaleString('es-AR')} PI</div>`; }
 function renderHangar(){
   if(!PROG) loadProg(); menuScreen='hangar'; document.body.classList.remove('home');
-  const NN=Object.fromEntries(eraNations(curEra).map(k=>[k,NATIONS[k]])); if(!NN[chosenNation]) chosenNation=Object.keys(NN)[0];
-  const T=vehTree(chosenNation); if(!hgSel||!(T.includes(hgSel)||garageOf(chosenNation).includes(hgSel))) hgSel=garageOf(chosenNation)[0]||T[0];   // los tanques especiales (diario.js) no están en el árbol
+  const NN=Object.fromEntries(lineNations().map(k=>[k,NATIONS[k]])); if(!NN[chosenNation]) chosenNation=Object.keys(NN)[0];
+  syncLineEra(chosenNation); const strip=eraStripHTML(chosenNation);   // la época de la batalla sale del garaje; las pestañas eligen qué rango se mira
+  if(hgSel&&VEH[hgSel]&&VEH[hgSel].nation===chosenNation&&lineRanks(chosenNation).includes(rankOf(hgSel))) viewRank=rankOf(hgSel);
+  const T=vehTreeE(chosenNation,viewRank); if(!hgSel||!(T.includes(hgSel)||garageOf(chosenNation).includes(hgSel))) hgSel=garageOf(chosenNation).find(k=>T.includes(k))||T[0]||garageOf(chosenNation)[0];   // los tanques especiales (diario.js) no están en el árbol
   hgShow(hgSel,chosenNation);
   const V=VEH[hgSel], S=hgStatus(hgSel), lv=tankLv(hgSel), xp=tankXP(hgSel);
   const eq=[`Mira ${V.optic.join('/')}×`,`Ametralladora ${String(V.mgc||MG_CAL[hgSel]||7.62).replace('.',',')} mm`,V.arc!=null?`Sin torre: ±${Math.round(V.arc*180/Math.PI)}°`:'',V.trench?`Cruza trincheras de ${String(V.trench).replace('.',',')} m`:'',V.fcs?'Telémetro':'',V.stab?'Estabilizador':'',V.thermal?'Térmica':'',V.autoL?'Cargador automático':'',V.auto?'Cañón automático':'',V.troops?`Lleva ${V.troops} soldados`:''].filter(Boolean);
@@ -68,7 +70,7 @@ function renderHangar(){
   const modes={battle:'Batalla',camp:'Campaña',...(curEra===5?{esp:'Ctes. vs. Resistencia'}:{}),watch:'Ver partida',tut:'Tutorial'}; if(!modes[playMode]) playMode='battle';
   const playTxt=playMode==='camp'?'Abrir la campaña':playMode==='tut'?(S.own?'Tutorial con este tanque':'Tanque bloqueado'):playMode==='watch'?'Mirar una partida':playMode==='online'?'Jugar online':playMode==='esp'?'¡Al puente!':'¡A la batalla!';
   $('panel').innerHTML=`<div class="hg">
-    <div class="hgTop"><button class="hgBack" id="hgBack" title="Inicio">⌂</button>${eraStripHTML()}<span class="hgBr"></span>
+    <div class="hgTop"><button class="hgBack" id="hgBack" title="Inicio">⌂</button>${strip}<span class="hgBr"></span>
       ${Object.entries(NN).map(([k,N])=>`<button class="hgN${k===chosenNation?' sel':''}" data-n="${k}"><i style="background:linear-gradient(90deg,${(N.uni||N.camo).join(',')})"></i>${N.label}</button>`).join('')}
 </div>
     <button class="setB" id="setB" title="Ajustes" aria-label="Ajustes">⚙</button>
@@ -93,7 +95,7 @@ function renderHangar(){
       <button class="hgPlay" id="hgPlay" ${playMode==='tut'&&!S.own?'disabled':''}>${playTxt}</button></div>
     <div id="hgModal"></div></div>`;
   document.querySelectorAll('.hgN[data-n]').forEach(b=>b.onclick=()=>{ chosenNation=b.dataset.n; hgSel=null; renderHangar(); });
-  wireEraStrip(()=>{ hgSel=null; renderHangar(); });
+  wireEraStrip(()=>{ hgSel=vehTreeE(chosenNation,viewRank)[0]||null; renderHangar(); });
   document.querySelectorAll('.hgc').forEach(b=>b.onclick=()=>{ hgSel=b.dataset.k; renderHangar(); });
   document.querySelectorAll('.hgModes button').forEach(b=>b.onclick=()=>{ playMode=b.dataset.m; renderHangar(); });
   document.querySelectorAll('.hgOpt [data-side]').forEach(b=>b.onclick=()=>{ specialSide=b.dataset.side; renderHangar(); });
@@ -137,22 +139,23 @@ function hgOnline(){
 
 let treeNation=null;
 function renderTree(){
-  const NN=Object.fromEntries(eraNations(curEra).map(k=>[k,NATIONS[k]])); treeNation=treeNation&&NN[treeNation]?treeNation:NN[chosenNation]?chosenNation:Object.keys(NN)[0]; const n=treeNation, T=vehTree(n), g=garageOf(n), nx=nextResearch(n);
+  const NN=Object.fromEntries(lineNations().map(k=>[k,NATIONS[k]])); treeNation=treeNation&&NN[treeNation]?treeNation:NN[chosenNation]?chosenNation:Object.keys(NN)[0]; const n=treeNation, strip=eraStripHTML(n), T=vehTreeE(n,viewRank), g=garageOf(n), nx=nextResearch(n);
+  const RO=rankOpen(n,viewRank), pr=prevRank(n,viewRank), rkTxt=viewRank<RANK_ENTRY?'Rango de antes de la 2ª Guerra: opcional, no hace falta para avanzar.':viewRank===RANK_ENTRY?'Puerta de entrada: acá empieza tu línea.':RO?`Abierto (investigaste ${rankHave(n,viewRank)} de rango ${RANK_ROMAN[pr]}).`:`🔒 Se abre con ${rankNeed(n,viewRank)} tanques investigados de rango ${RANK_ROMAN[pr]} (tenés ${rankHave(n,viewRank)}).`;
   const row=k=>{ const V=VEH[k], S=hgStatus(k), inG=g.includes(k), q=reqOf(k);
     const st=S.own?'':S.done?`<small><br>Investigado · cuesta ${ypTxt(S.yc)}</small>`:S.res?`<div class="pbar"><i style="width:${Math.round(S.have/S.cost*100)}%"></i></div><small>Investigando: ${S.have.toLocaleString('es-AR')} / ${S.cost.toLocaleString('es-AR')} PI</small>`
       :S.can?`<small><br>Se puede investigar · ${S.cost.toLocaleString('es-AR')} PI</small>`:`<small><br>🔒 ${S.why} · ${S.cost.toLocaleString('es-AR')} PI</small>`;
     const bt=S.own?`<button data-k="${k}" data-a="gar" class="tg">${inG?'Quitar':'Al garaje'}</button>`:S.done?`<button data-k="${k}" data-a="buy" class="tg" ${(PROG.yp||0)<S.yc?'disabled':''}>Comprar</button>`:S.can&&!S.res?`<button data-k="${k}" data-a="res" class="tg">Investigar</button>`:'';
     return `<div class="vrow ${S.own?'own':S.res||S.done?'res':'lock'} ${inG?'in':''}" data-k="${k}">${miniHTML(k)}<div class="br">${RANK_ROMAN[rankOf(k)]}<small style="display:block;font-size:12px">${brTxt(V.br)}</small></div><div><b>${V.label}</b><small>${CLS_ES[V.cls]||V.cls}${V.year?' · '+V.year:''}${q?' · viene del '+VEH[q].label:''}</small>${vehStatsHTML(k)}${st}</div>
       <div>${bt}</div></div>`; };
-  $('panel').innerHTML=`<div class="side" style="width:min(800px,96vw)"><button class="setB" id="setB" title="Ajustes" aria-label="Ajustes">⚙</button><h1 class="logo" style="font-size:54px!important">Vehículos</h1><div class="hgTop treeEra">${eraStripHTML()}</div><p class="s">${ERAS[curEra].n} (${ERAS[curEra].y}). ${ERAS[curEra].desc}</p>
+  $('panel').innerHTML=`<div class="side" style="width:min(800px,96vw)"><button class="setB" id="setB" title="Ajustes" aria-label="Ajustes">⚙</button><h1 class="logo" style="font-size:54px!important">Vehículos</h1><div class="hgTop treeEra">${strip}</div><p class="s">Rango ${RANK_ROMAN[viewRank]} · ${ERAS[viewRank].n} (${ERAS[viewRank].y}). ${ERAS[viewRank].desc} <b>${rkTxt}</b></p>
     ${radios('tn',Object.fromEntries(Object.entries(NN).map(([k,N])=>[k,{label:N.label,desc:''}])),n,'two')}
     <p class="s">Garaje (hasta 3): ${g.map(k=>VEH[k].label).join(', ')||'vacío'} · <b>BR de batalla ${brTxt(garageBR(n))}</b> (el de tu vehículo más alto). Enemigos y aliados salen con BR de ±1.0.
     Cada batalla da puntos de investigación (PI) para el tanque que estás investigando y ${YP} para comprarlo. Tenés <b>${ypTxt(PROG.yp||0)}</b>.
-    Cada época tiene su propio árbol. La 2ª Guerra se juega siempre; las demás son eventos con fecha.</p>
+    Una sola línea por nación: llevá al garaje tanques de cualquier rango. El mapa sale de tu tanque de BR más alto; en los eventos, esa época da doble PI.</p>
     <div class="tree">${T.map(row).join('')}</div><p class="s">Pasá el mouse por un vehículo para ver su ficha técnica. Tocalo para verlo en el hangar.</p>
     <button class="go alt" id="back">Volver</button></div>`;
   document.querySelectorAll('.tk').forEach(b=>b.onclick=()=>{ if(b.dataset.g==='tn'){ treeNation=b.dataset.k; renderTree(); } });
-  wireEraStrip(()=>{ treeNation=null; renderTree(); });
+  wireEraStrip(()=>renderTree());
   document.querySelectorAll('.tg').forEach(b=>b.onclick=()=>{ const k=b.dataset.k;
     if(b.dataset.a==='buy'){ buyTank(k); renderTree(); return; } if(b.dataset.a==='res'){ setResearch(k); renderTree(); return; }
     const G=garRef(n), i=G.indexOf(k); if(i>=0){ if(G.length>1) G.splice(i,1); } else { if(G.length>=3) G.shift(); G.push(k); } saveProg(); renderTree(); });

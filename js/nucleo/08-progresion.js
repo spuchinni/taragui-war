@@ -6,36 +6,55 @@ function addSP(tank,n,score=0,label){ if(!tank||!tank.crew) return; tank.crew.sp
 const ECON={rp:.3,yp:.2};
 function actionReward(score){ const k=(player&&player.key)||selKey, K=RANK_K[k&&VEH[k]?rankOf(k):1]||1; return {rp:Math.round(score*2.5*K*ECON.rp),yp:Math.round(score*.5*K*ECON.yp)}; }
 // ---------- Progresión estilo War Thunder ----------
-// Cada época es un rango (I = 1ª Guerra … V = Guerra Fría) con su árbol propio: como la 2ª Guerra es la permanente y las demás son
-// eventos con fecha, cada época se abre sola (su primer tanque viene regalado) y no depende de la anterior. Cada nación tiene líneas por clase en orden de año: un tanque pide el
-// anterior de su línea dentro de la misma época. Con PI (puntos de investigación) se investiga y con Yaguaretés se compra.
+// Línea única por nación (26/11/2026, pedido de Sebastián: "solo una línea temporal por nación, así cualquiera usa cualquier tanque que tenga
+// desbloqueado, estilo WT"): cada época es un rango (I = 1ª Guerra … V = Guerra Fría) de UNA sola línea por nación, con un solo garaje.
+// La puerta de entrada es el rango III (2ª Guerra, RANK_ENTRY): ahí empieza el entrenamiento y sus primeros tanques no piden nada.
+// De ahí para arriba la línea sigue (IV, V) y cada rango pide RANK_NEED investigados del anterior; los rangos I y II son la parte de antes
+// de la puerta: abiertos, opcionales, encadenados entre ellos. El mapa y las reglas salen del tanque de BR más alto del garaje (lineEra).
+// Con PI (puntos de investigación) se investiga y con Yaguaretés se compra.
 const BR_TABLE={stuart:2.0,m113:2.7,sherman:3.3,ee9:4.0,vctp:4.3,m41u:4.3,pt76:4.7,scorpion:5.0,marder:5.3,sk105:5.7,ru251:6.0,sheridan:6.3,tiran:6.3,centurion:6.7,
   t55:7.0,tam:7.0,leopard1:7.3,patagon:7.7,leo1v:7.7,m60:7.7,t62m:7.7,chieftain:8.3,leo1a5:8.7,m60a3:8.7,tam2c:9.0,leo2a4:10.0,abrams:10.3};
 for(const k in VEH) VEH[k].br=VEH[k].br||BR_TABLE[k]||5;
 const brTxt=b=>b.toFixed(1);
 // Árbol de una nación en una época (por defecto, la elegida en el menú). Los cañones de campaña no son jugables.
 function vehTreeE(n,e){ return Object.keys(VEH).filter(k=>VEH[k].nation===n&&eraOf(k)===e&&!VEH[k].static&&!VEH[k].support&&!VEH[k].special).sort((a,b)=>VEH[a].br-VEH[b].br||(VEH[a].year||0)-(VEH[b].year||0)); }
-function vehTree(n){ return vehTreeE(n,curEra); }
-const RANK_ROMAN=['','I','II','III','IV','V'], RANK_K={1:1,2:1.7,3:2.6,4:3.6,5:4.8}, RANK_NEED=3, YP_START=2000;
+// Línea entera de una nación (todos los rangos listos), en orden de rango y BR
+function vehLine(n){ return eraList().flatMap(e=>vehTreeE(n,e)); }
+function vehTree(n){ return vehLine(n); }
+const RANK_ROMAN=['','I','II','III','IV','V'], RANK_K={1:1,2:1.7,3:2.6,4:3.6,5:4.8}, RANK_NEED=3, RANK_ENTRY=3, YP_START=2000;
+// Rango anterior de la línea que tiene tanques en esa nación (el IV, Posguerra, está vacío: el V viene después del III); 0 = no hay
+function prevRank(n,r){ for(let e=r-1;e>=1;e--) if(eraReady(e)&&vehTreeE(n,e).length) return e; return 0; }
+// Rango que se mira en el hangar y en el árbol (solo la vista: no cambia dónde se juega)
+let viewRank=RANK_ENTRY;
 const rankOf=k=>eraOf(k);
 const YP='Yaguaretés', ypTxt=n=>`🐆 ${Math.round(n).toLocaleString('es-AR')}`;
 // Costos: crecen con el rango y dentro del rango (los primeros tanques cuestan unas 3 batallas)
 const rpCost=k=>{ const r=rankOf(k), i=Math.max(0,vehTreeE(VEH[k].nation,r).indexOf(k)); return Math.round((1800+700*i)*RANK_K[r]/50)*50; };
 const ypCost=k=>Math.round(rpCost(k)*2.2/100)*100;
-// Tanque que hay que tener investigado antes (null = solo pide el rango)
-// (un pedido de otra época no cuenta: cada época es independiente)
-function reqOf(k){ const V=VEH[k]; if(V.req!==undefined&&(!V.req||eraOf(V.req)===eraOf(k))) return V.req; const r=rankOf(k), T=vehTreeE(V.nation,r), same=T.filter(x=>VEH[x].cls===V.cls), i=same.indexOf(k);
+// Tanque que hay que tener investigado antes (null = solo pide el rango). La línea cruza épocas: el primero de una clase en un rango pide
+// el último de esa clase del rango anterior (o, si no hay, el último de ese rango). En la puerta de entrada (rango III) no se mira para atrás.
+function reqOf(k){ const V=VEH[k]; if(V.req!==undefined) return V.req; const r=rankOf(k), T=vehTreeE(V.nation,r), same=T.filter(x=>VEH[x].cls===V.cls), i=same.indexOf(k);
   if(i>0) return same[i-1];
+  const pr=r===RANK_ENTRY?0:prevRank(V.nation,r);
+  if(pr){ const P=vehTreeE(V.nation,pr), ps=P.filter(x=>VEH[x].cls===V.cls); return ps.length?ps[ps.length-1]:P[P.length-1]; }
   return T[0]!==k?T[0]:null; }
 const researched=k=>!!(PROG&&PROG.unlocked[k]);
 const owned=k=>!!(PROG&&PROG.owned&&PROG.owned[k]);
-// Cada época se abre sola (ya no hace falta investigar la anterior); queda la función por si vuelve a hacer falta
-function rankOpen(n,r){ return true; }
+// Un rango arriba de la puerta de entrada se abre con RANK_NEED tanques investigados del rango anterior (o todos, si tiene menos)
+const rankNeed=(n,r)=>{ const pr=prevRank(n,r); return r<=RANK_ENTRY||!pr?0:Math.min(RANK_NEED,vehTreeE(n,pr).length); };
+const rankHave=(n,r)=>{ const pr=prevRank(n,r); return pr?vehTreeE(n,pr).filter(researched).length:0; };
+function rankOpen(n,r){ return rankHave(n,r)>=rankNeed(n,r); }
 const canResearch=k=>!researched(k)&&rankOpen(VEH[k].nation,rankOf(k))&&(!reqOf(k)||researched(reqOf(k)));
 function lockReason(k){ const n=VEH[k].nation, r=rankOf(k);
+  if(!rankOpen(n,r)){ const pr=prevRank(n,r), f=rankNeed(n,r)-rankHave(n,r); return `Investigá ${f} tanque${f>1?'s':''} más de rango ${RANK_ROMAN[pr]} para abrir el ${RANK_ROMAN[r]}`; }
   const q=reqOf(k); return q&&!researched(q)?`Requiere investigar el ${VEH[q].label}`:''; }
-// Garaje: uno por nación y por época
-const garRef=(n,e=curEra)=>PROG.garage[n+'@'+e]||(PROG.garage[n+'@'+e]=[]);
+// Garaje: uno por nación, con tanques de cualquier rango (el segundo argumento, la época, quedó de antes y no se usa).
+// El progreso viejo tenía uno por nación y época ('de@3'): la primera vez se juntan, primero el de la última época jugada y después
+// la 2ª Guerra, hasta 3. Las claves viejas no se borran (si se vuelve a la versión anterior, siguen ahí).
+function garRef(n){ const G=PROG.garage||(PROG.garage={}); if(G[n]) return G[n];
+  const L=[], pe=PROG.era||RANK_ENTRY, keys=Object.keys(G).filter(x=>x.startsWith(n+'@')).sort((a,b)=>{ const w=x=>x===n+'@'+pe?0:x===n+'@'+RANK_ENTRY?1:2; return w(a)-w(b); });
+  for(const x of keys) for(const k of G[x]||[]) if(VEH[k]&&!L.includes(k)&&L.length<3) L.push(k);
+  return G[n]=L; }
 let PROG=null;
 const PROG_V=4;   // versión del progreso: al subirla se reinicia el de todos (4 = reinicio del 10/11/2026, pedido de Sebastián)
 // Progreso (tw2_progress, versión 3 = rangos e investigar/comprar; las versiones anteriores se reinician). La versión 1 del juego usa tw_progress.
@@ -46,10 +65,16 @@ function loadProg(){ try{ PROG=JSON.parse(localStorage.getItem(PROG_KEY)||'null'
   if(!PROG||PROG.v!==PROG_V){ for(const k of ['tw2_arranque','tw2_coach','tw2_elegido','tw2_menuFull','tw2_lFoe','tw2_lWeak','tw2_lMira','tw2_lCap']) try{ localStorage.removeItem(k); }catch(e){}   // progreso nuevo: el entrenamiento vuelve a salir
     PROG={v:PROG_V,unlocked:{},owned:{},rp:{},target:{},yp:YP_START,garage:{},stats:{battles:0,wins:0},eraOpen:{1:1},camp:{},train:1}; }   // train: entrenamiento (3 primeras batallas, rapida.js/primeras.js): sin tanques propios
   PROG.camp=PROG.camp||{}; PROG.owned=PROG.owned||{}; PROG.target=PROG.target||{};
-  // cada nación arranca, en cada época, con su primer tanque investigado y comprado (los jugadores nuevos no: reciben uno solo al terminar el entrenamiento; PROG.openN = naciones abiertas)
-  if(!PROG.train) for(const n in NATIONS){ if(NATIONS[n].special||(PROG.openN&&!PROG.openN.includes(n))) continue; for(const e of eraList()){ if(!eraReady(e)) continue; const T=vehTreeE(n,e); if(!T.length) continue; PROG.unlocked[T[0]]=1; PROG.owned[T[0]]=1;
-    const G=garRef(n,e); if(!G.length) G.push(T[0]); } }
+  // cada nación arranca con el primer tanque de su línea en la puerta de entrada (rango III), investigado y comprado (los jugadores nuevos no:
+  // reciben uno solo al terminar el entrenamiento; PROG.openN = naciones abiertas). Lo que ya tenías de otras épocas queda.
+  // Solo se regalan los tanques de reserva (26/11/2026, pedido de Sebastián): las naciones con requisito (brasil.js) dejan su primer tanque
+  // investigado pero hay que comprarlo.
+  if(!PROG.train) for(const n in NATIONS){ if(NATIONS[n].special||(PROG.openN&&!PROG.openN.includes(n))||(NATIONS[n].abre&&!(PROG.reqN||[]).includes(n))) continue; const T=vehTreeE(n,RANK_ENTRY); if(!T.length) continue;
+    PROG.unlocked[T[0]]=1; if(NATIONS[n].abre) continue; PROG.owned[T[0]]=1; const G=garRef(n); if(!G.length) G.push(T[0]); }
   syncEraOpen(); curEra=PROG.era&&PROG.eraOpen[PROG.era]?PROG.era:3; }
+// Época en la que se juega con una nación: la del tanque de BR más alto del garaje (pone el mapa, las reglas y la sala)
+function lineEra(n){ const G=PROG&&n?garageOf(n):[]; if(!G.length) return RANK_ENTRY; const k=G.reduce((a,b)=>VEH[b].br>VEH[a].br?b:a); return eraOf(k); }
+function syncLineEra(n){ const e=lineEra(n); if(eraReady(e)&&e!==curEra){ curEra=e; applyEraNations(e); } return curEra; }
 // Una época se puede elegir si alguna nación tiene abierto ese rango
 function syncEraOpen(){ const out=[]; for(const e of eraList()) PROG.eraOpen[e]=eraPlayable(e)?1:0;
   return out; }
@@ -63,16 +88,18 @@ function saveProg(){ if(!PROG) return; PROG.era=curEra; PROG.t=Date.now();
 // Épocas que se abrieron recién (ya no pasa: se abren por fecha)
 function checkEraUnlock(){ const out=syncEraOpen(); if(out.length) saveProg(); return out; }
 // Lo que se está investigando en una nación: el elegido (si todavía se puede) o el primero investigable en orden de rango
+// (primero de la puerta de entrada para arriba; los rangos de antes, al final)
 function nextResearch(n){ const t=PROG.target[n]; if(t&&VEH[t]&&canResearch(t)) return t;
-  for(const e of eraList()){ const k=vehTreeE(n,e).find(canResearch); if(k) return k; } return null; }
+  const L=eraList(), ord=L.filter(e=>e>=RANK_ENTRY).concat(L.filter(e=>e<RANK_ENTRY).reverse());
+  for(const e of ord){ const k=vehTreeE(n,e).find(canResearch); if(k) return k; } return null; }
 function setResearch(k){ if(canResearch(k)){ PROG.target[VEH[k].nation]=k; saveProg(); } }
 // Comprar un tanque investigado con Yaguaretés; entra al garaje si hay lugar
 function buyTank(k){ if(!researched(k)||owned(k)) return false; const c=ypCost(k); if((PROG.yp||0)<c) return false;
   PROG.yp-=c; PROG.owned[k]=1; const g=garRef(VEH[k].nation,eraOf(k)); if(g.length<3&&!g.includes(k)) g.push(k); saveProg(); return true; }
-const garageOf=n=>garRef(n).filter(k=>owned(k)&&VEH[k]&&eraOf(k)===curEra);
+const garageOf=n=>garRef(n).filter(k=>owned(k)&&VEH[k]);
 const garageBR=n=>Math.max(...garageOf(n).map(k=>VEH[k].br),1);
 // Emparejamiento: vehículos de la nación con BR dentro de ±1.0 del de la batalla (si no hay, los más cercanos)
-function mmLineup(n,br){ const T=vehTree(n); let c=T.filter(k=>Math.abs(VEH[k].br-br)<=1.0);
+function mmLineup(n,br){ const T=vehLine(n); let c=T.filter(k=>Math.abs(VEH[k].br-br)<=1.0);
   if(c.length<2) c=T.slice().sort((a,b)=>Math.abs(VEH[a].br-br)-Math.abs(VEH[b].br-br)).slice(0,2); return shuffle(c).slice(0,3); }
 // Suma PI al tanque que se investiga en esa nación; lo que sobra pasa al siguiente. Devuelve los tanques investigados (falta comprarlos).
 function addRP(n,rp){ const out=[]; let left=rp;
@@ -81,6 +108,8 @@ function addRP(n,rp){ const out=[]; let left=rp;
     else { PROG.rp[k]=have+left; left=0; } }
   saveProg(); return out; }
 // Premio de una batalla según el rango más alto que usaste: los tanques viejos dan menos
+// Estilo WT: si usaste tanques de un rango más bajo que el que investigás, los PI rinden 20 % menos por rango de diferencia (mínimo 40 %)
+const rpLowK=(used,target)=>!target?1:Math.max(.4,1-.2*Math.max(0,rankOf(target)-used));
 function battleReward(rank,win,score){ const K=RANK_K[rank]||1;
   return {rp:Math.round(((win?450:250)+score*2.5)*K*ECON.rp), yp:Math.round(((win?1700:900)+score*5)*K*ECON.yp/10)*10}; }
 let battleBR=null;

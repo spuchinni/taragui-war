@@ -35,8 +35,9 @@ function avisoCartel(s,txt){
 }
 // Unirse a esa partida: cambia a su época si está abierta y entra directo (sin el filtro de BR de "¡A la batalla!")
 function avisoUnir(s){
-  if(s.e!==curEra){ if(!(eraPlayable(s.e)&&PROG.eraOpen[s.e])){ banner('No podés entrar',`Esa partida es de ${avisoEra(s)||'otra época'}, que no tenés abierta`,4); return; }
-    curEra=s.e; applyEraNations(s.e); saveProg(); }
+  // línea única: entrás con tu garaje; la época la pone el mapa de la partida (solo hace falta que la época esté lista)
+  if(s.e!==curEra){ if(!eraPlayable(s.e)){ banner('No podés entrar',`Esa partida es de ${avisoEra(s)||'otra época'}, que todavía no está lista`,4); return; }
+    curEra=s.e; applyEraNations(s.e); }
   if(!netName){ jugarOnline(); return; } // primero pide el nombre
   sala.busca=true; salaUnir([s],0);
 }

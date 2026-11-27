@@ -189,7 +189,7 @@
   // en camino de la época, el menú abre el garaje de su nación con ese tanque y el camión lo trae en el acto.
   { const _mm=mainMenu; let busy=false; mainMenu=function(){ const r=_mm.apply(this,arguments);
       try{ if(busy||!PROG||PROG.train||state!=='menu'||L.on) return r; sync();
-        const k=Object.keys(PROG.llegaPend||{}).find(k=>VEH[k]&&owned(k)&&llegaOk(k)&&(VEH[k].era||3)===curEra);
+        const k=Object.keys(PROG.llegaPend||{}).find(k=>VEH[k]&&owned(k)&&llegaOk(k));   // línea única: cualquier rango
         if(k&&!(menuScreen==='hangar'&&hgSel===k)&&(menuScreen==='hangar'||document.body.classList.contains('home'))){
           busy=true; chosenNation=VEH[k].nation; hgSel=k; menuScreen='hangar'; try{ _mm.call(this); }finally{ busy=false; } } }catch(e){ console.warn('camión',e); }
       return r; }; }

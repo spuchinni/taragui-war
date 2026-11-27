@@ -74,8 +74,8 @@ function hostLobby(){
 }
 const sideOf=conn=>net.mode==='vs'?(conn.side?1:0):0;
 function remoteCrew(conn){ const nat=conn.nation||allyNation, c=newCrew(conn.name,sideOf(conn),nat,false); c.lineup=conn.garage&&conn.garage.length?conn.garage.slice():NATIONS[nat].lineup.slice();
-  // el invitado juega en la época de la partida: si su garaje es de otra, sale con los primeros tanques de esa época
-  { const e=W.era||5; c.lineup=c.lineup.filter(k=>eraOf(k)===e); if(!c.lineup.length){ const n2=eraNations(e).includes(nat)?nat:(sideOf(conn)===0?allyNation:foeNation); c.nation=n2; c.lineup=vehTreeE(n2,e).slice(0,2); } }
+  // línea única: el invitado sale con su garaje (de cualquier rango); solo si viene vacío, con los primeros de la época de la partida
+  { const e=W.era||5; c.lineup=c.lineup.filter(k=>VEH[k]); if(!c.lineup.length){ const n2=eraNations(e).includes(nat)?nat:(sideOf(conn)===0?allyNation:foeNation); c.nation=n2; c.lineup=vehTreeE(n2,e).slice(0,2); } }
   c.peer=conn.peer; c.wasHuman=true; c.lvs=conn.lvs||{}; c.cams=conn.cams||{}; conn.crew=c; return c; }
 const battleOn=()=>['brief','play','deploy','spectate','end','paused'].includes(state)&&crews.length&&!tut;
 function hostData(conn,d){
@@ -236,7 +236,7 @@ function guestStart(m){
   net.swap=m.side?1:0; net.startMsg=m;
   curEra=WORLDS[m.map].era||5; applyEraNations(curEra); tut=null; curSpecial=null; spectating=false; allyNation=sw?m.foe:m.ally; foeNation=sw?m.ally:m.foe; builtKey=m.map; battleBR=+m.br||1; allyMixed=false; summary._done=false; menuScreen='home';
   netInf.clear(); withSeed(m.seed,()=>{ clearBattle(); assignSpawns(m.ally); if(sw){ const a=W.sp[0]; W.sp[0]=W.sp[1]; W.sp[1]=a; if(W.infSp){ const b=W.infSp[0]; W.infSp[0]=W.infSp[1]; W.infSp[1]=b; } } }); applyWeather(m.wx||'dia'); $('feed').innerHTML=''; netTanks.clear();
-  const gn=eraNations(curEra).includes(chosenNation)?chosenNation:allyNation;
+  const gn=garageOf(chosenNation).length||eraNations(curEra).includes(chosenNation)?chosenNation:allyNation;
   playerCrew=newCrew(net.name,0,gn,true); if(!playerCrew.lineup.length) playerCrew.lineup=vehTreeE(gn,curEra).slice(0,2); crews=[playerCrew]; now=0; noises.length=0; updateHud();
   initAudio(); openBriefing(false);
 }
