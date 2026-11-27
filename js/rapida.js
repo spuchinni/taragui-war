@@ -141,6 +141,8 @@
 
   // ---- 4) naciones nuevas por victorias (pedido de Sebastián): después del entrenamiento, con 2 victorias se abre la
   // Argentina (el Nahuel) y después cada 5 victorias otra nación, que elige el jugador entre las que faltan. ----
+  // YA NO SE USA (27/11/2026, línea única: todas las naciones abiertas desde el fin del entrenamiento): PROG.lockN nunca se pone y
+  // loadProg borra el de los progresos viejos, así que checkNations no hace nada. Queda por si se quiere volver.
   const AR_WINS=2, EVERY=5;
   const winsT=()=>Math.max(0,((PROG.stats&&PROG.stats.wins)||0)-(PROG.winBase||0));
   const allowedN=w=>1+(w>=AR_WINS?1+Math.floor((w-AR_WINS)/EVERY):0);

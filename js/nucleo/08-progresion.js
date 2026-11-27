@@ -69,9 +69,16 @@ function loadProg(){ try{ PROG=JSON.parse(localStorage.getItem(PROG_KEY)||'null'
   // reciben uno solo al terminar el entrenamiento; PROG.openN = naciones abiertas). Lo que ya tenías de otras épocas queda.
   // Solo se regalan los tanques de reserva (26/11/2026, pedido de Sebastián): las naciones con requisito (brasil.js) dejan su primer tanque
   // investigado pero hay que comprarlo.
-  if(!PROG.train) for(const n in NATIONS){ if(NATIONS[n].special||(PROG.openN&&!PROG.openN.includes(n))||(NATIONS[n].abre&&!(PROG.reqN||[]).includes(n))) continue; const T=vehTreeE(n,RANK_ENTRY); if(!T.length) continue;
-    PROG.unlocked[T[0]]=1; if(NATIONS[n].abre) continue; PROG.owned[T[0]]=1; const G=garRef(n); if(!G.length) G.push(T[0]); }
+  // Desde la línea única ya no hay naciones que se abren por victorias (27/11/2026, pedido de Sebastián): se borra el candado viejo
+  // (PROG.lockN/openN de rapida.js) y todas las naciones sin requisito quedan abiertas con su tanque de reserva.
+  if(PROG.lockN||PROG.openN){ delete PROG.lockN; delete PROG.openN; }
+  giveReserves(); 
   syncEraOpen(); curEra=PROG.era&&PROG.eraOpen[PROG.era]?PROG.era:3; }
+// Tanque de reserva de cada nación (el primero de su puerta de entrada), investigado y comprado; las naciones con requisito dejan el suyo
+// investigado pero hay que comprarlo. Se llama al cargar el progreso y al terminar el entrenamiento.
+function giveReserves(){ if(!PROG||PROG.train) return;
+  for(const n in NATIONS){ if(NATIONS[n].special||(NATIONS[n].abre&&!(PROG.reqN||[]).includes(n))) continue; const T=vehTreeE(n,RANK_ENTRY); if(!T.length) continue;
+    PROG.unlocked[T[0]]=1; if(NATIONS[n].abre) continue; PROG.owned[T[0]]=1; const G=garRef(n); if(!G.length) G.push(T[0]); } }
 // Época en la que se juega con una nación: la del tanque de BR más alto del garaje (pone el mapa, las reglas y la sala)
 function lineEra(n){ const G=PROG&&n?garageOf(n):[]; if(!G.length) return RANK_ENTRY; const k=G.reduce((a,b)=>VEH[b].br>VEH[a].br?b:a); return eraOf(k); }
 function syncLineEra(n){ const e=lineEra(n); if(eraReady(e)&&e!==curEra){ curEra=e; applyEraNations(e); } return curEra; }
