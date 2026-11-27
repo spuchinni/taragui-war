@@ -3,7 +3,7 @@
   "costanera":   {"nombre":"Costanera de Corrientes","lat":-27.4690,"lon":-58.8470,"hx":750,"hz":750,"pisos":[1,2,2,3,4]},
   "rotonda":     {"nombre":"Ruta 12 y Av. Independencia","lat":-27.4890,"lon":-58.7815,"hx":750,"hz":750,"pisos":[1,1,1,2]},
   "carrefour":   {"nombre":"Av. Independencia (Carrefour)","lat":-27.4780,"lon":-58.8113,"hx":750,"hz":750,"pisos":[1,1,2,2,3]},
-  "aeropuerto":  {"nombre":"Ruta 12, aeropuerto","lat":-27.4450,"lon":-58.7536,"hx":800,"hz":750,"pisos":[1,1,1,2]},
+  "aeropuerto":  {"nombre":"Ruta 12, aeropuerto","lat":-27.4446,"lon":-58.7482,"hx":2000,"hz":1150,"pisos":[1,1,1,2]},
   "lagunabrava": {"nombre":"Laguna Brava","lat":-27.4905,"lon":-58.7150,"hx":750,"hz":750,"pisos":[1,1,1,2]},
   "pasopatria":  {"nombre":"Paso de la Patria","lat":-27.3187,"lon":-58.5720,"hx":750,"hz":750,"pisos":[1,1,1,2]},
   "itati":       {"nombre":"Itatí","lat":-27.2723,"lon":-58.2440,"hx":750,"hz":750,"pisos":[1,1,1,2]},

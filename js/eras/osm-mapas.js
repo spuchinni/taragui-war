@@ -63,13 +63,14 @@ const OSM_CFG={
     zones:[{id:'A',x:350,z:100,r:24,label:'Carrefour'},{id:'B',x:0,z:-30,r:22,label:'Av. Independencia'},{id:'C',x:-576,z:-413,r:22,label:'Monte de los Olivos'}],
     spawns:{0:[{label:'Base sur, Villa Chiquita',x:0,z:-690},{label:'Base sudoeste, Santa Teresita',x:350,z:-690}],
             1:[{label:'Base norte, Comisaría 5.ª',x:150,z:690},{label:'Base noreste, Shopping',x:-300,z:690}]}},
-  aeropuerto:{label:'Ruta 12, aeropuerto',desc:'El Aeropuerto Piragine Niveyro con su pista, el Corsódromo Nolo Alías, la Ruta 12 y el cruce de La Reina. Mucho campo abierto: combate a larga distancia.',
-    bx:800,sky:0xbcc6c8,fog:[300,900],urban:1,ground:'#7f8a4c',pisos:[1,1,1,2],fill:{p:.85,row2:.5,fr:[7,13],dp:[9,15],gap:[1,4]},pitch:.15,rural:.15,
+  // 27/11/2026, pedido de Sebastián: agrandado hacia el este por la Ruta 12 hasta el depósito de ADA (4 × 2,3 km; centro corrido 534 m al este y 44 m al norte)
+  aeropuerto:{label:'Ruta 12, aeropuerto',desc:'El Aeropuerto Piragine Niveyro con su pista, el Corsódromo Nolo Alías y la Ruta 12 hasta el galpón de ADA Logística y el Golf Club. Mucho campo abierto: combate a larga distancia.',
+    bx:2000,bz:1150,sky:0xbcc6c8,fog:[350,1300],urban:1,ground:'#7f8a4c',pisos:[1,1,1,2],fill:{p:.85,row2:.5,fr:[7,13],dp:[9,15],gap:[1,4]},pitch:.15,rural:.15,
     sp:{calle:['lapacho','timbo','ceibo','pindo'],parque:['lapacho','jacaranda','pindo','timbo'],bosque:['timbo','algarrobo','espinillo'],monte:['espinillo','algarrobo']},calleArb:.2,
-    hitos:o=>osmAeropuerto(o,{x:487,z:-447}),   // super-aero.js
-    zones:[{id:'A',x:491,z:-481,r:24,label:'Terminal del aeropuerto'},{id:'B',x:-200,z:-120,r:26,label:'Corsódromo'},{id:'C',x:-600,z:-330,r:24,label:'Cruce de La Reina'}],
-    spawns:{0:[{label:'Base oeste, pista',x:720,z:0},{label:'Base sudoeste, cabecera de pista',x:650,z:-650}],
-            1:[{label:'Base este, Ruta 12',x:-720,z:100},{label:'Base sudeste, barrio',x:-650,z:-650}]}},
+    hitos:o=>{ osmAeropuerto(o,{x:1021,z:-491}); osmADA(o); },   // super-aero.js, ada.js
+    zones:[{id:'A',x:1025,z:-525,r:24,label:'Terminal del aeropuerto'},{id:'B',x:334,z:-164,r:26,label:'Corsódromo'},{id:'C',x:-509,z:23,r:24,label:'Depósito de ADA'}],
+    spawns:{0:[{label:'Base oeste, pista',x:1800,z:300},{label:'Base sudoeste, cabecera de pista',x:1700,z:-800}],
+            1:[{label:'Base noreste, Ruta 12',x:-1500,z:1000},{label:'Base sudeste, Golf Club',x:-1700,z:-900}]}},
   lagunabrava:{label:'Laguna Brava',desc:'El pueblo de Laguna Brava, en las afueras de Corrientes, con la laguna al norte, la Ruta 12, la plaza 6 de Mayo y las quintas alrededor. La costa tiene juncos y se puede vadear.',
     sky:0xbcc8c4,fog:[300,900],urban:1,ground:'#7d8a4c',pisos:[1,1,1,2],fill:{p:.8,row2:.45,fr:[7,12],dp:[9,14],gap:[1,6]},pitch:.25,rural:.12,shoreSand:6,depth:3.5,waterCol:[78,98,84],waterHex:0x4a5e52,
     sp:{calle:['lapacho','timbo','ceibo','pindo','espinillo'],parque:['lapacho','jacaranda','pindo','timbo'],bosque:['timbo','algarrobo','espinillo'],monte:['espinillo','algarrobo']},calleArb:.25,

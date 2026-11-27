@@ -197,6 +197,7 @@
           busy=true; chosenNation=VEH[k].nation; hgSel=k; menuScreen='hangar'; try{ _mm.call(this); }finally{ busy=false; } } }catch(e){ console.warn('camión',e); }
       return r; }; }
   { const _sb=startBattle; startBattle=function(){ try{ if(L.on) finish(true); }catch(e){} return _sb.apply(this,arguments); }; }   // si arranca una batalla, el camión se saltea (no queda el cartel)
+  window.adaTex=adaTex;                                                                                              // lo usa ada.js (galpón de ADA en el mapa del aeropuerto)
   window.camionRig=buildRig;                                                                                         // para mirar el camión desde la consola
   window.llegaCamion=k=>{ if(hg&&hg.obj) start(hg.obj,k||hgSel); };                                                 // para probar desde la consola
 })();
