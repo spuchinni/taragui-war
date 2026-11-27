@@ -256,12 +256,61 @@
       wheels(b,[[-1.35,-.82],[1.35,-.82],[-1.35,.82],[1.35,.82]],.34,.24);
       driver(b,.05,.72,-.38,0x1b2a44,0x1a1a1c);
       for(const sd of [-1,1]){ const m=new THREE.Mesh(new THREE.PlaneGeometry(4.45,.62),plotM); m.position.set(0,.68,sd*.868); if(sd<0) m.rotation.y=Math.PI; g.add(m); } });
-    const fork=mover((b,g)=>{ b.box(1.7,.75,1.1,0,.75,0,yel); b.box(.6,.95,1.1,-.75,1.1,0,yel); b.box(.5,.08,.5,-.2,1.2,0,blk);
-      for(const [x,z] of [[.55,-.5],[.55,.5],[-.6,-.5],[-.6,.5]]) b.box(.06,1.15,.06,x,1.7,z,blk); b.box(1.25,.06,1.1,0,2.28,0,blk);
-      for(const z of [-.32,.32]) b.box(.1,2.4,.1,.95,1.3,z,blk);
-      wheels(b,[[.6,-.5],[.6,.5],[-.6,-.5],[-.6,.5]],.3,.22);
-      driver(b,-.25,1.25,0,0x1b2a44,0x151515);
-      const fk=new THREE.Group(), fb=Bag(); fb.box(.05,.55,.95,1.03,.45,0,steel); for(const z of [-.3,.3]) fb.box(1.1,.05,.12,1.6,.2,z,steel); fb.meshes(fk); g.add(fk); g.userData.fk=fk; });
+    // autoelevador: copia del "Forklift low poly" de Ricardo Sanchez (Sketchfab, CC BY), hecho por código. Medidas de uno de 2,5 t (tipo Toyota 8FD):
+    // cuerpo amarillo con contrapeso redondeado atrás, techo protector de caño gris oscuro con listones y baliza, mástil de dos canales con cilindros, cadenas,
+    // carro con respaldo de reja y uñas largas; ruedas de adelante grandes con llanta, asiento negro, volante inclinado, escalón y faros. Adelante = +x.
+    const fork=mover((b,g)=>{ const FY=mat('adaForkY',0xd6a41c), FG=mat('adaForkG',0x303337), FD=mat('adaForkD',0x1a1b1d), rim=mat('adaForkRim',0x585c61),
+        amb=mat('adaForkAmb',0xff8a1a), lamp=mat('adaFaro',0xf2f0e0), red=mat('adaFaroR',0x9a1a14);
+      const tube=(x0,y0,z0,x1,y1,z1,r,m)=>{ const a=new THREE.Vector3(x0,y0,z0), c=new THREE.Vector3(x1,y1,z1), d=c.clone().sub(a), L=d.length();
+        const geo=new THREE.BoxGeometry(r,L,r); geo.applyMatrix4(new THREE.Matrix4().makeRotationFromQuaternion(new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0,1,0),d.normalize()))); geo.translate((x0+x1)/2,(y0+y1)/2,(z0+z1)/2); b.add(geo,m); };
+      // chasis y cuerpo
+      b.box(2.05,.32,.98,-.15,.4,0,FD);                                   // bastidor bajo
+      b.box(1.25,.55,1.1,.05,.78,0,FY);                                   // costados del cuerpo
+      b.box(.95,.1,1.0,-.05,1.08,0,FG);                                   // capot gris del motor
+      b.box(.22,.42,1.06,.6,1.0,0,FY); b.box(.24,.08,1.08,.6,1.24,0,FG);  // tablero (frente del puesto) con tapa
+      for(const sd of [-1,1]){ b.box(.42,.06,.2,.35,.42,sd*.6,FG); b.box(.6,.05,.08,-.1,.86,sd*.56,FD); }   // escalón y moldura
+      // contrapeso: caja + media luna atrás, con zócalo oscuro y luces
+      b.box(.45,.72,1.12,-.75,.82,0,FY);
+      { const cg=new THREE.CylinderGeometry(.56,.56,.72,20,1,false,Math.PI,Math.PI); cg.scale(.62,1,1); cg.translate(-.97,.82,0); b.add(cg,FY); }
+      { const cg=new THREE.CylinderGeometry(.57,.57,.14,20,1,false,Math.PI,Math.PI); cg.scale(.64,1,1); cg.translate(-.98,.43,0); b.add(cg,FD); }
+      b.box(.46,.14,1.13,-.75,.43,0,FD); b.box(.5,.05,1.14,-.78,1.2,0,FY);
+      for(const sd of [-1,1]){ b.box(.08,.1,.14,-1.25,1.0,sd*.3,red); b.box(.08,.08,.1,-1.25,.86,sd*.3,amb); }
+      // ruedas: adelante grandes con llanta y buje, atrás chicas
+      for(const sd of [-1,1]){ b.cyl(.33,.33,.26,.6,.33,sd*.49,rubber,16,Math.PI/2); b.cyl(.2,.2,.27,.6,.33,sd*.49,rim,12,Math.PI/2); b.cyl(.08,.08,.3,.6,.33,sd*.49,FD,8,Math.PI/2);
+        b.cyl(.27,.27,.2,-.95,.27,sd*.44,rubber,14,Math.PI/2); b.cyl(.15,.15,.21,-.95,.27,sd*.44,rim,10,Math.PI/2);
+        b.box(.75,.06,.3,.6,.7,sd*.49,FD); }                            // guardabarros de adelante
+      // puesto: asiento, volante, palancas
+      b.box(.46,.12,.48,-.3,1.18,0,FD); b.box(.1,.5,.48,-.52,1.45,0,FD); b.box(.06,.08,.5,-.3,1.27,0,FD);
+      tube(.5,1.25,0,.3,1.6,0,.07,FD);
+      { const tg=new THREE.TorusGeometry(.16,.022,6,16); tg.rotateY(Math.PI/2); tg.rotateZ(-.55); tg.translate(.28,1.63,0); b.add(tg,FD); }
+      for(const z of [.18,.26,.34]) tube(.6,1.25,z,.5,1.55,z,.025,FD);
+      for(const z of [.18,.26,.34]) b.cyl(.03,.03,.05,.5,1.57,z,red,6);
+      driver(b,-.28,1.24,0,0x1b2a44,0x151515);
+      // techo protector: patas de adelante inclinadas, de atrás rectas, marco con listones y baliza
+      const TY=2.12;
+      for(const sd of [-1,1]){ tube(.62,1.2,sd*.5,.7,TY,sd*.52,.08,FG); tube(-.72,1.22,sd*.5,-.72,TY,sd*.52,.08,FG); }
+      for(const sd of [-1,1]) b.box(1.55,.07,.07,-.01,TY,sd*.52,FG);
+      for(const x of [-.72,.72]) b.box(.07,.07,1.1,x,TY,0,FG);
+      for(let k=0;k<6;k++) b.box(.04,.04,1.0,-.55+k*.22,TY+.03,0,FG);
+      b.box(.2,.15,.16,.72,TY-.14,.5,FD); b.box(.02,.1,.1,.83,TY-.14,.5,lamp);       // faro de trabajo
+      b.cyl(.06,.07,.12,-.72,TY+.1,-.48,amb,10);                                      // baliza
+      b.box(.02,.08,.12,.66,1.32,-.53,lamp); b.box(.02,.08,.12,.66,1.32,.53,lamp);
+      // mástil: dos canales de afuera + dos de adentro, travesaños, cilindros de inclinación y de elevación
+      const MX=1.0, MH=2.12;
+      for(const sd of [-1,1]){ b.box(.1,MH,.13,MX,.12+MH/2,sd*.36,FG); b.box(.08,MH+.06,.09,MX+.07,.15+MH/2,sd*.25,FG);
+        tube(.55,.82,sd*.45,MX-.06,1.05,sd*.42,.08,rim);                            // cilindro de inclinación
+        b.cyl(.045,.045,1.6,MX-.12,.95,sd*.2,rim,8); b.cyl(.03,.03,.5,MX-.12,1.95,sd*.2,steel,6); }
+      for(const y of [.22,1.15,MH+.1]) b.box(.1,.1,.82,MX,y,0,FG);
+      b.box(.1,.08,.6,MX+.07,MH+.14,0,FG);
+      // carro con respaldo de reja y uñas (sube con fk)
+      const fk=new THREE.Group(), fb=Bag(); const CX=MX+.17;
+      fb.box(.07,.12,1.06,CX,.22,0,FG); fb.box(.07,.12,1.06,CX,.6,0,FG); for(const z of [-.5,.5]) fb.box(.07,.5,.06,CX,.41,z,FG);
+      fb.box(.05,.05,1.08,CX,1.25,0,FG); for(let k=0;k<7;k++){ const z=-.48+k*.16; fb.box(.04,.6,.04,CX,.95,z,FG); }
+      fb.box(.05,.04,1.06,CX,.95,0,FG); for(const z of [-.52,.52]) fb.box(.06,.68,.06,CX,.95,z,FG);
+      for(const z of [-.3,.3]){ fb.box(.05,.52,.12,CX+.06,.38,z,FD); fb.box(1.1,.05,.12,CX+.6,.14,z,FD);
+        { const tg=new THREE.BoxGeometry(.12,.045,.12); tg.rotateZ(.25); tg.translate(CX+1.14,.13,z); fb.add(tg,FD); } }
+      for(const sd of [-1,1]) for(let y=.3;y<2.1;y+=.12) b.box(.03,.05,.04,MX+.02,y,sd*.12,FD);   // cadenas
+      fb.meshes(fk); g.add(fk); g.userData.fk=fk; });
     const AN={G,gl,car:{g:strada,park:[W/2+3.2,13.5,Math.PI],st:'idle',wait:25+Math.random()*30,i:0,
       path:[[W/2+9.5,13.5,1],[W/2+9.5,fz+8],[W/2-2,fz+16],[-22,fz+16],[-27,fz+24],[-10,fz+27.5],[20,fz+26],[W/2+9.5,fz+12],[W/2+9.5,13.5],[W/2+3.2,13.5]],sp:4.5},
       fork:{g:fork,park:[doorX-2.5,fz+1.6,Math.PI/2],st:'idle',wait:3,i:0,path:[[doorX-2.5,fz+4.5],[doorX+5.5,fz+5],[doorX+7.6,fz+4.6],[doorX+3,fz+5.2,1],[doorX-2.5,fz+4.5],[doorX-2.5,fz+1.6,1]],sp:2},
