@@ -59,7 +59,7 @@
   function rollPool(day,any){ const L=POOL.filter(p=>any||!p.ok||p.ok()), tot=L.reduce((a,p)=>a+p.w,0); let x=Math.random()*tot;
     for(const p of L){ x-=p.w; if(x<=0) return {...p.make(day),rar:p.rar}; } return {...L[0].make(day),rar:L[0].rar}; }
   // lo que muestra cada tarjeta de la ruleta
-  function cardOf(r,c){ if(r.tank){ const S=specialOf(c); return {i:'🎁',t:T2('Tanque especial','Special tank'),s:S?T2(S.es,S.en):''}; }
+  function cardOf(r,c){ if(r.tank){ const S=specialOf(c); return {i:(window.cajaRegaloImg?cajaRegaloImg(72):'🎁'),t:T2('Tanque especial','Special tank'),s:S?T2(S.es,S.en):''}; }
     if(r.yp) return {i:'🐆',t:`${r.yp.toLocaleString('es-AR')} Yaguaretés`,s:`+${r.xp.toLocaleString('es-AR')} XP`};
     if(r.stk) return {i:'🏷️',t:T2('Calcomanía','Sticker'),s:T2('para tu tanque','for your tank')};
     if(r.acc) return {i:'🎒',t:T2('Accesorio','Accessory'),s:T2('para tu tanque','for your tank')};
@@ -72,7 +72,7 @@
     if(r.acc){ const k=pickNew(ACC,C.acc); if(k){ C.acc[k]=1; msg='🎒 '+T2(ACC[k].es,ACC[k].en)+' '+ACC[k].e; } else { PROG.yp+=800; msg='🐆 800'; } }
     if(r.camo){ PROG.camoOwn=PROG.camoOwn||{base:1}; const k=DAILY_CAMOS.find(x=>!PROG.camoOwn[x]); if(k){ PROG.camoOwn[k]=1; msg='🎨 '+T2('Camuflaje','Camo')+': '+CAMOS[k].n; } else { PROG.yp+=1000; msg='🐆 1.000'; } }
     if(r.boost){ C.boost[r.boost]=(C.boost[r.boost]||0)+(r.n||1); }
-    if(r.tank){ const S=specialOf(c); if(S){ msg='🎁 '+T2(S.es,S.en); const V=VEH[S.k]; PROG.unlocked[S.k]=1; PROG.owned[S.k]=1; const g=garRef(V.nation,eraOf(S.k)); const i=g.indexOf(S.k); if(i>=0) g.splice(i,1); g.unshift(S.k); if(g.length>3) g.length=3; } }
+    if(r.tank){ const S=specialOf(c); if(S){ msg=(window.cajaRegaloImg?cajaRegaloImg(30):'🎁')+' '+T2(S.es,S.en); const V=VEH[S.k]; PROG.unlocked[S.k]=1; PROG.owned[S.k]=1; const g=garRef(V.nation,eraOf(S.k)); const i=g.indexOf(S.k); if(i>=0) g.splice(i,1); g.unshift(S.k); if(g.length>3) g.length=3; } }
     return msg; }
   // se cobra ANTES de que gire la ruleta (cerrar a mitad de giro no da otro tiro)
   function claim(){ const R=racha(); if(!canClaim()) return null; if(broken()) R.n=0;
@@ -109,7 +109,7 @@
   const itemHTML=(r,c)=>{ const K=cardOf(r,c), R=RAR[r.rar||0]; return `<div class="it" style="--rc:${R.c}"><div class="i">${K.i}</div><div class="t">${K.t}</div><div class="s">${K.s}</div><div class="r">${T2(R.es,R.en)}</div></div>`; };
   function tick(){ try{ if(typeof AC==='undefined'||!AC||AC.state!=='running') return; const o=AC.createOscillator(), g=AC.createGain(); o.type='square'; o.frequency.value=1400;
     g.gain.setValueAtTime(.05,AC.currentTime); g.gain.exponentialRampToValueAtTime(.0001,AC.currentTime+.04); o.connect(g); g.connect(AC.destination); o.start(); o.stop(AC.currentTime+.05); }catch(e){} }
-  function dotsHTML(cur,done){ let h=''; for(let i=0;i<DAYS;i++){ const last=i===DAYS-1; h+=`<span class="dot${i<done?' ok':''}${i===cur?' now':''}${last?' tk':''}">${last?'🎁 14':i+1}</span>`; } return h; }
+  function dotsHTML(cur,done){ let h=''; for(let i=0;i<DAYS;i++){ const last=i===DAYS-1; h+=`<span class="dot${i<done?' ok':''}${i===cur?' now':''}${last?' tk':''}">${last?(window.cajaRegaloImg?cajaRegaloImg(18):'🎁')+' 14':i+1}</span>`; } return h; }
   function showDaily(){ if(!PROG) return; const R=racha(), can=canClaim(), brk=can&&broken(), cur=brk?0:R.n, c=R.ciclo||0, S=specialOf(c), done=can?cur:(R.n||DAYS);
     // tira de muestra: premios al azar para ver qué puede salir (el día 14 muestra el tanque)
     const sample=[]; for(let i=0;i<9;i++) sample.push(cur===DAYS-1&&can?{tank:1,rar:3}:rollPool(cur,true));
