@@ -20,17 +20,24 @@ function modState(k){ if(!PROG||!VEH[k]) return {d:[],c:null,x:0}; PROG.mods=PRO
   if(!S){ const lv=tankLv(k), d=[]; if(lv>=2) d.push('smk','am2'); if(lv>=3) d.push('rep','am3'); if(lv>=4) d.push('pen'); if(lv>=5) d.push('fcs');   // lo que ya tenía por su nivel viejo
     S=PROG.mods[k]={d:d.filter(id=>modsOf(k).some(m=>m.id===id)),c:null,x:0}; }
   if(S.c&&(S.d.includes(S.c)||!modsOf(k).some(m=>m.id===S.c))) S.c=null;
-  if(!S.c){ const n=modsOf(k).find(m=>!S.d.includes(m.id)); S.c=n?n.id:null; S.x=0; }
+  // automático (26/11/2026, pedido de Sebastián: "que me deje poner automático o elegir qué mejorar"): elige solo la próxima que falte;
+  // sin automático, al terminar una mejora la experiencia queda guardada (S.pool) hasta que elijas otra
+  if(!S.c&&S.auto!==false){ const n=modsOf(k).find(m=>!S.d.includes(m.id)); S.c=n?n.id:null; S.x=0; }
   return S; }
 const modHas=(k,id)=>{ if(window._modAll) return true; return modState(k).d.includes(id); };
 const modCode=k=>100+modsOf(k).reduce((a,m)=>a+(modHas(k,m.id)?m.bit:0),0);
 const modDone=k=>modState(k).d.length, modTotal=k=>modsOf(k).length;
-function modPick(k,id){ const S=modState(k); if(S.d.includes(id)||S.c===id) return; S.c=id; S.x=0; saveProg(); }   // cambiar de mejora reinicia lo puesto (como en War Thunder)
+function modPick(k,id){ const S=modState(k); if(S.d.includes(id)||S.c===id) return; S.c=id; S.x=0; saveProg(); modPool(k); }   // cambiar de mejora reinicia lo puesto (como en War Thunder)
+// usa la experiencia guardada en la mejora elegida
+function modPool(k){ const S=modState(k), p=S.pool|0; if(p>0&&S.c){ S.pool=0; modGain(k,p); } else saveProg(); }
+function modAuto(k,on){ const S=modState(k); S.auto=!!on; modState(k); modPool(k); }
+const modLeft=k=>modDone(k)<modTotal(k);
 // reparte experiencia del tanque en las mejoras: devuelve {done:[mejoras completadas], cur, f0, f1, have, cost}
 function modGain(k,xp){ const S=modState(k), L=modsOf(k), done=[]; let left=xp|0, f0=null, cur=null;
   while(left>0&&S.c){ const m=L.find(z=>z.id===S.c); if(!m){ S.c=null; break; } if(f0==null){ f0=S.x/m.xp; cur=m; }
     const need=m.xp-S.x, put=Math.min(need,left); S.x+=put; left-=put;
     if(S.x>=m.xp){ S.d.push(m.id); done.push(m); S.c=null; S.x=0; modState(k); } }
+  if(left>0&&!S.c&&S.d.length<L.length) S.pool=(S.pool|0)+left;   // sin automático y sin mejora elegida: queda guardada
   const m2=L.find(z=>z.id===S.c); saveProg();
   return {done,cur:m2||null,f0:f0==null?1:f0,f1:m2?S.x/m2.xp:1,have:S.x,cost:m2?m2.xp:0}; }
 
@@ -47,17 +54,32 @@ function modGain(k,xp){ const S=modState(k), L=modsOf(k), done=[]; let left=xp|0
 (()=>{ const EN=()=>window.LANG==='en', T2=(es,en)=>EN()?en:es, nm=m=>EN()?(m.she||m.en):(m.sh||m.n), ds=m=>EN()?m.de:m.d, fmt=n=>Math.round(n).toLocaleString(EN()?'en-US':'es-AR');
   function box(k){ const S=modState(k), L=modsOf(k), c=L.find(m=>m.id===S.c);
     return `<div class="lvl mods" data-notr><b>${T2('Mejoras','Upgrades')}</b> · ${S.d.length} / ${L.length}${c?` · ${T2('investigando','researching')} <b>${nm(c)}</b> ${Math.round(S.x/c.xp*100)} %<i class="pb"><i style="width:${Math.round(S.x/c.xp*100)}%"></i></i>`:` · ${T2('todas listas','all done')}`}
+      ${!c&&S.d.length<L.length?` · <b>${T2('elegí qué investigar','pick an upgrade')}</b>${S.pool?` (${fmt(S.pool)} XP ${T2('guardada','saved')})`:''}`:''}
       <button class="hgB" id="hgMods">${T2('Elegir qué investigar','Choose research')}</button></div>`; }
-  function modal(k){ const bx=$('hgModal'); if(!bx) return; const S=modState(k), L=modsOf(k), V=VEH[k];
+  // fuera del garaje (resumen de la batalla) se abre en una capa propia
+  function holder(){ let bx=$('hgModal'); if(bx&&bx.offsetParent!==null) return bx;
+    bx=$('mdFloat'); if(!bx){ bx=document.createElement('div'); bx.id='mdFloat'; document.body.appendChild(bx); } return bx; }
+  function modal(k){ const bx=holder(); const S=modState(k), L=modsOf(k), V=VEH[k], auto=S.auto!==false;
+    bx.classList.toggle('on',bx.id==='mdFloat');
     bx.innerHTML=`<div class="hgM mods" data-notr style="width:min(560px,94vw)"><h2>${T2('Mejoras','Upgrades')} · ${V.label}</h2>
-      <p class="s">${T2('La experiencia que gana este tanque en batalla va a la mejora elegida. Al terminarla sigue sola con la próxima. Cambiar de mejora reinicia lo puesto en ella.','The XP this tank earns goes to the chosen upgrade. When done it moves on to the next one. Switching resets its progress.')}</p>
+      <p class="s">${T2('La experiencia que gana este tanque en batalla va a la mejora elegida. Cambiar de mejora reinicia lo puesto en ella.','The XP this tank earns goes to the chosen upgrade. Switching resets its progress.')}</p>
+      <label class="mdAuto"><input type="checkbox" id="mdAuto" ${auto?'checked':''}> <b>${T2('Automático','Automatic')}</b> · <small>${auto?T2('al terminar una mejora sigue sola con la próxima','when one is done it moves on to the next'):T2('al terminar una mejora, la experiencia se guarda hasta que elijas otra','when one is done, XP is saved until you pick another')}</small></label>
+      ${S.pool?`<p class="s"><b>${fmt(S.pool)} XP ${T2('guardada','saved')}</b>: ${T2('tocá una mejora para usarla','tap an upgrade to use it')}</p>`:''}
       <ul>${L.map(m=>{ const ok=S.d.includes(m.id), cur=S.c===m.id, f=cur?S.x/m.xp:0;
         return `<li class="${ok?'ok':''}${cur?' cur':''}" data-mod="${m.id}"><b>${ok?'✓':cur?'⚙':'○'} ${EN()?m.en:m.n}</b><small>${ds(m)}</small>
           <span class="mx">${ok?T2('Lista','Done'):cur?`${fmt(S.x)} / ${fmt(m.xp)} XP`:`${fmt(m.xp)} XP · ${T2('investigar','research')}`}</span>${cur?`<i class="pb"><i style="width:${Math.round(f*100)}%"></i></i>`:''}</li>`; }).join('')}</ul>
       <div style="text-align:center;margin-top:10px"><button class="go" id="mdOk">${T2('Listo','Done')}</button></div></div>`;
     bx.querySelectorAll('li[data-mod]').forEach(li=>li.onclick=()=>{ if(li.classList.contains('ok')) return; modPick(k,li.dataset.mod); modal(k); });
-    $('mdOk').onclick=()=>{ bx.innerHTML=''; renderHangar(); }; }
+    $('mdAuto').onchange=e=>{ modAuto(k,e.target.checked); modal(k); };
+    $('mdOk').onclick=()=>{ bx.innerHTML=''; bx.classList.remove('on'); if(bx.id==='mdFloat'){ if(window.modsSummaryRefresh) modsSummaryRefresh(k); } else renderHangar(); }; }
   window.modsModal=modal;
+  // resumen de la batalla: "Elegir mejora" en cada tanque usado (también en el entrenamiento, que no pasa por el garaje)
+  window.modsSummaryRefresh=k=>{ const row=document.querySelector(`.wrow[data-mk="${k}"]`); if(!row) return; const S=modState(k), L=modsOf(k), c=L.find(m=>m.id===S.c);
+    const t=row.querySelector('.wmtx'); if(t) t.textContent=c?`${T2('Investigando','Researching')} ${nm(c).toLowerCase()}: ${fmt(S.x)} / ${fmt(c.xp)} XP`:S.d.length<L.length?T2('Elegí qué mejorar: la experiencia queda guardada','Pick an upgrade: XP is saved'):T2('Todas las mejoras listas','All upgrades done');
+    const lv=row.querySelector('.wlv'); if(lv) lv.textContent=`${modDone(k)}/${modTotal(k)}`; };
+  { const _s=summary; summary=function(){ const r=_s.apply(this,arguments);
+      try{ document.querySelectorAll('.wmod[data-mk]').forEach(b=>b.onclick=e=>{ e.stopPropagation(); modal(b.dataset.mk); }); }catch(e){ console.warn('mejoras',e); }
+      return r; }; }
   const _rh=renderHangar; renderHangar=function(){ const r=_rh.apply(this,arguments);
     try{ const el=document.querySelector('#panel .lvl'); if(el&&hgSel&&owned(hgSel)){ el.outerHTML=box(hgSel); const k=hgSel; $('hgMods').onclick=()=>modal(k); }
       document.querySelectorAll('#panel .hgc[data-k]').forEach(b=>{ const k=b.dataset.k, s=b.querySelector('small'); if(s&&owned(k)) s.innerHTML=s.innerHTML.replace(/Nv \d/,`${modDone(k)}/${modTotal(k)} ${T2('mejoras','upgrades')}`); }); }catch(e){ console.warn('mejoras',e); }
@@ -65,5 +87,9 @@ function modGain(k,xp){ const S=modState(k), L=modsOf(k), done=[]; let left=xp|0
   const st=document.createElement('style'); st.textContent=`.lvl.mods .pb{display:block;margin:3px 0}.lvl.mods #hgMods{margin-top:4px}
     .hgM.mods ul{list-style:none;padding:0;margin:8px 0;text-align:left}.hgM.mods li{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 10px;padding:7px 10px;margin:5px 0;border:1px solid rgba(232,217,160,.22);border-radius:4px;cursor:pointer}
     .hgM.mods li:hover{background:rgba(232,217,160,.1)}.hgM.mods li b{flex:1 1 60%}.hgM.mods li small{flex:1 1 100%;opacity:.75;order:3}.hgM.mods li .mx{font-size:13px;opacity:.85}
+    #mdFloat{display:none}#mdFloat.on{display:flex;position:fixed;inset:0;z-index:60;background:rgba(0,0,0,.6);align-items:center;justify-content:center}
+    #mdFloat .hgM{background:#1d1c16;border:1px solid rgba(232,217,160,.35);border-radius:6px;padding:14px 18px;color:#e8d9a0;max-height:90vh;overflow:auto}
+    .mdAuto{display:block;margin:6px 0;cursor:pointer}.mdAuto input{vertical-align:middle}
+    .wmod{margin-left:6px;font-size:12px;padding:1px 8px;cursor:pointer}
     .hgM.mods li.ok{cursor:default;color:#b8d890}.hgM.mods li.cur{background:rgba(232,217,160,.16);border-color:rgba(232,217,160,.6)}.hgM.mods li .pb{flex:1 1 100%;order:4;display:block}`; document.head.appendChild(st);
 })();

@@ -334,8 +334,8 @@ function summary(winner){
     for(const k of used){ const xp=Math.round(rp/used.length); addTankXP(k,xp); const G=modGain(k,xp);
       const nw=G.done.map(m=>`<span class="wup" title="${esc(m.d)}">🔓 ${esc(m.n)}</span>`).join('');
       if(G.done.length&&window.tallerQ) tallerQ.push({kind:'up',k,txt:G.done.map(m=>m.n).join(' · ')});   // escena del taller al volver al garaje (taller.js)
-      tks+=`<div class="wrow">${miniHTML(k)}<div class="wtx"><b>${VEH[k].label}</b> <span class="wlv">${modDone(k)}/${modTotal(k)}</span> <small>+${fmt(xp)} XP</small>${bar(G.f0,G.done.length?1:G.f1,G.done.length?'full':'')}
-        <small>${!G.cur?(G.done.length?'¡Mejora lista! Ya tiene todas':'Todas las mejoras listas'):G.done.length?'¡Mejora lista! Ahora investiga: '+G.cur.n.toLowerCase():'Investigando '+G.cur.n.toLowerCase()+': '+fmt(G.have)+' / '+fmt(G.cost)+' XP'}</small>${nw?`<div class="wups">${nw}</div>`:''}</div></div>`; }
+      tks+=`<div class="wrow" data-mk="${k}">${miniHTML(k)}<div class="wtx"><b>${VEH[k].label}</b> <span class="wlv">${modDone(k)}/${modTotal(k)}</span> <small>+${fmt(xp)} XP</small>${modLeft(k)?`<button class="hgB wmod" data-mk="${k}">Elegir mejora</button>`:''}${bar(G.f0,G.done.length?1:G.f1,G.done.length?'full':'')}
+        <small class="wmtx">${!G.cur&&modLeft(k)?(G.done.length?'¡Mejora lista! ':'')+'Elegí qué mejorar: la experiencia queda guardada':!G.cur?(G.done.length?'¡Mejora lista! Ya tiene todas':'Todas las mejoras listas'):G.done.length?'¡Mejora lista! Ahora investiga: '+G.cur.n.toLowerCase():'Investigando '+G.cur.n.toLowerCase()+': '+fmt(G.have)+' / '+fmt(G.cost)+' XP'}</small>${nw?`<div class="wups">${nw}</div>`:''}</div></div>`; }
     let ach='';
     if(r1>r0) ach+=`<span class="wach">🎖 Ascendiste a ${RANKS[r1][1]}</span>`;
     ach+=dn.map(c=>`<span class="wach">✔ ${chText(c)} · +1 medalla</span>`).join('');
