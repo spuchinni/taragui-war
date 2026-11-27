@@ -393,6 +393,16 @@
   { const st4=document.createElement('style'); st4.textContent=`body.lkScope #tch .tScope,body.lkScope #tch .tZoom,body.lkAmmo #tch .tMg,body.lkAmmo #ammoSlots{display:none!important}`; document.head.appendChild(st4); }
   // ---- premio de la 1ª batalla: 1.000 Yaguaretés (un tanque cuesta ~10.000); la caja sale al terminar la 3ª ----
   { const _br=battleReward; battleReward=function(){ const r=_br.apply(this,arguments); if(B&&B.first&&!tut) r.yp=Math.min(r.yp,1000); return r; }; }
+  // ---- las misiones 1 y 2 del entrenamiento no suman nada: se empieza a contar en la última (26/11/2026, pedido de Sebastián: "acabo de jugar
+  // la segunda misión del entrenamiento y ya tengo todo lo que gané; que empiece a contar a partir del último capítulo del entrenamiento").
+  // Sin PI (ni investigación ni experiencia del tanque, que sale de los PI), sin Yaguaretés y sin experiencia de jugador.
+  const noCuenta=()=>!!(PROG&&PROG.train&&!tut&&!curSpecial&&battles()<2);
+  { const _br=battleReward; battleReward=function(){ const r=_br.apply(this,arguments); if(r&&noCuenta()){ r.rp=0; r.yp=0; } return r; }; }
+  { const _s=summary; summary=function(){ const nc=!summary._done&&noCuenta(), px=PROG&&PROG.pxp; const r=_s.apply(this,arguments);
+      if(nc&&PROG){ PROG.pxp=px; saveProg();
+        try{ document.querySelectorAll('.wchip.xp').forEach(e=>e.innerHTML='+0 <small>XP</small>');
+          const c=document.querySelector('.wchip.rp'); if(c&&!document.getElementById('trNoCuenta')) c.parentElement.insertAdjacentHTML('beforeend','<span class="wchip" id="trNoCuenta">Entrenamiento: lo ganado empieza a contar en la última misión</span>'); }catch(e){} }
+      return r; }; }
   const gift=document.createElement('div'); gift.id='pGift'; gift.setAttribute('data-notr',''); document.body.appendChild(gift);
   window.giftBoxVer=k=>giftBox(k||'m4a1');                                                                         // para mirar la caja desde la consola (regala el tanque)
   function giftBox(k){ const V=VEH[k]; if(!V) return; const E=EN();
