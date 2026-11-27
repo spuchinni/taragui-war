@@ -102,7 +102,7 @@ function renderHangar(){
   // la ficha arranca debajo de la barra de épocas y naciones (con muchas naciones esa barra ocupa dos renglones)
   // la ficha va debajo de las naciones (con zoom, en el celular, las medidas vienen achicadas)
   { const ht=document.querySelector('.hg .hgTop'), hi=document.querySelector('.hgInfo'); if(ht&&hi){ const zm=parseFloat(getComputedStyle($('overlay')).zoom)||1, y=Math.round(ht.getBoundingClientRect().bottom/zm+8); hi.style.top=y+'px'; hi.style.maxHeight=`calc(100% - ${y+214}px)`; } }
-  $('hgBack').onclick=()=>{ menuScreen='home'; mainMenu(); };
+  $('hgBack').onclick=()=>{ menuScreen='home'; window.irInicio=1; try{ mainMenu(); }finally{ window.irInicio=0; } };   // el ⌂ va siempre a la portada (el camión no lo devuelve al garaje)
   $('hgTree').onclick=()=>{ menuScreen='tree'; treeNation=chosenNation; mainMenu(); };
   $('setB').onclick=()=>{ menuScreen='settings'; mainMenu(); };
   if($('hgGar')) $('hgGar').onclick=()=>{ const G=garRef(chosenNation); const i=G.indexOf(hgSel);

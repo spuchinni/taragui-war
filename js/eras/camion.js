@@ -188,8 +188,11 @@
   // vuelve a la portada del menú y de ahí "Jugar ahora" va derecho a otra batalla, así que el garaje nunca se mostraba. Ahora, si hay un tanque
   // en camino de la época, el menú abre el garaje de su nación con ese tanque y el camión lo trae en el acto.
   { const _mm=mainMenu; let busy=false; mainMenu=function(){ const r=_mm.apply(this,arguments);
-      try{ if(busy||!PROG||PROG.train||state!=='menu'||L.on) return r; sync();
-        const k=Object.keys(PROG.llegaPend||{}).find(k=>VEH[k]&&owned(k)&&llegaOk(k));   // línea única: cualquier rango
+      try{ if(busy||window.irInicio||!PROG||PROG.train||state!=='menu'||L.on) return r; sync();
+        // 27/11/2026 (Sebastián: "el botón de inicio no va al inicio"): solo tanques que el garaje puede mostrar (nación visible, en su garaje);
+        // antes uno que no se podía mostrar quedaba en camino para siempre y cada vuelta a la portada rebotaba al garaje
+        const NV=typeof lineNations==='function'?lineNations():null;
+        const k=Object.keys(PROG.llegaPend||{}).find(k=>VEH[k]&&owned(k)&&llegaOk(k)&&(!NV||NV.includes(VEH[k].nation))&&garageOf(VEH[k].nation).includes(k));   // línea única: cualquier rango
         if(k&&!(menuScreen==='hangar'&&hgSel===k)&&(menuScreen==='hangar'||document.body.classList.contains('home'))){
           busy=true; chosenNation=VEH[k].nation; hgSel=k; menuScreen='hangar'; try{ _mm.call(this); }finally{ busy=false; } } }catch(e){ console.warn('camión',e); }
       return r; }; }
