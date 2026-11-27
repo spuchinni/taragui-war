@@ -52,7 +52,8 @@ function placeGuns(team,nat,n){
 }
 function startBattle(spectator=false,forceMap=null,special=null,noBrief=false){ tut=null; summary._done=false; curSpecial=special; menuScreen='home';
   spectating=spectator; const pick=a=>a[(Math.random()*a.length)|0];
-  // la época: la de la misión, la del mapa forzado o la elegida en el menú
+  // la época: la de la misión, la del mapa forzado o la de tu tanque de BR más alto (línea única: lineEra)
+  if(!special&&!forceMap&&!spectator&&PROG) syncLineEra(chosenNation);
   const era=special&&special.era?special.era:forceMap&&WORLDS[forceMap]?(WORLDS[forceMap].era||5):curEra;
   if(!special||special.mission) curEra=era; applyEraNations(era);
   const NK=special&&special.mission?[special.ally,special.foe]:eraNations(era).length?eraNations(era):Object.keys(normalNations());
@@ -307,9 +308,11 @@ function summary(winner){
   const bar=(f0,f1,cls='')=>{ const id='wb'+bars.length; bars.push([id,f1]); return `<div class="wbar ${cls}"><i class="old" style="width:${Math.round(f0*100)}%"></i><i class="gain" id="${id}" style="left:${Math.round(f0*100)}%;width:0"></i></div>`; };
   if(!spectating&&(!curSpecial||MS)&&me&&PROG&&!summary._done){ summary._done=true; const n=MS?MS.ally:chosenNation, win=winner===0;
     // premio según el rango más alto que usaste: PI para investigar y Yaguaretés para comprar
-    const used=Object.keys(me.uses||{}).filter(k=>VEH[k]), rk=Math.max(1,...used.map(rankOf)), R=battleReward(rk,win,me.score|0), rp=R.rp;
+    const used=Object.keys(me.uses||{}).filter(k=>VEH[k]), rk=Math.max(1,...used.map(rankOf)), R=battleReward(rk,win,me.score|0);
     if(MS) mres=missionResult(MS,win);
     const nx0=nextResearch(n), rp0=nx0?(PROG.rp[nx0]||0):0;
+    // línea única: los tanques de rango más bajo que lo que investigás rinden menos; los eventos dan doble PI en los mapas de su época
+    const rp=Math.round(R.rp*rpLowK(rk,nx0)*eraBonus((W&&W.era)||curEra));
     PROG.stats.battles++; if(win) PROG.stats.wins++; updateSkill(me,win); PROG.yp=(PROG.yp||0)+R.yp; const un=addRP(n,rp).concat(mres&&mres.un||[]), nx=nextResearch(n); unl=un;
     let gx=0, r0=0, r1=0, dn=[];
     { const st=me.st||{}, v={kills:me.kills|0,side:st.side|0,caps:me.caps|0,assists:me.assists|0,inf:st.inf|0,wins:win?1:0,badwx:['noche','niebla','lluvia','tormenta'].includes(wxKey)?1:0,smoke:st.smoke|0};

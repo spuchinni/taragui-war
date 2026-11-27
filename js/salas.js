@@ -19,8 +19,9 @@ function salaCerrar(){
 }
 // Salas vivas de la época con BR parecido y lugar libre: primero las de BR más cercano y después las más llenas
 async function salasAbiertas(){
-  const br=garageBR(chosenNation), q=await salasCol().where('e','==',curEra).get(), ahora=Date.now();
-  return q.docs.map(d=>d.data()).filter(s=>s.t&&s.p&&ahora-s.t.toMillis()<SALA_VIVA&&s.n>0&&s.n<MAX_GUESTS+1&&Math.abs(s.br-br)<=SALA_BR&&s.c!==net.code)
+  // línea única: se empareja solo por BR (no por época); en las épocas con bandos históricos (1ª Guerra) tu nación tiene que tener bando
+  const br=garageBR(chosenNation), q=await salasCol().where('t','>',firebase.firestore.Timestamp.fromMillis(Date.now()-SALA_VIVA)).get(), ahora=Date.now(), bando=s=>!(ERAS[s.e]&&ERAS[s.e].sides)||eraSide(s.e,chosenNation)>=0;
+  return q.docs.map(d=>d.data()).filter(s=>s.t&&s.p&&ahora-s.t.toMillis()<SALA_VIVA&&s.n>0&&s.n<MAX_GUESTS+1&&Math.abs(s.br-br)<=SALA_BR&&s.c!==net.code&&bando(s))
     .sort((a,b)=>Math.abs(a.br-br)-Math.abs(b.br-br)||b.n-a.n);
 }
 function salaPanel(h){ lobbyShell(); $('panel').innerHTML=`<div class="side" style="width:min(560px,96vw)"><h1 class="logo" style="font-size:46px!important">Batalla online</h1>${h}</div>`; }
@@ -31,7 +32,7 @@ async function jugarOnline(){
   if(sala.busca) return;
   if(navigator.onLine===false){ jugarSolo('Sin conexión a internet: jugás con bots.'); return; }
   if(!nube.on){ jugarSolo('No se pudo conectar al servidor de partidas: jugás con bots.'); return; }
-  sala.busca=true; salaMsg(`Buscando partidas de ${ERAS[curEra]?ERAS[curEra].n:'tu época'} con BR ${brTxt(garageBR(chosenNation))}…`);
+  sala.busca=true; salaMsg(`Buscando partidas con BR ${brTxt(garageBR(chosenNation))}…`);
   let L;
   try{ L=await Promise.race([salasAbiertas(),new Promise((_,no)=>setTimeout(()=>no(new Error('tiempo')),8000))]); }
   catch(e){ console.warn(e); jugarSolo('No se pudo conectar al servidor de partidas: jugás con bots.'); return; }

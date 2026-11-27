@@ -133,7 +133,7 @@
       md.insertAdjacentHTML('beforebegin',`<button class="hgMapB hgModeB" id="hgModeB" data-notr title="${L?'Battle length':'Duración de la batalla'}">${q?(L?'⏱ Quick battle: <b>5 min, close bases</b>':'⏱ Batalla rápida: <b>5 min, bases cerca</b>'):(L?'🗺 Big battle: <b>full map, 12–15 min</b>':'🗺 Batalla grande: <b>mapa entero, 12–15 min</b>')}</button>`);
       document.getElementById('hgModeB').onclick=()=>{ LS('tw2_modo',q?'grande':'rapida'); mainMenu(); }; }
     // naciones cerradas (PROG.lockN): 🔒 y cuántas victorias faltan
-    if(PROG&&PROG.lockN){ const L=EN(), has=n=>(PROG.openN||[]).includes(n)||Object.keys(VEH).some(k=>VEH[k].nation===n&&eraOf(k)===curEra&&owned(k));
+    if(PROG&&PROG.lockN){ const L=EN(), has=n=>(PROG.openN||[]).includes(n)||Object.keys(VEH).some(k=>VEH[k].nation===n&&owned(k));
       document.querySelectorAll('.hgN[data-n]').forEach(b=>{ if(!has(b.dataset.n)&&!b.querySelector('.lk')) b.insertAdjacentHTML('beforeend','<span class="lk" data-notr> 🔒</span>'); });
       const pb=document.getElementById('hgPlay'); if(pb&&!has(chosenNation)&&['battle','tut','camp'].includes(playMode)){ pb.disabled=true; const f=winsLeft();
         pb.textContent=f>0?(L?`🔒 Opens with ${f} more win${f>1?'s':''}`:`🔒 Se abre con ${f} victoria${f>1?'s':''} más`):(L?'🔒 Nation locked':'🔒 Nación cerrada'); } }
@@ -146,7 +146,7 @@
   const allowedN=w=>1+(w>=AR_WINS?1+Math.floor((w-AR_WINS)/EVERY):0);
   function winsLeft(){ if(!PROG||!PROG.lockN) return 0; const w=winsT(), next=w<AR_WINS?AR_WINS:AR_WINS+EVERY*(Math.floor((w-AR_WINS)/EVERY)+1); return next-w; }
   window.winsLeft=winsLeft;
-  const lockedN=()=>eraNations(3).filter(n=>!(PROG.openN||[]).includes(n)&&vehTreeE(n,3).length);
+  const lockedN=()=>eraNations(3).filter(n=>!(PROG.openN||[]).includes(n)&&vehTreeE(n,3).length&&!NATIONS[n].abre);   // las de requisito (brasil.js) no se abren por victorias
   function openNation(n){ const f=vehTreeE(n,3)[0]; PROG.openN=PROG.openN||[]; if(!PROG.openN.includes(n)) PROG.openN.push(n);
     if(f){ PROG.unlocked[f]=1; PROG.owned[f]=1; const G=garRef(n,3); if(!G.includes(f)) G.unshift(f); } saveProg(); return f; }
   const nbox=document.createElement('div'); nbox.id='natPick'; nbox.setAttribute('data-notr',''); document.body.appendChild(nbox);

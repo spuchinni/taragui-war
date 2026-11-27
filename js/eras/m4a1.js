@@ -59,13 +59,14 @@
         for(const sx of [-1,1]) box(root,.04,.28,.28,sx*iw2*.39,y,z,darkMat); }
       root.updateMatrixWorld(true);
       // ---- calcas ----
-      if(hull){ const Ht=[hull], X=new THREE.Vector3(1,0,0), Y=new THREE.Vector3(0,1,0), Z=new THREE.Vector3(0,0,1);
+      const yank=!I.ins||I.ins==='us';   // las copias de otras naciones (Brasil, Chile) no llevan estrellas: llevan su bandera (w2Insignia)
+      if(hull&&yank){ const Ht=[hull], X=new THREE.Vector3(1,0,0), Y=new THREE.Vector3(0,1,0), Z=new THREE.Vector3(0,0,1);
         for(const sx of [-1,1]){ const out=X.clone().multiplyScalar(sx);
           decal(root,Ht,'star',new THREE.Vector3(sx*M.W/2,deck-.26,zf-L*.3),out,Y,.56,.56);                       // costados, adelante
           decal(root,Ht,'usa',new THREE.Vector3(sx*M.W/2,deck-.24,zr+L*.15),out,Y,.64,.16,12); }                    // "U.S.A." atrás
         decal(root,Ht.concat(doors),'star',new THREE.Vector3(0,deck+.05,zd),Y,Z.clone().negate(),.72,.72,8);        // tapa del motor
       }
-      if(tur){ tur.updateMatrixWorld(true); const Tt=[]; tur.children.forEach(o=>{ if(o.isMesh&&o.geometry&&o.geometry.type==='LatheGeometry') Tt.push(o); });
+      if(tur&&yank){ tur.updateMatrixWorld(true); const Tt=[]; tur.children.forEach(o=>{ if(o.isMesh&&o.geometry&&o.geometry.type==='LatheGeometry') Tt.push(o); });
         if(Tt.length){ const tb=new THREE.Box3(); Tt.forEach(o=>tb.expandByObject(o)); const c=tb.getCenter(new THREE.Vector3()), s=tb.getSize(new THREE.Vector3());
           for(const sx of [-1,1]) decal(tur,Tt,'star',new THREE.Vector3(c.x+sx*s.x/2,tb.min.y+s.y*.46,c.z-s.z*.08),new THREE.Vector3(sx,0,0),new THREE.Vector3(0,1,0),.46,.46); } }
       // ---- 75 mm M3: anillo de la boca ----

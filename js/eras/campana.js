@@ -84,11 +84,14 @@ function hgCampaign(){ const box=$('hgModal'); if(!box) return;
   $('mClose').onclick=()=>{ box.innerHTML=''; };
   box.querySelectorAll('.camM:not(.lock)').forEach(b=>b.onclick=goWrap(()=>startMission(b.dataset.m))); }
 
-// Selector de época del hangar y del árbol: las épocas cerradas muestran cómo se abren
-function eraStripHTML(){ return `<span class="hgEra">${eraList().map(e=>{ const E=ERAS[e], open=eraPlayable(e)&&PROG.eraOpen[e], ev=eraReady(e)?eventTxt(e):'';
-    return `<button class="hgE${e===curEra?' sel':''}${open?'':' lock'}" data-e="${e}" title="${E.n} (${E.y})${E.ready?'':' · en construcción'}${ev?' · '+ev:''}">${open?ev?'★ ':'':'🔒 '}${E.y}<small>${E.n}${ev?` · ${ev}`:''}</small></button>`; }).join('')}</span>`; }
+// Pestañas de rango del hangar y del árbol (línea única, 26/11/2026): solo cambian qué parte de la línea se mira (viewRank);
+// dónde se juega lo pone el tanque de BR más alto del garaje. Un rango cerrado muestra 🔒 y cuántos tanques faltan.
+const lineRanks=n=>eraList().filter(e=>!n||vehTreeE(n,e).length);
+function eraStripHTML(n){ const L=lineRanks(n); if(!L.includes(viewRank)) viewRank=L.includes(RANK_ENTRY)?RANK_ENTRY:L[0];
+  return `<span class="hgEra">${L.map(e=>{ const E=ERAS[e], open=!n||rankOpen(n,e), ev=eventTxt(e);
+    return `<button class="hgE${e===viewRank?' sel':''}${open?'':' lock'}" data-e="${e}" title="Rango ${RANK_ROMAN[e]} · ${E.n} (${E.y})${ev?' · '+ev:''}">${open?ev&&eventOn(e)?'★ ':'':'🔒 '}${RANK_ROMAN[e]} · ${E.y}<small>${E.n}${ev?` · ${ev}`:''}</small></button>`; }).join('')}</span>`; }
 function wireEraStrip(redraw){ document.querySelectorAll('.hgE').forEach(b=>b.onclick=()=>{ const e=+b.dataset.e;
-  if(eraPlayable(e)&&PROG.eraOpen[e]){ curEra=e; applyEraNations(e); saveProg(); redraw(); return; }
+  if(eraPlayable(e)){ viewRank=e; redraw(); return; }
   const box=$('hgModal'), w=eventWin(e), msg=!eraReady(e)?`<b>${ERAS[e].n}</b> (${ERAS[e].y}) todavía está en construcción: ${ERAS[e].desc}`
     :`<b>${ERAS[e].n}</b> es un evento: se juega del <b>${fmtDia(w[0])}</b> al <b>${fmtDia(new Date(w[1].getTime()-864e5))}</b>, por el ${ERA_EVENT[e].n}. Tu progreso de esa época queda guardado para la próxima vez.`;
   if(box){ box.innerHTML=`<div class="hgM"><h2>Época cerrada</h2><p class="s">${msg}</p><button class="go alt" id="mClose" style="margin:6px 0 0">Cerrar</button></div>`; $('mClose').onclick=()=>{ box.innerHTML=''; }; }
