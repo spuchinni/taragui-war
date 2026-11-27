@@ -19,6 +19,23 @@
     L.push({g,r}); return g; }
   // ---- el equipo: tractor M1070 (8x8, 9,1 × 2,59 m) + semirremolque M1000 (5 ejes, 40 ruedas, piso de 3,66 m de ancho) ----
   // Origen = centro del piso del semirremolque, a la altura del piso (DECK). Adelante = +x.
+  // ---- logo de ADA Logística (pedido de Sebastián, 26/11/2026): calco azul con las letras de su logo redibujadas en un canvas ----
+  let ADA_TEX=null;
+  function adaTex(){ if(ADA_TEX) return ADA_TEX; const c=document.createElement('canvas'); c.width=1024; c.height=512; const g=c.getContext('2d');
+    const rr=(x,y,w,h,r)=>{ g.beginPath(); g.moveTo(x+r,y); g.arcTo(x+w,y,x+w,y+h,r); g.arcTo(x+w,y+h,x,y+h,r); g.arcTo(x,y+h,x,y,r); g.arcTo(x,y,x+w,y,r); g.closePath(); };
+    rr(6,6,1012,500,46); g.fillStyle='#1f4f9e'; g.fill(); g.lineWidth=10; g.strokeStyle='#e9eef5'; g.stroke();
+    // letras del logo (A sin travesaño, D cuya base se une a la pata de la primera A), coordenadas del logo original 683 × 398
+    g.save(); g.translate(70,52); g.scale(.78,.78); g.translate(-235,-117); g.fillStyle='#fff';
+    g.beginPath(); g.moveTo(235,515); g.lineTo(298,117); g.lineTo(390,117); g.lineTo(448,458); g.lineTo(585,458); g.quadraticCurveTo(612,458,612,430);
+    g.lineTo(612,205); g.quadraticCurveTo(612,172,580,172); g.lineTo(548,172); g.lineTo(548,418); g.lineTo(482,418); g.lineTo(482,117); g.lineTo(605,117);
+    g.quadraticCurveTo(678,117,678,190); g.lineTo(678,440); g.quadraticCurveTo(678,515,605,515); g.lineTo(390,515); g.lineTo(342,222); g.lineTo(295,515); g.closePath(); g.fill();
+    g.beginPath(); g.moveTo(700,515); g.lineTo(765,117); g.lineTo(855,117); g.lineTo(918,515); g.lineTo(857,515); g.lineTo(808,222); g.lineTo(760,515); g.closePath(); g.fill(); g.restore();
+    g.fillStyle='#fff'; g.font='700 74px Arial,sans-serif'; g.textAlign='left'; g.fillText('LOGÍSTICA',72,468);
+    // flechas >> como las de su página
+    g.fillStyle='#5aa8ff'; for(const x of [780,870]){ g.beginPath(); g.moveTo(x,150); g.lineTo(x+40,150); g.lineTo(x+110,240); g.lineTo(x+40,330); g.lineTo(x,330); g.lineTo(x+70,240); g.closePath(); g.fill(); }
+    const t=new THREE.CanvasTexture(c); t.anisotropy=4; if(typeof renderer!=='undefined'&&renderer) t.encoding=renderer.outputEncoding===THREE.sRGBEncoding?THREE.sRGBEncoding:t.encoding;
+    ADA_TEX=new THREE.MeshLambertMaterial({map:t,transparent:true}); return ADA_TEX; }
+  function adaDecal(p,w,x,y,z,side){ const m=new THREE.Mesh(new THREE.PlaneGeometry(w,w/2),adaTex()); m.position.set(x,y,z); if(side<0) m.rotation.y=Math.PI; p.add(m); return m; }
   const DECK=1.05, DL=11.2, RAMP=2.5, REAR=-DL/2;
   function buildRig(col){ const rig=new THREE.Group(), W=[], P=MAT[col], ramps=[];
     // semirremolque: piso, largueros, cuello de cisne, ejes
@@ -61,6 +78,8 @@
     // dos malacates detrás de la cabina (el tanque sube con cable)
     for(const s of [-1,1]) cy(tk,.28,.6,1.9,.95,s*.55,MAT.dark,12,'z');
     rig.traverse(o=>{ if(o.isMesh){ o.castShadow=true; o.receiveShadow=true; } });
+    // logo de ADA en las puertas de la cabina y en los costados del cuello de cisne
+    for(const sd of [-1,1]){ adaDecal(cab,1.15,.2,.88,sd*1.258,sd); adaDecal(tr,1.0,DL/2+2.25,.7,sd*1.256,sd); }
     return {rig,W,ramps};
   }
   // ---- animación ----
@@ -175,5 +194,6 @@
           busy=true; chosenNation=VEH[k].nation; hgSel=k; menuScreen='hangar'; try{ _mm.call(this); }finally{ busy=false; } } }catch(e){ console.warn('camión',e); }
       return r; }; }
   { const _sb=startBattle; startBattle=function(){ try{ if(L.on) finish(true); }catch(e){} return _sb.apply(this,arguments); }; }   // si arranca una batalla, el camión se saltea (no queda el cartel)
+  window.camionRig=buildRig;                                                                                         // para mirar el camión desde la consola
   window.llegaCamion=k=>{ if(hg&&hg.obj) start(hg.obj,k||hgSel); };                                                 // para probar desde la consola
 })();
