@@ -7,7 +7,9 @@
    · Al costado (sudeste del patio) la playa con techos de chapa sobre columnas, con pilas de pallets de madera abajo y el logo en el borde.
    · Cubiertas apiladas, tambores rojos y estantería azul junto al frente, como en la foto.
    Las paredes chocan con bloques indestructibles escondidos (block) y las casas de relleno que caían en la huella se achican (clearOut).
-   El logo es el de camion.js (window.adaTex). */
+   El logo es el de camion.js (window.adaTex).
+   Segunda tanda (27/11/2026, 24 fotos de Sebastián): zócalo de bloques, oficinas al oeste, pasillo con cerco, tanque y grupo electrógeno, garita, alero con
+   autos y motos, playón de tierra con pallets, nave baja atrás al este y letras ADA en los costados (ver CLAUDE.md). */
 (()=>{
   const H=()=>window.HITO;
   const tex=(w,h,fn,rep)=>{ const c=document.createElement('canvas'); c.width=w; c.height=h; fn(c.getContext('2d'),w,h); const t=new THREE.CanvasTexture(c); t.anisotropy=4; if(rep){ t.wrapS=t.wrapT=THREE.RepeatWrapping; t.repeat.set(rep[0],rep[1]); } return t; };
@@ -74,30 +76,99 @@
         x.strokeStyle='rgba(80,80,78,.45)'; x.lineWidth=2; for(let i=0;i<=w;i+=64){ x.beginPath(); x.moveTo(i,0); x.lineTo(i,h); x.stroke(); x.beginPath(); x.moveTo(0,i); x.lineTo(w,i); x.stroke(); } x.fillStyle='rgba(60,55,50,.25)'; for(let i=0;i<8;i++) x.fillRect(Math.random()*w,Math.random()*h,28,10); },[(W+16)/16,yd/16]);
       const g=new THREE.PlaneGeometry(W+16,yd,20,8); g.rotateX(-Math.PI/2); const p=g.attributes.position; for(let i=0;i<p.count;i++){ const [X,Z]=at(p.getX(i),p.getZ(i)+fz+yd/2); p.setY(i,Math.max(.02,heightAt(X,Z)-gy+.06)); } g.translate(0,0,fz+yd/2);
       const m=new THREE.Mesh(g,new THREE.MeshLambertMaterial({map:t,polygonOffset:true,polygonOffsetFactor:-2})); m.receiveShadow=true; G.add(m); }
-    // --- al costado: playa con techos de chapa sobre columnas, pallets de madera abajo y el logo ---
-    const pX0=14, pX1=W/2+8, pZ0=fz+9, pZ1=fz+21, pH=5.2, pw=pX1-pX0, pd=pZ1-pZ0, pcx=(pX0+pX1)/2, pcz=(pZ0+pZ1)/2;
-    let pb=0; for(const x of [pX0,pX1]) for(const z of [pZ0,pZ1]) pb=Math.max(pb,gl(x,z)); const pT=pb+pH;   // techo parejo sobre el punto más alto
-    for(let k=0;k<=4;k++){ const x=pX0+k*pw/4; for(const z of [pZ0,pZ1]){ const b=gl(x,z)-.2; B.box(.25,pT-b,.25,x,(pT+b)/2,z,steel); } B.box(.18,.35,pd,x,pT-.1,pcz,steel); }
-    { const g=new THREE.BoxGeometry(pw+1.2,.12,pd+1.6); g.rotateX(-.06); g.translate(pcx,pT+.25,pcz); B.add(g,roofP); }
-    B.box(pw+1.2,.9,.1,pcx,pT-.15,pZ1+.85,white);                                                // borde del techo donde va el logo
-    // pilas de pallets (cada uno 1,2 × 1 × 0,15 m: tablas y tacos)
     const pallet=(x,y,z,ry)=>{ y+=gl(x,z); for(let t=0;t<5;t++) B.box(1.2,.03,.14,x+(ry?0:0),y+.135,z-.43+t*.215,wood,ry); for(const tz of [-.4,0,.4]) B.box(1.2,.1,.12,x,y+.065,z+tz,woodD,ry); B.box(1.2,.02,.12,x,y+.01,z,wood,ry); };
-    let pi=0; for(let ix=0;ix<6;ix++) for(let iz=0;iz<4;iz++){ const n=3+((ix*7+iz*3)%8), x=pX0+2+ix*(pw-4)/5, z=pZ0+1.6+iz*2.8; for(let k=0;k<n;k++) pallet(x,k*.15,z,0); pi+=n; }
     // dos pilas sueltas junto al portón (las de la foto) y un auto-elevador manual
     for(let k=0;k<6;k++) pallet(doorX+doorW/2+3,k*.15,fz+3,0); for(let k=0;k<2;k++) pallet(doorX-doorW/2-2.5,k*.15,fz+2.5,0);
+    // ====== segunda tanda con las fotos de Sebastián (27/11/2026): costados, atrás y alrededores ======
+    const glass=mat('adaGlass',0x2b333d), tankM=mat('adaTank',0x2f8fdc), tankD=mat('adaTankD',0x2577bd), truss=mat('adaTruss',0xd9dcdf);
+    const drape=(x0,x1,z0,z1,m)=>{ const w=x1-x0, d=z1-z0, g=new THREE.PlaneGeometry(w,d,Math.ceil(w/4),Math.ceil(d/4)); g.rotateX(-Math.PI/2); g.translate((x0+x1)/2,0,(z0+z1)/2);
+      const p=g.attributes.position, uv=g.attributes.uv; for(let i=0;i<p.count;i++){ const [X,Z]=at(p.getX(i),p.getZ(i)); p.setY(i,Math.max(.02,heightAt(X,Z)-gy+.06)); }
+      for(let i=0;i<uv.count;i++) uv.setXY(i,uv.getX(i)*w/16,uv.getY(i)*d/16); const me=new THREE.Mesh(g,m); me.receiveShadow=true; G.add(me); return me; };
+    const rep=t=>{ t.wrapS=t.wrapT=THREE.RepeatWrapping; return t; };
+    const noise=(x,w,h,n,r,g,b,a)=>{ for(let i=0;i<n;i++){ x.fillStyle=`rgba(${r+Math.random()*40|0},${g+Math.random()*40|0},${b+Math.random()*35|0},${a})`; x.fillRect(Math.random()*w,Math.random()*h,2,2); } };
+    // zócalo de bloques de hormigón gris (~4 m) en los dos costados y atrás: textura de 1,6 m, hiladas de 20 cm y bloques de 40
+    const bloqM=new THREE.MeshLambertMaterial({map:rep(tex(128,128,(x,w,h)=>{ x.fillStyle='#b3b4ac'; x.fillRect(0,0,w,h); noise(x,w,h,1400,120,121,115,.3);
+      x.strokeStyle='rgba(85,87,83,.55)'; x.lineWidth=2; for(let r=0;r<8;r++){ const y=r*16; x.beginPath(); x.moveTo(0,y); x.lineTo(w,y); x.stroke(); for(let k=0;k<4;k++){ const xx=k*32+(r%2?16:0); x.beginPath(); x.moveTo(xx,y); x.lineTo(xx,y+16); x.stroke(); } } }))});
+    const zB=3.9;
+    for(const [w,d,x,z] of [[.3,Dp+.3,-W/2-.08,0],[.3,Dp+.3,W/2+.08,0],[W+.3,.3,0,-Dp/2-.08]]){ const g=boxUV(w,zB+.6,d,1.6); g.translate(x,(zB+.6)/2-.6,z); add(g,bloqM); }
+    // suelos: tierra al este (playón de pallets y autos) y pasillo de hormigón al oeste
+    const dirtM=new THREE.MeshLambertMaterial({map:rep(tex(256,256,(x,w,h)=>{ x.fillStyle='#93806b'; x.fillRect(0,0,w,h); noise(x,w,h,4000,115,95,72,.35);
+      x.strokeStyle='rgba(110,78,52,.35)'; x.lineWidth=5; for(let i=0;i<6;i++){ x.beginPath(); const y=Math.random()*h; x.moveTo(0,y); x.bezierCurveTo(w*.3,y+30*(Math.random()-.5),w*.6,y+30*(Math.random()-.5),w,y); x.stroke(); }
+      for(let i=0;i<14;i++){ x.fillStyle='rgba(95,120,60,.35)'; x.beginPath(); x.arc(Math.random()*w,Math.random()*h,4+Math.random()*10,0,7); x.fill(); } })),polygonOffset:true,polygonOffsetFactor:-1});
+    const concM=new THREE.MeshLambertMaterial({map:rep(tex(128,128,(x,w,h)=>{ x.fillStyle='#a9a7a1'; x.fillRect(0,0,w,h); noise(x,w,h,1500,130,128,122,.3); x.strokeStyle='rgba(80,80,78,.4)'; x.lineWidth=2; for(let i=0;i<=h;i+=32){ x.beginPath(); x.moveTo(0,i); x.lineTo(w,i); x.stroke(); } })),polygonOffset:true,polygonOffsetFactor:-2});
+    drape(W/2,W/2+30,-Dp/2-16,fz+yd,dirtM);
+    // --- oficinas: bloque de dos pisos de bloques grises pegado al frente en la punta oeste (fotos 8 y 10) ---
+    const oX0=-W/2-7.5, oX1=-W/2+.2, oZ0=fz-11, oZ1=fz+.8, oH=7.4, ow=oX1-oX0, od=oZ1-oZ0, ocx=(oX0+oX1)/2, ocz=(oZ0+oZ1)/2;
+    { const g=boxUV(ow,oH+.6,od,1.6); g.translate(ocx,(oH+.6)/2-.6,ocz); add(g,bloqM); }
+    B.box(ow+.3,.35,od+.3,ocx,oH+.17,ocz,grey);
+    const win=(x,y,z,ax)=>{ if(ax){ B.box(.1,1.4,1.7,x,y,z,white); B.box(.14,1.15,1.45,x,y,z,glass); } else { B.box(1.7,1.4,.1,x,y,z,white); B.box(1.45,1.15,.14,x,y,z,glass); } };
+    for(const y of [1.7,5.1]){ win(oX0+2,y,oZ1+.02,0); for(const dz of [-3.2,1.2]) win(oX0-.02,y,ocz+dz,1); win(oX0+2,y,oZ0-.02,0); }
+    B.box(1,2.2,.12,oX0+5,1.1,oZ1+.03,grey); B.box(1,2.2,.12,-W/2-2.6,1.1,oZ0-.03,grey);                // puertas: al patio y al pasillo
+    for(const [x,y] of [[oX0+4.4,3.4],[oX0+5.6,6.6]]) B.box(.9,.6,.35,x,y,oZ0-.2,white);                // aires acondicionados
+    B.box(.5,.7,.2,oX0+6.5,1.5,oZ1+.12,grey);                                                            // caja del medidor
+    // --- pasillo de hormigón al oeste entre la pared y el cerco olímpico, con tanque de agua y grupo electrógeno al fondo (fotos 0, 1, 3 y 4) ---
+    const fX=-W/2-6.2, fZ0=-Dp/2-7, fZ1=oZ0;
+    drape(fX+.2,-W/2,fZ0+.2,oZ0,concM);
+    const meshT=tex(64,64,(x,w,h)=>{ x.clearRect(0,0,w,h); x.strokeStyle='rgba(150,155,150,.95)'; x.lineWidth=2; for(let i=-64;i<128;i+=16){ x.beginPath(); x.moveTo(i,0); x.lineTo(i+64,64); x.stroke(); x.beginPath(); x.moveTo(i,64); x.lineTo(i+64,0); x.stroke(); } });
+    rep(meshT); const meshM=new THREE.MeshLambertMaterial({map:meshT,transparent:true,alphaTest:.4,side:THREE.DoubleSide});
+    // tramo de cerco de (x0,z0) a (x1,z1); out = hacia dónde se inclinan los postes (afuera)
+    const cerco=(x0,z0,x1,z1,ox,oz)=>{ const L=Math.hypot(x1-x0,z1-z0), ry=Math.atan2(x1-x0,z1-z0), n=Math.max(1,Math.round(L/3));
+      for(let i=0;i<=n;i++){ const x=x0+(x1-x0)*i/n, z=z0+(z1-z0)*i/n, b=gl(x,z); B.box(.18,2.5,.18,x,b+1.2,z,conc);
+        const g=new THREE.BoxGeometry(.13,.75,.13); g.rotateZ(-ox*.6); g.rotateX(oz*.6); g.translate(x+ox*.2,b+2.7,z+oz*.2); B.add(g,conc); }
+      const mx=(x0+x1)/2, mz=(z0+z1)/2, b=gl(mx,mz);
+      B.box(.22,.5,L,mx,b+.2,mz,block1,ry);                                                                 // murito de bloques abajo
+      for(const k of [1,2,3]) B.box(.03,.03,L,mx+ox*.12*k,b+2.35+k*.15,mz+oz*.12*k,steel,ry);             // alambre de púas
+      const g=new THREE.PlaneGeometry(L,1.9); const u=g.attributes.uv; for(let i=0;i<u.count;i++) u.setXY(i,u.getX(i)*L/.6,u.getY(i)*1.9/.6);
+      const m=new THREE.Mesh(g,meshM); m.position.set(mx,b+1.4,mz); m.rotation.y=ry+Math.PI/2; G.add(m); };
+    cerco(fX,fZ1,fX,fZ0,-1,0); cerco(fX,fZ0,-W/2+12,fZ0,0,-1);
+    { const tx=-W/2-3.1, tz=-Dp/2-2.4, b=gl(tx,tz); B.cyl(1.75,1.75,4.6,tx,b+2.3,tz,tankM,22); B.cyl(.35,1.75,.55,tx,b+4.87,tz,tankM,22); B.cyl(.32,.32,.18,tx,b+5.2,tz,tankD,12);
+      for(let k=1;k<6;k++) B.cyl(1.8,1.8,.12,tx,b+k*.78,tz,tankD,22); B.cyl(.06,.06,4,tx+1.6,b+2,tz+.6,white,6); }
+    { const gx=-W/2-1.1, gz=-Dp/2+5, b=gl(gx,gz); B.box(1.5,2,3.6,gx,b+1,gz,white); B.box(.05,1.1,1.6,gx-.76,b+1.1,gz-.6,grey); B.box(1.55,.1,3.65,gx,b+2.03,gz,steel); B.box(1.6,.15,3.8,gx,b+.07,gz,blk); }
+    // --- frente este: garita blanca, caño blanco y alero pegado a la pared con autos y motos abajo (fotos 5, 15, 16, 18 y 21) ---
+    { const gx=W/2+2.3, gz=fz-2.4, b=gl(gx,gz); B.box(2.3,2.4,2.4,gx,b+1.25,gz,white); B.box(2.8,.15,2.9,gx,b+2.55,gz,white);
+      B.box(1.7,.9,.06,gx,b+1.6,gz+1.22,glass); B.box(.06,.9,1.6,gx+1.17,b+1.6,gz,glass); B.box(.06,.9,1.6,gx-1.17,b+1.6,gz,glass); B.box(.8,1.9,.06,gx+.5,b+1,gz-1.22,white); B.box(.6,.45,.06,gx+.5,b+1.5,gz-1.24,glass); }
+    B.cyl(.3,.3,11.2,W/2+.5,5.2,fz-6.5,white,10);
+    const cZ0=-9, cZ1=fz-5, cX=W/2+6.4, cl=cZ1-cZ0, ccz=(cZ0+cZ1)/2;
+    { const t0=4.5, t1=4.1; const g=new THREE.BoxGeometry(cX-W/2+.5,.1,cl); g.rotateZ(-Math.atan2(t0-t1,cX-W/2)); g.translate((W/2+cX)/2,(t0+t1)/2,ccz); B.add(g,roofP);
+      for(const y of [t1-.05,t1-.6]) B.box(.08,.08,cl,cX,y,ccz,truss);                                     // viga reticulada blanca del borde
+      for(let k=0;k<cl/.6;k++){ const z=cZ0+k*.6+.3; const g2=new THREE.BoxGeometry(.05,.78,.05); g2.rotateX(k%2?.75:-.75); g2.translate(cX,t1-.33,z); B.add(g2,truss); }
+      for(let k=0;k<=3;k++){ const z=cZ0+k*cl/3, b=gl(cX,z)-.1, hh=t1-.6-b;                             // columnas reticuladas triangulares
+        for(const [dx,dz] of [[-.17,-.15],[-.17,.15],[.17,0]]) B.box(.05,hh,.05,cX+dx,b+hh/2,z+dz,truss);
+        for(let j=0;j<hh/.5;j++){ const y=b+.25+j*.5; B.box(.03,.03,.34,cX-.17,y,z,truss); B.box(.36,.03,.03,cX,y,z+(j%2?.08:-.08),truss); } } }
+    const car=(x,z,col,pick)=>{ const b=gl(x,z), cm=mat('adaCar'+col.toString(16),col); B.box(4.3,.75,1.8,x,b+.65,z,cm); B.box(pick?1.7:2.3,.6,1.65,x+(pick?.65:.2),b+1.3,z,glass); B.box(pick?1.5:2.1,.08,1.6,x+(pick?.65:.2),b+1.63,z,cm);
+      if(pick){ B.box(1.9,.4,1.8,x-1.15,b+1.15,z,cm); B.box(4.32,.14,1.82,x,b+.75,z,frame); }
+      for(const [wx,wz] of [[-1.35,-.85],[1.35,-.85],[-1.35,.85],[1.35,.85]]) B.cyl(.34,.34,.25,x+wx,b+.34,z+wz,rubber,10,Math.PI/2); };
+    const moto=(x,z,col)=>{ const b=gl(x,z); B.box(1.5,.45,.25,x,b+.7,z,mat('adaMoto'+col.toString(16),col)); B.box(.6,.12,.28,x-.3,b+.98,z,blk); B.box(.05,.5,.6,x+.65,b+1.05,z,steel);
+      for(const wx of [-.7,.7]) B.cyl(.3,.3,.1,x+wx,b+.3,z,rubber,10,Math.PI/2); };
+    car(W/2+3.4,fz-7.5,0xf2f3f4,1); car(W/2+3.4,fz-10.6,0xd8dadc,0); car(W/2+3.4,fz-13.6,0xb9bcc0,0); car(W/2+3.4,fz-19.5,0x3d4248,0);
+    moto(W/2+2.6,fz-16,0x1a1a1a); moto(W/2+2.6,fz-16.9,0xc22a2a); moto(W/2+2.6,fz-22.5,0x2a63c8); moto(W/2+2.6,fz-23.4,0x1a1a1a);
+    // --- pilas de pallets: contra la pared este pasando el alero hasta el fondo, y el murallón suelto sobre la tierra (fotos 7, 19 y 22) ---
+    const palTex=(base,dk)=>rep(tex(128,128,(x,w,h)=>{ x.fillStyle=dk; x.fillRect(0,0,w,h);
+      for(let p=0;p<8;p++){ const y=p*16; x.fillStyle=base; x.fillRect(0,y,w,3); x.fillRect(0,y+13,w,2); for(const bx of [0,52,108]) x.fillRect(bx,y+3,20,10); }
+      noise(x,w,h,900,90,60,30,.35); }));
+    const palM=[new THREE.MeshLambertMaterial({map:palTex('#b98c58','#3a2a1a')}),new THREE.MeshLambertMaterial({map:palTex('#8f7a62','#2e261d')})];
+    const stack=(x,z,n,ry)=>{ const h=n*.15, b=gl(x,z)-.02, g=boxUV(1.2,h,1,1.2); g.translate(0,h/2,0); if(ry) g.rotateY(ry); g.translate(x,b,z); B.add(g,palM[(x*7+z*3|0)&1]); };
+    const rnd=(i)=>{ const v=Math.sin(i*12.9898)*43758.5453; return v-Math.floor(v); };
+    let si=0;
+    for(let z=cZ0-1; z>-Dp/2-13; z-=1.05) for(let ix=0;ix<4;ix++){ si++; stack(W/2+1.2+ix*1.25,z,11+(rnd(si)*7|0),(rnd(si+99)-.5)*.08); }
+    for(let z=fz-3; z>-Dp/2-13; z-=1.05) for(let ix=0;ix<2;ix++){ si++; if(rnd(si)<.06) continue; stack(W/2+16+ix*1.25,z,12+(rnd(si)*6|0),(rnd(si+99)-.5)*.1); }
+    // --- nave baja azul pegada atrás, del lado este (se ve detrás de los pallets) ---
+    const aX0=W/2-24, aX1=W/2, aZ0=-Dp/2-14, aZ1=-Dp/2, aH=7, aw=aX1-aX0, ad=aZ1-aZ0, acx=(aX0+aX1)/2, acz=(aZ0+aZ1)/2;
+    { const g=boxUV(aw,aH+.6,ad,1.6); g.translate(acx,(aH+.6)/2-.6,acz); add(g,[azul,azul,techo,techo,azul,azul]); const g2=boxUV(aw+.3,zB+.6,ad+.3,1.6); g2.translate(acx,(zB+.6)/2-.6,acz); add(g2,bloqM); }
+    for(const ax of [acx-5,acx+5]) B.box(8,5,.12,ax,2.5,aZ0-.1,frame);
     // columnas de luz del patio
     for(const lx of [-20,0,20]){ { const b=gl(lx,fz+yd-3); B.cyl(.12,.16,10+b,lx,(10+b)/2,fz+yd-3,steel,6); B.box(1.4,.2,.5,lx,10+b,fz+yd-3,steel); } }
     B.meshes(G).forEach(m=>osmHitoMs.push(m));
     // letras ADA y el logo
-    { const m=new THREE.Mesh(new THREE.PlaneGeometry(17,8.5),new THREE.MeshLambertMaterial({map:lettersTex(),transparent:true,depthWrite:false})); m.position.set(-9,8.2,fz+.2); G.add(m); }
-    const adaM=window.adaTex&&window.adaTex();
-    if(adaM){ const m=new THREE.Mesh(new THREE.PlaneGeometry(1.8,.9),adaM); m.position.set(pcx,pT-.15,pZ1+.92); G.add(m);
-      for(const sd of [-1,1]){ const m2=new THREE.Mesh(new THREE.PlaneGeometry(5,2.5),adaM); m2.position.set(sd*(W/2+.05),7.5,8); m2.rotation.y=sd*Math.PI/2; G.add(m2); }   // costados de la nave
-      { const m3=new THREE.Mesh(new THREE.PlaneGeometry(4,2),adaM); m3.position.set(pcx,gl(pcx,pZ1)+1.3,pZ1+.35); G.add(m3); B2post(G,pcx,pZ1+.3,steel,gl(pcx,pZ1)); } }
+    { const lm=new THREE.MeshLambertMaterial({map:lettersTex(),transparent:true,depthWrite:false}); const m=new THREE.Mesh(new THREE.PlaneGeometry(17,8.5),lm); m.position.set(-9,8.2,fz+.2); G.add(m);
+      for(const [sd,z,y] of [[1,fz-11,8],[-1,fz-19,8.4]]){ const m2=new THREE.Mesh(new THREE.PlaneGeometry(13,6.5),lm); m2.position.set(sd*(W/2+.2),y,z); m2.rotation.y=sd*Math.PI/2; G.add(m2); } }   // también en los dos costados (fotos 4 y 19)
     G.updateMatrixWorld(true);
     // choque: la nave y las columnas de la playa; las casas de relleno que caen adentro se achican
-    clearOut((x,z,r)=>{ const dx=x-cx, dz=z-cz, lx=dx*c-dz*s, lz=dx*s+dz*c; return Math.abs(lx)<W/2+10+r*.3&&lz>-Dp/2-8-r*.3&&lz<fz+yd+r*.3; });
+    clearOut((x,z,r)=>{ const dx=x-cx, dz=z-cz, lx=dx*c-dz*s, lz=dx*s+dz*c; return lx>-W/2-22-r*.3&&lx<W/2+30+r*.3&&lz>-Dp/2-17-r*.3&&lz<fz+yd+r*.3; });
     block(cx,cz,W,Dp,th,.35);                                                               // bloque bajo escondido (uno alto se dibujaría como edificio)
+    { const lb=(x0,x1,z0,z1)=>{ const [X,Z]=at((x0+x1)/2,(z0+z1)/2); block(X,Z,x1-x0,z1-z0,th,.35); };   // oficinas, nave baja, garita, tanque, grupo y pilas de pallets
+      lb(oX0,oX1,oZ0,oZ1); lb(aX0,aX1,aZ0,aZ1); lb(W/2+1.1,W/2+3.5,fz-3.6,fz-1.2); lb(-W/2-4.9,-W/2-1.3,-Dp/2-4.2,-Dp/2-.6); lb(-W/2-1.9,-W/2-.3,-Dp/2+3.2,-Dp/2+6.8);
+      lb(W/2+.6,W/2+6,-Dp/2-13,cZ0-.5); lb(W/2+15.4,W/2+17.5,-Dp/2-13,fz-2.5); }
     W2set(cx,cz,th,at,fz,yd); }
   // cartel bajo con el logo: dos postes
   function B2post(G,x,z,m,b=0){ for(const dx of [-1.8,1.8]){ const p=new THREE.Mesh(new THREE.BoxGeometry(.12,2.4,.12),m); p.position.set(x+dx,b+1.2,z-.08); G.add(p); osmHitoMs.push(p); } }
