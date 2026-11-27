@@ -254,7 +254,7 @@
       b.box(1.45,.03,1.5,-1.45,1.005,0,blk); b.box(4.5,.14,1.76,0,.4,0,blk); b.box(.06,.25,1.1,2.25,.58,0,blk);
       for(const z of [-.6,.6]){ b.box(.05,.1,.32,2.26,.74,z,mat('adaFaro',0xf2f0e0)); b.box(.05,.22,.1,-2.24,.78,z,mat('adaFaroR',0x9a1a14)); }
       wheels(b,[[-1.35,-.82],[1.35,-.82],[-1.35,.82],[1.35,.82]],.34,.24);
-      driver(b,.05,.72,-.38,0x1b2a44,0x1a1a1c);
+      { const db=Bag(), dg=new THREE.Group(); driver(db,.05,.72,-.38,0x1b2a44,0x1a1a1c); db.meshes(dg); g.add(dg); g.userData.drv=dg; }
       for(const sd of [-1,1]){ const m=new THREE.Mesh(new THREE.PlaneGeometry(4.45,.62),plotM); m.position.set(0,.68,sd*.868); if(sd<0) m.rotation.y=Math.PI; g.add(m); } });
     // autoelevador: copia del "Forklift low poly" de Ricardo Sanchez (Sketchfab, CC BY), hecho por código. Medidas de uno de 2,5 t (tipo Toyota 8FD):
     // cuerpo amarillo con contrapeso redondeado atrás, techo protector de caño gris oscuro con listones y baliza, mástil de dos canales con cilindros, cadenas,
@@ -285,7 +285,7 @@
       { const tg=new THREE.TorusGeometry(.16,.022,6,16); tg.rotateY(Math.PI/2); tg.rotateZ(-.55); tg.translate(.28,1.63,0); b.add(tg,FD); }
       for(const z of [.18,.26,.34]) tube(.6,1.25,z,.5,1.55,z,.025,FD);
       for(const z of [.18,.26,.34]) b.cyl(.03,.03,.05,.5,1.57,z,red,6);
-      driver(b,-.28,1.24,0,0x1b2a44,0x151515);
+      { const db=Bag(), dg=new THREE.Group(); driver(db,-.28,1.24,0,0x1b2a44,0x151515); db.meshes(dg); g.add(dg); g.userData.drv=dg; }
       // techo protector: patas de adelante inclinadas, de atrás rectas, marco con listones y baliza
       const TY=2.12;
       for(const sd of [-1,1]){ tube(.62,1.2,sd*.5,.7,TY,sd*.52,.08,FG); tube(-.72,1.22,sd*.5,-.72,TY,sd*.52,.08,FG); }
@@ -297,11 +297,11 @@
       b.box(.02,.08,.12,.66,1.32,-.53,lamp); b.box(.02,.08,.12,.66,1.32,.53,lamp);
       // mástil: dos canales de afuera + dos de adentro, travesaños, cilindros de inclinación y de elevación
       const MX=1.0, MH=2.12;
-      for(const sd of [-1,1]){ b.box(.1,MH,.13,MX,.12+MH/2,sd*.36,FG); b.box(.08,MH+.06,.09,MX+.07,.15+MH/2,sd*.25,FG);
+      const mi=new THREE.Group(), mb=Bag(); for(const sd of [-1,1]) mb.box(.08,MH+.06,.09,MX+.07,.15+MH/2,sd*.25,FG); mb.box(.1,.08,.6,MX+.07,MH+.14,0,FG); mb.meshes(mi); g.add(mi); g.userData.mi=mi;
+      for(const sd of [-1,1]){ b.box(.1,MH,.13,MX,.12+MH/2,sd*.36,FG);
         tube(.55,.82,sd*.45,MX-.06,1.05,sd*.42,.08,rim);                            // cilindro de inclinación
         b.cyl(.045,.045,1.6,MX-.12,.95,sd*.2,rim,8); b.cyl(.03,.03,.5,MX-.12,1.95,sd*.2,steel,6); }
       for(const y of [.22,1.15,MH+.1]) b.box(.1,.1,.82,MX,y,0,FG);
-      b.box(.1,.08,.6,MX+.07,MH+.14,0,FG);
       // carro con respaldo de reja y uñas (sube con fk)
       const fk=new THREE.Group(), fb=Bag(); const CX=MX+.17;
       fb.box(.07,.12,1.06,CX,.22,0,FG); fb.box(.07,.12,1.06,CX,.6,0,FG); for(const z of [-.5,.5]) fb.box(.07,.5,.06,CX,.41,z,FG);
@@ -311,12 +311,103 @@
         { const tg=new THREE.BoxGeometry(.12,.045,.12); tg.rotateZ(.25); tg.translate(CX+1.14,.13,z); fb.add(tg,FD); } }
       for(const sd of [-1,1]) for(let y=.3;y<2.1;y+=.12) b.box(.03,.05,.04,MX+.02,y,sd*.12,FD);   // cadenas
       fb.meshes(fk); g.add(fk); g.userData.fk=fk; });
+    // ====== chasis y acoplado cargando en la playa (27/11/2026, pedido de Sebastián con la foto de "Chasis y acoplado" de agroentregas.com.ar) ======
+    // VW Constellation 6x2 blanco (cabina corta de techo alto, franja negra con la parrilla y el escudo redondo) con caja de barandas grises y lona azul,
+    // y acoplado de 3 ejes (1 adelante en el carretón + 2 atrás) con la lona enrollada y la baranda de este lado bajada: el autoelevador lo carga de a un pallet.
+    // Hecho por código (no hay un modelo libre parecido). Adelante = +x; la trompa en x = 0 del grupo, el camión mira al este.
+    const TX=15, TZ=fz+12, TRK={}, DECK=1.37, LH=1.14;
+    const truckG=veh(TX,TZ,0,b=>{ const wt=mat('ctWhite',0xf1f2f0), blk2=mat('ctBlk',0x1c1d1f), dg=mat('ctDG',0x55595e), chrome=mat('adaChrome',0xd6d9dc),
+        lona=new THREE.MeshLambertMaterial({map:tex(64,64,(x,w,h)=>{ x.fillStyle='#2f6db3'; x.fillRect(0,0,w,h); for(let i=0;i<w;i+=16){ x.fillStyle='rgba(15,40,90,.35)'; x.fillRect(i,0,5,h); x.fillStyle='rgba(140,180,235,.25)'; x.fillRect(i+7,0,3,h); } })}),
+        bar=new THREE.MeshLambertMaterial({map:tex(256,64,(x,w,h)=>{ x.fillStyle='#b9b7ae'; x.fillRect(0,0,w,h); for(let y=0;y<h;y+=13){ x.fillStyle='rgba(70,68,62,.55)'; x.fillRect(0,y,w,2); } noise(x,w,h,500,150,148,140,.3);
+          for(const px of [0,84,170,254]){ x.fillStyle='#6e7176'; x.fillRect(px,0,4,h); } x.fillStyle='#4a4c50'; x.fillRect(0,0,w,4); x.fillRect(0,h-4,w,4); })}),
+        rope=mat('ctRope',0xd8d2bf), lamp=mat('adaFaro',0xf2f0e0), redL=mat('adaFaroR',0x9a1a14), amb=mat('adaForkAmb',0xff8a1a);
+      const gb=(w,h,d,x,y,z,m,ry,rx,rz)=>{ const g=new THREE.BoxGeometry(w,h,d); if(rz) g.rotateZ(rz); if(rx) g.rotateX(rx); if(ry) g.rotateY(ry); g.translate(x,y,z); b.add(g,m); };
+      const tyre=(x,z,dual)=>{ for(const dz of dual?[-.17,.17]:[0]){ const zz=z+dz*Math.sign(z); b.cyl(.52,.52,.3,x,.52,zz,rubber,16,Math.PI/2); b.cyl(.3,.3,.31,x,.52,zz,dg,12,Math.PI/2); }
+        b.cyl(.12,.12,.34,x,.52,z+(dual?.17:0)*Math.sign(z)+.02*Math.sign(z),chrome,8,Math.PI/2); };
+      // --- cabina (Constellation corta, techo alto) ---
+      b.box(2.15,1.85,2.48,-1.22,2.28,0,wt);                                  // caja de la cabina (1,35 → 3,2 m)
+      b.box(2.2,.16,2.5,-1.2,3.28,0,wt); b.box(1.5,.28,2.2,-1.45,3.48,0,wt);   // techo y deflector
+      for(const sd of [-1,1]) b.cyl(.14,.14,1.85,-.12,2.28,sd*1.12,wt,10);   // esquinas redondeadas del frente
+      gb(.09,.95,2.24,-.1,2.62,0,glass,0,0,.12);                               // parabrisas (apenas tumbado)
+      b.box(.1,.06,2.3,.0,3.15,0,blk2);                                       // visera
+      b.box(.08,.55,2.3,-.02,1.68,0,blk2);                                    // franja negra con la parrilla
+      for(let k=0;k<4;k++) b.box(.04,.035,2.0,.03,1.48+k*.12,0,dg);
+      b.cyl(.2,.2,.06,.04,1.9,0,chrome,18,0,Math.PI/2); b.cyl(.15,.15,.07,.05,1.9,0,mat('ctVW',0x1f3f7a),16,0,Math.PI/2);   // escudo redondo
+      b.box(.12,.3,2.46,-.06,2.15,0,wt);                                      // frente blanco entre la parrilla y el parabrisas
+      b.box(.38,.42,2.52,.05,.82,0,dg); b.box(.3,.12,2.0,.1,.58,0,blk2);       // paragolpes gris oscuro
+      for(const z of [-.95,.95]){ b.box(.06,.2,.4,.25,.98,z,lamp); b.box(.06,.08,.18,.25,.8,z*1.08,amb); }
+      for(const sd of [-1,1]){ const z=sd*1.245;
+        b.box(.95,.62,.04,-.62,2.66,z,glass); b.box(.5,.5,.04,-1.75,2.7,z,glass);     // ventanilla de la puerta y la de atrás
+        b.box(.04,1.55,.03,-1.15,2.12,z+sd*.01,mat('ctJunta',0xb8bab9));            // junta de la puerta
+        b.box(.5,.05,.3,-.75,.62,sd*1.3,blk2); b.box(.5,.05,.3,-.75,1.0,sd*1.3,blk2); // escalones
+        b.box(.06,.06,.5,.12,2.75,sd*1.38,blk2); b.box(.08,.45,.2,.16,2.6,sd*1.6,blk2); // espejos
+        b.box(1.2,.12,.42,-1.2,1.12,sd*1.08,blk2); }                                  // guardabarros de adelante
+      // --- chasis: largueros, tanque, caja de baterías y ejes ---
+      for(const sd of [-1,1]) b.box(10.4,.28,.12,-5.25,.95,sd*.45,blk2);
+      b.cyl(.32,.32,1.3,-3.2,.85,-1.0,mat('ctTank',0xbfc3c6),16,0,Math.PI/2); b.box(.7,.5,.5,-3.2,.85,1.0,blk2);
+      tyre(-1.3,-1.08); tyre(-1.3,1.08); for(const x of [-6.6,-7.92]){ tyre(x,-.92,1); tyre(x,.92,1); }
+      for(const sd of [-1,1]){ b.box(2.7,.06,.7,-7.26,1.14,sd*.98,blk2); b.box(.04,.5,.55,-8.7,.85,sd*.98,blk2); }
+      // --- caja con barandas grises, lona azul atada con sogas ---
+      const cajaX0=-2.62, cajaX1=-10.22, cL=cajaX0-cajaX1, cMx=(cajaX0+cajaX1)/2;
+      b.box(cL,.14,2.5,cMx,1.3,0,dg);
+      b.box(.1,1.5,2.5,cajaX0-.05,2.12,0,dg);                                 // frente de la caja
+      for(const sd of [-1,1]) b.box(cL,1.2,.06,cMx,1.97,sd*1.22,bar);
+      b.box(.06,1.2,2.5,cajaX1,1.97,0,bar);
+      const tarp=(x0,x1,yb)=>{ const sh=new THREE.Shape(); sh.moveTo(-1.29,yb); sh.lineTo(-1.29,2.75); sh.quadraticCurveTo(-1.25,3.3,0,3.36); sh.quadraticCurveTo(1.25,3.3,1.29,2.75); sh.lineTo(1.29,yb); sh.lineTo(1.2,yb); sh.lineTo(1.2,2.75); sh.quadraticCurveTo(1.15,3.22,0,3.26); sh.quadraticCurveTo(-1.15,3.22,-1.2,2.75); sh.lineTo(-1.2,yb); sh.closePath();
+        const g=new THREE.ExtrudeGeometry(sh,{depth:x0-x1,bevelEnabled:false,curveSegments:6}); g.rotateY(Math.PI/2); g.translate(x1,0,0); b.add(g,lona);
+        { const top=new THREE.Shape(); top.moveTo(-1.29,2.75); top.quadraticCurveTo(-1.25,3.3,0,3.36); top.quadraticCurveTo(1.25,3.3,1.29,2.75); top.lineTo(-1.29,2.75); const g2=new THREE.ShapeGeometry(top,6);
+          for(const x of [x0,x1]){ const g3=g2.clone(); g3.rotateY(Math.PI/2); g3.translate(x,0,0); b.add(g3,lona); } }
+        for(let x=x1+.6;x<x0;x+=1.1) for(const sd of [-1,1]) b.box(.03,3.36-yb-.3,.03,x,(3.36+yb)/2-.15,sd*1.3,rope); };
+      tarp(cajaX0,cajaX1,2.2);
+      for(const sd of [-1,1]){ b.box(.06,.16,.2,cajaX1-.02,1.1,sd*.95,redL); b.box(.06,.1,.2,cajaX1-.02,.92,sd*.95,amb); }
+      b.box(.05,.22,.5,cajaX1-.02,.95,0,mat('ctPat',0xe8e8e8));                // patente
+      // lanza y enganche
+      b.box(.4,.22,.3,-10.35,.78,0,blk2);
+      for(const sd of [-1,1]){ const a=new THREE.Vector3(-10.4,.72,0), c2=new THREE.Vector3(-12.55,.62,sd*.55), d=c2.clone().sub(a), L=d.length(); const g=new THREE.BoxGeometry(L,.1,.1); g.rotateY(-Math.atan2(d.z,d.x)); g.translate((a.x+c2.x)/2,.67,(a.z+c2.z)/2); b.add(g,blk2); }
+      // --- acoplado: carretón con eje de adelante, 2 ejes atrás; lona enrollada a lo largo de la baranda de enfrente, la de este lado bajada ---
+      const aX0=-11.8, aX1=-19.85, aL=aX0-aX1, aMx=(aX0+aX1)/2;
+      b.box(aL,.14,2.5,aMx,1.3,0,dg); for(const sd of [-1,1]) b.box(aL,.3,.12,aMx,1.08,sd*.45,blk2);
+      b.cyl(.6,.6,.12,-12.9,1.0,0,blk2,16);                                    // plato del carretón
+      for(const x of [-12.9,-17.95,-19.25]){ tyre(x,-.92,1); tyre(x,.92,1); }
+      for(const sd of [-1,1]){ b.box(1.3,.06,.7,-12.9,1.14,sd*.98,blk2); b.box(2.7,.06,.7,-18.6,1.14,sd*.98,blk2); }
+      b.box(.1,1.5,2.5,aX0-.05,2.12,0,dg);                                     // frente
+      b.box(aL,1.2,.06,aMx,1.97,1.22,bar);                                     // baranda de enfrente
+      { const g=new THREE.BoxGeometry(aL,1.2,.06); g.translate(0,-.6,0); g.rotateX(.12); g.translate(aMx,1.32,-1.3); b.add(g,bar); }   // baranda bajada (colgando)
+      b.box(.06,1.2,2.5,aX1,1.97,0,bar);                                       // compuerta de atrás
+      b.cyl(.2,.2,aL-.3,aMx,2.72,1.12,lona,12,0,Math.PI/2);                    // lona enrollada sobre la baranda
+      for(let x=aX1+.8;x<aX0;x+=1.6) b.box(.03,.32,.24,x,2.7,1.12,rope);
+      for(const sd of [-1,1]){ b.box(.06,.16,.2,aX1-.02,1.1,sd*.95,redL); b.box(.06,.1,.2,aX1-.02,.92,sd*.95,amb); }
+      // chofer adentro (se lo ve por el parabrisas)
+      { const db=Bag(), dgp=new THREE.Group(); driver(db,-.85,1.75,-.55,0x5a6b82,0x2a2a2c); db.meshes(dgp); TRK.drv=dgp; } });
+    truckG.add(TRK.drv);
+    // logo de ADA en las puertas
+    if(window.adaTex) for(const sd of [-1,1]){ const m=new THREE.Mesh(new THREE.PlaneGeometry(.9,.45),window.adaTex()); m.position.set(-.62,1.92,sd*1.262); if(sd<0) m.rotation.y=Math.PI; truckG.add(m); }
+    // --- pallets cargados (cajas y bolsas con film): 7 pilas de 2 frente al portón; el autoelevador los lleva uno por uno al acoplado ---
+    const SLX=k=>-4.25+k*1.13, SUPZ=fz+2.2;
+    const cajaT=tex(128,128,(x,w,h)=>{ x.fillStyle='#b58a58'; x.fillRect(0,0,w,h); x.strokeStyle='rgba(70,45,20,.6)'; x.lineWidth=2; for(let i=0;i<=w;i+=42){ x.beginPath(); x.moveTo(i,0); x.lineTo(i,h); x.stroke(); } for(let j=0;j<=h;j+=32){ x.beginPath(); x.moveTo(0,j); x.lineTo(w,j); x.stroke(); }
+      x.fillStyle='rgba(210,200,170,.7)'; for(let i=0;i<w;i+=42) x.fillRect(i+18,0,5,h); x.fillStyle='rgba(255,255,255,.18)'; x.fillRect(0,0,w,h); });
+    const bolsaT=tex(128,128,(x,w,h)=>{ x.fillStyle='#e9e6dd'; x.fillRect(0,0,w,h); for(let j=0;j<h;j+=21){ x.fillStyle='rgba(120,115,100,.45)'; x.fillRect(0,j,w,2); for(let i=(j/21%2)*30;i<w;i+=60){ x.fillStyle='rgba(60,120,60,.55)'; x.fillRect(i+8,j+6,30,8); } } x.fillStyle='rgba(255,255,255,.2)'; x.fillRect(0,0,w,h); });
+    const cargaM=[new THREE.MeshLambertMaterial({map:cajaT}),new THREE.MeshLambertMaterial({map:bolsaT})];
+    const palG=(()=>{ const g=boxUV(1.2,.14,1.0,1.2); g.translate(0,.07,0); return g; })(), loadG=(()=>{ const g=new THREE.BoxGeometry(1.14,1.0,.98); g.translate(0,.64,0); return g; })();
+    const loads=[];
+    for(let k=0;k<7;k++) for(let l=0;l<2;l++){ const o=new THREE.Group(); o.add(new THREE.Mesh(palG,palM[k&1])); const lm=new THREE.Mesh(loadG,cargaM[(k+l)%3?0:1]); o.add(lm);
+      o.traverse(m=>{ if(m.isMesh){ m.castShadow=m.receiveShadow=true; } }); const x=SLX(k), z=SUPZ; o.position.set(x,gl(x,z)+l*LH,z); o.rotation.y=Math.PI/2+(rnd(k*3+l)-.5)*.06;
+      o.userData.home={p:o.position.clone(),r:o.rotation.y,k,l}; G.add(o); loads.push(o); }
+    const truckY=truckG.position.y;
+    // --- operarios (chaleco flúo): el señalero junto al acoplado, el chofer al lado de la cabina y el encargado con la planilla ---
+    const POSTS=[{x:-6.6,z:fz+9.4,look:[-1,fz+8]},{x:TX-1.6,z:fz+9.6,look:[2,fz+10]},{x:-7.6,z:fz+4.2,look:[-1,fz+6],clip:1}];
+    // ====== el autoelevador: plan de cada viaje (agarra arriba primero, después abajo; carga primero el piso del acoplado y después la segunda fila) ======
+    const FY0=-.15, PO=1.92;
+    const plan=n=>{ const k=n%7, sl=n<7?1:0, dl=n<7?0:1, x=SLX(k), q=[];
+      q.push({to:[x,fz+5.4],fy:sl*LH-.2+FY0+.15},{to:[x,SUPZ+PO],wf:1},{act:'pick',o:loads[k*2+sl]},{to:[x,fz+6.1],rev:1,fy:'carry'},
+        {to:[x,fz+7.2],fy:DECK+dl*LH-.1},{to:[x,TZ-.7-PO],wf:1},{act:'drop',l:dl},{to:[x,fz+6.6],rev:1,fy:.05}); return q; };
     const AN={G,gl,car:{g:strada,park:[W/2+3.2,13.5,Math.PI],st:'idle',wait:25+Math.random()*30,i:0,
       path:[[W/2+9.5,13.5,1],[W/2+9.5,fz+8],[W/2-2,fz+16],[-22,fz+16],[-27,fz+24],[-10,fz+27.5],[20,fz+26],[W/2+9.5,fz+12],[W/2+9.5,13.5],[W/2+3.2,13.5]],sp:4.5},
-      fork:{g:fork,park:[doorX-2.5,fz+1.6,Math.PI/2],st:'idle',wait:3,i:0,path:[[doorX-2.5,fz+4.5],[doorX+5.5,fz+5],[doorX+7.6,fz+4.6],[doorX+3,fz+5.2,1],[doorX-2.5,fz+4.5],[doorX-2.5,fz+1.6,1]],sp:2},
+      fork:{g:fork,park:[SLX(3),fz+6.6,Math.PI/2],n:0,q:null,qi:0,fy:.05,dwell:2,sp:2},
+      plan,PO,loads,LH,DECK,truckY,truckG,TRK,TX,TZ,POSTS,at,panic:false,calm:0,wk:null,
       };
     adaSet(AN); for(const v of [AN.car,AN.fork]){ const [x,z,h]=v.park; v.x=x; v.z=z; v.h=h; v.g.position.set(x,gl(x,z),z); v.g.rotation.y=-h; }
-    hookAda();
+    hookAda(); hookCiv();
     B.meshes(G).forEach(m=>osmHitoMs.push(m));
     // letras ADA y el logo
     { const lm=new THREE.MeshLambertMaterial({map:lettersTex(),transparent:true,depthWrite:false}); const m=new THREE.Mesh(new THREE.PlaneGeometry(17,8.5),lm); m.position.set(-9,8.2,fz+.2); G.add(m);
@@ -340,10 +431,61 @@
     const want=Math.atan2(dz,dx)+(rev?Math.PI:0); let dh=want-v.h; dh=Math.atan2(Math.sin(dh),Math.cos(dh)); v.h+=dh*Math.min(1,dt*3);
     const k=Math.max(.25,Math.cos(dh)), st=Math.min(d,v.sp*k*dt); v.x+=dx/d*st; v.z+=dz/d*st;
     v.g.position.set(v.x,gl(v.x,v.z),v.z); v.g.rotation.y=-v.h; }
+  // un paso del autoelevador que carga el acoplado: va de las pilas del portón al acoplado y vuelve; espera a las uñas cuando hace falta
+  function stepFork(A,dt){ const F=A.fork, fk=F.g.userData.fk, mi=F.g.userData.mi;
+    if(fk){ fk.position.y+=Math.sign(F.fy-fk.position.y)*Math.min(Math.abs(F.fy-fk.position.y),dt*.7); if(mi) mi.position.y=Math.max(0,fk.position.y-.9); }
+    if(A.panic||!F.g.userData.drv.visible) return;
+    if(F.dwell>0){ F.dwell-=dt; return; }
+    if(!F.q){ if(F.n>=14) return; F.q=A.plan(F.n); F.qi=0; }
+    const s=F.q[F.qi]; if(!s){ F.q=null; if(F.n>=99) return; F.n++; F.dwell=1.5+Math.random()*2; if(F.n>=14){ F.q=[{to:[F.park[0]+9,F.park[1]-.6],fy:.05}]; F.qi=0; F.n=99; } return; }
+    if(s.act==='pick'){ fk.attach(s.o); s.o.position.set(A.PO,.165,0); s.o.rotation.set(0,0,0); F.fy=fk.position.y+.14; F.dwell=.9; F.qi++; return; }
+    if(s.act==='drop'){ const o=fk.children[fk.children.length-1]; if(o&&o.userData.home){ A.G.attach(o); o.position.y=A.truckY+A.DECK+s.l*A.LH; o.rotation.x=o.rotation.z=0; o.userData.on=1; } F.fy=fk.position.y-.2; F.dwell=1; F.qi++; return; }
+    if(s.fy!=null&&!s._f){ s._f=1; F.fy=s.fy==='carry'?F.fy:s.fy; }
+    if(s.wf&&Math.abs(fk.position.y-F.fy)>.03) return;
+    const P=s.to, dx=P[0]-F.x, dz=P[1]-F.z, d=Math.hypot(dx,dz);
+    if(d<.08){ F.qi++; return; }
+    const want=Math.atan2(dz,dx)+(s.rev?Math.PI:0); let dh=want-F.h; dh=Math.atan2(Math.sin(dh),Math.cos(dh)); F.h+=dh*Math.min(1,dt*(d<1.5?6:3));
+    const k=Math.max(.25,Math.cos(dh)), st=Math.min(d,F.sp*k*dt*(d<1.2?.6:1)); F.x+=dx/d*st; F.z+=dz/d*st;
+    F.g.position.set(F.x,A.gl(F.x,F.z),F.z); F.g.rotation.y=-F.h; }
+  // camión lleno: cuando nadie mira (cámara a más de 150 m) se "descarga" y vuelve a empezar
+  function resetLoads(A){ const F=A.fork; for(const o of A.loads){ const h=o.userData.home; A.G.attach(o); o.position.copy(h.p); o.rotation.set(0,h.r,0); o.userData.on=0; }
+    F.n=0; F.q=null; F.fy=.05; const [x,z,h]=F.park; F.x=x; F.z=z; F.h=h; F.g.position.set(x,A.gl(x,z),z); F.g.rotation.y=-h; }
+  // operarios y choferes: cuando se acerca un tanque (o hay tiros o explosiones cerca) salen corriendo; vuelven cuando pasa
+  const vest=(()=>{ let V=null; return ()=>V||(V={g:(()=>{ const g=new THREE.CylinderGeometry(.218,.178,.46,10); g.scale(1,1,.66); return g; })(),m:new THREE.MeshLambertMaterial({color:0xd9f21e,emissive:0x3a4200}),s:new THREE.MeshLambertMaterial({color:0xc9ccd0,emissive:0x303030})}); })();
+  const man=(x,z)=>{ for(let i=0;i<10;i++){ const P=makePerson('civ',-1,x,z); if(!P.female) return P; removeInf(P); } return makePerson('civ',-1,x,z); };   // operarios varones (sin vestidos)
+  function worker(A,i,x,z){ const P=man(x,z), V=vest(); const v=new THREE.Mesh(V.g,V.m); v.position.y=.03; P.parts.torso.add(v);
+    for(const y of [-.08,.1]){ const st=new THREE.Mesh(new THREE.CylinderGeometry(.222,.2,.04,10),V.s); st.scale.z=.67; st.position.y=y; P.parts.torso.add(st); }
+    if(A.POSTS[i].clip){ const c=new THREE.Mesh(new THREE.BoxGeometry(.24,.32,.02),new THREE.MeshLambertMaterial({color:0x6a4a2a})); c.position.set(0,-.62,.12); c.rotation.x=-.4; P.parts.armR.add(c); }
+    P.ada={i}; P.name='Operario de ADA'; return P; }
+  const wpos=(A,lx,lz)=>{ const [X,Z]=A.at(lx,lz); return {x:X,z:Z}; };
+  function danger(A,r){ const T=wpos(A,A.TX-10,A.TZ); return tanks.some(t=>!t.dead&&Math.hypot(t.pos.x-T.x,t.pos.z-T.z)<r)||noises.some(n=>now-n.t<3&&Math.hypot(n.x-T.x,n.z-T.z)<Math.max(n.r,30)+40); }
+  function runner(A,veh,drv,lx,lz){ drv.visible=false; if(net.guest) return; const p=wpos(A,lx,lz), P=man(p.x,p.z); P.flee=true; P.goal=null; P.ada={drv:veh}; P.name='Operario de ADA'; A.wk.push(P); }
+  function adaWorkers(A,dt){
+    if(state!=='play') return;
+    if(!A.wk){ A.wk=[]; if(!net.guest) A.POSTS.forEach((o,i)=>{ const p=wpos(A,o.x,o.z); A.wk.push(worker(A,i,p.x,p.z)); }); }
+    if(!A.panic){ if(danger(A,70)){ A.panic=true; A.calm=0;
+        for(const P of A.wk) if(!P.dead&&P.ada){ P.flee=true; P.goal=null; P.back=false; }
+        const F=A.fork, C=A.car; runner(A,'fork',F.g.userData.drv,F.x-.6,F.z-.9); runner(A,'car',C.g.userData.drv,C.x+Math.sin(C.h)*1.4,C.z-Math.cos(C.h)*1.4); runner(A,'truck',A.TRK.drv,A.TX-.8,A.TZ-1.8); } }
+    else { A.calm=danger(A,110)?0:A.calm+dt; if(A.calm>25){ A.panic=false;                 // se fue el tanque: vuelven caminando desde la puerta de las oficinas
+        const door=wpos(A,-40.3,8.2), alive=new Set(infantry);
+        A.POSTS.forEach((o,i)=>{ let P=A.wk.find(Q=>Q.ada&&Q.ada.i===i&&alive.has(Q)&&!Q.dead); if(!P&&!net.guest){ P=worker(A,i,door.x,door.z); A.wk.push(P); } if(P){ P.flee=false; P.back=true; P.goal=null; } });
+        for(const [k,drv,lx,lz] of [['fork',A.fork.g.userData.drv],['car',A.car.g.userData.drv],['truck',A.TRK.drv]]){ let P=A.wk.find(Q=>Q.ada&&Q.ada.drv===k&&alive.has(Q)&&!Q.dead);
+          if(!P){ if(net.guest){ drv.visible=true; continue; } P=man(door.x,door.z); P.ada={drv:k}; P.name='Operario de ADA'; A.wk.push(P); } P.flee=false; P.back=true; P.goal=null; P.ada.home=drv; }
+        A.wk=A.wk.filter(Q=>alive.has(Q)||!Q.dead&&infantry.includes(Q)); } } }
+  // los operarios se quedan en su puesto mirando la carga (los que vuelven caminan hasta su lugar; los choferes se suben)
+  let civHooked=false;
+  function hookCiv(){ if(civHooked||typeof civThink!=='function') return; civHooked=true; const _c=civThink;
+    civThink=function(P,dt){ const A=W&&W._adaAnim; if(P.ada&&A&&!P.flee){
+        let tx,tz; if(P.ada.drv==='truck'){ const p=wpos(A,A.TX-.8,A.TZ-1.6); tx=p.x; tz=p.z; } else if(P.ada.drv){ const wp=new THREE.Vector3(); (P.ada.drv==='fork'?A.fork.g:A.car.g).getWorldPosition(wp); tx=wp.x; tz=wp.z; }
+        else { const o=A.POSTS[P.ada.i], p=wpos(A,o.x,o.z); tx=p.x; tz=p.z; }
+        if(P.back||P.ada.drv){ if(walk(P,tx,tz,1.3,dt)||Math.hypot(tx-P.pos.x,tz-P.pos.z)<(P.ada.drv?1.6:.6)){ P.back=false; if(P.ada.drv){ (P.ada.home||{}).visible=true; P.removed=true; } } return; }
+        const o=A.POSTS[P.ada.i], L=wpos(A,o.look[0],o.look[1]); P.heading=Math.atan2(L.x-P.pos.x,L.z-P.pos.z); P.spd=0; P.pose=0; return; }
+      return _c.apply(this,arguments); }; }
   function adaTick(dt){ const A=W&&W._adaAnim; if(!A||!A.G.parent) return; if(!['play','deploy','spectate','end','brief'].includes(state)) return; dt=Math.min(dt,.1);
-    stepV(A.car,dt,A.gl,v=>{ v.wait=60+Math.random()*60; v.h=v.park[2]; v.g.rotation.y=-v.h; });
-    const F=A.fork; stepV(F,dt,A.gl,v=>{ v.wait=5+Math.random()*6; });
-    const fk=F.g.userData.fk; if(fk){ const up=F.st==='go'&&F.i>=3&&F.i<=4?.9:0; fk.position.y+=(up-fk.position.y)*Math.min(1,dt*1.5); } }
+    try{ adaWorkers(A,dt); }catch(e){ console.warn('ada',e); }
+    if(!A.panic&&A.car.g.userData.drv.visible) stepV(A.car,dt,A.gl,v=>{ v.wait=60+Math.random()*60; v.h=v.park[2]; v.g.rotation.y=-v.h; });
+    stepFork(A,dt);
+    if(A.fork.n===99&&!A.panic&&camera){ const T=wpos(A,A.TX-10,A.TZ); if(Math.hypot(camera.position.x-T.x,camera.position.z-T.z)>150) resetLoads(A); } }
   function adaSet(a){ W._adaAnim=a; }
   let hooked=false;
   function hookAda(){ if(hooked||typeof frame!=='function') return; hooked=true; const _f=frame; frame=function(dt){ const r=_f.apply(this,arguments); try{ adaTick(dt); }catch(e){} return r; }; }
