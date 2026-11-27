@@ -70,6 +70,7 @@
     #pGift .crate .body{position:absolute;left:0;right:0;bottom:0;height:130px;border-radius:8px;background:repeating-linear-gradient(90deg,#8a5a2b 0 34px,#7a4d23 34px 36px);border:4px solid #4e3015;box-shadow:inset 0 0 0 8px rgba(0,0,0,.18)}
     #pGift .crate .lid{position:absolute;left:-10px;right:-10px;top:0;height:46px;border-radius:8px;background:linear-gradient(#a06a35,#7a4d23);border:4px solid #4e3015;transition:transform .7s cubic-bezier(.2,.9,.3,1.2),opacity .7s}
     #pGift .crate .q{position:absolute;left:0;right:0;bottom:22px;font:900 76px 'Saira Condensed',system-ui,sans-serif;color:#ffd24a;text-shadow:0 3px 0 #4e3015}
+    #pGift .crate.cnt{width:auto;height:auto} #pGift .crate.cnt img{display:block;width:210px;height:210px}
     #pGift .crate .star{position:absolute;left:50%;top:-34px;transform:translateX(-50%);font-size:30px}
     #pGift.open .crate{display:none} #pGift.open .sub{display:none}
     #pGift .burst{position:fixed;left:50%;top:50%;width:10px;height:10px;border-radius:50%;transform:translate(-50%,-50%) scale(0);background:radial-gradient(circle,rgba(255,236,170,.95),rgba(255,210,74,0) 70%);pointer-events:none}
@@ -393,10 +394,11 @@
   // ---- premio de la 1ª batalla: 1.000 Yaguaretés (un tanque cuesta ~10.000); la caja sale al terminar la 3ª ----
   { const _br=battleReward; battleReward=function(){ const r=_br.apply(this,arguments); if(B&&B.first&&!tut) r.yp=Math.min(r.yp,1000); return r; }; }
   const gift=document.createElement('div'); gift.id='pGift'; gift.setAttribute('data-notr',''); document.body.appendChild(gift);
+  window.giftBoxVer=k=>giftBox(k||'m4a1');                                                                         // para mirar la caja desde la consola (regala el tanque)
   function giftBox(k){ const V=VEH[k]; if(!V) return; const E=EN();
     try{ PROG.unlocked[k]=1; PROG.owned[k]=1; const g=garRef(V.nation,eraOf(k)); if(!g.includes(k)){ if(g.length>=3) g.pop(); g.unshift(k); } saveProg(); }catch(e){}
     gift.className=''; gift.innerHTML=`<h2>${E?'Training complete!':'¡Terminaste el entrenamiento!'}</h2><div class="sub">${E?'Here is your first tank:':'Acá está tu primer tanque:'}</div>
-      <div class="crate"><div class="star">⭐</div><div class="body"><div class="q">?</div></div><div class="lid"></div></div><div class="burst"></div>
+      ${window.cajaRegaloImg?`<div class="crate cnt">${cajaRegaloImg(210)}</div>`:'<div class="crate"><div class="star">⭐</div><div class="body"><div class="q">?</div></div><div class="lid"></div></div>'}<div class="burst"></div>
       <div class="prize">${typeof miniHTML==='function'?miniHTML(k):''}<div class="nm">${V.label}</div>
         <div class="ds">${E?'It is yours for good. Win battles to research and buy the next ones in the line.':'Es tuyo para siempre. Ganá batallas para investigar y comprar los siguientes de la línea.'}</div>
         <button class="go" id="pGiftOk">${EN()?'Great!':'¡Genial!'}</button></div>
